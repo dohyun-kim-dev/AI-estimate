@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/lib/utils/handleLoginStatus.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755953514832,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755953514832,
+            "name": "Commit-0",
+            "content": "import { ApiLoginStatus } from '@lib/utils/apiLoginStatus';\n\ntype HandleLoginStatusProps = {\n  status: ApiLoginStatus;\n  message: string;\n  onSuccess: () => void;\n  onFail?: () => void;\n  showMessage?: (msg: string) => void;\n};\n\nexport function handleLoginStatus({\n  status,\n  message,\n  onSuccess,\n  onFail,\n  showMessage = (msg) => alert(msg),\n}: HandleLoginStatusProps) {\n  switch (status) {\n    case ApiLoginStatus.Success:\n      onSuccess();\n      break;\n    case ApiLoginStatus.NoUser:\n      onFail?.();\n      showMessage('가입된 회원 정보가 없습니다');\n      break;\n    case ApiLoginStatus.PasswordIncorrect:\n      onFail?.();\n      showMessage('비밀번호가 일치하지 않습니다');\n      break;\n    case ApiLoginStatus.DisabledUser:\n      onFail?.();\n      showMessage('탈퇴한 회원입니다. 재가입이 필요합니다.');\n      break;\n    case ApiLoginStatus.NoData:\n      onFail?.();\n      showMessage('데이터가 없습니다');\n      break;\n    case ApiLoginStatus.Unknown:\n      onFail?.();\n      showMessage(`알 수 없는 오류: ${message}`);\n      break;\n  }\n}\n"
+        }
+    ]
+}

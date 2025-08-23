@@ -1,0 +1,46 @@
+{
+    "sourceFile": "src/app/layout.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 7,
+            "patches": [
+                {
+                    "date": 1755953872663,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1755957050925,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,15 +1,16 @@\n import React, { useState, useEffect } from \"react\";\n import { ThemeProvider } from \"styled-components\";\n-import { useThemeStore } from \"@/store/themeStore\";\n-import { lightTheme, darkTheme } from \"@/styles/theme\";\n-import { GlobalStyle } from \"@/styles/globalStyles\";\n-import Header from \"@/components/common/Header\";\n-import Footer from \"@/components/common/Footer\";\n+import { useThemeStore } from \"@store/themeStore\";\n+import { lightTheme, darkTheme } from \"@styles/theme\";\n+import { GlobalStyle } from \"@styles/globalStyles\";\n+import Header from \"@components/common/Header\";\n+import Footer from \"@components/common/Footer\";\n import styled from \"styled-components\";\n-import { ToastProvider } from \"@/components/common/ToastProvider\";\n-import { PageLoaderProvider } from \"@/contexts/PageLoaderContext\";\n+import { ToastProvider } from \"@components/common/ToastProvider\";\n+import { PageLoaderProvider } from \"@contexts/PageLoaderContext\";\n import { useLocation } from \"react-router-dom\";\n+import { Outlet } from \"react-router-dom\";\n \n const Main = styled.main<{ $hideDefault?: boolean }>`\n   ${({ $hideDefault }) =>\n     $hideDefault\n@@ -33,9 +34,9 @@\n const FooterWrapper = ({ isCompact }: HeaderFooterProps) => (\n   <Footer compact={isCompact || false} />\n );\n \n-export default function RootLayout({ children }: { children: React.ReactNode }) {\n+export default function RootLayout() {\n   const { isDarkMode } = useThemeStore();\n   const location = useLocation();\n   const [compact, setCompact] = useState(false);\n   const [mounted, setMounted] = useState(false);\n@@ -58,9 +59,11 @@\n       <GlobalStyle />\n       <PageLoaderProvider>\n         <ToastProvider>\n           {!hideDefaultLayout && <HeaderWrapper isCompact={compact} />}\n-          <Main $hideDefault={hideDefaultLayout}>{children}</Main>\n+          <Main $hideDefault={hideDefaultLayout}>\n+            <Outlet />\n+          </Main>\n           {!hideDefaultLayout && <FooterWrapper isCompact={compact} />}\n         </ToastProvider>\n       </PageLoaderProvider>\n     </ThemeProvider>\n"
+                },
+                {
+                    "date": 1755957325893,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,8 +11,9 @@\n import { useLocation } from \"react-router-dom\";\n import { Outlet } from \"react-router-dom\";\n \n const Main = styled.main<{ $hideDefault?: boolean }>`\n+j\n   ${({ $hideDefault }) =>\n     $hideDefault\n       ? `\n       min-height: 100vh;\n"
+                },
+                {
+                    "date": 1755957334518,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,9 +11,11 @@\n import { useLocation } from \"react-router-dom\";\n import { Outlet } from \"react-router-dom\";\n \n const Main = styled.main<{ $hideDefault?: boolean }>`\n-j\n+  justify-content: center;\n+  align-items: center;\n+  margin: 0 auto;\n   ${({ $hideDefault }) =>\n     $hideDefault\n       ? `\n       min-height: 100vh;\n"
+                },
+                {
+                    "date": 1755957340065,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,9 +13,8 @@\n \n const Main = styled.main<{ $hideDefault?: boolean }>`\n   justify-content: center;\n   align-items: center;\n-  margin: 0 auto;\n   ${({ $hideDefault }) =>\n     $hideDefault\n       ? `\n       min-height: 100vh;\n"
+                },
+                {
+                    "date": 1755957346371,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,11 +10,9 @@\n import { PageLoaderProvider } from \"@contexts/PageLoaderContext\";\n import { useLocation } from \"react-router-dom\";\n import { Outlet } from \"react-router-dom\";\n \n-const Main = styled.main<{ $hideDefault?: boolean }>`\n-  justify-content: center;\n-  align-items: center;\n+const Main = styled.main<{ $hideDefault?: boolean }>`wid\n   ${({ $hideDefault }) =>\n     $hideDefault\n       ? `\n       min-height: 100vh;\n"
+                },
+                {
+                    "date": 1755957368869,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,9 +10,10 @@\n import { PageLoaderProvider } from \"@contexts/PageLoaderContext\";\n import { useLocation } from \"react-router-dom\";\n import { Outlet } from \"react-router-dom\";\n \n-const Main = styled.main<{ $hideDefault?: boolean }>`wid\n+const Main = styled.main<{ $hideDefault?: boolean }>`\n+  width: 100%vw\n   ${({ $hideDefault }) =>\n     $hideDefault\n       ? `\n       min-height: 100vh;\n"
+                },
+                {
+                    "date": 1755957374688,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,9 +11,9 @@\n import { useLocation } from \"react-router-dom\";\n import { Outlet } from \"react-router-dom\";\n \n const Main = styled.main<{ $hideDefault?: boolean }>`\n-  width: 100%vw\n+  width: 100vw;\n   ${({ $hideDefault }) =>\n     $hideDefault\n       ? `\n       min-height: 100vh;\n"
+                }
+            ],
+            "date": 1755953872663,
+            "name": "Commit-0",
+            "content": "import React, { useState, useEffect } from \"react\";\nimport { ThemeProvider } from \"styled-components\";\nimport { useThemeStore } from \"@/store/themeStore\";\nimport { lightTheme, darkTheme } from \"@/styles/theme\";\nimport { GlobalStyle } from \"@/styles/globalStyles\";\nimport Header from \"@/components/common/Header\";\nimport Footer from \"@/components/common/Footer\";\nimport styled from \"styled-components\";\nimport { ToastProvider } from \"@/components/common/ToastProvider\";\nimport { PageLoaderProvider } from \"@/contexts/PageLoaderContext\";\nimport { useLocation } from \"react-router-dom\";\n\nconst Main = styled.main<{ $hideDefault?: boolean }>`\n  ${({ $hideDefault }) =>\n    $hideDefault\n      ? `\n      min-height: 100vh;\n      `\n      : `\n      padding: 76px 0 84px;\n      min-height: 100vh;\n      `}\n`;\n\ninterface HeaderFooterProps {\n  isCompact?: boolean;\n}\n\nconst HeaderWrapper = ({ isCompact }: HeaderFooterProps) => (\n  <Header compact={isCompact || false} />\n);\n\nconst FooterWrapper = ({ isCompact }: HeaderFooterProps) => (\n  <Footer compact={isCompact || false} />\n);\n\nexport default function RootLayout({ children }: { children: React.ReactNode }) {\n  const { isDarkMode } = useThemeStore();\n  const location = useLocation();\n  const [compact, setCompact] = useState(false);\n  const [mounted, setMounted] = useState(false);\n\n  useEffect(() => {\n    setMounted(true);\n    const searchParams = new URLSearchParams(location.search);\n    setCompact(searchParams.get(\"embed\") === \"1\");\n  }, [location]);\n\n  const theme = mounted ? (isDarkMode ? darkTheme : lightTheme) : lightTheme;\n\n  // 특정 경로에서는 기본 헤더/푸터를 숨김\n  const hideDefaultLayout = location.pathname.startsWith(\"/cms\") || \n                          location.pathname.startsWith(\"/ai\") || \n                          location.pathname.startsWith(\"/ai-estimate\");\n\n  return (\n    <ThemeProvider theme={theme}>\n      <GlobalStyle />\n      <PageLoaderProvider>\n        <ToastProvider>\n          {!hideDefaultLayout && <HeaderWrapper isCompact={compact} />}\n          <Main $hideDefault={hideDefaultLayout}>{children}</Main>\n          {!hideDefaultLayout && <FooterWrapper isCompact={compact} />}\n        </ToastProvider>\n      </PageLoaderProvider>\n    </ThemeProvider>\n  );\n}"
+        }
+    ]
+}

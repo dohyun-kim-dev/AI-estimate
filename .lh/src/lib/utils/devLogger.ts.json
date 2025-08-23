@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/lib/utils/devLogger.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755959544170,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755959544170,
+            "name": "Commit-0",
+            "content": "/**\n * 개발 환경에서만 콘솔 로그를 출력하는 유틸 함수\n * Dev-only logger to prevent logs in production\n */\nexport const devLog = (...args: any[]) => {\n  if (import.meta.env.NODE_ENV === 'development') {\n    console.log('devLog:', ...args);\n  }\n};\n\nexport const devWarn = (...args: any[]) => {\n  if (import.meta.env.NODE_ENV === 'development') {\n    console.warn('devWarn:', ...args);\n  }\n};\n\nexport const devError = (...args: any[]) => {\n  if (import.meta.env.NODE_ENV === 'development') {\n    console.error('devError:', ...args);\n  }\n};"
+        }
+    ]
+}

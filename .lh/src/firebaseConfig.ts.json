@@ -1,0 +1,30 @@
+{
+    "sourceFile": "src/firebaseConfig.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1755954983446,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1755955279974,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,16 +13,34 @@\n   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,\n   appId: import.meta.env.VITE_FIREBASE_APP_ID,\n }\n \n+// 환경 변수가 제대로 로드되었는지 확인\n+console.log('Firebase Config:', {\n+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? '설정됨' : '설정되지 않음',\n+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ? '설정됨' : '설정되지 않음',\n+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ? '설정됨' : '설정되지 않음',\n+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ? '설정됨' : '설정되지 않음',\n+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ? '설정됨' : '설정되지 않음',\n+  appId: import.meta.env.VITE_FIREBASE_APP_ID ? '설정됨' : '설정되지 않음',\n+})\n+\n let app\n devLog('>>>> Firebase Config: Attempting initialization...')\n+\n+// Firebase 초기화 전에 필수 설정값 확인\n+if (!firebaseConfig.apiKey || !firebaseConfig.authDomain || !firebaseConfig.projectId) {\n+  console.error('필수 Firebase 설정이 누락되었습니다. 환경 변수를 확인해주세요.')\n+  throw new Error('Firebase 설정 오류: 필수 설정 누락')\n+}\n+\n if (!getApps().length) {\n   try {\n     app = initializeApp(firebaseConfig)\n     devLog('>>>> Firebase Config: Initialized successfully:', app.name)\n   } catch (error) {\n     console.error('>>>> Firebase Config: Error during initializeApp:', error)\n+    throw error\n   }\n } else {\n   app = getApp()\n   devLog('>>>> Firebase Config: App already exists, getting app:', app.name)\n"
+                },
+                {
+                    "date": 1755956757482,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,11 +27,16 @@\n let app\n devLog('>>>> Firebase Config: Attempting initialization...')\n \n // Firebase 초기화 전에 필수 설정값 확인\n-if (!firebaseConfig.apiKey || !firebaseConfig.authDomain || !firebaseConfig.projectId) {\n-  console.error('필수 Firebase 설정이 누락되었습니다. 환경 변수를 확인해주세요.')\n-  throw new Error('Firebase 설정 오류: 필수 설정 누락')\n+const missingKeys = Object.entries(requiredKeys)\n+  .filter(([_, value]) => !value)\n+  .map(([key]) => key)\n+\n+if (missingKeys.length > 0) {\n+  console.error(\"❌ Firebase 환경 변수 누락됨:\", missingKeys)\n+} else {\n+  console.log(\"✅ 모든 Firebase 환경 변수가 정상적으로 설정됨\")\n }\n \n if (!getApps().length) {\n   try {\n"
+                },
+                {
+                    "date": 1755956793092,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,9 +27,9 @@\n let app\n devLog('>>>> Firebase Config: Attempting initialization...')\n \n // Firebase 초기화 전에 필수 설정값 확인\n-const missingKeys = Object.entries(requiredKeys)\n+const missingKeys = Object.entries(firebaseConfig)\n   .filter(([_, value]) => !value)\n   .map(([key]) => key)\n \n if (missingKeys.length > 0) {\n"
+                }
+            ],
+            "date": 1755954983446,
+            "name": "Commit-0",
+            "content": "import { initializeApp, getApps, getApp, FirebaseOptions } from 'firebase/app'\nimport { getAuth } from 'firebase/auth'\nimport { getFirestore } from 'firebase/firestore'\nimport { getStorage } from 'firebase/storage'\nimport { getAI } from 'firebase/ai'\nimport { devLog } from '@/utils/devLogger'\n\nconst firebaseConfig: FirebaseOptions = {\n  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,\n  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,\n  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,\n  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,\n  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,\n  appId: import.meta.env.VITE_FIREBASE_APP_ID,\n}\n\nlet app\ndevLog('>>>> Firebase Config: Attempting initialization...')\nif (!getApps().length) {\n  try {\n    app = initializeApp(firebaseConfig)\n    devLog('>>>> Firebase Config: Initialized successfully:', app.name)\n  } catch (error) {\n    console.error('>>>> Firebase Config: Error during initializeApp:', error)\n  }\n} else {\n  app = getApp()\n  devLog('>>>> Firebase Config: App already exists, getting app:', app.name)\n}\n\nconst auth = getAuth(app)\nconst db = app ? getFirestore(app) : null\nconst storage = app ? getStorage(app) : null\nconst ai = app ? getAI(app) : null\n\nexport { app, auth, db, storage, ai }"
+        }
+    ]
+}

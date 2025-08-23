@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/utils/devLogger.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755959548648,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755959548648,
+            "name": "Commit-0",
+            "content": "export const devLog = (...args: any[]) => {\n  if (import.meta.env.NODE_ENV !== 'production') {\n     \n    console.log(...args)\n  }\n}\n\nexport const devWarn = (...args: any[]) => {\n  if (import.meta.env.NODE_ENV !== 'production') {\n     \n    console.warn(...args)\n  }\n}\n"
+        }
+    ]
+}

@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/lib/services/loginAdminService.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755953514832,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755953514832,
+            "name": "Commit-0",
+            "content": "import { adminLogin } from '@/lib/api/admin';\nimport { getLoginStatus } from '@/lib/utils/apiLoginStatus';\nimport { handleLoginStatus } from '@/lib/utils/handleLoginStatus';\nimport { devError, devWarn } from '@lib/utils/devLogger';\n\ntype LoginAdminServiceParams = {\n  id: string;\n  password: string;\n  showMessage?: (msg: string) => void;\n  onSuccess?: (result: { id: string }) => void;\n};\n\ninterface LoginResponse {\n  message?: string;\n  statusCode?: number;\n  data?: unknown;\n}\n\n/**\n * 관리자 로그인 서비스 / Admin login flow\n */\nexport async function loginAdminService({\n  id,\n  password,\n  showMessage = (msg) => alert(msg),\n  onSuccess,\n}: LoginAdminServiceParams) {\n  try {\n    const response = await adminLogin({ userId: id, password });\n    devWarn('로그인 응답:', response);\n\n    // 응답이 배열인 경우 첫 번째 항목 사용\n    const responseData = (Array.isArray(response) ? response[0] : response) as LoginResponse;\n    const message = responseData?.message ?? 'unknown';\n    const status = getLoginStatus(message);\n\n    handleLoginStatus({\n      status,\n      message,\n      showMessage,\n      onSuccess: () => {\n        // ✅ 외부로 로그인 정보 전달 (context login에서 처리)\n        onSuccess?.({ id });\n      },\n      onFail: () => {\n        devWarn('로그인 실패:', message);\n      },\n    });\n  } catch (error) {\n    devError('로그인 요청 중 오류 발생:', error);\n    showMessage('로그인 중 오류가 발생했습니다.');\n  }\n}\n"
+        }
+    ]
+}

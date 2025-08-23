@@ -1,100 +1,80 @@
+'use client'
+
 import React from 'react'
 import styled from 'styled-components'
+import { IoClose } from 'react-icons/io5'
 
 interface ModalProps {
   open: boolean
-  onClose: () => void
   title?: string
-  width?: number | string
+  onClose: () => void
   children: React.ReactNode
+  width?: number
   centerTitle?: boolean
 }
 
-const Overlay = styled.div<{ isOpen: boolean }>`
+const Overlay = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: ${({ isOpen }) => (isOpen ? 'flex' : 'none')};
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-`
-
-const Container = styled.div<{ width: number | string }>`
-  background-color: ${({ theme }) => theme.body};
-  border-radius: 12px;
-  padding: 24px;
-  width: ${({ width }) => (typeof width === 'number' ? `${width}px` : width)};
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
-`
-
-const Header = styled.div<{ centerTitle?: boolean }>`
+  inset: 0;
+  background: rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
-  justify-content: ${({ centerTitle }) => (centerTitle ? 'center' : 'space-between')};
-  margin-bottom: 20px;
+  justify-content: center;
+  z-index: 99999;
 `
 
-const Title = styled.h2`
-  font-size: 20px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.text};
+const Dialog = styled.div<{ $width?: number }>`
+  width: 100%;
+  max-width: ${({ $width }) => ($width ? `${$width}px` : '560px')};
+  background: #ffffff;
+  color: #111827;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+  border: 1px solid #e5e7eb;
+  margin: 0 16px;
+  z-index: 99999;
+`
+
+const Header = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 32px;
+  align-items: center;
+  padding: 16px 20px 0 20px;
+`
+
+const Title = styled.h3<{ $center?: boolean }>`
   margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: ${({ $center }) => ($center ? 'center' : 'left')};
 `
 
 const CloseButton = styled.button`
-  position: absolute;
-  right: 24px;
-  top: 24px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: ${({ theme }) => theme.text};
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-
-  &:hover {
-    opacity: 0.7;
-  }
+  color: #666666;
 `
 
-export const Modal: React.FC<ModalProps> = ({
-  open,
-  onClose,
-  title,
-  width = 480,
-  children,
-  centerTitle = false,
-}) => {
-  if (!open) return null
+const Body = styled.div`
+  padding: 16px 20px 20px;
+`
 
+export default function Modal({ open, title, onClose, children, width, centerTitle = false }: ModalProps) {
+  if (!open) return null
   return (
-    <Overlay isOpen={open} onClick={onClose}>
-      <Container
-        width={width}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {title && (
-          <Header centerTitle={centerTitle}>
-            <Title>{title}</Title>
-            {!centerTitle && (
-              <CloseButton onClick={onClose}>×</CloseButton>
-            )}
-          </Header>
-        )}
-        {children}
-      </Container>
+    <Overlay onClick={onClose}>
+      <Dialog $width={width} onClick={(e) => e.stopPropagation()}>
+        <Header>
+          {title ? <Title $center={centerTitle}>{title}</Title> : <div />}
+          <CloseButton aria-label="close" onClick={onClose}>
+            <IoClose size={20} />
+          </CloseButton>
+        </Header>
+        <Body>{children}</Body>
+      </Dialog>
     </Overlay>
   )
 }
-
-export default Modal

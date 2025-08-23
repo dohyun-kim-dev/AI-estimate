@@ -1,0 +1,4 @@
+/* y축 선 제거 (오른쪽 축) */
+.nivo-axis--right .domain {
+    stroke: none !important;
+  }

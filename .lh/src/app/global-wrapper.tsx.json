@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/app/global-wrapper.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1755956908707,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1755959502691,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -51,9 +51,9 @@\n       {/* HTML link preload 추가 */}\n       \n       <ToastContainer style={{ zIndex: 9999 }} />\n       <GoogleOAuthProvider\n-        clientId={process.env.VITE_GOOGLE_CLIENT_ID || ''}\n+        clientId={meta.env.VITE_GOOGLE_CLIENT_ID || ''}\n       >\n       {/* react-activation Provider | Keep components alive */}\n       {/* <ActivationProvider> */}\n         {/* 페이지 로딩 상태 전역 관리 | Global page loading state */}\n"
+                }
+            ],
+            "date": 1755956908707,
+            "name": "Commit-0",
+            "content": "\"use client\";\n\nimport { DeviceProvider } from \"@/contexts/DeviceContext\";\nimport { PageLoaderProvider } from \"@/contexts/PageLoaderContext\";\nimport { SettingsProvider } from \"@/contexts/SettingsContext\";\nimport { GlobalStyle } from \"@/styles/globalStyles\";\nimport { useEffect } from \"react\";\nimport ActivationProvider from \"@/components/ActivationProvider\";\nimport { ToastContainer } from 'react-toastify';\nimport { SocialLoginModal } from '@/components/ai-esti/SocialLoginModal';\nimport { useModalStore } from '@/store/modalStore';\nimport { useAuthStore } from '@/store/authStore';\nimport { GoogleOAuthProvider } from '@react-oauth/google';\nimport AdditionalInfoModal from '@/components/common/AdditionalInfoModal';\n\nimport 'react-toastify/dist/ReactToastify.css'; \n// src/app/providers.tsx\n\n/**\n * GlobalWrapper는 애플리케이션 전역에 필요한 컨텍스트와 스타일을 감싸주는 최상위 Provider 컴포넌트입니다.\n * 디바이스 정보, 페이지 로딩 상태, 글로벌 스타일 등을 일괄 적용하는 용도로 사용됩니다.\n *\n * GlobalWrapper is the top-level provider component that wraps the app with global context and styles.\n * It applies device info, page loader state, and global styles across the application.\n */\n\n\nfunction ModalContainer() {\n  const { isLoginModalOpen, closeLoginModal } = useModalStore();\n  const { isAdditionalInfoModalOpen, closeAdditionalInfoModal } = useAuthStore();\n  \n  return (\n    <>\n      <SocialLoginModal\n        $isOpen={isLoginModalOpen}\n        onClose={closeLoginModal}\n      />\n      <AdditionalInfoModal\n        open={isAdditionalInfoModalOpen}\n        onClose={closeAdditionalInfoModal}\n      />\n    </>\n  )\n}\n\nexport function GlobalWrapper({ children }: { children: React.ReactNode }) {\n  // 앱 시작과 동시에 구성품 이미지들을 preload\n\n  return (\n    <>\n      {/* HTML link preload 추가 */}\n      \n      <ToastContainer style={{ zIndex: 9999 }} />\n      <GoogleOAuthProvider\n        clientId={process.env.VITE_GOOGLE_CLIENT_ID || ''}\n      >\n      {/* react-activation Provider | Keep components alive */}\n      {/* <ActivationProvider> */}\n        {/* 페이지 로딩 상태 전역 관리 | Global page loading state */}\n        <PageLoaderProvider>\n            <DeviceProvider>\n              {/* 글로벌 스타일 적용 | Apply global base styles */}\n              {/* <GlobalStyle /> */}\n              {children}\n              <ModalContainer />\n            </DeviceProvider>\n        </PageLoaderProvider>\n      {/* </ActivationProvider> */}\n      </GoogleOAuthProvider>\n\n    </>\n  );\n}\n"
+        }
+    ]
+}

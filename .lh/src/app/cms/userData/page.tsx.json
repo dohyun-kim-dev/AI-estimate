@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/app/cms/userData/page.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755958226636,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755958226636,
+            "name": "Commit-0",
+            "content": "import { useEffect } from 'react';\nimport { useNavigate } from \"react-router-dom\";\n\nexport default function UserDataRedirectPage() {\n  const navigate = useNavigate();\n\n  useEffect(() => {\n    navigate('/cms/userData/proposal');\n  }, [router]);\n\n  return null; // 로딩 메시지나 스피너를 추가할 수도 있음\n}\n"
+        }
+    ]
+}

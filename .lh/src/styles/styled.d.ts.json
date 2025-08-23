@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/styles/styled.d.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755953514832,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755953514832,
+            "name": "Commit-0",
+            "content": "// src/styles/styled.d.ts\nimport 'styled-components';\nimport { Theme } from '@styles/theme';\n\ndeclare module 'styled-components' {\n  export interface DefaultTheme extends Theme {}\n}\n"
+        }
+    ]
+}

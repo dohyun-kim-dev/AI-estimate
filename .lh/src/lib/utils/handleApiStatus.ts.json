@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/lib/utils/handleApiStatus.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755953514832,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755953514832,
+            "name": "Commit-0",
+            "content": "import { ApiStatus } from '@lib/utils/apiStatus';\n\ntype HandleApiStatusProps = {\n  status: ApiStatus;\n  customMessageIfAny: string;\n  onSuccess: () => void;\n  onFail?: () => void;\n  onNoData?: () => void;\n  onUnknown?: () => void;\n  customUI?: (message: string) => void;\n};\n\nexport function handleApiStatus({\n  status,\n  customMessageIfAny,\n  onSuccess,\n  onFail,\n  onNoData,\n  onUnknown,\n  customUI,\n}: HandleApiStatusProps) {\n  const showMessage = (message: string) => {\n    if (customUI) {\n      customUI(message);\n    } else {\n      alert(message); // 기본 fallback, toast 등으로 변경 가능\n    }\n  };\n\n  switch (status) {\n    case ApiStatus.Success:\n      onSuccess();\n      break;\n    case ApiStatus.Fail:\n      onFail?.();\n      showMessage('요청에 실패했습니다');\n      break;\n    case ApiStatus.NoData:\n      onNoData?.();\n      showMessage('데이터가 없습니다');\n      break;\n    case ApiStatus.Unknown:\n        onUnknown?.();\n      showMessage(customMessageIfAny);\n      break;\n  }\n}\n"
+        }
+    ]
+}

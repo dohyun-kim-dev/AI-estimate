@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/app/page.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755957050925,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755957050925,
+            "name": "Commit-0",
+            "content": "import React from 'react'\nimport styled from 'styled-components'\nimport { useNavigate } from 'react-router-dom'\n\nconst Container = styled.div`\n  min-height: 78vh;\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n  align-items: center;\n  background-color: ${({ theme }) => theme.body};\n  padding: 20px;\n  text-align: center;\n  gap: 24px;\n`\n\nconst MainTitle = styled.h1`\n  font-size: 2.5rem;\n  font-weight: 700;\n  color: ${({ theme }) => theme.text};\n  margin-bottom: 1rem;\n  line-height: 1.3;\n\n  @media (max-width: 768px) {\n    font-size: 2rem;\n  }\n`\n\nconst Subtitle = styled.p`\n  font-size: 1.25rem;\n  color: ${({ theme }) => theme.subtleText};\n  margin-bottom: 2rem;\n  max-width: 600px;\n  line-height: 1.6;\n\n  @media (max-width: 768px) {\n    font-size: 1.1rem;\n  }\n`\n\nconst CTAButton = styled.button`\n  background-color: ${({ theme }) => theme.accent};\n  color: ${({ theme }) => theme.surface2};\n  font-size: 1.125rem;\n  font-weight: 600;\n  padding: 1rem 2rem;\n  border-radius: 12px;\n  border: none;\n  cursor: pointer;\n  transition: transform 0.2s ease, box-shadow 0.2s ease;\n  \n  &:hover {\n    transform: translateY(-2px);\n    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);\n  }\n\n  &:active {\n    transform: translateY(0);\n  }\n`\n\nconst Highlight = styled.span`\n  color: ${({ theme }) => theme.accent};\n  font-weight: 700;\n`\n\nexport default function Home() {\n  const navigate = useNavigate()\n\n  return (\n    <Container>\n      <MainTitle>\n        AI가 분석하는 맞춤형 프로젝트 견적\n        <br />\n        <Highlight>5분 만에 받아보세요</Highlight>\n      </MainTitle>\n      <Subtitle>\n        복잡한 견적 계산은 이제 그만! \n        AI가 프로젝트의 규모와 특성을 분석하여\n        최적화된 견적과 기간을 제안해드립니다.\n      </Subtitle>\n      <CTAButton onClick={() => navigate('/ai-estimate')}>\n        AI 견적서 받아보기\n      </CTAButton>\n      <CTAButton onClick={() => navigate('/ai')}>\n        테스트\n      </CTAButton>\n    </Container>\n  )\n}"
+        }
+    ]
+}

@@ -1,33 +1,68 @@
 import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider } from 'styled-components'
-import { useThemeStore } from './store/themeStore'
-import { GlobalStyle } from './styles/GlobalStyle'
+import { useThemeStore } from '@store/themeStore'
+import { GlobalStyle } from '@styles/globalStyles'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import AppRoutes from './routes'
+import { lightTheme, darkTheme } from '@styles/theme'
+import { useEffect, useState } from 'react'
+import styled from 'styled-components'
+import { GoogleOAuthProvider } from '@react-oauth/google'
+
+const AppWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  overflow-x: hidden;
+`
+
+const ContentWrapper = styled.main`
+  flex: 1;
+  width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+`
 
 function App() {
-  const { theme } = useThemeStore()
+  const { isDarkMode } = useThemeStore()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // SSR/Hydration 문제 방지를 위한 초기 테마 설정
+  const theme = mounted ? (isDarkMode ? darkTheme : lightTheme) : lightTheme
 
   return (
-    <BrowserRouter>
-      <ThemeProvider theme={theme}>
-        <GlobalStyle />
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="colored"
-        />
-        <AppRoutes />
-      </ThemeProvider>
-    </BrowserRouter>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <BrowserRouter>
+        <ThemeProvider theme={theme}>
+          <GlobalStyle />
+          <AppWrapper>
+            <ContentWrapper>
+              <AppRoutes />
+            </ContentWrapper>
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="colored"
+            />
+          </AppWrapper>
+        </ThemeProvider>
+      </BrowserRouter>
+    </GoogleOAuthProvider>
   )
 }
 
