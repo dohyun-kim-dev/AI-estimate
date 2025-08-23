@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/store/authStore.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755951202965,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755951202965,
+            "name": "Commit-0",
+            "content": "import { create } from 'zustand'\nimport { persist } from 'zustand/middleware'\nimport { GoogleLoginResponse } from '@/lib/api/auth'\n\nexport interface UserData extends GoogleLoginResponse {\n  isLoggedIn: boolean\n}\n\ninterface AuthState {\n  user: UserData | null\n  isAdditionalInfoModalOpen: boolean\n  login: (userData: GoogleLoginResponse) => void\n  logout: () => void\n  openAdditionalInfoModal: () => void\n  closeAdditionalInfoModal: () => void\n  isAuthenticated: () => boolean\n}\n\nexport const useAuthStore = create<AuthState>()(\n  persist(\n    (set, get) => ({\n      user: null,\n      isAdditionalInfoModalOpen: false,\n      login: (userData: GoogleLoginResponse) =>\n        set({ user: { ...userData, isLoggedIn: true } }),\n      logout: () => set({ user: null }),\n      isAuthenticated: () => {\n        const state = get()\n        return !!(state.user?.isLoggedIn && state.user?.cellphone)\n      },\n      openAdditionalInfoModal: () => set({ isAdditionalInfoModalOpen: true }),\n      closeAdditionalInfoModal: () => set({ isAdditionalInfoModalOpen: false }),\n    }),\n    {\n      name: 'auth-storage',\n      partialize: (state) => ({ user: state.user }),\n    }\n  )\n)\n"
+        }
+    ]
+}
