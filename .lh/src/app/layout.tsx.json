@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 7,
+            "activePatchIndex": 8,
             "patches": [
                 {
                     "date": 1755953872663,
@@ -36,6 +36,10 @@
                 {
                     "date": 1755957374688,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,9 +11,9 @@\n import { useLocation } from \"react-router-dom\";\n import { Outlet } from \"react-router-dom\";\n \n const Main = styled.main<{ $hideDefault?: boolean }>`\n-  width: 100%vw\n+  width: 100vw;\n   ${({ $hideDefault }) =>\n     $hideDefault\n       ? `\n       min-height: 100vh;\n"
+                },
+                {
+                    "date": 1756082558142,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -9,8 +9,10 @@\n import { ToastProvider } from \"@components/common/ToastProvider\";\n import { PageLoaderProvider } from \"@contexts/PageLoaderContext\";\n import { useLocation } from \"react-router-dom\";\n import { Outlet } from \"react-router-dom\";\n+import { useModalStore } from \"@store/modalStore\";\n+import { SocialLoginModal } from \"@components/ai-esti/SocialLoginModal\";\n \n const Main = styled.main<{ $hideDefault?: boolean }>`\n   width: 100vw;\n   ${({ $hideDefault }) =>\n@@ -37,8 +39,9 @@\n );\n \n export default function RootLayout() {\n   const { isDarkMode } = useThemeStore();\n+  const { isLoginModalOpen, closeLoginModal } = useModalStore();\n   const location = useLocation();\n   const [compact, setCompact] = useState(false);\n   const [mounted, setMounted] = useState(false);\n \n@@ -64,8 +67,9 @@\n           <Main $hideDefault={hideDefaultLayout}>\n             <Outlet />\n           </Main>\n           {!hideDefaultLayout && <FooterWrapper isCompact={compact} />}\n+          <SocialLoginModal $isOpen={isLoginModalOpen} onClose={closeLoginModal} />\n         </ToastProvider>\n       </PageLoaderProvider>\n     </ThemeProvider>\n   );\n"
                 }
             ],
             "date": 1755953872663,

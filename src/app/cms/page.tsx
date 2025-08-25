@@ -1,24 +1,18 @@
-"use client";
-
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import dynamic from "next/dynamic";
-const ResponsivePie = dynamic(() => import("@nivo/pie").then(m => m.ResponsivePie), { ssr: false });
-const ResponsiveLine = dynamic(() => import("@nivo/line").then(m => m.ResponsiveLine), { ssr: false });
-const MyResponsiveBar = dynamic(() => import("@/components/Chart/MyResponsiveBar"), { ssr: false });
-import { THEME_COLORS, ThemeMode } from "@/styles/theme_colors";
-import GenericDateRangePicker from "@/components/CustomList/GenericDateRangePicker";
+import { ResponsivePie } from "@nivo/pie";
+import { ResponsiveLine } from "@nivo/line";
+import MyResponsiveBar from "@components/Chart/MyResponsiveBar";
+import { THEME_COLORS, ThemeMode } from "@styles/theme_colors";
+import GenericDateRangePicker from "@components/CustomList/GenericDateRangePicker";
 import dayjs from "dayjs";
 
 const PageWrapper = styled.div`
-  width: 100%; // ✅ 수정: 부모(MainContent)의 너비를 그대로 따라감
+  width: 100%;
   padding: 30px 0;
   overflow-x: auto;
-
   background-color: #E6E7E9;
 `;
-
-
 
 const LineChartHeader = styled.div`
   display: flex;
@@ -49,8 +43,6 @@ const LineChartButton = styled.button.withConfig({
   }
 `;
 
-
-
 const TopListWrapper = styled.div`
   display: flex;
   flex-direction: column;
@@ -63,7 +55,6 @@ const TopListItem = styled.div`
   align-items: center;
   margin-top: 15px;
   height: 40px;
-  
   justify-content: space-between;
 `;
 
@@ -104,7 +95,6 @@ const Price = styled.div`
   white-space: nowrap;
 `;
 
-
 const SearchButton = styled.button<{ $themeMode: ThemeMode }>`
   width: 60px;
   height: 40px;
@@ -137,8 +127,6 @@ const Container = styled.div<{ $themeMode: ThemeMode }>`
     $themeMode === 'light' ? THEME_COLORS.light.text : THEME_COLORS.dark.text};
   box-sizing: border-box;
 `;
-
-
 
 const TopHeader = styled.div`
   display: flex;
@@ -226,14 +214,11 @@ const DashboardWrapper = styled.div`
   box-sizing: border-box;
 `;
 
-
-
-
 const ChartCard = styled.div`
   background: #fff;
   border: 1px solid #dbdfea;
   border-radius: 8px;
-  flex: 1 1 calc((100% - 32px) / 3); // gap 16px × 2
+  flex: 1 1 calc((100% - 32px) / 3);
   min-width: 360px;
   height: 430px;
   padding: 20px;
@@ -241,8 +226,6 @@ const ChartCard = styled.div`
   display: flex;
   flex-direction: column;
 `;
-
-
 
 const LineChartCard = styled(ChartCard)`
   width: 100%;
@@ -286,9 +269,8 @@ const Label = styled.div`
 interface TopItem {
   name: string;
   date: string;
-  value: string; // 금액 또는 횟수
+  value: string;
 }
-
 
 const dummyRequestTop5: TopItem[] = [
   { name: "IoT 앱", date: "2시간 전", value: "30,000,000원" },
@@ -314,112 +296,7 @@ const dummyAccessTop5: TopItem[] = [
   { name: "정혜진", date: "25.05.10", value: "6회" },
 ];
 
-
-
-// ---------- ChartCard Renderer ----------
-const renderBarChartCard = (item: typeof barChartMeta[number]) => (
-  <ChartCard key={item.title}>
-    <MetaSection>
-      <Row>
-        <Title>{item.title}</Title>
-        <Value>{item.total.toLocaleString()}</Value>
-      </Row>
-      <Row>
-        <Label>기간내</Label>
-        <Label>{item.period}</Label>
-      </Row>
-      <Row>
-        <Label>7일내</Label>
-        <Label>{item.week}</Label>
-      </Row>
-    </MetaSection>
-    <ChartContainer>
-      <MyResponsiveBar data={item.data} />
-    </ChartContainer>
-  </ChartCard>
-);
-
-const renderTopListCard = (title: string, items: { name: string; date: string; value: string; imageUrl?: string }[]) => (
-  <ChartCard key={title}>
-    <Title>{title}</Title>
-    <TopListWrapper>
-      {items.map((item, i) => {
-        // imageUrl이 없거나 빈 값이면 /cms/nodata.svg 사용
-        const profileImgSrc = item.imageUrl && item.imageUrl.trim() ? item.imageUrl : '/cms/nodata.svg';
-        return (
-          <TopListItem key={i}>
-            <ProfileSection>
-              <ProfileImage src={profileImgSrc} alt="user" />
-              <NameDateBox>
-                <Name>{item.name}</Name>
-                <DateText>{item.date}</DateText>
-              </NameDateBox>
-            </ProfileSection>
-            <Price>{item.value}</Price>
-          </TopListItem>
-        );
-      })}
-    </TopListWrapper>
-  </ChartCard>
-);
-
-const renderVisitPieCard = () => {
-  const data = visitMeta.accessUser;
-  return (
-    <ChartCard>
-      <Title>방문유형 (PC · Mobile)</Title>
-      <MetaSection>
-        {["접속수별", "접속자별"].map((label, idx) => {
-          const key = idx === 0 ? "accessCount" : "accessUser";
-          const row = visitMeta[key as "accessCount" | "accessUser"];
-          const total = row.pc + row.mobile;
-          return (
-            <Row key={label}>
-              <Label style={{ color: "#324c8e", minWidth: 80 }}>{label}</Label>
-              <Value style={{ color: "#324c8e" }}>{row.pc}</Value>
-              <Value style={{ color: "#678b6c" }}>{row.mobile}</Value>
-              <Value>{total}</Value>
-            </Row>
-          );
-        })}
-      </MetaSection>
-      <ChartContainer>
-        <ResponsivePie
-          data={[
-            { id: "PC", label: "PC", value: visitMeta.accessUser.pc },
-            { id: "Mobile", label: "Mobile", value: visitMeta.accessUser.mobile },
-          ]}
-          margin={{ top: 0, right: 10, bottom: 20, left: 10 }}
-          innerRadius={0.6}
-          padAngle={1}
-          cornerRadius={3}
-          enableArcLabels={false}
-          enableArcLinkLabels={false}
-          tooltip={() => null}
-          colors={["#324c8e", "#678b6c"]}
-          layers={[
-            "arcs",
-            ({ centerX, centerY }) => (
-              <>
-                <text x={centerX} y={centerY - 10} textAnchor="middle" dominantBaseline="central"
-                  style={{ fontSize: "14px", fontWeight: "bold", fill: "#324c8e" }}>
-                  PC: {visitMeta.accessUser.pc}
-                </text>
-                <text x={centerX} y={centerY + 10} textAnchor="middle" dominantBaseline="central"
-                  style={{ fontSize: "14px", fontWeight: "bold", fill: "#678b6c" }}>
-                  Mobile: {visitMeta.accessUser.mobile}
-                </text>
-              </>
-            ),
-          ]}
-        />
-      </ChartContainer>
-    </ChartCard>
-  );
-};
-
-// ---------- Main Page ----------
-const CmsDashboardPage = () => {
+const CmsDashboardPage: React.FC = () => {
   const [fromDate, setFromDate] = useState(dayjs().subtract(6, "month").format("YYYY-MM-DD"));
   const [toDate, setToDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [visitorView, setVisitorView] = useState("월간");
@@ -427,6 +304,106 @@ const CmsDashboardPage = () => {
   const handleDateChangeInternal = (newFrom: string, newTo: string) => {
     setFromDate(newFrom);
     setToDate(newTo);
+  };
+
+  const renderBarChartCard = (item: typeof barChartMeta[number]) => (
+    <ChartCard key={item.title}>
+      <MetaSection>
+        <Row>
+          <Title>{item.title}</Title>
+          <Value>{item.total.toLocaleString()}</Value>
+        </Row>
+        <Row>
+          <Label>기간내</Label>
+          <Label>{item.period}</Label>
+        </Row>
+        <Row>
+          <Label>7일내</Label>
+          <Label>{item.week}</Label>
+        </Row>
+      </MetaSection>
+      <ChartContainer>
+        <MyResponsiveBar data={item.data} />
+      </ChartContainer>
+    </ChartCard>
+  );
+
+  const renderTopListCard = (title: string, items: { name: string; date: string; value: string; imageUrl?: string }[]) => (
+    <ChartCard key={title}>
+      <Title>{title}</Title>
+      <TopListWrapper>
+        {items.map((item, i) => {
+          const profileImgSrc = item.imageUrl && item.imageUrl.trim() ? item.imageUrl : '/cms/nodata.svg';
+          return (
+            <TopListItem key={i}>
+              <ProfileSection>
+                <ProfileImage src={profileImgSrc} alt="user" />
+                <NameDateBox>
+                  <Name>{item.name}</Name>
+                  <DateText>{item.date}</DateText>
+                </NameDateBox>
+              </ProfileSection>
+              <Price>{item.value}</Price>
+            </TopListItem>
+          );
+        })}
+      </TopListWrapper>
+    </ChartCard>
+  );
+
+  const renderVisitPieCard = () => {
+    const data = visitMeta.accessUser;
+    return (
+      <ChartCard>
+        <Title>방문유형 (PC · Mobile)</Title>
+        <MetaSection>
+          {["접속수별", "접속자별"].map((label, idx) => {
+            const key = idx === 0 ? "accessCount" : "accessUser";
+            const row = visitMeta[key as "accessCount" | "accessUser"];
+            const total = row.pc + row.mobile;
+            return (
+              <Row key={label}>
+                <Label style={{ color: "#324c8e", minWidth: 80 }}>{label}</Label>
+                <Value style={{ color: "#324c8e" }}>{row.pc}</Value>
+                <Value style={{ color: "#678b6c" }}>{row.mobile}</Value>
+                <Value>{total}</Value>
+              </Row>
+            );
+          })}
+        </MetaSection>
+        <ChartContainer>
+          <ResponsivePie
+            data={[
+              { id: "PC", value: visitMeta.accessUser.pc },
+              { id: "Mobile", value: visitMeta.accessUser.mobile },
+            ]}
+            margin={{ top: 0, right: 10, bottom: 20, left: 10 }}
+            innerRadius={0.6}
+            padAngle={1}
+            cornerRadius={3}
+            enableArcLabels={false}
+            enableArcLinkLabels={false}
+            tooltip={() => null}
+            colors={["#324c8e", "#678b6c"]}
+            layers={[
+              "arcs",
+              ({ centerX, centerY }) => (
+                <>
+                  <text x={centerX} y={centerY - 10} textAnchor="middle" dominantBaseline="central"
+                    style={{ fontSize: "14px", fontWeight: "bold", fill: "#324c8e" }}>
+                    PC: {visitMeta.accessUser.pc}
+                  </text>
+                  <text x={centerX} y={centerY + 10} textAnchor="middle" dominantBaseline="central"
+                    style={{ fontSize: "14px", fontWeight: "bold", fill: "#678b6c" }}>
+                    Mobile: {visitMeta.accessUser.mobile}
+                  </text>
+                </>
+              ),
+            ]}
+          />
+        </ChartContainer>
+      </ChartCard>
+    );
   };
 
   const visitorData = [
@@ -452,109 +429,101 @@ const CmsDashboardPage = () => {
 
   return (
     <PageWrapper>
-    <Container $themeMode="light">
-      <TopHeader>
-        <h1>CMS 대시보드</h1>
-      </TopHeader>
+      <Container $themeMode="light">
+        <TopHeader>
+          <h1>CMS 대시보드</h1>
+        </TopHeader>
 
-      <ControlHeader>
-        <GenericDateRangePicker
-          initialFromDate={fromDate}
-          initialToDate={toDate}
-          onDateChange={handleDateChangeInternal}
-          themeMode="light"
-        />
-        <SearchButton $themeMode="light">조회</SearchButton>
-      </ControlHeader>
+        <ControlHeader>
+          <GenericDateRangePicker
+            initialFromDate={fromDate}
+            initialToDate={toDate}
+            onDateChange={handleDateChangeInternal}
+            themeMode="light"
+          />
+          <SearchButton $themeMode="light">조회</SearchButton>
+        </ControlHeader>
 
-      <DashboardWrapper>
-        {/* 1행 */}
-        {renderBarChartCard(barChartMeta[0])}
-        <ChartCard>
+        <DashboardWrapper>
+          {renderBarChartCard(barChartMeta[0])}
+          <ChartCard>
+            <LineChartHeader>
+              <Title>방문자 수(건)</Title>
+              <Value>40</Value>
+              <LineChartButtonGroup>
+                {['주간', '월간', '연간'].map((label) => (
+                  <LineChartButton
+                    key={label}
+                    active={visitorView === label}
+                    onClick={() => setVisitorView(label)}>
+                    {label}
+                  </LineChartButton>
+                ))}
+              </LineChartButtonGroup>
+            </LineChartHeader>
 
-    <LineChartHeader>
-    <Title>방문자 수(건)</Title>
-    <Value>40</Value>
-    <LineChartButtonGroup>
-      {['주간', '월간', '연간'].map((label) => (
-        <LineChartButton
-          key={label}
-          active={visitorView === label}
-          onClick={() => setVisitorView(label)}>
-          {label}
-        </LineChartButton>
-      ))}
-    </LineChartButtonGroup>
-  </LineChartHeader>
+            <ChartContainer>
+              <ResponsiveLine
+                data={visitorData}
+                margin={{ top: 20, right: 20, bottom: 40, left: 20 }}
+                xScale={{ type: "point" }}
+                yScale={{ type: "linear", min: "auto", max: "auto" }}
+                axisBottom={{ tickRotation: 0, tickPadding: 5 }}
+                axisLeft={null}
+                enableArea={false}
+                colors={["#2f64cb"]}
+                lineWidth={2}
+                pointSize={6}
+                pointColor="#fff"
+                pointBorderWidth={2}
+                pointBorderColor="#2f64cb"
+                useMesh
+              />
+            </ChartContainer>
+          </ChartCard>
+          {renderVisitPieCard()}
 
-  <ChartContainer>
-    <ResponsiveLine
-      data={visitorData}
-      margin={{ top: 20, right: 20, bottom: 40, left: 20 }}
-      xScale={{ type: "point" }}
-      yScale={{ type: "linear", min: "auto", max: "auto" }}
-      axisBottom={{ tickRotation: 0, tickPadding: 5 }}
-      axisLeft={null}
-      enableArea={false}
-      colors={["#2f64cb"]}
-      lineWidth={2}
-      pointSize={6}
-      pointColor="#fff"
-      pointBorderWidth={2}
-      pointBorderColor="#2f64cb"
-      useMesh
-    />
-  </ChartContainer>
-</ChartCard>
-        {renderVisitPieCard()}
+          {renderBarChartCard(barChartMeta[3])}
+          {renderTopListCard("견적 문의 대상 TOP 5", dummyRequestTop5)}
+          {renderBarChartCard(barChartMeta[2])}
 
-        {/* 2행 */}
-        {renderBarChartCard(barChartMeta[3])}
-        {renderTopListCard("견적 문의 대상 TOP 5", dummyRequestTop5)}
-        {renderBarChartCard(barChartMeta[2])}
+          {renderBarChartCard(barChartMeta[4])}
+          {renderTopListCard("견적 다운로드 TOP 5", dummyDownloadTop5)}
+          {renderTopListCard("자주 접속 TOP 5", dummyAccessTop5)}
 
-        {/* 3행 */}
-        {renderBarChartCard(barChartMeta[4])}
-        {renderTopListCard("견적 다운로드 TOP 5", dummyDownloadTop5)}
-        {renderTopListCard("자주 접속 TOP 5", dummyAccessTop5)}
-
-
-        {/* 마지막: AI 사용 현황 */}
-        <LineChartCard>
-          <LineChartHeader>
-            <Title>AI 사용 현황</Title>
-            <LineChartButtonGroup>
-              <LineChartButton active>주간</LineChartButton>
-              <LineChartButton>월간</LineChartButton>
-              <LineChartButton>연간</LineChartButton>
-            </LineChartButtonGroup>
-          </LineChartHeader>
-          <ChartContainer>
-            <ResponsiveLine
-              data={dummyLineData}
-              margin={{ top: 20, right: 20, bottom: 40, left: 20 }}
-              xScale={{ type: "point" }}
-              yScale={{ type: "linear", min: "auto", max: "auto" }}
-              axisBottom={{ tickRotation: 0, tickPadding: 5 }}
-              axisLeft={null}
-              enableArea
-              areaOpacity={0.15}
-              colors={["#2f64cb"]}
-              lineWidth={3}
-              pointSize={6}
-              pointColor="#2f64cb"
-              pointBorderWidth={2}
-              pointBorderColor="#fff"
-              useMesh
-            />
-          </ChartContainer>
-        </LineChartCard>
-      </DashboardWrapper>
-    </Container>
+          <LineChartCard>
+            <LineChartHeader>
+              <Title>AI 사용 현황</Title>
+              <LineChartButtonGroup>
+                <LineChartButton active>주간</LineChartButton>
+                <LineChartButton>월간</LineChartButton>
+                <LineChartButton>연간</LineChartButton>
+              </LineChartButtonGroup>
+            </LineChartHeader>
+            <ChartContainer>
+              <ResponsiveLine
+                data={dummyLineData}
+                margin={{ top: 20, right: 20, bottom: 40, left: 20 }}
+                xScale={{ type: "point" }}
+                yScale={{ type: "linear", min: "auto", max: "auto" }}
+                axisBottom={{ tickRotation: 0, tickPadding: 5 }}
+                axisLeft={null}
+                enableArea
+                areaOpacity={0.15}
+                colors={["#2f64cb"]}
+                lineWidth={3}
+                pointSize={6}
+                pointColor="#2f64cb"
+                pointBorderWidth={2}
+                pointBorderColor="#fff"
+                useMesh
+              />
+            </ChartContainer>
+          </LineChartCard>
+        </DashboardWrapper>
+      </Container>
     </PageWrapper>
   );
 };
-
-
 
 export default CmsDashboardPage;

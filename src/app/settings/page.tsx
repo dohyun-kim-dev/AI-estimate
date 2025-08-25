@@ -1,12 +1,11 @@
 
 import React, { useState } from 'react' 
 import styled from 'styled-components'
-import Icon from '@/components/ai-esti/Icon'
 import { IoChevronForward } from 'react-icons/io5'
 import LanguageSelector from '@/components/common/LanguageSelector'
 import { useNavigate } from "react-router-dom";
-import { useRouter } from 'next/navigation'
 import TermsModal from '@/components/ai-esti/TermsModal'     
+import { useAuthStore } from '@/store/authStore'
 
 const Container = styled.div`
   // min-height: 100vh;
@@ -28,6 +27,17 @@ const ProfileImage = styled.div`
   height: 56px;
   border-radius: 50%;
   overflow: hidden;
+  background-color: ${({ theme }) => theme.surface1};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
 `
 
 const ProfileInfo = styled.div`
@@ -90,7 +100,8 @@ const MenuText = styled.span`
 
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const [isModalOpen, setIsModalOpen] = useState(false); // 👈 모달 상태 추가
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { user, logout } = useAuthStore();
 
   const handleLogout = () => {
     logout()
@@ -99,18 +110,22 @@ export default function SettingsPage() {
 
   const handleViewTerms = () => {
     console.log("check")
-    setIsModalOpen(true); // 👈 모달 열기 함수
+    setIsModalOpen(true);
   };
 
   return (
     <Container>
       <ProfileSection>
         <ProfileImage>
-          <Icon 
-            src={user?.profileImage || "/main/profile.png"}
-            width={56} 
-            height={56}
-            fallbackIcon="image"
+          <img 
+            src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} 
+            alt="프로필" 
+            referrerPolicy="no-referrer"
+            crossOrigin="anonymous"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = '/main/profile.png';
+            }}
           />
         </ProfileImage>
         <ProfileInfo>

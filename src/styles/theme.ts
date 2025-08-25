@@ -5,6 +5,9 @@ export const lightTheme = {
   surface1: '#F0F4F9', // 컴포넌트 배경
   surface2: '#F7F7F7', // 헤더 등 강조 영역 배경
   surface3: '#FFFFFF', // 헤더 등 강조 영역 배경
+  card: '#FFFFFF',
+  cardButton: '#D8DDE5',  
+  cardBorder: '#D8DDE5',
   
   // 텍스트 및 기타 색상
   text: '#171B23', // 기본 텍스트
@@ -31,6 +34,10 @@ export const darkTheme = {
   surface1: '#1F2937', // 컴포넌트 배경
   surface2: '#171B23', // 헤더 등 강조 영역 배경
   surface3: '#1E212D', // 헤더 등 강조 영역 배경
+  card: '#121212',
+  cardButton: '#27313F',
+  cardBorder: '#2F2F38',
+
   track: '#374151', // 슬라이더 트랙
   // 텍스트 및 기타 색상
   text: '#F8F8F8', // 기본 텍스트

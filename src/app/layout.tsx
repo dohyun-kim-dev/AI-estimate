@@ -10,6 +10,8 @@ import { ToastProvider } from "@components/common/ToastProvider";
 import { PageLoaderProvider } from "@contexts/PageLoaderContext";
 import { useLocation } from "react-router-dom";
 import { Outlet } from "react-router-dom";
+import { useModalStore } from "@store/modalStore";
+import { SocialLoginModal } from "@components/ai-esti/SocialLoginModal";
 
 const Main = styled.main<{ $hideDefault?: boolean }>`
   width: 100vw;
@@ -38,6 +40,7 @@ const FooterWrapper = ({ isCompact }: HeaderFooterProps) => (
 
 export default function RootLayout() {
   const { isDarkMode } = useThemeStore();
+  const { isLoginModalOpen, closeLoginModal } = useModalStore();
   const location = useLocation();
   const [compact, setCompact] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -65,6 +68,7 @@ export default function RootLayout() {
             <Outlet />
           </Main>
           {!hideDefaultLayout && <FooterWrapper isCompact={compact} />}
+          <SocialLoginModal $isOpen={isLoginModalOpen} onClose={closeLoginModal} />
         </ToastProvider>
       </PageLoaderProvider>
     </ThemeProvider>

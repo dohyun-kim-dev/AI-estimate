@@ -1,16 +1,12 @@
-
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import dayjs from 'dayjs';
-import ResponsiveView from '@/layout/ResponsiveView';
+import ResponsiveView from '@layout/ResponsiveView';
 import CustomSidebar, { MenuItemConfig } from './CustomSidebar';
 import { MenuIcon } from 'lucide-react';
-import { AppColors } from '@/styles/colors';
+import { AppColors } from '@styles/colors';
 import { useNavigate } from "react-router-dom";
-import dynamic from "next/dynamic";
-
-const SettingsIcon = dynamic(() => import('@mui/icons-material/Settings'));
-
+import SettingsIcon from '@mui/icons-material/Settings';
 
 const recentNotices = [
   '서버 점검 안내: 8월 20일 00:00 ~ 02:00',
@@ -38,7 +34,7 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({
   onMobileSidebarOpenChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [showSettingsMenu, setShowSettingsMenu] = useState(false); // 설정 메뉴 상태 추가
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const navigate = useNavigate();
 
   const toggleMobileSidebar = (next: boolean) => {
@@ -52,12 +48,11 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({
 
   const handleNavigate = (path: string) => {
     navigate(path);
-    setShowSettingsMenu(false); // 페이지 이동 후 메뉴 닫기
+    setShowSettingsMenu(false);
   };
 
   return (
     <ResponsiveView
-    
       desktopView={
         <CustomSidebar
           isCollapsed={isCollapsed}
@@ -75,7 +70,8 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({
               <DateText>{dayjs().format('YYYY.MM.DD')}</DateText>
               <SettingsContainer>
                 <SettingsButton onClick={handleSettingsClick}>
-                {<SettingsIcon />}</SettingsButton>
+                  <SettingsIcon />
+                </SettingsButton>
                 <SettingsMenu $isvisible={showSettingsMenu}>
                   <MenuItem onClick={() => handleNavigate('/cms/company-settings')}>회사정보 설정</MenuItem>
                   <MenuItem onClick={() => handleNavigate('/cms/aigo-settings')}>AIGO 설정</MenuItem>
@@ -123,8 +119,8 @@ const MobileToggleButton = styled.button`
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%; /* ✅ 화면 너비 100% */
-  height: 56px; /* ✅ 원하는 높이 */
+  width: 100%;
+  height: 56px;
   z-index: 1101;
   background-color: #2c2e3c;
   border: none;
@@ -139,8 +135,9 @@ const MobileToggleButton = styled.button`
     opacity: 0.8;
   }
 `;
+
 const LogoImage = styled.img`
-  height: 32px; /* 원하는 높이 */
+  height: 32px;
   object-fit: contain;
 `;
 
@@ -153,6 +150,7 @@ const SidebarOverlay = styled.div`
   background: rgba(0, 0, 0, 0.4);
   z-index: 1100;
 `;
+
 const MobileSidebarContainer = styled.div`
   position: fixed;
   top: 0;
@@ -171,6 +169,7 @@ const MobileSidebarContainer = styled.div`
     }
   }
 `;
+
 const AppBar = styled.div<{ $sidebarWidth: number }>`
   position: fixed;
   top: 0;
@@ -183,25 +182,29 @@ const AppBar = styled.div<{ $sidebarWidth: number }>`
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
-  z-index: 1200; // 사이드바보다 위
+  z-index: 1200;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 `;
+
 const LeftLogo = styled.img`
   height: 32px;
   object-fit: contain;
 `;
+
 const CenterNotice = styled.div`
   flex: 1;
   text-align: center;
   font-size: 14px;
   color: #fff;
 `;
+
 const RightInfo = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  position: relative; // 설정 메뉴를 위해 필요
+  position: relative;
 `;
+
 const DateText = styled.div`
   font-size: 14px;
   color: white;
@@ -222,12 +225,12 @@ const SettingsButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px; // ⚙️ 아이콘 크기
+  font-size: 16px;
 `;
 
 const SettingsMenu = styled.div<{ $isvisible: boolean }>`
   position: absolute;
-  top: 44px; // 버튼 바로 아래
+  top: 44px;
   right: -12px;
   background-color: #fff;
   border: 1px solid #ddd;
@@ -239,7 +242,6 @@ const SettingsMenu = styled.div<{ $isvisible: boolean }>`
   display: flex;
   flex-direction: column;
   
-  // 애니메이션
   transform-origin: top;
   transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
   transform: scaleY(${({ $isvisible }) => ($isvisible ? 1 : 0)});
@@ -248,7 +250,7 @@ const SettingsMenu = styled.div<{ $isvisible: boolean }>`
 `;
 
 const MenuItem = styled.button`
-  width: 100%;
+  width: 100%; 
   padding: 12px 16px;
   text-align: left;
   background: transparent;

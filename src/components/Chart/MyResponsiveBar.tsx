@@ -1,11 +1,11 @@
-import dynamic from "next/dynamic";
-const ResponsiveBar = dynamic(() => import("@nivo/bar").then(m => m.ResponsiveBar), { ssr: false });
+import { ResponsiveBar } from "@nivo/bar";
+import React from "react";
 
 type MyResponsiveBarProps = {
   data: Array<Record<string, any>>;
 };
 
-const MyResponsiveBar = ({ data }: MyResponsiveBarProps) => {
+const MyResponsiveBar: React.FC<MyResponsiveBarProps> = ({ data }) => {
   const allKeys = Object.keys(data[0]);
   const indexBy = allKeys[0];
   const keys = allKeys.slice(1);
@@ -36,11 +36,6 @@ const MyResponsiveBar = ({ data }: MyResponsiveBarProps) => {
         modifiers: [["darker", 1.6]],
       }}
       axisTop={null}
-      // axisRight={{
-      //   tickSize: 0,
-      //   tickPadding: 5,
-      //   tickRotation: 0,
-      // }}
       axisBottom={{
         tickSize: 0,
         tickPadding: 5,
@@ -50,22 +45,9 @@ const MyResponsiveBar = ({ data }: MyResponsiveBarProps) => {
         format: (value) => {
           if (value === "기준일") return "기준일";
           if (value === "7일전") return "7일전";
-          return ""; // 나머지는 표시 안 함
+          return "";
         },
       }}
-      
-      // tooltip={({ id, value, indexValue }) => (
-      //   <div
-      //     style={{
-      //       padding: 12,
-      //       background: "#fff",
-      //       border: "1px solid #ccc",
-      //       color: "#214A72", // 원하는 hover 텍스트 색상
-      //     }}
-      //   >
-      //     <strong>{id}</strong>: {value} in <strong>{indexValue}</strong>
-      //   </div>
-      // )}
       tooltip={() => null}
       label={(d) => `${d.value}`}
       labelPosition="end"
@@ -74,8 +56,6 @@ const MyResponsiveBar = ({ data }: MyResponsiveBarProps) => {
       animate={true}
       axisLeft={null}
       enableGridY={true}
-       
-      // enableLabel={false}
       labelSkipWidth={12}
       labelSkipHeight={12}
       labelTextColor={"#000"}

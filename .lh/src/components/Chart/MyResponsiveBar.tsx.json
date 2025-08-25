@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/components/Chart/MyResponsiveBar.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755960762925,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755960762925,
+            "name": "Commit-0",
+            "content": "import { ResponsiveBar } from \"@nivo/bar\";\nimport React from \"react\";\n\ntype MyResponsiveBarProps = {\n  data: Array<Record<string, any>>;\n};\n\nconst MyResponsiveBar: React.FC<MyResponsiveBarProps> = ({ data }) => {\n  const allKeys = Object.keys(data[0]);\n  const indexBy = allKeys[0];\n  const keys = allKeys.slice(1);\n\n  const lastIndex = data.length - 1;\n\n  const coloredData: Array<Record<string, any>> = data.map((item, index) => ({\n    ...item,\n    color: index === lastIndex ? \"#214A72\" : \"#648096\",\n  }));\n\n  return (\n    <ResponsiveBar\n      data={coloredData}\n      keys={keys}\n      indexBy={indexBy}\n      margin={{ top: 20, right: 0, bottom: 20, left: 0 }}\n      padding={0.3}\n      groupMode=\"grouped\"\n      valueScale={{ type: \"linear\" }}\n      indexScale={{ type: \"band\", round: true }}\n      colors={({ indexValue }) => {\n        const item = coloredData.find((d) => d[indexBy] === indexValue);\n        return item?.color || \"#648096\";\n      }}\n      borderColor={{\n        from: \"color\",\n        modifiers: [[\"darker\", 1.6]],\n      }}\n      axisTop={null}\n      axisBottom={{\n        tickSize: 0,\n        tickPadding: 5,\n        tickRotation: 0,\n        legendPosition: \"middle\",\n        legendOffset: 32,\n        format: (value) => {\n          if (value === \"기준일\") return \"기준일\";\n          if (value === \"7일전\") return \"7일전\";\n          return \"\";\n        },\n      }}\n      tooltip={() => null}\n      label={(d) => `${d.value}`}\n      labelPosition=\"end\"\n      labelOffset={12}\n      enableTotals={false}\n      animate={true}\n      axisLeft={null}\n      enableGridY={true}\n      labelSkipWidth={12}\n      labelSkipHeight={12}\n      labelTextColor={\"#000\"}\n      legends={[]}\n      role=\"application\"\n      ariaLabel=\"Nivo bar chart\"\n      barAriaLabel={(e) => `${e.id}: ${e.formattedValue} in ${e.indexValue}`}\n    />\n  );\n};\n\nexport default MyResponsiveBar;"
+        }
+    ]
+}

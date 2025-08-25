@@ -1,8 +1,6 @@
-'use client'
-
-import React from 'react'
 import styled from 'styled-components'
-import Image from 'next/image'
+import { useNavigate } from 'react-router-dom' // ✅ 추가
+
 import { useThemeStore } from '@/store/themeStore'
 import { useModalStore } from '@/store/modalStore'
 import { useAuthStore } from '@/store/authStore'
@@ -62,12 +60,15 @@ const ProfileImage = styled.div`
   border-radius: 50%;
   overflow: hidden;
   background-color: ${({ theme }) => theme.surface1};
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
   }
 `
 
@@ -84,6 +85,7 @@ const Header = ({ compact }: HeaderProps) => {
   const { isDarkMode, toggleTheme } = useThemeStore()
   const { openLoginModal } = useModalStore()
   const { user, logout, isAuthenticated } = useAuthStore()
+  const navigate = useNavigate() // ✅ 추가
 
   const handleProfileClick = () => {
     if (!isAuthenticated()) {
@@ -95,7 +97,7 @@ const Header = ({ compact }: HeaderProps) => {
   return (
     <HeaderWrapper>
       <HeaderContent>
-        <Logo>
+        <Logo onClick={() => navigate('/')}> {/* ✅ 클릭 시 홈으로 이동 */}
           <Icon 
             src={isDarkMode ? '/main/logo_dark.png' : '/main/logo_light.png'} 
             height={32} 
@@ -116,7 +118,16 @@ const Header = ({ compact }: HeaderProps) => {
               <>
                 <ProfileName>{user.name}</ProfileName>
                 <ProfileImage>
-                  <img src={user.profileImage || '/main/profile.png'} alt="프로필" />
+                  <img 
+                    src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} 
+                    alt="프로필" 
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/main/profile.png';
+                    }}
+                  />
                 </ProfileImage>
               </>
             ) : (

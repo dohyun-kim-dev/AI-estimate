@@ -182,6 +182,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
               name: `${userInfo.family_name}${userInfo.given_name}`,
               email: userInfo.email,
               profileImage: userInfo.picture,
+              cellphone: "",  // 추가 정보 모달에서 입력받을 예정
             });
 
             if (updateResponse.statusCode === 200) {

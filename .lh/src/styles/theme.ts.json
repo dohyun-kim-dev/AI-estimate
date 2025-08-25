@@ -1,0 +1,66 @@
+{
+    "sourceFile": "src/styles/theme.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 12,
+            "patches": [
+                {
+                    "date": 1756085046155,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756085052069,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n   body: '#FFFFFF', // 가장 바깥 배경\n   surface1: '#F0F4F9', // 컴포넌트 배경\n   surface2: '#F7F7F7', // 헤더 등 강조 영역 배경\n   surface3: '#FFFFFF', // 헤더 등 강조 영역 배경\n-  card: '#121212'\n+  card: '#121212',\n \n   // 텍스트 및 기타 색상\n   text: '#171B23', // 기본 텍스트\n   subtleText: '#666666', // 보조 텍스트\n@@ -31,8 +31,10 @@\n   body: '#08080F', // 가장 바깥 배경\n   surface1: '#1F2937', // 컴포넌트 배경\n   surface2: '#171B23', // 헤더 등 강조 영역 배경\n   surface3: '#1E212D', // 헤더 등 강조 영역 배경\n+\n+  \n   track: '#374151', // 슬라이더 트랙\n   // 텍스트 및 기타 색상\n   text: '#F8F8F8', // 기본 텍스트\n   subtleText: '#A1A1AA', // 보조 텍스트\n"
+                },
+                {
+                    "date": 1756085063364,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -31,10 +31,10 @@\n   body: '#08080F', // 가장 바깥 배경\n   surface1: '#1F2937', // 컴포넌트 배경\n   surface2: '#171B23', // 헤더 등 강조 영역 배경\n   surface3: '#1E212D', // 헤더 등 강조 영역 배경\n+  card: '#121212',\n \n-  \n   track: '#374151', // 슬라이더 트랙\n   // 텍스트 및 기타 색상\n   text: '#F8F8F8', // 기본 텍스트\n   subtleText: '#A1A1AA', // 보조 텍스트\n"
+                },
+                {
+                    "date": 1756085077223,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,8 +5,9 @@\n   surface1: '#F0F4F9', // 컴포넌트 배경\n   surface2: '#F7F7F7', // 헤더 등 강조 영역 배경\n   surface3: '#FFFFFF', // 헤더 등 강조 영역 배경\n   card: '#121212',\n+  card\n \n   // 텍스트 및 기타 색상\n   text: '#171B23', // 기본 텍스트\n   subtleText: '#666666', // 보조 텍스트\n@@ -31,9 +32,9 @@\n   body: '#08080F', // 가장 바깥 배경\n   surface1: '#1F2937', // 컴포넌트 배경\n   surface2: '#171B23', // 헤더 등 강조 영역 배경\n   surface3: '#1E212D', // 헤더 등 강조 영역 배경\n-  card: '#121212',\n+  card: '#FFFFFF',\n \n   track: '#374151', // 슬라이더 트랙\n   // 텍스트 및 기타 색상\n   text: '#F8F8F8', // 기본 텍스트\n"
+                },
+                {
+                    "date": 1756085082724,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,9 +5,9 @@\n   surface1: '#F0F4F9', // 컴포넌트 배경\n   surface2: '#F7F7F7', // 헤더 등 강조 영역 배경\n   surface3: '#FFFFFF', // 헤더 등 강조 영역 배경\n   card: '#121212',\n-  card\n+  cardButton: '#27313F',\n \n   // 텍스트 및 기타 색상\n   text: '#171B23', // 기본 텍스트\n   subtleText: '#666666', // 보조 텍스트\n"
+                },
+                {
+                    "date": 1756085092204,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,8 +33,9 @@\n   surface1: '#1F2937', // 컴포넌트 배경\n   surface2: '#171B23', // 헤더 등 강조 영역 배경\n   surface3: '#1E212D', // 헤더 등 강조 영역 배경\n   card: '#FFFFFF',\n+  \n \n   track: '#374151', // 슬라이더 트랙\n   // 텍스트 및 기타 색상\n   text: '#F8F8F8', // 기본 텍스트\n"
+                },
+                {
+                    "date": 1756085127804,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,10 +33,13 @@\n   surface1: '#1F2937', // 컴포넌트 배경\n   surface2: '#171B23', // 헤더 등 강조 영역 배경\n   surface3: '#1E212D', // 헤더 등 강조 영역 배경\n   card: '#FFFFFF',\n-  \n+  cardButton: '#D8DDE5',\n \n+  card: '#121212',\n+  cardButton: '#27313F',\n+\n   track: '#374151', // 슬라이더 트랙\n   // 텍스트 및 기타 색상\n   text: '#F8F8F8', // 기본 텍스트\n   subtleText: '#A1A1AA', // 보조 텍스트\n"
+                },
+                {
+                    "date": 1756085142292,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,11 +4,12 @@\n   body: '#FFFFFF', // 가장 바깥 배경\n   surface1: '#F0F4F9', // 컴포넌트 배경\n   surface2: '#F7F7F7', // 헤더 등 강조 영역 배경\n   surface3: '#FFFFFF', // 헤더 등 강조 영역 배경\n-  card: '#121212',\n-  cardButton: '#27313F',\n+  card: '#FFFFFF',\n+  cardButton: '#D8DDE5',\n \n+\n   // 텍스트 및 기타 색상\n   text: '#171B23', // 기본 텍스트\n   subtleText: '#666666', // 보조 텍스트\n   border: '#CBCBCC', // 테두리\n@@ -32,13 +33,11 @@\n   body: '#08080F', // 가장 바깥 배경\n   surface1: '#1F2937', // 컴포넌트 배경\n   surface2: '#171B23', // 헤더 등 강조 영역 배경\n   surface3: '#1E212D', // 헤더 등 강조 영역 배경\n-  card: '#FFFFFF',\n-  cardButton: '#D8DDE5',\n-\n   card: '#121212',\n   cardButton: '#27313F',\n+  car\n \n   track: '#374151', // 슬라이더 트랙\n   // 텍스트 및 기타 색상\n   text: '#F8F8F8', // 기본 텍스트\n"
+                },
+                {
+                    "date": 1756085160426,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -35,9 +35,9 @@\n   surface2: '#171B23', // 헤더 등 강조 영역 배경\n   surface3: '#1E212D', // 헤더 등 강조 영역 배경\n   card: '#121212',\n   cardButton: '#27313F',\n-  car\n+  card\n \n   track: '#374151', // 슬라이더 트랙\n   // 텍스트 및 기타 색상\n   text: '#F8F8F8', // 기본 텍스트\n"
+                },
+                {
+                    "date": 1756085165943,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -35,9 +35,9 @@\n   surface2: '#171B23', // 헤더 등 강조 영역 배경\n   surface3: '#1E212D', // 헤더 등 강조 영역 배경\n   card: '#121212',\n   cardButton: '#27313F',\n-  card\n+  cardBorder: '#D8DDE5',\n \n   track: '#374151', // 슬라이더 트랙\n   // 텍스트 및 기타 색상\n   text: '#F8F8F8', // 기본 텍스트\n"
+                },
+                {
+                    "date": 1756085176787,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,11 +5,11 @@\n   surface1: '#F0F4F9', // 컴포넌트 배경\n   surface2: '#F7F7F7', // 헤더 등 강조 영역 배경\n   surface3: '#FFFFFF', // 헤더 등 강조 영역 배경\n   card: '#FFFFFF',\n-  cardButton: '#D8DDE5',\n+  cardButton: '#D8DDE5',  \n+  cardBorder: '#D8DDE5',\n \n-\n   // 텍스트 및 기타 색상\n   text: '#171B23', // 기본 텍스트\n   subtleText: '#666666', // 보조 텍스트\n   border: '#CBCBCC', // 테두리\n"
+                },
+                {
+                    "date": 1756085213937,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,10 +6,11 @@\n   surface2: '#F7F7F7', // 헤더 등 강조 영역 배경\n   surface3: '#FFFFFF', // 헤더 등 강조 영역 배경\n   card: '#FFFFFF',\n   cardButton: '#D8DDE5',  \n+  cardBorder: '#2F2F38',\n+\n   cardBorder: '#D8DDE5',\n-\n   // 텍스트 및 기타 색상\n   text: '#171B23', // 기본 텍스트\n   subtleText: '#666666', // 보조 텍스트\n   border: '#CBCBCC', // 테두리\n"
+                },
+                {
+                    "date": 1756085221540,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,11 +6,10 @@\n   surface2: '#F7F7F7', // 헤더 등 강조 영역 배경\n   surface3: '#FFFFFF', // 헤더 등 강조 영역 배경\n   card: '#FFFFFF',\n   cardButton: '#D8DDE5',  \n-  cardBorder: '#2F2F38',\n-\n   cardBorder: '#D8DDE5',\n+  \n   // 텍스트 및 기타 색상\n   text: '#171B23', // 기본 텍스트\n   subtleText: '#666666', // 보조 텍스트\n   border: '#CBCBCC', // 테두리\n@@ -36,9 +35,9 @@\n   surface2: '#171B23', // 헤더 등 강조 영역 배경\n   surface3: '#1E212D', // 헤더 등 강조 영역 배경\n   card: '#121212',\n   cardButton: '#27313F',\n-  cardBorder: '#D8DDE5',\n+  cardBorder: '#2F2F38',\n \n   track: '#374151', // 슬라이더 트랙\n   // 텍스트 및 기타 색상\n   text: '#F8F8F8', // 기본 텍스트\n"
+                }
+            ],
+            "date": 1756085046155,
+            "name": "Commit-0",
+            "content": "// src/styles/theme.ts\nexport const lightTheme = {\n  // 사용자가 제공한 라이트 모드 색상\n  body: '#FFFFFF', // 가장 바깥 배경\n  surface1: '#F0F4F9', // 컴포넌트 배경\n  surface2: '#F7F7F7', // 헤더 등 강조 영역 배경\n  surface3: '#FFFFFF', // 헤더 등 강조 영역 배경\n  card: '#121212'\n\n  // 텍스트 및 기타 색상\n  text: '#171B23', // 기본 텍스트\n  subtleText: '#666666', // 보조 텍스트\n  border: '#CBCBCC', // 테두리\n  accent: '#000000', // 강조색\n  track: '#B5B5B5', // 슬라이더 트랙\n  pick:'#D1D5DE', //선택된 색\n\n  accordionHeader: '#F8F8F8',\n  subAccordionHeader: '#FFFFFF',\n\n  // 아코디언 레벨별 배경색\n  accordionLevel1: '#ffffff',\n  accordionLevel2: '#F8F8F8',\n  accordionLevel3: '#f0f0f0',\n\n  actionButton: '#F3F3F3',\n};\n\nexport const darkTheme = {\n  // 사용자가 제공한 다크 모드 색상\n  body: '#08080F', // 가장 바깥 배경\n  surface1: '#1F2937', // 컴포넌트 배경\n  surface2: '#171B23', // 헤더 등 강조 영역 배경\n  surface3: '#1E212D', // 헤더 등 강조 영역 배경\n  track: '#374151', // 슬라이더 트랙\n  // 텍스트 및 기타 색상\n  text: '#F8F8F8', // 기본 텍스트\n  subtleText: '#A1A1AA', // 보조 텍스트\n  border: '#374151', // 테두리\n  accent: '#3391FF', // 강조색\n  pick : '#434B5D', //선택된 색\n\n  accordionHeader: '#1C2128',\n  subAccordionHeader: '#21262D',\n\n  // 아코디언 레벨별 배경색\n  accordionLevel1: '#1E1E24',\n  accordionLevel2: '#1E1E24',\n  accordionLevel3: '#1E1E24',\n\n  actionButton: '#283139',\n};\n\nexport type Theme = typeof lightTheme;"
+        }
+    ]
+}

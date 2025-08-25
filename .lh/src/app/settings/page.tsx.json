@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1755958274035,
@@ -16,6 +16,10 @@
                 {
                     "date": 1755958284948,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -89,9 +89,8 @@\n `\n \n export default function SettingsPage() {\n   const navigate = useNavigate();\n-  const router = useRouter()\n   const [isModalOpen, setIsModalOpen] = useState(false); // 👈 모달 상태 추가\n \n   const handleLogout = () => {\n     logout()\n"
+                },
+                {
+                    "date": 1756083171199,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,13 +1,12 @@\n \n import React, { useState } from 'react' \n import styled from 'styled-components'\n-import Icon from '@/components/ai-esti/Icon'\n import { IoChevronForward } from 'react-icons/io5'\n import LanguageSelector from '@/components/common/LanguageSelector'\n import { useNavigate } from \"react-router-dom\";\n-import { useRouter } from 'next/navigation'\n import TermsModal from '@/components/ai-esti/TermsModal'     \n+import { useAuthStore } from '@/store/authStore'\n \n const Container = styled.div`\n   // min-height: 100vh;\n   background-color: ${({ theme }) => theme.body};\n@@ -27,8 +26,19 @@\n   width: 56px;\n   height: 56px;\n   border-radius: 50%;\n   overflow: hidden;\n+  background-color: ${({ theme }) => theme.surface1};\n+  display: flex;\n+  align-items: center;\n+  justify-content: center;\n+\n+  img {\n+    width: 100%;\n+    height: 100%;\n+    object-fit: cover;\n+    display: block;\n+  }\n `\n \n const ProfileInfo = styled.div`\n   flex: 1;\n@@ -89,29 +99,34 @@\n `\n \n export default function SettingsPage() {\n   const navigate = useNavigate();\n-  const [isModalOpen, setIsModalOpen] = useState(false); // 👈 모달 상태 추가\n+  const [isModalOpen, setIsModalOpen] = useState(false);\n+  const { user, logout } = useAuthStore();\n \n   const handleLogout = () => {\n     logout()\n-    router.push('/')\n+    navigate('/')\n   }\n \n   const handleViewTerms = () => {\n     console.log(\"check\")\n-    setIsModalOpen(true); // 👈 모달 열기 함수\n+    setIsModalOpen(true);\n   };\n \n   return (\n     <Container>\n       <ProfileSection>\n         <ProfileImage>\n-          <Icon \n-            src={user?.profileImage || \"/main/profile.png\"}\n-            width={56} \n-            height={56}\n-            fallbackIcon=\"image\"\n+          <img \n+            src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} \n+            alt=\"프로필\" \n+            referrerPolicy=\"no-referrer\"\n+            crossOrigin=\"anonymous\"\n+            onError={(e) => {\n+              const target = e.target as HTMLImageElement;\n+              target.src = '/main/profile.png';\n+            }}\n           />\n         </ProfileImage>\n         <ProfileInfo>\n           <Flex>\n"
                 }
             ],
             "date": 1755958274035,

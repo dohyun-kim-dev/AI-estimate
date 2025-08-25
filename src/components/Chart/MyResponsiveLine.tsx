@@ -1,6 +1,5 @@
 import React from "react";
-import dynamic from "next/dynamic";
-const ResponsiveLine = dynamic(() => import("@nivo/line").then(m => m.ResponsiveLine), { ssr: false });
+import { ResponsiveLine } from "@nivo/line";
 import "./nivo-style-overrides.css";
 
 type Datum = {
@@ -11,7 +10,7 @@ type Datum = {
 type LineSerie = {
   id: string;
   data: Datum[];
-  color?: string; // ✅ 커스텀 색상 지정 가능
+  color?: string;
 };
 
 type MyResponsiveLineProps = {

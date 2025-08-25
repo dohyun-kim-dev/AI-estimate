@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/components/Chart/MyResponsiveLine.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755960762925,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755960762925,
+            "name": "Commit-0",
+            "content": "import React from \"react\";\nimport { ResponsiveLine } from \"@nivo/line\";\nimport \"./nivo-style-overrides.css\";\n\ntype Datum = {\n  x: string | number | Date;\n  y: number | string | null;\n};\n\ntype LineSerie = {\n  id: string;\n  data: Datum[];\n  color?: string;\n};\n\ntype MyResponsiveLineProps = {\n  data: LineSerie[];\n};\n\nconst MyResponsiveLine: React.FC<MyResponsiveLineProps> = ({ data }) => (\n  <ResponsiveLine\n    data={data}\n    margin={{ top: 30, right: 80, bottom: 30, left: 30 }}\n    xScale={{ type: \"point\" }}\n    yScale={{ type: \"linear\", min: \"auto\", max: \"auto\" }}\n    colors={({ id }) => {\n      const serie = data.find((s) => s.id === id);\n      return serie?.color || \"#000\";\n    }}\n    yFormat=\" >-.2f\"\n    axisTop={null}\n    axisRight={{\n      tickSize: 0,\n      tickPadding: 20,\n      tickRotation: 0,\n      truncateTickAt: 0,\n    }}\n    axisBottom={{\n      tickSize: 0,\n      tickPadding: 10,\n      tickRotation: 0,\n      legendOffset: 30,\n      legendPosition: \"middle\",\n      truncateTickAt: 0,\n    }}\n    axisLeft={null}\n    enableGridX={false}\n    enableGridY={false}\n    theme={{\n      background: \"#fff\",\n      axis: {\n        domain: {\n          line: {\n            stroke: \"#999\",\n            strokeWidth: 1,\n          },\n        },\n      },\n    }}\n    pointSize={10}\n    pointColor={{ theme: \"background\" }}\n    pointBorderWidth={2}\n    pointBorderColor={{ from: \"serieColor\" }}\n    pointLabel=\"data.yFormatted\"\n    pointLabelYOffset={-12}\n    enableTouchCrosshair={true}\n    useMesh={true}\n    legends={[\n      {\n        anchor: \"top-right\",\n        direction: \"row\",\n        translateY: -30,\n        itemsSpacing: 50,\n        itemWidth: 85,\n        itemHeight: 10,\n        itemOpacity: 0.75,\n        symbolSize: 12,\n        symbolShape: \"circle\",\n        symbolBorderColor: \"rgba(0, 0, 0, .5)\",\n        effects: [\n          {\n            on: \"hover\",\n            style: {\n              itemBackground: \"rgba(0, 0, 0, .03)\",\n              itemOpacity: 1,\n            },\n          },\n        ],\n      },\n    ]}\n  />\n);\n\nexport default MyResponsiveLine;"
+        }
+    ]
+}

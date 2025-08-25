@@ -34,64 +34,66 @@ const deplete = keyframes`
 
 const Container = styled.div`
   position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + 12px);
-  right: 12px;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: 8px;
   z-index: 9999;
   pointer-events: none;
 `
 
-const Card = styled.div`
-  background: #ffffff; /* 라이트/다크 공통 화이트 고정 */
-  color: #111827; /* neutral-900 */
-  border: 1px solid #e5e7eb; /* neutral-200 */
-  border-radius: 4px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+const Card = styled.div<{ $type: ToastType }>`
+  background: ${({ $type }) => ($type === 'success' ? '#4263EB' : $type === 'error' ? '#F03E3E' : '#3391FF')};
+  color: #FFFFFF;
+  border-radius: 8px;
   pointer-events: all;
   animation: ${slideDown} 0.16s ease both;
   overflow: hidden;
   min-width: 280px;
   max-width: min(360px, calc(100vw - 24px));
+  padding: 16px 20px;
 `
 
 const Row = styled.div`
-  display: grid;
-  grid-template-columns: 28px 1fr 28px;
+  display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 12px;
 `
 
 const IconBox = styled.div<{ $type: ToastType }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${({ $type }) => ($type === 'success' ? '#6366f1' : $type === 'error' ? '#ef4444' : '#3391FF')};
+  color: #FFFFFF;
 `
 
 const Message = styled.div`
   font-size: 14px;
   line-height: 1.45;
+  color: #FFFFFF;
+  font-weight: 500;
+  flex: 1;
 `
 
 const CloseButton = styled.button`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  color: #9ca3af; /* neutral-400 */
+  width: 24px;
+  height: 24px;
+  color: #FFFFFF;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+  
+  &:hover {
+    opacity: 1;
+  }
 `
 
-const Progress = styled.div<{ $type: ToastType; $duration: number }>`
-  height: 4px;
-  background: ${({ $type }) => ($type === 'success' ? '#6366f1' : $type === 'error' ? '#ef4444' : '#3391FF')};
-  animation: ${deplete} linear forwards;
-  animation-duration: ${({ $duration }) => $duration}ms;
-`
+
 
 const TYPE_ICON: Record<ToastType, React.ComponentType<{ size?: number }>> = {
   success: IoCheckmarkCircle,
@@ -126,15 +128,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {toasts.map((t) => {
           const Icon = TYPE_ICON[t.type]
           return (
-            <Card key={t.id}>
+            <Card key={t.id} $type={t.type}>
               <Row>
-                <IconBox $type={t.type}><Icon size={20} /></IconBox>
+                <IconBox $type={t.type}><Icon size={24} /></IconBox>
                 <Message>{t.message}</Message>
                 <CloseButton aria-label="close" onClick={() => remove(t.id)}>
-                  <IoClose size={18} />
+                  <IoClose size={20} />
                 </CloseButton>
               </Row>
-              <Progress $type={t.type} $duration={t.duration} />
             </Card>
           )
         })}
