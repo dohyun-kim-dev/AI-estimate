@@ -3,11 +3,19 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1755960621580,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756100050838,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -118,9 +118,9 @@\n \n const Container = styled.div<{ $themeMode: ThemeMode }>`\n   min-width: 1200px;\n   width: 100%;\n-  padding: 0px 30px;\n+  padding: 80px 30px;\n   padding-bottom: 30px;\n   background-color: ${({ $themeMode }) =>\n     $themeMode === 'light' ? THEME_COLORS.light.background : THEME_COLORS.dark.background};\n   color: ${({ $themeMode }) =>\n"
+                },
+                {
+                    "date": 1756100056181,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -118,9 +118,9 @@\n \n const Container = styled.div<{ $themeMode: ThemeMode }>`\n   min-width: 1200px;\n   width: 100%;\n-  padding: 80px 30px;\n+  padding: 60px 30px;\n   padding-bottom: 30px;\n   background-color: ${({ $themeMode }) =>\n     $themeMode === 'light' ? THEME_COLORS.light.background : THEME_COLORS.dark.background};\n   color: ${({ $themeMode }) =>\n"
                 }
             ],
             "date": 1755960621580,

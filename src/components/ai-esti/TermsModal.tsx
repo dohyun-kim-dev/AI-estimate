@@ -32,6 +32,7 @@ const TabButton = styled.button<{ active: boolean }>`
   font-weight: ${({ active }) => (active ? 'bold' : 'normal')};
   color: ${({ active }) => (active ? AppColors.primary : '#555')};
   border-bottom: 2px solid ${({ active }) => (active ? AppColors.primary : 'transparent')};
+  
   transition: all 0.2s;
   &:hover {
     color: ${AppColors.primary};

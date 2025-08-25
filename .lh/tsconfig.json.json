@@ -3,11 +3,23 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1755953227058,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756113047522,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -0,0 +1,42 @@\n+{\n+  \"compilerOptions\": {\n+    \"target\": \"ES2020\",\n+    \"useDefineForClassFields\": true,\n+    \"lib\": [\"ES2020\", \"DOM\", \"DOM.Iterable\"],\n+    \"module\": \"ESNext\",\n+    \"skipLibCheck\": true,\n+    \"baseUrl\": \".\",\n+    \"paths\": {\n+      \"@/*\": [\"src/*\"],\n+      \"@ai/*\": [\"src/ai/*\"],\n+      \"@app/*\": [\"src/app/*\"],\n+      \"@components/*\": [\"src/components/*\"],\n+      \"@config/*\": [\"src/config/*\"],\n+      \"@constants/*\": [\"src/constants/*\"],\n+      \"@contexts/*\": [\"src/contexts/*\"],\n+      \"@elements/*\": [\"src/elements/*\"],\n+      \"@hooks/*\": [\"src/hooks/*\"],\n+      \"@layout/*\": [\"src/layout/*\"],\n+      \"@lib/*\": [\"src/lib/*\"],\n+      \"@store/*\": [\"src/store/*\"],\n+      \"@styles/*\": [\"src/styles/*\"],\n+      \"@utils/*\": [\"src/utils/*\"]\n+    },\n+\n+    /* Bundler mode */\n+    \"moduleResolution\": \"bundler\",\n+    \"allowImportingTsExtensions\": true,\n+    \"resolveJsonModule\": true,\n+    \"isolatedModules\": true,\n+    \"noEmit\": false,\n+    \"jsx\": \"react-jsx\",\n+\n+    /* Linting */\n+    \"strict\": true,\n+    \"noUnusedLocals\": true,\n+    \"noUnusedParameters\": true,\n+    \"noFallthroughCasesInSwitch\": true\n+  },\n+  \"include\": [\"src\"],\n+  \"references\": [{ \"path\": \"./tsconfig.node.json\" }]\n+}\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756113827761,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -23,8 +23,9 @@\n       \"@utils/*\": [\"src/utils/*\"]\n     },\n \n     /* Bundler mode */\n+    \"composite\": true,\n     \"moduleResolution\": \"bundler\",\n     \"allowImportingTsExtensions\": true,\n     \"resolveJsonModule\": true,\n     \"isolatedModules\": true,\n@@ -38,47 +39,5 @@\n     \"noFallthroughCasesInSwitch\": true\n   },\n   \"include\": [\"src\"],\n   \"references\": [{ \"path\": \"./tsconfig.node.json\" }]\n-}\n-{\n-  \"compilerOptions\": {\n-    \"target\": \"ES2020\",\n-    \"useDefineForClassFields\": true,\n-    \"lib\": [\"ES2020\", \"DOM\", \"DOM.Iterable\"],\n-    \"module\": \"ESNext\",\n-    \"skipLibCheck\": true,\n-    \"baseUrl\": \".\",\n-    \"paths\": {\n-      \"@/*\": [\"src/*\"],\n-      \"@ai/*\": [\"src/ai/*\"],\n-      \"@app/*\": [\"src/app/*\"],\n-      \"@components/*\": [\"src/components/*\"],\n-      \"@config/*\": [\"src/config/*\"],\n-      \"@constants/*\": [\"src/constants/*\"],\n-      \"@contexts/*\": [\"src/contexts/*\"],\n-      \"@elements/*\": [\"src/elements/*\"],\n-      \"@hooks/*\": [\"src/hooks/*\"],\n-      \"@layout/*\": [\"src/layout/*\"],\n-      \"@lib/*\": [\"src/lib/*\"],\n-      \"@store/*\": [\"src/store/*\"],\n-      \"@styles/*\": [\"src/styles/*\"],\n-      \"@utils/*\": [\"src/utils/*\"]\n-    },\n-\n-    /* Bundler mode */\n-    \"moduleResolution\": \"bundler\",\n-    \"allowImportingTsExtensions\": true,\n-    \"resolveJsonModule\": true,\n-    \"isolatedModules\": true,\n-    \"noEmit\": true,\n-    \"jsx\": \"react-jsx\",\n-\n-    /* Linting */\n-    \"strict\": true,\n-    \"noUnusedLocals\": true,\n-    \"noUnusedParameters\": true,\n-    \"noFallthroughCasesInSwitch\": true\n-  },\n-  \"include\": [\"src\"],\n-  \"references\": [{ \"path\": \"./tsconfig.node.json\" }]\n }\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756113895506,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,11 +26,11 @@\n     /* Bundler mode */\n     \"composite\": true,\n     \"moduleResolution\": \"bundler\",\n     \"allowImportingTsExtensions\": true,\n+    \"noEmit\": true,\n     \"resolveJsonModule\": true,\n     \"isolatedModules\": true,\n-    \"noEmit\": false,\n     \"jsx\": \"react-jsx\",\n \n     /* Linting */\n     \"strict\": true,\n"
                 }
             ],
             "date": 1755953227058,

@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/contexts/DeviceContext.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1756112304634,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756112543435,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,32 +13,28 @@\n \n   useEffect(() => {\n     const detectDevice = () => {\n       const width = window.innerWidth;\n-      const isMobile = width <= Breakpoints.mobile;\n+      const ua = navigator.userAgent || navigator.vendor || (window as any).opera;\n+      const isSmallScreen = window.matchMedia(`(max-width: ${Breakpoints.mobile}px)`).matches;\n \n-      if (isMobile) {\n+      console.log(\"📱 Device Detection Log:\");\n+      console.log(\"📏 window.innerWidth:\", width);\n+      console.log(\"🧭 userAgent:\", ua);\n+      console.log(\"📐 matchMedia:\", isSmallScreen);\n+\n+      if (isSmallScreen) {\n+        console.log(\"✅ Set device: mobile\");\n         setDevice('mobile');\n       } else {\n+        console.log(\"✅ Set device: desktop\");\n         setDevice('desktop');\n       }\n     };\n \n-    // 초기 체크\n-    detectDevice();\n-\n-    // resize 이벤트에 디바운스 적용\n-    let timeoutId: NodeJS.Timeout;\n-    const handleResize = () => {\n-      clearTimeout(timeoutId);\n-      timeoutId = setTimeout(detectDevice, 150);\n-    };\n-\n-    window.addEventListener('resize', handleResize);\n-    return () => {\n-      window.removeEventListener('resize', handleResize);\n-      clearTimeout(timeoutId);\n-    };\n+    detectDevice(); // 초기 체크\n+    window.addEventListener('resize', detectDevice);\n+    return () => window.removeEventListener('resize', detectDevice);\n   }, []);\n \n   return <DeviceContext.Provider value={device}>{children}</DeviceContext.Provider>;\n };\n"
+                }
+            ],
+            "date": 1756112304634,
+            "name": "Commit-0",
+            "content": "'use client';\n\nimport React, { createContext, useContext, useEffect, useState } from 'react';\nimport { Breakpoints } from '@/constants/layoutConstants';\n\ntype SimplifiedDeviceType = 'mobile' | 'desktop';\n\nconst DeviceContext = createContext<SimplifiedDeviceType>('desktop');\nexport const useDevice = () => useContext(DeviceContext);\n\nexport const DeviceProvider = ({ children }: { children: React.ReactNode }) => {\n  const [device, setDevice] = useState<SimplifiedDeviceType>('desktop');\n\n  useEffect(() => {\n    const detectDevice = () => {\n      const width = window.innerWidth;\n      const isMobile = width <= Breakpoints.mobile;\n\n      if (isMobile) {\n        setDevice('mobile');\n      } else {\n        setDevice('desktop');\n      }\n    };\n\n    // 초기 체크\n    detectDevice();\n\n    // resize 이벤트에 디바운스 적용\n    let timeoutId: NodeJS.Timeout;\n    const handleResize = () => {\n      clearTimeout(timeoutId);\n      timeoutId = setTimeout(detectDevice, 150);\n    };\n\n    window.addEventListener('resize', handleResize);\n    return () => {\n      window.removeEventListener('resize', handleResize);\n      clearTimeout(timeoutId);\n    };\n  }, []);\n\n  return <DeviceContext.Provider value={device}>{children}</DeviceContext.Provider>;\n};\n"
+        }
+    ]
+}

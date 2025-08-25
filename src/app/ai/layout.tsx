@@ -6,6 +6,8 @@ import { useThemeStore } from '@store/themeStore';
 import { useChatStore } from '@store/chatStore';
 import { useToast } from '@components/common/ToastProvider';
 import Modal from '@components/common/Modal';
+import { useAuthStore } from '@store/authStore';
+import { useModalStore } from '@store/modalStore';
 
 const LayoutWrapper = styled.div`
   min-height: 100vh;
@@ -73,6 +75,47 @@ const ThemeToggleButton = styled.button`
   }
 `;
 
+const DropdownMenu = styled.div<{ $isOpen: boolean }>`
+  position: absolute;
+  top: 133%;
+  right: -16px;
+  width: 150px;
+  background-color: ${({ theme }) => theme.body};
+  border: 1px solid ${({ theme }) => theme.border};
+  border-radius: 0px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  display: ${({ $isOpen }) => ($isOpen ? 'block' : 'none')};
+  z-index: 1000;
+  overflow: hidden;
+`
+
+const DropdownItem = styled.button`
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 0px;
+  color: ${({ theme }) => theme.text};
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.border};
+  }
+
+  &:not(:last-child) {
+    border-bottom: 1px solid ${({ theme }) => theme.border};
+  }
+`
+
+const ProfileIconWrapper = styled.div`
+  position: relative;
+`
+
 const ShareInput = styled.div`
   display: flex;
   gap: 8px;
@@ -109,6 +152,9 @@ export default function AILayout() {
   const { success } = useToast();
   const resetChat = useChatStore((s) => s.clear);
   const [openShare, setOpenShare] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { isAuthenticated } = useAuthStore();
+  const { openLoginModal } = useModalStore();
 
   // useEffect를 사용하여 컴포넌트 마운트 시 로컬 스토리지에서 테마를 불러옵니다.
   useEffect(() => {
@@ -125,7 +171,21 @@ export default function AILayout() {
     new: isLightTheme ? '/ai-estimate/new.png' : '/ai-estimate/new_dark.png',
     estimate: isLightTheme ? '/ai-estimate/esti.png' : '/ai-estimate/esti_dark.png',
     profile: isLightTheme ? '/ai-estimate/profile.png' : '/ai-estimate/profile_dark.png',
+    setting: isLightTheme ? '/ai-estimate/setting.png' : '/ai-estimate/setting_dark.png',
   };
+
+  // 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.profile-menu')) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   const pageTitle = location.pathname === '/ai/my-estimate' ? '내 견적서' : location.pathname === '/ai/setting' ? '설정' : null;
 
@@ -181,7 +241,33 @@ export default function AILayout() {
             <span className="icon" onClick={handleOpenShare}><Icon src={icons.share} width={36} height={36} /></span>
             <span className="icon" onClick={handleNewChat}><Icon src={icons.new} width={36} height={36} /></span>
             <span className="icon" onClick={handleGoToMyEstimate}><Icon src={icons.estimate} width={36} height={36} /></span>
-            <span className="icon" onClick={handleGoToSettings}><Icon src={icons.profile} width={36} height={36} /></span>
+            <ProfileIconWrapper className="profile-menu">
+              {isAuthenticated() ? (
+                <span className="icon" onClick={handleGoToSettings}>
+                  <Icon src={icons.profile} width={36} height={36} />
+                </span>
+              ) : (
+                <>
+                  <span className="icon" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+                    <Icon src={icons.setting} width={36} height={36} />
+                  </span>
+                  <DropdownMenu $isOpen={isDropdownOpen}>
+                    <DropdownItem onClick={() => {
+                      setIsDropdownOpen(false);
+                      openLoginModal();
+                    }}>
+                      로그인 하기
+                    </DropdownItem>
+                    <DropdownItem onClick={() => {
+                      setIsDropdownOpen(false);
+                      toggleTheme();
+                    }}>
+                      {isDarkMode ? '라이트 모드로 변경' : '다크 모드로 변경'}
+                    </DropdownItem>
+                  </DropdownMenu>
+                </>
+              )}
+            </ProfileIconWrapper>
           </div>
         )}
       </TopNav>

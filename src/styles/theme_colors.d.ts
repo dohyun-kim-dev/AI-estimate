@@ -1,0 +1,41 @@
+export type ThemeMode = "dark" | "light";
+export declare const THEME_COLORS: {
+    dark: {
+        background: string;
+        text: string;
+        primary: string;
+        secondary: string;
+        accent: string;
+        tableBackground: string;
+        tableHeaderBackground: string;
+        tableRowEven: string;
+        tableRowOdd: string;
+        tableText: string;
+        tableHeaderText: string;
+        borderColor: string;
+        inputBackground: string;
+        inputText: string;
+        buttonBackground: string;
+        buttonText: string;
+        titleColor: string;
+    };
+    light: {
+        background: string;
+        text: string;
+        primary: string;
+        secondary: string;
+        accent: string;
+        tableBackground: string;
+        tableHeaderBackground: string;
+        tableRowEven: string;
+        tableRowOdd: string;
+        tableText: string;
+        tableHeaderText: string;
+        borderColor: string;
+        inputBackground: string;
+        inputText: string;
+        buttonBackground: string;
+        buttonText: string;
+        titleColor: string;
+    };
+};

@@ -1,0 +1,26 @@
+{
+    "sourceFile": "tsconfig.node.json",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1756112588594,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756113025724,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,9 +10,9 @@\n     \"moduleResolution\": \"bundler\",\n     \"allowImportingTsExtensions\": true,\n     \"verbatimModuleSyntax\": true,\n     \"moduleDetection\": \"force\",\n-    \"noEmit\": trfalseue,\n+    \"noEmit\": false,\n \n     /* Linting */\n     \"strict\": true,\n     \"noUnusedLocals\": true,\n"
+                },
+                {
+                    "date": 1756113973761,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,7 @@\n {\n   \"compilerOptions\": {\n+    \"composite\": true,\n     \"tsBuildInfoFile\": \"./node_modules/.tmp/tsconfig.node.tsbuildinfo\",\n     \"target\": \"ES2023\",\n     \"lib\": [\"ES2023\"],\n     \"module\": \"ESNext\",\n"
+                }
+            ],
+            "date": 1756112588594,
+            "name": "Commit-0",
+            "content": "{\n  \"compilerOptions\": {\n    \"tsBuildInfoFile\": \"./node_modules/.tmp/tsconfig.node.tsbuildinfo\",\n    \"target\": \"ES2023\",\n    \"lib\": [\"ES2023\"],\n    \"module\": \"ESNext\",\n    \"skipLibCheck\": true,\n\n    /* Bundler mode */\n    \"moduleResolution\": \"bundler\",\n    \"allowImportingTsExtensions\": true,\n    \"verbatimModuleSyntax\": true,\n    \"moduleDetection\": \"force\",\n    \"noEmit\": trfalseue,\n\n    /* Linting */\n    \"strict\": true,\n    \"noUnusedLocals\": true,\n    \"noUnusedParameters\": true,\n    \"erasableSyntaxOnly\": true,\n    \"noFallthroughCasesInSwitch\": true,\n    \"noUncheckedSideEffectImports\": true\n  },\n  \"include\": [\"vite.config.ts\"]\n}\n"
+        }
+    ]
+}

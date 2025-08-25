@@ -45,9 +45,19 @@ const Container = styled.div`
   pointer-events: none;
 `
 
+const Progress = styled.div<{ $type: ToastType; $duration: number }>`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: ${({ $type }) => ($type === 'success' ? '#6565FC' : $type === 'error' ? '#F03E3E' : '#3391FF')};
+  animation: ${deplete} ${({ $duration }) => $duration}ms linear;
+  transform-origin: left;
+`
+
 const Card = styled.div<{ $type: ToastType }>`
-  background: ${({ $type }) => ($type === 'success' ? '#4263EB' : $type === 'error' ? '#F03E3E' : '#3391FF')};
-  color: #FFFFFF;
+  color: ${({ $type }) => ($type === 'success' ? '#6565FC' : $type === 'error' ? '#F03E3E' : '#3391FF')};
+  background: #FFFFFF;
   border-radius: 8px;
   pointer-events: all;
   animation: ${slideDown} 0.16s ease both;
@@ -55,6 +65,7 @@ const Card = styled.div<{ $type: ToastType }>`
   min-width: 280px;
   max-width: min(360px, calc(100vw - 24px));
   padding: 16px 20px;
+  position: relative;
 `
 
 const Row = styled.div`
@@ -67,13 +78,13 @@ const IconBox = styled.div<{ $type: ToastType }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #FFFFFF;
+  color: ${({ $type }) => ($type === 'success' ? '#6565FC' : $type === 'error' ? '#F03E3E' : '#3391FF')};
 `
 
 const Message = styled.div`
   font-size: 14px;
   line-height: 1.45;
-  color: #FFFFFF;
+  color: #000;
   font-weight: 500;
   flex: 1;
 `
@@ -136,6 +147,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   <IoClose size={20} />
                 </CloseButton>
               </Row>
+              <Progress $type={t.type} $duration={t.duration} />
             </Card>
           )
         })}

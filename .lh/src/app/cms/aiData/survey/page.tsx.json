@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/app/cms/aiData/survey/page.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1756103652607,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756104673496,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,10 +1,83 @@\n-import React from 'react';\n+'use client';\n \n-export default function SurveyPage() {\n+import React, { useState } from 'react';\n+import QuestionForm, { QuestionData } from '@/components/QuestionForm';\n+import { v4 as uuidv4 } from 'uuid';\n+\n+const SurveyPage = () => {\n+  const [questions, setQuestions] = useState<QuestionData[]>([\n\\ No newline at end of file\n+    {\n+      id: uuidv4(),\n+      question: { native: '', foreign: '' },\n+      description: { native: '', foreign: '' },\n+      choices: [\n+        {\n+          id: uuidv4(),\n+          text: { native: '', foreign: '' },\n+        },\n+        {\n+          id: uuidv4(),\n+          text: { native: '', foreign: '' },\n+        },\n+      ],\n+      allowMultiple: false,\n+    },\n+  ]);\n+\n+  const updateQuestion = (id: string, updated: QuestionData) => {\n+    setQuestions(prev =>\n+      prev.map(q => (q.id === id ? updated : q))\n+    );\n+  };\n+\n+  const deleteQuestion = (id: string) => {\n+    setQuestions(prev => prev.filter(q => q.id !== id));\n+  };\n+\n+  const duplicateQuestion = (id: string) => {\n+    const original = questions.find(q => q.id === id);\n+    if (!original) return;\n+\n+    const duplicated: QuestionData = {\n+      ...original,\n+      id: uuidv4(),\n+      choices: original.choices.map(choice => ({\n+        id: uuidv4(),\n+        text: { ...choice.text },\n+      })),\n+      question: { ...original.question },\n+      description: { ...original.description },\n+    };\n+\n+    setQuestions(prev => [...prev, duplicated]);\n+  };\n+\n+  const addNewQuestion = () => {\n+    const newQuestion: QuestionData = {\n+      id: uuidv4(),\n+      question: { native: '', foreign: '' },\n+      description: { native: '', foreign: '' },\n+      choices: [],\n+      allowMultiple: false,\n+    };\n+    setQuestions(prev => [...prev, newQuestion]);\n+  };\n+\n   return (\n-    <div>\n-      <h1>기초조사 관리</h1>\n-      {/* 컴포넌트 내용 */}\n+    <div style={{ padding: '24px' }}>\n+      {questions.map((q) => (\n+        <QuestionForm\n+          key={q.id}\n+          data={q}\n+          onUpdate={(updated) => updateQuestion(q.id, updated)}\n+          onDelete={() => deleteQuestion(q.id)}\n+          onDuplicate={() => duplicateQuestion(q.id)}\n+        />\n+      ))}\n+\n+      <button onClick={addNewQuestion}>+ 질문 추가</button>\n     </div>\n   );\n-}\n+};\n+\n+export default SurveyPage;\n"
+                }
+            ],
+            "date": 1756103652607,
+            "name": "Commit-0",
+            "content": "import React from 'react';\n\nexport default function SurveyPage() {\n  return (\n    <div>\n      <h1>기초조사 관리</h1>\n      {/* 컴포넌트 내용 */}\n    </div>\n  );\n}"
+        }
+    ]
+}

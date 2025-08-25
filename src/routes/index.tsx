@@ -24,6 +24,16 @@ import CMSLogin from '@app/cms/login/page'
 import CMSSuperAdminMng from '@app/cms/superAdminMng/page'
 import CMSTerms from '@app/cms/terms/page'
 import CMSUserData from '@app/cms/userData/page'
+import CMSUserMng from '@app/cms/userMng/page'
+import PromptPage from '../app/cms/aiData/prompt/page'
+import AiChatHistoryPage from '../app/cms/aiData/conversationHistory/page'
+import TreeGridPage from '../app/cms/aiData/wrongAnswer/page'
+import SurveyPage from '../app/cms/aiData/survey/page'
+import CompanyInfoSettingsPage from '@app/cms/company-settings/page'
+import AigoSettingsPage from '@app/cms/aigo-settings/page'
+import InquiryPage from '../app/cms/userData/inquiry/page'
+import PriceListPage from '../app/cms/userData/price/page'
+import ProposalDownloadPage from '../app/cms/userData/proposal/page'
 
 export default function AppRoutes() {
   return (
@@ -49,17 +59,39 @@ export default function AppRoutes() {
         {/* CMS routes */}
         <Route element={<CMSLayout />}>
           <Route path="/cms" element={<CMS />} />
-          <Route path="/cms/admin-management" element={<CMSAdminMng />} />
-          <Route path="/cms/ai-data" element={<CMSAiData />} />
-          <Route path="/cms/aigo-settings" element={<CMSAigoSettings />} />
-          <Route path="/cms/ai-setting" element={<CMSAiSetting />} />
-          <Route path="/cms/company-settings" element={<CMSCompanySettings />} />
-          <Route path="/cms/company-management" element={<CMSCompanyMng />} />
-          <Route path="/cms/inquiry" element={<CMSInquiry />} />
           <Route path="/cms/login" element={<CMSLogin />} />
           <Route path="/cms/super-admin" element={<CMSSuperAdminMng />} />
+          <Route path="/cms/company-management" element={<CMSCompanyMng />} />
+          <Route path="/cms/admin-management" element={<CMSAdminMng />} />
+          <Route path="/cms/user-management" element={<CMSUserMng />} />
+          
+          {/* AI Data Management Routes */}
+          <Route path="/cms/ai-data">
+            <Route index element={<Navigate to="/cms/ai-data/survey" replace />} />
+            <Route path="survey" element={<SurveyPage />} />
+            <Route path="prompt" element={<PromptPage />} />
+            <Route path="wrong-answer" element={<TreeGridPage />} />
+            <Route path="conversation-history" element={<AiChatHistoryPage />} />
+          </Route>
+
+          {/* AI Settings Routes */}
+          <Route path="/cms/ai-setting">
+            <Route index element={<Navigate to="/cms/ai-setting/company-info" replace />} />
+            <Route path="company-info" element={<CompanyInfoSettingsPage />} />
+            <Route path="management" element={<AigoSettingsPage />} />
+          </Route>
+
+          {/* User Data Routes */}
+          <Route path="/cms/user-data">
+            <Route index element={<Navigate to="/cms/user-data/price" replace />} />
+            <Route path="price" element={<PriceListPage />} />
+            <Route path="proposal" element={<ProposalDownloadPage />} />
+            <Route path="inquiry" element={<InquiryPage />} />
+          </Route>
+
+          <Route path="/cms/company-settings" element={<CompanyInfoSettingsPage />} />
+          <Route path="/cms/aigo-settings" element={<AigoSettingsPage />} />
           <Route path="/cms/terms" element={<CMSTerms />} />
-          <Route path="/cms/user-data" element={<CMSUserData />} />
         </Route>
 
         {/* Fallback route */}

@@ -1,0 +1,30 @@
+{
+    "sourceFile": "src/app/cms/aiData/wrongAnswer/page.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1756108838999,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756108844938,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -123,9 +123,9 @@\n     console.log(\"✅ 셀 변경:\", { id, key, value });\n   };\n \n   return (\n-    <r\n+    <CmsResponsiveContainer\n       title=\"AI 대화이력 관리\"\n       columns={columns}\n       fetchData={fetchData}\n       onCellChange={handleCellChange} // ✅ 추가\n"
+                },
+                {
+                    "date": 1756108850479,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,8 +1,9 @@\n \"use client\";\n \n import GenericTreeListUI from \"@/components/CustomList/GenericTreeListUI\";\n import React from \"react\";\n+import CmsResponsiveContainer from \"../../../../components/CustomList/ResponsiveList/CmsResponsiveContainer\";\n \n // 🔷 인터페이스 정의 (GenericTreeListUI가 요구하는 구조)\n interface TreeNode {\n   id: string | number;\n@@ -123,9 +124,9 @@\n     console.log(\"✅ 셀 변경:\", { id, key, value });\n   };\n \n   return (\n-    <CmsResponsiveContainer\n+    <CmsResponsiveContainer<TreeNode>\n       title=\"AI 대화이력 관리\"\n       columns={columns}\n       fetchData={fetchData}\n       onCellChange={handleCellChange} // ✅ 추가\n"
+                },
+                {
+                    "date": 1756108862902,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -125,11 +125,14 @@\n   };\n \n   return (\n     <CmsResponsiveContainer<TreeNode>\n-      title=\"AI 대화이력 관리\"\n+      title=\"AI 동문서답 관리\"\n       columns={columns}\n       fetchData={fetchData}\n+      enableSearch\n+      enableDateFilter\n+      searchPlaceholder=\"검색어를 입력하세요\"\n       onCellChange={handleCellChange} // ✅ 추가\n       themeMode=\"light\"\n     />\n   );\n"
+                }
+            ],
+            "date": 1756108838999,
+            "name": "Commit-0",
+            "content": "\"use client\";\n\nimport GenericTreeListUI from \"@/components/CustomList/GenericTreeListUI\";\nimport React from \"react\";\n\n// 🔷 인터페이스 정의 (GenericTreeListUI가 요구하는 구조)\ninterface TreeNode {\n  id: string | number;\n  [key: string]: any;\n  children?: TreeNode[];\n}\n\ninterface FetchParams {\n  fromDate?: string;\n  toDate?: string;\n  keyword?: string;\n}\n\ninterface FetchResult {\n  data: TreeNode[];\n  totalItems: number;\n  allItems?: number;\n}\n\n// 🔷 더미 데이터 정의\nconst dummyData: TreeNode[] = [\n  {\n    id: 1,\n    name: \"홍길동\",\n    profile: \"/sample_avatar1.jpg\",\n    userId: \"1234567891234567890\",\n    email: \"hgd123@gmail.com\",\n    date: \"25-05-01(thu)\",\n    project: \"AI 견적서 시스템\",\n    feature: \"관리자 등록 기능\",\n    children: [\n      {\n        id: 2,\n        date: \"25-05-02(fri)\",\n        project: \"AI 견적서 시스템\",\n        feature: \"관리자 등록 기능\",\n      },\n      {\n        id: 3,\n        date: \"25-05-01(thu)\",\n        project: \"전산 솔루션\",\n        feature: \"관리자 등록 기능\",\n      },\n    ],\n  },\n  {\n    id: 4,\n    name: \"강태원\",\n    profile: \"/sample_avatar4.jpg\",\n    userId: \"1234567891234567890\",\n    email: \"hgd123@gmail.com\",\n    date: \"25-05-02(fri)\",\n    project: \"드론\",\n    feature: \"관리자 등록 기능\",\n  },\n  {\n    id: 5,\n    name: \"임정기\",\n    profile: \"/sample_avatar5.jpg\",\n    userId: \"1234567891234567890\",\n    email: \"hgd123@gmail.com\",\n    date: \"25-05-02(fri)\",\n    project: \"중고거래\",\n    feature: \"관리자 등록 기능\",\n  },\n  {\n    id: 6,\n    name: \"곽준규\",\n    profile: \"/sample_avatar6.jpg\",\n    userId: \"1234567891234567890\",\n    email: \"hgd123@gmail.com\",\n    date: \"25-05-02(fri)\",\n    project: \"금융 / 펀드\",\n    feature: \"관리자 등록 기능\",\n  },\n];\n\n\n// 🔷 컬럼 정의\nconst columns = [\n  { header: \"유저\", accessor: \"name\", editable: true },\n  {\n    header: \"프로필\",\n    accessor: \"profile\",\n    // formatter: (value) => <img src={value} alt=\"프로필\" style={{ width: 32, height: 32, borderRadius: \"50%\" }} />,\n    noPopup: true,\n  },\n  { header: \"아이디\", accessor: \"userId\" },\n  { header: \"이메일\", accessor: \"email\" , editable: true},\n  { header: \"날짜\", accessor: \"date\" },\n  { header: \"프로젝트\", accessor: \"project\" },\n  { header: \"기능제목\", accessor: \"feature\" },\n  {\n    header: \"파일 다운로드\",\n    accessor: \"download\",\n    formatter: () => <button style={{ background: \"#123B64\", color: \"white\", padding: \"5px 10px\" }}>파일 다운로드</button>,\n    noPopup: true,\n  },\n];\n\n\n// 🔷 fetchData 구현\nconst fetchData = async (params: FetchParams): Promise<FetchResult> => {\n  console.log(\"📦 fetchData called with params:\", params);\n  return new Promise((resolve) => {\n    setTimeout(() => {\n      resolve({\n        data: dummyData,\n        totalItems: dummyData.length,\n      });\n    }, 300);\n  });\n};\n\n// 🔷 페이지 컴포넌트\nexport default function TreeGridPage() {\n  const handleCellChange = (id: string | number, key: string, value: any) => {\n    console.log(\"✅ 셀 변경:\", { id, key, value });\n  };\n\n  return (\n    <r\n      title=\"AI 대화이력 관리\"\n      columns={columns}\n      fetchData={fetchData}\n      onCellChange={handleCellChange} // ✅ 추가\n      themeMode=\"light\"\n    />\n  );\n}\n\n"
+        }
+    ]
+}

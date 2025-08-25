@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/layout/ResponsiveView.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1756112304634,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756112543447,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -28,11 +28,12 @@\n }: ResponsiveViewProps) {\n   const device = useDevice(); // 현재 디바이스 타입 가져오기 | Get current device type\n \n   // 모바일인 경우 mobileView 렌더링 (있을 때만) | Render mobileView if device is mobile and it exists\n-  switch (device) {\n-    case 'mobile':\n-      return <>{mobileView || desktopView}</>;\n-    default:\n-      return <>{desktopView}</>;\n-  }\n+  if (device === 'mobile' && mobileView) return <>{mobileView}</>;\n+\n+  // 태블릿인 경우 tabletView 렌더링 (있을 때만) | Render tabletView if device is tablet and it exists\n+  // if (device === 'tablet' && tabletView) return <>{tabletView}</>;\n+\n+  // 기본: 데스크톱 뷰 렌더링 | Default: Render desktop view\n+  return <>{desktopView}</>;\n }\n"
+                }
+            ],
+            "date": 1756112304634,
+            "name": "Commit-0",
+            "content": "// src/layout/ResponsiveView.tsx\n'use client';\n\n/**\n * ResponsiveView 컴포넌트는 현재 디바이스 타입(mobile, tablet, desktop)에 따라\n * 각각의 뷰를 조건부로 렌더링할 수 있도록 도와줍니다.\n * 각 폰트, 레이아웃은 스타일은 의존하고, ResponsiveView는 디바이스 브레이크포인트에 따라서 UI 형태가 달라지는 경우에 컴포넌트들을 전달 받아서 사용합니다\n *\n * ResponsiveView conditionally renders different views based on the current device type\n * (mobile, tablet, desktop) from DeviceContext.\n * Each font, layout, and style depend on the device type.\n * ResponsiveView takes components as props and renders them when the UI changes based on device breakpoints.\n */\n\nimport { useDevice } from '@/contexts/DeviceContext';\nimport React from 'react';\n\ninterface ResponsiveViewProps {\n  mobileView?: React.ReactNode;   // 모바일 화면에서 보여줄 컴포넌트 | Component for mobile view\n  tabletView?: React.ReactNode;   // 태블릿 화면에서 보여줄 컴포넌트 | Component for tablet view\n  desktopView: React.ReactNode;   // 데스크톱 화면에서 기본으로 보여줄 컴포넌트 | Default component for desktop view\n}\n\nexport default function ResponsiveView({\n  mobileView,\n  tabletView,\n  desktopView,\n}: ResponsiveViewProps) {\n  const device = useDevice(); // 현재 디바이스 타입 가져오기 | Get current device type\n\n  // 모바일인 경우 mobileView 렌더링 (있을 때만) | Render mobileView if device is mobile and it exists\n  switch (device) {\n    case 'mobile':\n      return <>{mobileView || desktopView}</>;\n    default:\n      return <>{desktopView}</>;\n  }\n}\n"
+        }
+    ]
+}

@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/app/cms/aiData/conversation-history/page.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1756103652599,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1756103652599,
+            "name": "Commit-0",
+            "content": "import React from 'react';\n\nexport default function ConversationHistoryPage() {\n  return (\n    <div>\n      <h1>AI 대화이력 관리</h1>\n      {/* 컴포넌트 내용 */}\n    </div>\n  );\n}\n"
+        }
+    ]
+}

@@ -42,7 +42,16 @@ export const GlobalStyle = createGlobalStyle`
     cursor: pointer;
     font: inherit;
     color: inherit;
+    border-radius: 0;
+    outline: none; 
   }
+  
+  button:focus {
+    outline: none;
+    box-shadow: none;
+  }
+  
+    }
 
   /* 스크롤바 스타일링 */
   ::-webkit-scrollbar {

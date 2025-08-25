@@ -3,6 +3,8 @@ import styled from 'styled-components';
 import TextField from '@components/common/TextField';
 import Switch from '@components/Switch';
 import { AppColors } from '@styles/colors';
+import { ThemeProvider } from "styled-components";
+import { lightTheme } from "@styles/theme"; 
 import { Link } from 'react-router-dom';
 
 const Slider = styled.input.attrs({ type: 'range' })`
@@ -193,6 +195,7 @@ export default function AigoSettingsPage() {
   };
 
   return (
+    <ThemeProvider theme={lightTheme}>
     <SettingsContainer>
       <Heading>AIGO 설정</Heading>
       <FlexContainer>
@@ -297,5 +300,6 @@ export default function AigoSettingsPage() {
         </MainContent>
       </FlexContainer>
     </SettingsContainer>
+    </ThemeProvider>
   );
 }

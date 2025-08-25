@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 4,
             "patches": [
                 {
                     "date": 1755953751114,
@@ -20,6 +20,10 @@
                 {
                     "date": 1755959171618,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,8 +7,9 @@\n import AppRoutes from './routes'\n import { lightTheme, darkTheme } from '@styles/theme'\n import { useEffect, useState } from 'react'\n import styled from 'styled-components'\n+import { GoogleOAuthProvider } from '@react-oauth/google'\n \n const AppWrapper = styled.div`\n   display: flex;\n   flex-direction: column;\n@@ -37,30 +38,32 @@\n   // SSR/Hydration 문제 방지를 위한 초기 테마 설정\n   const theme = mounted ? (isDarkMode ? darkTheme : lightTheme) : lightTheme\n \n   return (\n-    <BrowserRouter>\n-      <ThemeProvider theme={theme}>\n-        <GlobalStyle />\n-        <AppWrapper>\n-          <ContentWrapper>\n-            <AppRoutes />\n-          </ContentWrapper>\n-          <ToastContainer\n-            position=\"top-right\"\n-            autoClose={3000}\n-            hideProgressBar={false}\n-            newestOnTop\n-            closeOnClick\n-            rtl={false}\n-            pauseOnFocusLoss\n-            draggable\n-            pauseOnHover\n-            theme=\"colored\"\n-          />\n-        </AppWrapper>\n-      </ThemeProvider>\n-    </BrowserRouter>\n+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>\n+      <BrowserRouter>\n+        <ThemeProvider theme={theme}>\n+          <GlobalStyle />\n+          <AppWrapper>\n+            <ContentWrapper>\n+              <AppRoutes />\n+            </ContentWrapper>\n+            <ToastContainer\n+              position=\"top-right\"\n+              autoClose={3000}\n+              hideProgressBar={false}\n+              newestOnTop\n+              closeOnClick\n+              rtl={false}\n+              pauseOnFocusLoss\n+              draggable\n+              pauseOnHover\n+              theme=\"colored\"\n+            />\n+          </AppWrapper>\n+        </ThemeProvider>\n+      </BrowserRouter>\n+    </GoogleOAuthProvider>\n   )\n }\n \n export default App\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756098641022,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -49,9 +49,8 @@\n             </ContentWrapper>\n             <ToastContainer\n               position=\"top-right\"\n               autoClose={3000}\n-              hideProgressBar={false}\n               newestOnTop\n               closeOnClick\n               rtl={false}\n               pauseOnFocusLoss\n"
                 }
             ],
             "date": 1755953751114,

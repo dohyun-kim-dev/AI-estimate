@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 23,
+            "activePatchIndex": 24,
             "patches": [
                 {
                     "date": 1756086483613,
@@ -100,6 +100,10 @@
                 {
                     "date": 1756088574574,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -202,18 +202,18 @@\n                       pageBreakInside: 'avoid',\n                       breakAfter: 'auto',\n                       breakBefore: 'auto',\n                       paddingTop: '4px',\n-                      paddingBottom: '10px'\n+                      paddingBottom: '4px'\n                     }} rowSpan={currentRowSpan.subCategory}>\n                       {item.subCategory}\n                     </td>\n                   )}\n                   <td style={{ \n                     ...valueCellStyle, \n                     textAlign: 'center',\n-                    paddingTop: '10px',\n-                    paddingBottom: '10px'\n+                    paddingTop: '4px',\n+                    paddingBottom: '4px'\n                   }}>{item.name}</td>\n                   <td style={{ \n                     ...valueCellStyle,\n                     paddingTop: '10px',\n"
+                },
+                {
+                    "date": 1756088892399,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -215,16 +215,16 @@\n                     paddingBottom: '4px'\n                   }}>{item.name}</td>\n                   <td style={{ \n                     ...valueCellStyle,\n-                    paddingTop: '10px',\n-                    paddingBottom: '10px'\n+                    paddingTop: '4px',\n+                    paddingBottom: '4px'\n                   }}>{item.description}</td>\n                   <td style={{ \n                     ...valueCellStyle, \n                     textAlign: 'right',\n-                    paddingTop: '10px',\n-                    paddingBottom: '10px'\n+                    paddingTop: '4px',\n+                    paddingBottom: '4px'\n                   }}>{item.price}</td>\n                 </tr>\n               );\n             });\n"
                 }
             ],
             "date": 1756086483613,

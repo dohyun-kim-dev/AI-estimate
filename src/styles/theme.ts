@@ -26,6 +26,17 @@ export const lightTheme = {
   accordionLevel3: '#f0f0f0',
 
   actionButton: '#F3F3F3',
+  inputBg: '#FFFFFF',
+  inputBorder: '#E5E7EB',
+  cardBg: '#FFFFFF',
+  cardShadow: 'rgba(0, 0, 0, 0.1)',
+  cardText: '#4263EB',
+  statBg: '#F8F9FA',
+  statText: '#4263EB',
+  testimonialBg: '#FFFFFF',
+  testimonialBorder: '#E5E7EB',
+  bottomNavBg: '#FFFFFF',
+  bottomNavBorder: '#E5E7EB',
 };
 
 export const darkTheme = {
@@ -55,6 +66,17 @@ export const darkTheme = {
   accordionLevel3: '#1E1E24',
 
   actionButton: '#283139',
+  inputBg: '#1E1E2D',
+  inputBorder: '#2F2F38',
+  cardBg: '#1E1E2D',
+  cardShadow: 'rgba(0, 0, 0, 0.3)',
+  cardText: '#6366F1',
+  statBg: '#0A0F1D',
+  statText: '#3391FF',
+  testimonialBg: '#1E1E2D',
+  testimonialBorder: '#2F2F38',
+  bottomNavBg: '#08080F',
+  bottomNavBorder: '#2F2F38',
 };
 
 export type Theme = typeof lightTheme;

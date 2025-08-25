@@ -3,11 +3,35 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 6,
             "patches": [
                 {
                     "date": 1755954189935,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756108285420,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,8 +2,9 @@\n import styled from 'styled-components';\n import TextField from '@components/common/TextField';\n import Switch from '@components/Switch';\n import { AppColors } from '@styles/colors';\n+import { lightTheme } from \"@styles/theme\"; \n import { Link } from 'react-router-dom';\n \n const Slider = styled.input.attrs({ type: 'range' })`\n   width: 100%;\n"
+                },
+                {
+                    "date": 1756108290767,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,8 +2,10 @@\n import styled from 'styled-components';\n import TextField from '@components/common/TextField';\n import Switch from '@components/Switch';\n import { AppColors } from '@styles/colors';\n+import { ThemeProvider } from \"styled-components\";\n+\n import { lightTheme } from \"@styles/theme\"; \n import { Link } from 'react-router-dom';\n \n const Slider = styled.input.attrs({ type: 'range' })`\n"
+                },
+                {
+                    "date": 1756108304727,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,9 +3,8 @@\n import TextField from '@components/common/TextField';\n import Switch from '@components/Switch';\n import { AppColors } from '@styles/colors';\n import { ThemeProvider } from \"styled-components\";\n-\n import { lightTheme } from \"@styles/theme\"; \n import { Link } from 'react-router-dom';\n \n const Slider = styled.input.attrs({ type: 'range' })`\n@@ -195,8 +194,9 @@\n     setFormData(prev => ({ ...prev, inferencePerformance: parseInt(e.target.value, 10) }));\n   };\n \n   return (\n+    <ThemeProvider theme={lightTheme}></ThemeProvider>\n     <SettingsContainer>\n       <Heading>AIGO 설정</Heading>\n       <FlexContainer>\n         <MainContent>\n"
+                },
+                {
+                    "date": 1756108312223,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -194,9 +194,9 @@\n     setFormData(prev => ({ ...prev, inferencePerformance: parseInt(e.target.value, 10) }));\n   };\n \n   return (\n-    <ThemeProvider theme={lightTheme}></ThemeProvider>\n+    <ThemeProvider theme={lightTheme}>\n     <SettingsContainer>\n       <Heading>AIGO 설정</Heading>\n       <FlexContainer>\n         <MainContent>\n@@ -298,7 +298,8 @@\n             </Group>\n           </Card>\n         </MainContent>\n       </FlexContainer>\n-    </SettingsContainer>\n+    </SettingsContainer></ThemeProvider>\n+    </ThemeProvider>\n   );\n }\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756112135070,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,9 +27,9 @@\n \n const SettingsContainer = styled.div`\n   max-width: 1050px;\n   margin: 0 auto;\n-  padding: 84px 24px 24px 24px;\n+  padding: 24px 24px 24px 24px;\n `;\n \n const FlexContainer = styled.div`\n   display: flex;\n@@ -298,8 +298,8 @@\n             </Group>\n           </Card>\n         </MainContent>\n       </FlexContainer>\n-    </SettingsContainer></ThemeProvider>\n+    </SettingsContainer>\n     </ThemeProvider>\n   );\n }\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756112183806,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,9 +27,9 @@\n \n const SettingsContainer = styled.div`\n   max-width: 1050px;\n   margin: 0 auto;\n-  padding: 24px 24px 24px 24px;\n+  padding: 84px 24px 24px 24px;\n `;\n \n const FlexContainer = styled.div`\n   display: flex;\n"
                 }
             ],
             "date": 1755954189935,

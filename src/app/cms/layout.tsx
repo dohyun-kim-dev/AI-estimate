@@ -31,7 +31,14 @@ import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import GroupIcon from '@mui/icons-material/Group';
 
-import type { MenuItemConfig } from '@components/CustomSidebar/CustomSidebar';
+interface MenuItemConfig {
+  icon: React.ReactElement;
+  title: string;
+  path?: string;
+  subMenu?: MenuItemConfig[];
+  isOpen?: boolean;
+  id: string;
+}
 import ScrollAwareWrapper from '@layout/ScrollAwareWrapper';
 
 export default function CmsLayout() {
@@ -52,8 +59,11 @@ function ProtectedCmsLayout() {
   useEffect(() => {
     if (ready && !isLoggedIn && !isLoginPage) {
       navigate('/cms/login', { replace: true });
+    } else if (ready && isLoggedIn && location.pathname === '/cms') {
+      // 대시보드로 이동
+      navigate('/cms', { replace: true });
     }
-  }, [ready, isLoggedIn, isLoginPage, navigate]);
+  }, [ready, isLoggedIn, isLoginPage, location.pathname, navigate]);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -70,44 +80,60 @@ function ProtectedCmsLayout() {
     () => (device === 'mobile' ? isMobileSidebarOpen : !isCollapsed),
     [device, isMobileSidebarOpen, isCollapsed]
   );
+  const initialOpenMenus = JSON.parse(localStorage.getItem('openMenus') || '{}');
+  const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
+
+const handleMenuToggle = (menuId: string) => {
+  setOpenMenus(prev => ({
+    ...prev,
+    [menuId]: !prev[menuId]
+  }));
+};
+
 
   const menuItems: MenuItemConfig[] = [
-    { icon: <DashboardIcon />, title: '대시보드', path: '/cms' },
-    { icon: <WorkspacePremiumIcon />, title: '통합관리자', path: '/cms/superAdminMng' },
-    { icon: <BusinessIcon />, title: '고객사관리', path: '/cms/companyMng' },
-    { icon: <AdminPanelSettingsIcon />, title: '관리자 회원관리', path: '/cms/adminMng' },
-    { icon: <GroupIcon />, title: '사용자 회원관리', path: '/cms/userMng' },
+    { id: 'dashboard', icon: <DashboardIcon />, title: '대시보드', path: '/cms' },
+    { id: 'super-admin', icon: <WorkspacePremiumIcon />, title: '통합관리자 관리', path: '/cms/super-admin' },
+    { id: 'company', icon: <BusinessIcon />, title: '고객사 관리', path: '/cms/company-management' },
+    { id: 'admin', icon: <AdminPanelSettingsIcon />, title: '고객사관리자 관리', path: '/cms/admin-management' },
+    { id: 'user', icon: <GroupIcon />, title: '고객 회원관리', path: '/cms/user-management' },
     {
+      id: 'ai-data',
       icon: <DatasetIcon />,
       title: 'AI 데이터 관리',
-      path: '/cms/aiData',
+      // path: '/cms/ai-data',
+      isOpen: openMenus['ai-data'],
       subMenu: [
-        { icon: <AssessmentIcon />, title: '기초조사 관리', path: '/cms/aiData/survey' },
-        { icon: <TextFieldsIcon />, title: 'AI 프롬프트 관리', path: '/cms/aiData/prompt' },
-        { icon: <QuestionAnswerIcon />, title: 'AI 동문서답 관리', path: '/cms/aiData/wrongAnswer' },
-        { icon: <ChatIcon />, title: 'AI 대화이력 관리', path: '/cms/aiData/conversationHistory' },
+        { id: 'ai-data-survey', icon: <AssessmentIcon />, title: '기초조사 관리', path: '/cms/ai-data/survey' },
+        { id: 'ai-data-prompt', icon: <TextFieldsIcon />, title: 'AI 프롬프트 관리', path: '/cms/ai-data/prompt' },
+        { id: 'ai-data-wrong', icon: <QuestionAnswerIcon />, title: 'AI 동문서답 관리', path: '/cms/ai-data/wrong-answer' },
+        { id: 'ai-data-conv', icon: <ChatIcon />, title: 'AI 대화이력 관리', path: '/cms/ai-data/conversation-history' },
       ],
     },
     {
+      id: 'ai-setting',
       icon: <SettingsIcon />,
       title: 'AI 설정',
-      path: '/cms/aiSetting',
+      // path: '/cms/ai-setting',
+      isOpen: openMenus['ai-setting'],
       subMenu: [
-        { icon: <BusinessIcon />, title: '회사정보 관리', path: '/cms/aiSetting/companyInfo' },
-        { icon: <TuneIcon />, title: 'AI 설정관리', path: '/cms/aiSetting/mng' },
+        { id: 'ai-setting-company', icon: <BusinessIcon />, title: '회사정보 관리', path: '/cms/ai-setting/company-info' },
+        { id: 'ai-setting-mng', icon: <TuneIcon />, title: 'AI 설정관리', path: '/cms/ai-setting/management' },
       ],
     },
     {
+      id: 'user-data',
       icon: <StorageIcon />,
       title: '고객 데이터 관리',
-      path: '/cms/userData',
+      // path: '/cms/user-data',
+      isOpen: openMenus['user-data'],
       subMenu: [
-        { icon: <RequestQuoteIcon />, title: '단가표 관리', path: '/cms/userData/price' },
-        { icon: <DownloadIcon />, title: '견적 다운로드 현황', path: '/cms/userData/proposal' },
-        { icon: <ContactSupportIcon />, title: '견적 문의 관리', path: '/cms/userData/inquiry' },
+        { id: 'user-data-price', icon: <RequestQuoteIcon />, title: '단가표 관리', path: '/cms/user-data/price' },
+        { id: 'user-data-proposal', icon: <DownloadIcon />, title: '견적 다운로드 현황', path: '/cms/user-data/proposal' },
+        { id: 'user-data-inquiry', icon: <ContactSupportIcon />, title: '견적 문의 관리', path: '/cms/user-data/inquiry' },
       ],
     },
-    { icon: <DescriptionIcon />, title: '이용 약관 관리', path: '/cms/terms' },
+    { id: 'terms', icon: <DescriptionIcon />, title: '이용 약관', path: '/cms/terms' },
   ];
 
   if (!ready || (!isLoggedIn && !isLoginPage)) return null;
@@ -124,6 +150,7 @@ function ProtectedCmsLayout() {
           footerIcon={<LogoutIcon />}
           onFooterClick={handleLogout}
           onMobileSidebarOpenChange={setIsMobileSidebarOpen}
+          onMenuToggle={handleMenuToggle}
         >
           <CustomSidebarHeader
             isCollapsed={isCollapsed}
@@ -151,9 +178,9 @@ const OuterLayoutContainer = styled.div<{
   min-height: 100vh;
   background-color: #E6E7E9;
   
-  ${({ $device }) => $device !== 'mobile' && `
+  @media (min-width: 1024px) {
     min-width: 1200px;
-  `}
+  }
 `;
 
 const MainContent = styled.div<{
@@ -163,22 +190,16 @@ const MainContent = styled.div<{
   transition: all 0.3s ease;
   box-sizing: border-box;
   background-color: #E6E7E9;
+  margin-top: 56px;
+  margin-left: ${({ $isSidebarExpanded }) => $isSidebarExpanded ? "250px" : "0"};
+  width: ${({ $isSidebarExpanded }) => $isSidebarExpanded ? "calc(100% - 250px)" : "100%"};
+  max-width: 100%;
+  overflow-x: auto;
 
-  ${({ $device, $isSidebarExpanded }) => {
-    if ($device === "mobile") {
-      return `
-        margin-top: 56px;
-        margin-left: ${$isSidebarExpanded ? "250px" : "0"};
-        width: ${$isSidebarExpanded ? "calc(100% - 250px)" : "100%"};
-        max-width: 100%;
-        overflow-x: auto;
-      `;
-    } else {
-      return `
-        margin-left: ${$isSidebarExpanded ? "250px" : "80px"};
-        min-width: 1200px;
-        min-height: 100vh;
-      `;
-    }
-  }}
+  @media (min-width: 1024px) {
+    margin-top: 0;
+    margin-left: ${({ $isSidebarExpanded }) => $isSidebarExpanded ? "250px" : "80px"};
+    min-width: 1200px;
+    min-height: 100vh;
+  }
 `;

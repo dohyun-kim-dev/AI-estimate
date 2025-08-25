@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 9,
             "patches": [
                 {
                     "date": 1755958210289,
@@ -12,6 +12,38 @@
                 {
                     "date": 1755958220058,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,9 +12,9 @@\n   const [idError, setIdError] = useState<string | null>(null);\n   const [pwdError, setPwdError] = useState<string | null>(null);\n   const [isLoading, setIsLoading] = useState(false);\n \n-  const router = useRouter();\n+  const navigate = useNavigate();\n   const { login } = useAdminAuth();\n \n   const userIdRegex = /^(?=.*[A-Za-z])(?=.*[0-9])[A-Za-z0-9]{6,20}$/;\n   const passwordRegex =\n@@ -56,9 +56,9 @@\n         },\n         onSuccess: (response) => {\n           login(response.id);\n           toast.success('로그인 성공!');\n-          router.push('/cms');\n+          navigate('/cms');\n         },\n       });\n     } finally {\n       setIsLoading(false);\n"
+                },
+                {
+                    "date": 1756098658391,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -175,9 +175,8 @@\n         {/* 토스트 메시지 */}\n         <ToastContainer\n           position=\"top-center\"\n           autoClose={3000}\n-          hideProgressBar={false}\n           newestOnTop={true}\n           closeOnClick\n           rtl={false}\n           pauseOnFocusLoss\n"
+                },
+                {
+                    "date": 1756109012872,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,5 +1,5 @@\n-import { useState } from 'react';\n+import { useState, useEffect } from 'react';\n import { useNavigate } from \"react-router-dom\";\n import { TextField } from '@/components/TextField';\n import { loginAdminService } from '@/lib/services/loginAdminService';\n import { useAdminAuth } from '@/contexts/AdminAuthContext';\n@@ -13,10 +13,17 @@\n   const [pwdError, setPwdError] = useState<string | null>(null);\n   const [isLoading, setIsLoading] = useState(false);\n \n   const navigate = useNavigate();\n-  const { login } = useAdminAuth();\n+  const { login, isLoggedIn } = useAdminAuth();\n \n+  // 이미 로그인된 상태라면 /cms로 리다이렉트\n+  useEffect(() => {\n+    if (isLoggedIn) {\n+      navigate('/cms', { replace: true });\n+    }\n+  }, [isLoggedIn, navigate]);\n+\n   const userIdRegex = /^(?=.*[A-Za-z])(?=.*[0-9])[A-Za-z0-9]{6,20}$/;\n   const passwordRegex =\n     /^(?=.*[A-Za-z])(?=.*\\d)(?=.*[$@$!%*#?~^<>,.&+=])[A-Za-z\\d$@$!%*#?~^<>,.&+=]{8,}$/;\n \n"
+                },
+                {
+                    "date": 1756109109703,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -152,8 +152,12 @@\n           placeholder=\"비밀번호를 입력하세요\"\n           isPasswordField={true}\n           showSuffixIcon={true}\n           errorMessage={pwdError || undefined}\n+\n+  onKeyDown={(e) => {\n+    if (e.key === \"Enter\") handleLogin();\n+  }}\n         />\n \n         {/* 버튼과 여백 */}\n         <div style={{ height: '8px' }} />\n"
+                },
+                {
+                    "date": 1756109116145,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -152,12 +152,11 @@\n           placeholder=\"비밀번호를 입력하세요\"\n           isPasswordField={true}\n           showSuffixIcon={true}\n           errorMessage={pwdError || undefined}\n-\n-  onKeyDown={(e) => {\n-    if (e.key === \"Enter\") handleLogin();\n-  }}\n+          onKeyDown={(e) => {\n+          if (e.key === \"Enter\") handleLogin();\n+         }}\n         />\n \n         {/* 버튼과 여백 */}\n         <div style={{ height: '8px' }} />\n"
+                },
+                {
+                    "date": 1756109165124,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -152,11 +152,9 @@\n           placeholder=\"비밀번호를 입력하세요\"\n           isPasswordField={true}\n           showSuffixIcon={true}\n           errorMessage={pwdError || undefined}\n-          onKeyDown={(e) => {\n-          if (e.key === \"Enter\") handleLogin();\n-         }}\n+          \n         />\n \n         {/* 버튼과 여백 */}\n         <div style={{ height: '8px' }} />\n"
+                },
+                {
+                    "date": 1756109188079,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -72,8 +72,15 @@\n     }\n   };\n \n   return (\n+    <form\n+  onSubmit={(e) => {\n+    e.preventDefault(); // 새로고침 방지\n+    handleLogin();\n+  }}\n+  style={{ width: \"100%\" }}\n+></form>\n     <div\n       style={{\n         height: '100vh',\n         width: '100vw', // 화면 전체를 감싸도록 설정\n"
+                },
+                {
+                    "date": 1756109194539,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -78,9 +78,9 @@\n     e.preventDefault(); // 새로고침 방지\n     handleLogin();\n   }}\n   style={{ width: \"100%\" }}\n-></form>\n+>\n     <div\n       style={{\n         height: '100vh',\n         width: '100vw', // 화면 전체를 감싸도록 설정\n"
+                },
+                {
+                    "date": 1756111498557,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -199,6 +199,7 @@\n           pauseOnHover\n         />\n       </div>\n     </div>\n+    </form>\n   );\n }\n"
                 }
             ],
             "date": 1755958210289,

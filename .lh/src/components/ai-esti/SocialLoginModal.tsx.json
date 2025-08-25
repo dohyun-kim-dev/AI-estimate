@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 10,
             "patches": [
                 {
                     "date": 1755958292977,
@@ -16,6 +16,38 @@
                 {
                     "date": 1756082558140,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -22,9 +22,9 @@\n   z-index: 1000;\n `;\n \n   const ModalContent = styled.div`\n-    background-color: white;\n+  background-color: white;\n   color: ${AppColors.onSurface};\n   padding: 0;\n   border-radius: 12px;\n   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);\n@@ -181,8 +181,9 @@\n               providerId: userInfo.sub,\n               name: `${userInfo.family_name}${userInfo.given_name}`,\n               email: userInfo.email,\n               profileImage: userInfo.picture,\n+              cellphone: \"\",  // 추가 정보 모달에서 입력받을 예정\n             });\n \n             if (updateResponse.statusCode === 200) {\n               await login(updateResponse.data);\n"
+                },
+                {
+                    "date": 1756099429326,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,8 +33,9 @@\n   display: flex;\n   flex-direction: column;\n   overflow: hidden;\n   position: relative;\n+  ma\n `;\n \n const RightPanel = styled.div`\n   flex: 1;\n"
+                },
+                {
+                    "date": 1756099434858,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,9 +33,9 @@\n   display: flex;\n   flex-direction: column;\n   overflow: hidden;\n   position: relative;\n-  ma\n+  margin: 12px;\n `;\n \n const RightPanel = styled.div`\n   flex: 1;\n"
+                },
+                {
+                    "date": 1756099440158,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,9 +33,9 @@\n   display: flex;\n   flex-direction: column;\n   overflow: hidden;\n   position: relative;\n-  margin: 12px;\n+  margin: 16px;\n `;\n \n const RightPanel = styled.div`\n   flex: 1;\n"
+                },
+                {
+                    "date": 1756099540076,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,9 +33,9 @@\n   display: flex;\n   flex-direction: column;\n   overflow: hidden;\n   position: relative;\n-  margin: 16px;\n+  margin: 12px;\n `;\n \n const RightPanel = styled.div`\n   flex: 1;\n@@ -196,9 +196,9 @@\n           } else {\n             // 4. 기존 사용자면 바로 로그인 처리\n             await login(initialResponse.data);\n             onClose();\n-            toast.success('로그인되었습니다!');\n+            success('로그인되었습니다!');\n           }\n         } else {\n           setLoginError(initialResponse.error?.message || '로그인에 실패했습니다.');\n         }\n"
+                },
+                {
+                    "date": 1756099546460,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -196,9 +196,9 @@\n           } else {\n             // 4. 기존 사용자면 바로 로그인 처리\n             await login(initialResponse.data);\n             onClose();\n-            success('로그인되었습니다!');\n+            uccess('로그인되었습니다!');\n           }\n         } else {\n           setLoginError(initialResponse.error?.message || '로그인에 실패했습니다.');\n         }\n"
+                },
+                {
+                    "date": 1756099553322,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -196,9 +196,9 @@\n           } else {\n             // 4. 기존 사용자면 바로 로그인 처리\n             await login(initialResponse.data);\n             onClose();\n-            uccess('로그인되었습니다!');\n+            success('로그인되었습니다!');\n           }\n         } else {\n           setLoginError(initialResponse.error?.message || '로그인에 실패했습니다.');\n         }\n"
+                },
+                {
+                    "date": 1756099623741,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -141,8 +141,9 @@\n   onClose,\n }) => {\n   const [isLoading, setIsLoading] = useState(false);\n   const [loginError, setLoginError] = useState<string | null>(null);\n+  const { success } = useToast();\n \n   // const store = useAuthStore();\n   // const login = store.login;\n   // const openAdditionalInfoModal = store.openAdditionalInfoModal;\n"
+                },
+                {
+                    "date": 1756099628800,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,11 +4,11 @@\n import CloseIcon from '@mui/icons-material/Close';\n import { useEffect, useState } from 'react';\n import { useGoogleLogin } from '@react-oauth/google';\n import { useNavigate } from \"react-router-dom\";\n-import { toast } from 'react-toastify';\n import { useAuthStore } from '@/store/authStore';\n import { googleLoginInitial, googleLoginUpdate } from '@/lib/api/user/userApi';\n+import { useToast } from '@components/common/ToastProvider';\n \n const ModalOverlay = styled.div<{ $isOpen: boolean }>`\n   position: fixed;\n   top: 0;\n"
                 }
             ],
             "date": 1755958292977,

@@ -2,6 +2,7 @@
 
 import GenericTreeListUI from "@/components/CustomList/GenericTreeListUI";
 import React from "react";
+import CmsResponsiveContainer from "../../../../components/CustomList/ResponsiveList/CmsResponsiveContainer";
 
 // 🔷 인터페이스 정의 (GenericTreeListUI가 요구하는 구조)
 interface TreeNode {
@@ -124,10 +125,13 @@ export default function TreeGridPage() {
   };
 
   return (
-    <GenericTreeListUI
-      title="AI 대화이력 관리"
+    <CmsResponsiveContainer<TreeNode>
+      title="AI 동문서답 관리"
       columns={columns}
       fetchData={fetchData}
+      enableSearch
+      enableDateFilter
+      searchPlaceholder="유저, 아이디, 이메일, 프로젝트명 검색"
       onCellChange={handleCellChange} // ✅ 추가
       themeMode="light"
     />

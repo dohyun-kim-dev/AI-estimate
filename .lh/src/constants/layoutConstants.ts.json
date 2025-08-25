@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/constants/layoutConstants.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1756102648089,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756102677918,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,9 +10,9 @@\n  * Please keep the variable names and change the values according to your project design guidelines.\n  */\n \n export const Breakpoints = {\n-  mobile: 480,\n+  mobile: 770,\n   tablet: 1024,\n   desktop: 1200,\n } as const; // 화면 너비 기준점 | Screen width breakpoints\n \n"
+                }
+            ],
+            "date": 1756102648089,
+            "name": "Commit-0",
+            "content": "import { AppColors } from \"@/styles/colors\";\nimport { AppTextStyles } from \"@/styles/textStyles\";\n\n/**\n * 이 파일은 반응형 레이아웃을 구성하는 데 필요한 상수값들을 정의합니다.\n * 화면 너비 기준점(Breakpoints), 기본 레이아웃 여백(LayoutConstants),\n * 변수명은 유지하고, 값은 프로젝트 디자인 가이드에 맞게 변경해주세요\n * This file defines constants used for responsive layout configuration.\n * It includes screen breakpoints, layout paddings, input field styles,\n * Please keep the variable names and change the values according to your project design guidelines.\n */\n\nexport const Breakpoints = {\n  mobile: 480,\n  tablet: 1024,\n  desktop: 1200,\n} as const; // 화면 너비 기준점 | Screen width breakpoints\n\nexport const LayoutConstants = {\n  screenPadding: {\n    horizontal: {\n      mobile: \"20px\",\n      tablet: \"32px\",\n      desktop: \"64px\",\n    },\n    top: {\n      mobile: \"24px\",\n      tablet: \"32px\",\n      desktop: \"48px\",\n    },\n    bottom: {\n      mobile: \"24px\",\n      tablet: \"32px\",\n      desktop: \"48px\",\n    },\n  },\n}; // 화면 외곽 여백 | Outer screen padding\n"
+        }
+    ]
+}

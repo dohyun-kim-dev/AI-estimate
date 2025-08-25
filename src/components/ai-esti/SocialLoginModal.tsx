@@ -5,9 +5,9 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useEffect, useState } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useNavigate } from "react-router-dom";
-import { toast } from 'react-toastify';
 import { useAuthStore } from '@/store/authStore';
 import { googleLoginInitial, googleLoginUpdate } from '@/lib/api/user/userApi';
+import { useToast } from '@components/common/ToastProvider';
 
 const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
@@ -34,6 +34,7 @@ const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  margin: 12px;
 `;
 
 const RightPanel = styled.div`
@@ -141,6 +142,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const { success } = useToast();
 
   // const store = useAuthStore();
   // const login = store.login;
@@ -196,7 +198,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
             // 4. 기존 사용자면 바로 로그인 처리
             await login(initialResponse.data);
             onClose();
-            toast.success('로그인되었습니다!');
+            success('로그인되었습니다!');
           }
         } else {
           setLoginError(initialResponse.error?.message || '로그인에 실패했습니다.');

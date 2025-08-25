@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/app/cms/aiData/wrong-answer/page.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1756103652599,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756104673533,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,10 +1,1 @@\n-import React from 'react';\n-\n-export default function WrongAnswerPage() {\n-  return (\n-    <div>\n-      <h1>AI 동문서답 관리</h1>\n-      {/* 컴포넌트 내용 */}\n-    </div>\n-  );\n-}\n+ \n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1756103652599,
+            "name": "Commit-0",
+            "content": "import React from 'react';\n\nexport default function WrongAnswerPage() {\n  return (\n    <div>\n      <h1>AI 동문서답 관리</h1>\n      {/* 컴포넌트 내용 */}\n    </div>\n  );\n}\n"
+        }
+    ]
+}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { TextField } from '@/components/TextField';
 import { loginAdminService } from '@/lib/services/loginAdminService';
@@ -14,7 +14,14 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { login } = useAdminAuth();
+  const { login, isLoggedIn } = useAdminAuth();
+
+  // 이미 로그인된 상태라면 /cms로 리다이렉트
+  useEffect(() => {
+    if (isLoggedIn) {
+      navigate('/cms', { replace: true });
+    }
+  }, [isLoggedIn, navigate]);
 
   const userIdRegex = /^(?=.*[A-Za-z])(?=.*[0-9])[A-Za-z0-9]{6,20}$/;
   const passwordRegex =
@@ -66,6 +73,13 @@ export default function LoginPage() {
   };
 
   return (
+    <form
+  onSubmit={(e) => {
+    e.preventDefault(); // 새로고침 방지
+    handleLogin();
+  }}
+  style={{ width: "100%" }}
+>
     <div
       style={{
         height: '100vh',
@@ -146,6 +160,7 @@ export default function LoginPage() {
           isPasswordField={true}
           showSuffixIcon={true}
           errorMessage={pwdError || undefined}
+          
         />
 
         {/* 버튼과 여백 */}
@@ -176,7 +191,6 @@ export default function LoginPage() {
         <ToastContainer
           position="top-center"
           autoClose={3000}
-          hideProgressBar={false}
           newestOnTop={true}
           closeOnClick
           rtl={false}
@@ -186,5 +200,6 @@ export default function LoginPage() {
         />
       </div>
     </div>
+    </form>
   );
 }

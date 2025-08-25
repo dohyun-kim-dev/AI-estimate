@@ -341,6 +341,12 @@ const AdminMngPage: React.FC = () => {
         sortable: true,
         formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '-'),
       },
+      {
+        header: '최근 접속',
+        accessor: 'lastLoginTime',
+        sortable: true,
+        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '-'),
+      },
       { header: '이름', accessor: 'name' },
       { header: '아이디', accessor: 'adminId' },
       { header: '이메일', accessor: 'email' },
@@ -355,7 +361,6 @@ const AdminMngPage: React.FC = () => {
       <ToastContainer
         position="top-center"
         autoClose={3000}
-        hideProgressBar={false}
         newestOnTop={false}
         closeOnClick
         rtl={false}
@@ -377,7 +382,7 @@ const AdminMngPage: React.FC = () => {
   themeMode="light"
   compactFieldCount={3} // 모바일 compact 모드에서 보여줄 필드 수
   defaultViewMode="detail" // 모바일 기본 보기 모드
-  enableDateFilter={true}
+  enableDateFilter={false}
 />
 <CmsPopup
   title="관리자등록"

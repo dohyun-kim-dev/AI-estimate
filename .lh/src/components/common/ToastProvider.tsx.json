@@ -3,11 +3,63 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 13,
             "patches": [
                 {
                     "date": 1756082844315,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756098372859,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -46,9 +46,9 @@\n `\n \n const Card = styled.div<{ $type: ToastType }>`\n   background: ${({ $type }) => ($type === 'success' ? '#4263EB' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n-  color: #FFFFFF;\n+  background: #FFFFFF;\n   border-radius: 8px;\n   pointer-events: all;\n   animation: ${slideDown} 0.16s ease both;\n   overflow: hidden;\n"
+                },
+                {
+                    "date": 1756098378618,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -45,9 +45,9 @@\n   pointer-events: none;\n `\n \n const Card = styled.div<{ $type: ToastType }>`\n-  background: ${({ $type }) => ($type === 'success' ? '#4263EB' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n+  color: ${({ $type }) => ($type === 'success' ? '#4263EB' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n   background: #FFFFFF;\n   border-radius: 8px;\n   pointer-events: all;\n   animation: ${slideDown} 0.16s ease both;\n"
+                },
+                {
+                    "date": 1756098385182,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -46,9 +46,9 @@\n `\n \n const Card = styled.div<{ $type: ToastType }>`\n   color: ${({ $type }) => ($type === 'success' ? '#4263EB' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n-  background: #FFFFFF;\n+  background: ${({ $type }) => ($type === 'success' ? '#4263EB' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n   border-radius: 8px;\n   pointer-events: all;\n   animation: ${slideDown} 0.16s ease both;\n   overflow: hidden;\n"
+                },
+                {
+                    "date": 1756098391456,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -46,9 +46,9 @@\n `\n \n const Card = styled.div<{ $type: ToastType }>`\n   color: ${({ $type }) => ($type === 'success' ? '#4263EB' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n-  background: ${({ $type }) => ($type === 'success' ? '#4263EB' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n+  background: #FFFFFF;\n   border-radius: 8px;\n   pointer-events: all;\n   animation: ${slideDown} 0.16s ease both;\n   overflow: hidden;\n"
+                },
+                {
+                    "date": 1756098430130,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -66,9 +66,9 @@\n const IconBox = styled.div<{ $type: ToastType }>`\n   display: flex;\n   align-items: center;\n   justify-content: center;\n-  color: #FFFFFF;\n+  color: ${({ $type }) => ($type === 'success' ? '#4263EB' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n `\n \n const Message = styled.div`\n   font-size: 14px;\n"
+                },
+                {
+                    "date": 1756098453861,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -45,9 +45,9 @@\n   pointer-events: none;\n `\n \n const Card = styled.div<{ $type: ToastType }>`\n-  color: ${({ $type }) => ($type === 'success' ? '#4263EB' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n+  color: ${({ $type }) => ($type === 'success' ? '##6565FC' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n   background: #FFFFFF;\n   border-radius: 8px;\n   pointer-events: all;\n   animation: ${slideDown} 0.16s ease both;\n@@ -72,9 +72,9 @@\n \n const Message = styled.div`\n   font-size: 14px;\n   line-height: 1.45;\n-  color: #FFFFFF;\n+  color: ${({ $type }) => ($type === 'success' ? '#4263EB' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n   font-weight: 500;\n   flex: 1;\n `\n \n"
+                },
+                {
+                    "date": 1756098462522,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -45,9 +45,9 @@\n   pointer-events: none;\n `\n \n const Card = styled.div<{ $type: ToastType }>`\n-  color: ${({ $type }) => ($type === 'success' ? '##6565FC' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n+  color: ${({ $type }) => ($type === 'success' ? '#6565FC' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n   background: #FFFFFF;\n   border-radius: 8px;\n   pointer-events: all;\n   animation: ${slideDown} 0.16s ease both;\n@@ -66,9 +66,9 @@\n const IconBox = styled.div<{ $type: ToastType }>`\n   display: flex;\n   align-items: center;\n   justify-content: center;\n-  color: ${({ $type }) => ($type === 'success' ? '#4263EB' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n+  color: ${({ $type }) => ($type === 'success' ? '#6565FC' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n `\n \n const Message = styled.div`\n   font-size: 14px;\n"
+                },
+                {
+                    "date": 1756098470622,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -72,9 +72,9 @@\n \n const Message = styled.div`\n   font-size: 14px;\n   line-height: 1.45;\n-  color: ${({ $type }) => ($type === 'success' ? '#4263EB' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n+  color: #000;\n   font-weight: 500;\n   flex: 1;\n `\n \n"
+                },
+                {
+                    "date": 1756098517918,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -43,8 +43,14 @@\n   gap: 8px;\n   z-index: 9999;\n   pointer-events: none;\n `\n+const Progress = styled.div<{ $type: ToastType; $duration: number }>`\n+  height: 3px;\n+  background-color: ${({ $type }) => ($type === 'success' ? '#6565FC' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n+  width: 100%;\n+  animation: ${deplete} ${({ $duration }) => $duration}ms linear forwards;\n+`;\n \n const Card = styled.div<{ $type: ToastType }>`\n   color: ${({ $type }) => ($type === 'success' ? '#6565FC' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n   background: #FFFFFF;\n@@ -54,10 +60,16 @@\n   overflow: hidden;\n   min-width: 280px;\n   max-width: min(360px, calc(100vw - 24px));\n   padding: 16px 20px;\n-`\n+  display: flex;\n+  flex-direction: column;\n+`;\n \n+const deplete = keyframes`\n+  from { width: 100%; }\n+  to { width: 0%; }\n+`;\n const Row = styled.div`\n   display: flex;\n   align-items: center;\n   gap: 12px;\n"
+                },
+                {
+                    "date": 1756098552487,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -68,8 +68,9 @@\n const deplete = keyframes`\n   from { width: 100%; }\n   to { width: 0%; }\n `;\n+\n const Row = styled.div`\n   display: flex;\n   align-items: center;\n   gap: 12px;\n@@ -140,16 +141,17 @@\n         {toasts.map((t) => {\n           const Icon = TYPE_ICON[t.type]\n           return (\n             <Card key={t.id} $type={t.type}>\n-              <Row>\n-                <IconBox $type={t.type}><Icon size={24} /></IconBox>\n-                <Message>{t.message}</Message>\n-                <CloseButton aria-label=\"close\" onClick={() => remove(t.id)}>\n-                  <IoClose size={20} />\n-                </CloseButton>\n-              </Row>\n-            </Card>\n+  <Row>\n+    <IconBox $type={t.type}><Icon size={24} /></IconBox>\n+    <Message>{t.message}</Message>\n+    <CloseButton aria-label=\"close\" onClick={() => remove(t.id)}>\n+      <IoClose size={20} />\n+    </CloseButton>\n+  </Row>\n+  <Progress $type={t.type} $duration={t.duration} />\n+</Card>\n           )\n         })}\n       </Container>\n     </ToastContext.Provider>\n"
+                },
+                {
+                    "date": 1756098562004,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -64,13 +64,10 @@\n   display: flex;\n   flex-direction: column;\n `;\n \n-const deplete = keyframes`\n-  from { width: 100%; }\n-  to { width: 0%; }\n-`;\n \n+\n const Row = styled.div`\n   display: flex;\n   align-items: center;\n   gap: 12px;\n"
+                },
+                {
+                    "date": 1756098576095,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -64,10 +64,13 @@\n   display: flex;\n   flex-direction: column;\n `;\n \n+const deplete = keyframes`\n+  from { width: 100%; }\n+  to { width: 0%; }\n+`;\n \n-\n const Row = styled.div`\n   display: flex;\n   align-items: center;\n   gap: 12px;\n@@ -138,17 +141,16 @@\n         {toasts.map((t) => {\n           const Icon = TYPE_ICON[t.type]\n           return (\n             <Card key={t.id} $type={t.type}>\n-  <Row>\n-    <IconBox $type={t.type}><Icon size={24} /></IconBox>\n-    <Message>{t.message}</Message>\n-    <CloseButton aria-label=\"close\" onClick={() => remove(t.id)}>\n-      <IoClose size={20} />\n-    </CloseButton>\n-  </Row>\n-  <Progress $type={t.type} $duration={t.duration} />\n-</Card>\n+              <Row>\n+                <IconBox $type={t.type}><Icon size={24} /></IconBox>\n+                <Message>{t.message}</Message>\n+                <CloseButton aria-label=\"close\" onClick={() => remove(t.id)}>\n+                  <IoClose size={20} />\n+                </CloseButton>\n+              </Row>\n+            </Card>\n           )\n         })}\n       </Container>\n     </ToastContext.Provider>\n"
+                },
+                {
+                    "date": 1756098824444,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -43,14 +43,18 @@\n   gap: 8px;\n   z-index: 9999;\n   pointer-events: none;\n `\n+\n const Progress = styled.div<{ $type: ToastType; $duration: number }>`\n+  position: absolute;\n+  bottom: 0;\n+  left: 0;\n   height: 3px;\n-  background-color: ${({ $type }) => ($type === 'success' ? '#6565FC' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n-  width: 100%;\n-  animation: ${deplete} ${({ $duration }) => $duration}ms linear forwards;\n-`;\n+  background: ${({ $type }) => ($type === 'success' ? '#6565FC' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n+  animation: ${deplete} ${({ $duration }) => $duration}ms linear;\n+  transform-origin: left;\n+`\n \n const Card = styled.div<{ $type: ToastType }>`\n   color: ${({ $type }) => ($type === 'success' ? '#6565FC' : $type === 'error' ? '#F03E3E' : '#3391FF')};\n   background: #FFFFFF;\n@@ -60,17 +64,11 @@\n   overflow: hidden;\n   min-width: 280px;\n   max-width: min(360px, calc(100vw - 24px));\n   padding: 16px 20px;\n-  display: flex;\n-  flex-direction: column;\n-`;\n+  position: relative;\n+`\n \n-const deplete = keyframes`\n-  from { width: 100%; }\n-  to { width: 0%; }\n-`;\n-\n const Row = styled.div`\n   display: flex;\n   align-items: center;\n   gap: 12px;\n@@ -148,8 +146,9 @@\n                 <CloseButton aria-label=\"close\" onClick={() => remove(t.id)}>\n                   <IoClose size={20} />\n                 </CloseButton>\n               </Row>\n+              <Progress $type={t.type} $duration={t.duration} />\n             </Card>\n           )\n         })}\n       </Container>\n"
                 }
             ],
             "date": 1756082844315,

@@ -8,6 +8,7 @@ export interface MenuItemConfig {
   title: string;
   path: string;
   subMenu?: MenuItemConfig[] | null;
+  id: string; // 각 메뉴별 고유 ID 필요
 }
 
 interface CustomSidebarProps {
@@ -29,18 +30,16 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
+  const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
 
-  const isActive = (itemPath: string) => location.pathname === itemPath;
+  const isActive = (path: string) => location.pathname === path;
 
-  const isMenuExpanded = (subMenu?: MenuItemConfig[] | null) => {
-    if (!subMenu) return false;
-    return subMenu.some((sub) => location.pathname.startsWith(sub.path));
-  };
-
-  const handleMenuClick = (path: string, hasSubMenu: boolean) => {
-    if (hasSubMenu) {
-      setExpandedMenu(expandedMenu === path ? null : path);
+  const handleMenuToggle = (id: string, path?: string) => {
+    setOpenMenus((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+    if (path) {
       navigate(path);
     }
   };
@@ -66,33 +65,28 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({
       <MenuList $isCollapsed={isCollapsed}>
         {menuItems.map((item) => {
           const hasSubMenu = !!item.subMenu;
+          const expanded = !!openMenus[item.id];
           const active = isActive(item.path);
-          const expanded =
-            expandedMenu === item.path || isMenuExpanded(item.subMenu);
-          const shouldBeActive = active || isMenuExpanded(item.subMenu);
 
           return (
-            <React.Fragment key={item.path}>
+            <React.Fragment key={item.id}>
               {hasSubMenu ? (
                 <MenuItem
                   as="div"
                   $isCollapsed={isCollapsed}
-                  $active={shouldBeActive}
-                  onClick={() => handleMenuClick(item.path, true)}
+                  $active={active || expanded}
+                  onClick={() => handleMenuToggle(item.id, item.path)}
                 >
                   <Center $isCollapsed={isCollapsed}>
                     <IconWrapper $isCollapsed={isCollapsed}>
                       {item.icon}
                     </IconWrapper>
-
                     {!isCollapsed && (
                       <RightContent>
                         <span>{item.title}</span>
-                        {hasSubMenu && (
-                          <ArrowWrapper>
-                            {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                          </ArrowWrapper>
-                        )}
+                        <ArrowWrapper>
+                          {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </ArrowWrapper>
                       </RightContent>
                     )}
                   </Center>
@@ -108,23 +102,19 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({
                     <IconWrapper $isCollapsed={isCollapsed}>
                       {item.icon}
                     </IconWrapper>
-                    {!isCollapsed && (
-                      <RightContent>
-                        <span>{item.title}</span>
-                      </RightContent>
-                    )}
+                    {!isCollapsed && <RightContent>{item.title}</RightContent>}
                   </Center>
                 </MenuItem>
               )}
 
-              {expanded && item.subMenu && (
+              {hasSubMenu && expanded && item.subMenu && (
                 <SubMenuList>
                   {item.subMenu.map((subItem) => (
                     <SubMenuItem
-                      key={subItem.path}
+                      key={subItem.id}
                       as={Link}
                       to={subItem.path}
-                      $active={location.pathname === subItem.path}
+                      $active={isActive(subItem.path)}
                     >
                       <IconWrapper>{subItem.icon}</IconWrapper>
                       {subItem.title}
@@ -146,7 +136,6 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({
 };
 
 export default CustomSidebar;
-
 // --- Styled Components ---
 
 const SidebarContainer = styled.div<{ $isCollapsed: boolean }>`
@@ -185,7 +174,7 @@ const ToggleButton = styled.button<{ $isCollapsed: boolean }>`
 const RightContent = styled.div`
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   flex: 1;
   gap: 8px;
   padding-right: 20px;

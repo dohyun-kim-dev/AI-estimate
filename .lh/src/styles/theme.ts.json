@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 12,
+            "activePatchIndex": 18,
             "patches": [
                 {
                     "date": 1756085046155,
@@ -56,6 +56,30 @@
                 {
                     "date": 1756085221540,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,11 +6,10 @@\n   surface2: '#F7F7F7', // 헤더 등 강조 영역 배경\n   surface3: '#FFFFFF', // 헤더 등 강조 영역 배경\n   card: '#FFFFFF',\n   cardButton: '#D8DDE5',  \n-  cardBorder: '#2F2F38',\n-\n   cardBorder: '#D8DDE5',\n+  \n   // 텍스트 및 기타 색상\n   text: '#171B23', // 기본 텍스트\n   subtleText: '#666666', // 보조 텍스트\n   border: '#CBCBCC', // 테두리\n@@ -36,9 +35,9 @@\n   surface2: '#171B23', // 헤더 등 강조 영역 배경\n   surface3: '#1E212D', // 헤더 등 강조 영역 배경\n   card: '#121212',\n   cardButton: '#27313F',\n-  cardBorder: '#D8DDE5',\n+  cardBorder: '#2F2F38',\n \n   track: '#374151', // 슬라이더 트랙\n   // 텍스트 및 기타 색상\n   text: '#F8F8F8', // 기본 텍스트\n"
+                },
+                {
+                    "date": 1756094732174,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,8 +25,18 @@\n   accordionLevel2: '#F8F8F8',\n   accordionLevel3: '#f0f0f0',\n \n   actionButton: '#F3F3F3',\n+  inputBg: '#FFFFFF',\n+  inputBorder: '#E5E7EB',\n+  cardBg: '#FFFFFF',\n+  cardShadow: 'rgba(0, 0, 0, 0.1)',\n+  statBg: '#F8F9FA',\n+  statText: '#4263EB',\n+  testimonialBg: '#FFFFFF',\n+  testimonialBorder: '#E5E7EB',\n+  bottomNavBg: '#FFFFFF',\n+  bottomNavBorder: '#E5E7EB',\n };\n \n export const darkTheme = {\n   // 사용자가 제공한 다크 모드 색상\n@@ -54,7 +64,17 @@\n   accordionLevel2: '#1E1E24',\n   accordionLevel3: '#1E1E24',\n \n   actionButton: '#283139',\n+  inputBg: '#1E1E2D',\n+  inputBorder: '#2F2F38',\n+  cardBg: '#1E1E2D',\n+  cardShadow: 'rgba(0, 0, 0, 0.3)',\n+  statBg: '#1E1E2D',\n+  statText: '#3391FF',\n+  testimonialBg: '#1E1E2D',\n+  testimonialBorder: '#2F2F38',\n+  bottomNavBg: '#08080F',\n+  bottomNavBorder: '#2F2F38',\n };\n \n export type Theme = typeof lightTheme;\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756096998905,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -68,8 +68,9 @@\n   inputBg: '#1E1E2D',\n   inputBorder: '#2F2F38',\n   cardBg: '#1E1E2D',\n   cardShadow: 'rgba(0, 0, 0, 0.3)',\n+  #6366F1\n   statBg: '#1E1E2D',\n   statText: '#3391FF',\n   testimonialBg: '#1E1E2D',\n   testimonialBorder: '#2F2F38',\n"
+                },
+                {
+                    "date": 1756097004787,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -68,9 +68,9 @@\n   inputBg: '#1E1E2D',\n   inputBorder: '#2F2F38',\n   cardBg: '#1E1E2D',\n   cardShadow: 'rgba(0, 0, 0, 0.3)',\n-  #6366F1\n+  card\n   statBg: '#1E1E2D',\n   statText: '#3391FF',\n   testimonialBg: '#1E1E2D',\n   testimonialBorder: '#2F2F38',\n"
+                },
+                {
+                    "date": 1756097011221,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -68,9 +68,9 @@\n   inputBg: '#1E1E2D',\n   inputBorder: '#2F2F38',\n   cardBg: '#1E1E2D',\n   cardShadow: 'rgba(0, 0, 0, 0.3)',\n-  card\n+  cardText: '#6366F1'\n   statBg: '#1E1E2D',\n   statText: '#3391FF',\n   testimonialBg: '#1E1E2D',\n   testimonialBorder: '#2F2F38',\n"
+                },
+                {
+                    "date": 1756097022896,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,8 +29,9 @@\n   inputBg: '#FFFFFF',\n   inputBorder: '#E5E7EB',\n   cardBg: '#FFFFFF',\n   cardShadow: 'rgba(0, 0, 0, 0.1)',\n+  #6366F1\n   statBg: '#F8F9FA',\n   statText: '#4263EB',\n   testimonialBg: '#FFFFFF',\n   testimonialBorder: '#E5E7EB',\n@@ -68,9 +69,9 @@\n   inputBg: '#1E1E2D',\n   inputBorder: '#2F2F38',\n   cardBg: '#1E1E2D',\n   cardShadow: 'rgba(0, 0, 0, 0.3)',\n-  cardText: '#6366F1'\n+  cardText: '#6366F1',\n   statBg: '#1E1E2D',\n   statText: '#3391FF',\n   testimonialBg: '#1E1E2D',\n   testimonialBorder: '#2F2F38',\n"
+                },
+                {
+                    "date": 1756097369604,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,9 +29,9 @@\n   inputBg: '#FFFFFF',\n   inputBorder: '#E5E7EB',\n   cardBg: '#FFFFFF',\n   cardShadow: 'rgba(0, 0, 0, 0.1)',\n-  #6366F1\n+  cardText: '#4263EB',\n   statBg: '#F8F9FA',\n   statText: '#4263EB',\n   testimonialBg: '#FFFFFF',\n   testimonialBorder: '#E5E7EB',\n@@ -70,9 +70,9 @@\n   inputBorder: '#2F2F38',\n   cardBg: '#1E1E2D',\n   cardShadow: 'rgba(0, 0, 0, 0.3)',\n   cardText: '#6366F1',\n-  statBg: '#1E1E2D',\n+  statBg: '#0A0F1D',\n   statText: '#3391FF',\n   testimonialBg: '#1E1E2D',\n   testimonialBorder: '#2F2F38',\n   bottomNavBg: '#08080F',\n"
                 }
             ],
             "date": 1756085046155,

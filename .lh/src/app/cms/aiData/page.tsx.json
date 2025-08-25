@@ -3,11 +3,23 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1755958017825,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756103540717,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -0,0 +1,12 @@\n+import { useEffect } from \"react\";\n+import { useNavigate } from \"react-router-dom\";\n+\n+export default function AiDataRedirectPage() {\n+  const navigate = useNavigate();\n+\n+  useEffect(() => {\n+    navigate(\"/cms/ai-ㅇata/survey\");\n+  }, [navigate]);\n+\n+  return null; // 로딩 메시지나 스피너를 추가할 수도 있음\n+}\n"
+                },
+                {
+                    "date": 1756103652601,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,24 +1,17 @@\n-import { useEffect } from \"react\";\n-import { useNavigate } from \"react-router-dom\";\n+import Survey from './survey/page';\n+import Prompt from './prompt/page';\n+import WrongAnswer from './wrong-answer/page';\n+import ConversationHistory from './conversation-history/page';\n \n+// 리다이렉트 페이지\n export default function AiDataRedirectPage() {\n-  const navigate = useNavigate();\n-\n-  useEffect(() => {\n-    navigate(\"/cms/ai-ㅇata/survey\");\n-  }, [navigate]);\n-\n-  return null; // 로딩 메시지나 스피너를 추가할 수도 있음\n+  return <Survey />;  // 기본적으로 Survey 페이지를 보여줌\n }\n-import { useEffect } from \"react\";\n-import { useNavigate } from \"react-router-dom\";\n \n-export default function AiDataRedirectPage() {\n-  const navigate = useNavigate();\n-\n-  useEffect(() => {\n-    navigate(\"/cms/aiData/survey\");\n-  }, [router]);\n-\n-  return null; // 로딩 메시지나 스피너를 추가할 수도 있음\n-}\n+// 서브 페이지들 export\n+export {\n+  Survey,\n+  Prompt,\n+  WrongAnswer,\n+  ConversationHistory\n+};\n"
+                },
+                {
+                    "date": 1756104674169,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,17 +1,12 @@\n-import Survey from './survey/page';\n-import Prompt from './prompt/page';\n-import WrongAnswer from './wrong-answer/page';\n-import ConversationHistory from './conversation-history/page';\n+import { useEffect } from \"react\";\n+import { useNavigate } from \"react-router-dom\";\n \n-// 리다이렉트 페이지\n export default function AiDataRedirectPage() {\n-  return <Survey />;  // 기본적으로 Survey 페이지를 보여줌\n+  const navigate = useNavigate();\n+\n+  useEffect(() => {\n+    navigate(\"/cms/ai-data/survey\");\n+  }, [navigate]);\n+\n+  return null; // 로딩 메시지나 스피너를 추가할 수도 있음\n }\n-\n-// 서브 페이지들 export\n-export {\n-  Survey,\n-  Prompt,\n-  WrongAnswer,\n-  ConversationHistory\n-};\n"
                 }
             ],
             "date": 1755958017825,
