@@ -7,7 +7,8 @@ import MyEstimateCard from '../../../components/ai-esti/MyEstimateCard'
 const Container = styled.div`
   max-width: 960px;
   margin: 0 auto;
-  padding: 16px;
+  margin-bottom: 100px;
+  padding: 0 16px;
 `
 
 const EmptyState = styled.div`
@@ -46,10 +47,10 @@ const CTAButton = styled.button`
 
 // 그룹 타이틀
 const GroupTitle = styled.h2`
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 500;
   color: ${({ theme }) => theme.text};
-  margin: 32px 0 16px;
+  margin: 32px 0 12px;
 `
 const mockEstimates: ProjectEstimate[] = [
   {

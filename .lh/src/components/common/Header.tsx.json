@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1756083030310,
@@ -20,6 +20,14 @@
                 {
                     "date": 1756083283840,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,5 +1,4 @@\n-import React from 'react'\n import styled from 'styled-components'\n import { useNavigate } from 'react-router-dom' // ✅ 추가\n \n import { useThemeStore } from '@/store/themeStore'\n"
+                },
+                {
+                    "date": 1756170263785,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,9 +12,9 @@\n   left: 0;\n   right: 0;\n   height: 56px;\n   background-color: ${({ theme }) => theme.body};\n-  z-index: 100;\n+  z-index: 1000;\n `\n \n const HeaderContent = styled.div`\n   max-width: 1200px;\n"
+                },
+                {
+                    "date": 1756173224237,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -115,9 +115,9 @@\n           </ThemeToggle>\n           <Profile onClick={handleProfileClick}>\n             {isAuthenticated() && user ? (\n               <>\n-                <ProfileName>{user.name}</ProfileName>\n+                {/* <ProfileName>{user.name}</ProfileName> */}\n                 <ProfileImage>\n                   <img \n                     src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} \n                     alt=\"프로필\" \n"
                 }
             ],
             "date": 1756083030310,

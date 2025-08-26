@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import styled from 'styled-components'
 import useAI from '@/hooks/useAI'
 import { useToast } from '@/components/common/ToastProvider'
@@ -21,6 +21,7 @@ const Container = styled.div`
   margin: 0 auto;
   padding: 16px;
   padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  margin-bottom: 200px;
 `
 
 const ChatBox = styled.div`
@@ -44,7 +45,7 @@ const UserMessage = styled.div`
 `
 const StyledAiMessage = styled(AiResponseMessage)<{ isFullWidth?: boolean }>`
   padding: 0;
-  max-width: ${({ isFullWidth }) => (isFullWidth ? '100%' : '80%')}; // 👈 prop에 따라 동적 스타일 적용
+  max-width: ${({ isFullWidth }) => (isFullWidth ? '100%' : '80%')};
   align-self: flex-start;
 `
 
@@ -146,7 +147,6 @@ const AnimatedContainer = styled.div<{ $isvisible: boolean }>`
 
 type ModelName = 'gemini-2.5-flash' | 'gemini-2.5-flash-lite' | 'gemini-2.0-flash';
 
-// JSON 응답에서 견적서 데이터 추출
 const extractEstimateData = (content: string): ProjectEstimate | null => {
   try {
     const match = content.match(/<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/);
@@ -155,7 +155,6 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
     const jsonStr = match[1];
     const data = JSON.parse(jsonStr);
     
-    // 데이터 구조 검증
     if (!data || typeof data !== 'object' || !Array.isArray(data.categories)) {
       console.error('Invalid estimate data structure:', data);
       return null;
@@ -168,11 +167,10 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
   }
 };
 
-// AI 응답 메시지 렌더링 컴포넌트
 const AiMessageContent: React.FC<{ content: string }> = ({ content }) => {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
-  const [projectPeriod, setProjectPeriod] = useState(20); // 기본값
+  const [projectPeriod, setProjectPeriod] = useState(20);
   
   const estimateData = extractEstimateData(content);
   
@@ -187,7 +185,6 @@ const AiMessageContent: React.FC<{ content: string }> = ({ content }) => {
   if (estimateData && estimateData.categories) {
     return (
       <EstimateContainer>
-        {/* 견적서 JSON 이전의 텍스트가 있다면 표시 */}
         {content.split('<script')[0].trim() && (
           <div style={{ marginBottom: '16px' }}>
             {content.split('<script')[0].trim()}
@@ -249,6 +246,15 @@ export default function AiChatPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const updateLastMessage = useChatStore((s) => s.updateLastMessage);
 
+  // ⭐️ 1. useRef 훅으로 스크롤을 위한 ref 생성
+  const endOfMessagesRef = useRef<HTMLDivElement>(null);
+
+  // ⭐️ 2. 메시지가 업데이트될 때마다 스크롤을 맨 아래로 이동
+  useEffect(() => {
+    if (endOfMessagesRef.current) {
+      endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages.length]);
 
   const isEstimateMessage = (content: string) => {
     return content.includes('<script type="application/json" id="invoiceData">');
@@ -266,7 +272,7 @@ export default function AiChatPage() {
     try {
       const combinedPrompt = combinePrompts(selectedPromptId, input);
       const reply = await sendChat(combinedPrompt);
-      updateLastMessage(reply); // 마지막 메시지를 응답으로 업데이트
+      updateLastMessage(reply);
     } finally {
       setIsProcessing(false);
     }
@@ -316,6 +322,8 @@ export default function AiChatPage() {
             />
           )
         ))}
+        {/* ⭐️ 3. 채팅창 가장 아래에 빈 div를 추가하고 ref 연결 */}
+        <div ref={endOfMessagesRef} />
       </ChatBox>
 
       <BottomInput 

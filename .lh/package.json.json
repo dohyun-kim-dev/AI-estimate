@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 4,
+            "activePatchIndex": 7,
             "patches": [
                 {
                     "date": 1755954633520,
@@ -24,6 +24,18 @@
                 {
                     "date": 1756113973757,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n   \"private\": true,\n   \"type\": \"module\",\n   \"scripts\": {\n     \"dev\": \"vite\",\n-    \"build\": \"tsc && vite build\",\n+    \"build\": \"vite build\",\n     \"lint\": \"eslint .\",\n     \"preview\": \"vite preview\"\n   },\n   \"dependencies\": {\n"
+                },
+                {
+                    "date": 1756170773015,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n   \"private\": true,\n   \"type\": \"module\",\n   \"scripts\": {\n     \"dev\": \"vite\",\n-    \"build\": \"vite build\",\n+    \"build\": \"rimraf dist && tsc\"\n     \"lint\": \"eslint .\",\n     \"preview\": \"vite preview\"\n   },\n   \"dependencies\": {\n"
+                },
+                {
+                    "date": 1756171397573,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n   \"private\": true,\n   \"type\": \"module\",\n   \"scripts\": {\n     \"dev\": \"vite\",\n-    \"build\": \"rimraf dist && tsc\"\n+    \"build\": \"vite build\",\n     \"lint\": \"eslint .\",\n     \"preview\": \"vite preview\"\n   },\n   \"dependencies\": {\n@@ -65,10 +65,12 @@\n     \"xlsx\": \"^0.18.5\",\n     \"zustand\": \"^4.5.2\"\n   },\n   \"devDependencies\": {\n+    \"@types/gsap\": \"^1.20.2\",\n     \"@types/node\": \"^20.11.24\",\n     \"@types/react\": \"^19.0.0\",\n+    \"@types/react-datepicker\": \"^6.2.0\",\n     \"@types/react-dom\": \"^19.0.0\",\n     \"@typescript-eslint/eslint-plugin\": \"^7.1.1\",\n     \"@typescript-eslint/parser\": \"^7.1.1\",\n     \"@vitejs/plugin-react\": \"^4.2.1\",\n@@ -78,5 +80,5 @@\n     \"eslint-plugin-react-refresh\": \"^0.4.5\",\n     \"typescript\": \"^5.3.3\",\n     \"vite\": \"^5.1.4\"\n   }\n-}\n\\ No newline at end of file\n+}\n"
+                },
+                {
+                    "date": 1756183916981,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,9 +3,9 @@\n   \"version\": \"0.1.0\",\n   \"private\": true,\n   \"type\": \"module\",\n   \"scripts\": {\n-    \"dev\": \"vite\",\n+    \"dev\": \"vite --host\",\n     \"build\": \"vite build\",\n     \"lint\": \"eslint .\",\n     \"preview\": \"vite preview\"\n   },\n"
                 }
             ],
             "date": 1755954633520,

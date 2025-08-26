@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation,useNavigate } from 'react-router-dom'
 import { useThemeStore } from '@/store/themeStore'
 import Icon, { IconName } from '@/components/ai-esti/Icon'
 
@@ -82,7 +82,7 @@ function getIconSrc(key: ItemKey, isDark: boolean, isActive: boolean) {
 const Footer: React.FC<FooterProps> = ({ compact }) => {
   const location = useLocation()
   const { isDarkMode } = useThemeStore()
-
+  const navigate = useNavigate()  
   // 부모 창의 뷰포트 폭(Widget에서 전달)을 기반으로 임베드 모바일 여부 판정
   const [parentWidth, setParentWidth] = useState<number | null>(null)
   const [isEmbed, setIsEmbed] = useState(false)
@@ -108,6 +108,18 @@ const Footer: React.FC<FooterProps> = ({ compact }) => {
     { key: 'full', fallbackIcon: 'expand', text: '전체화면', external: true },
   ]
 
+  const handleConsultationClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault() // Link 컴포넌트의 기본 동작 방지
+
+    if (location.pathname === '/') {
+      // 현재 경로가 '/'일 때만 스크롤을 맨 위로 부드럽게 올림
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else {
+      // 다른 경로에 있을 때는 '/'로 이동
+      navigate('/')
+    }
+  }
+
   return (
     <FooterWrapper $compact={compact}>
       <FooterContent>
@@ -115,6 +127,19 @@ const Footer: React.FC<FooterProps> = ({ compact }) => {
           // 임베드 + 부모 모바일이면 전체화면 메뉴 숨김
           if (item.external && hideFull) return null
 
+          // '견적상담' 아이템을 별도로 처리
+          if (item.key === 'consultation') {
+            const isActive = location.pathname === item.href
+            const iconSrc = getIconSrc(item.key, isDarkMode, isActive)
+            return (
+              <ButtonLike key={item.href} $isActive={isActive} onClick={handleConsultationClick}>
+                <IconWrapper $isActive={isActive}>
+                  <Icon src={iconSrc} width={80} height={60} fallbackIcon={item.fallbackIcon} />
+                </IconWrapper>
+                {/* <NavText>{item.text}</NavText> */}
+              </ButtonLike>
+            )
+          }
           const isActive = item.href ? location.pathname === item.href : false
           const iconSrc = getIconSrc(item.key, isDarkMode, item.external ? false : isActive)
 

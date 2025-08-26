@@ -1,0 +1,102 @@
+{
+    "sourceFile": "src/components/ai-esti/TermsAgreement.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 21,
+            "patches": [
+                {
+                    "date": 1756175405989,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756175411727,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -85,9 +85,9 @@\n \n const TermsContent = styled.div`\n   white-space: pre-wrap;\n   line-height: 1.6;\n-  color: ${({ theme }) => theme.text};\n+  // color: ${({ theme }) => theme.text};\n   font-size: 14px;\n   max-height: 60vh;\n   overflow-y: auto;\n   padding: 16px;\n"
+                },
+                {
+                    "date": 1756175507128,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -90,9 +90,9 @@\n   font-size: 14px;\n   max-height: 60vh;\n   overflow-y: auto;\n   padding: 16px;\n-  // background-color: ${({ theme }) => theme.surface2};\n+  // background-color: #F7F7F7;\n   border-radius: 8px;\n   margin: 16px 0;\n `;\n \n"
+                },
+                {
+                    "date": 1756175512316,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -85,14 +85,14 @@\n \n const TermsContent = styled.div`\n   white-space: pre-wrap;\n   line-height: 1.6;\n-  // color: ${({ theme }) => theme.text};\n+  color: #000;\n   font-size: 14px;\n   max-height: 60vh;\n   overflow-y: auto;\n   padding: 16px;\n-  // background-color: #F7F7F7;\n+  background-color: #F7F7F7;\n   border-radius: 8px;\n   margin: 16px 0;\n `;\n \n"
+                },
+                {
+                    "date": 1756175562163,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -90,9 +90,9 @@\n   font-size: 14px;\n   max-height: 60vh;\n   overflow-y: auto;\n   padding: 16px;\n-  background-color: #F7F7F7;\n+  background-color: #F7F7F7 !important;\n   border-radius: 8px;\n   margin: 16px 0;\n `;\n \n"
+                },
+                {
+                    "date": 1756175569694,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -85,9 +85,9 @@\n \n const TermsContent = styled.div`\n   white-space: pre-wrap;\n   line-height: 1.6;\n-  color: #000;\n+  color: #000 !important;\n   font-size: 14px;\n   max-height: 60vh;\n   overflow-y: auto;\n   padding: 16px;\n"
+                },
+                {
+                    "date": 1756175637028,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -85,9 +85,9 @@\n \n const TermsContent = styled.div`\n   white-space: pre-wrap;\n   line-height: 1.6;\n-  color: #000 !important;\n+color: ${({ theme }) => theme.text};\n   font-size: 14px;\n   max-height: 60vh;\n   overflow-y: auto;\n   padding: 16px;\n"
+                },
+                {
+                    "date": 1756175642793,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -90,9 +90,9 @@\n   font-size: 14px;\n   max-height: 60vh;\n   overflow-y: auto;\n   padding: 16px;\n-  background-color: #F7F7F7 !important;\n+background-color: ${({ theme }) => theme.surface1};\n   border-radius: 8px;\n   margin: 16px 0;\n `;\n \n"
+                },
+                {
+                    "date": 1756175652934,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -90,9 +90,9 @@\n   font-size: 14px;\n   max-height: 60vh;\n   overflow-y: auto;\n   padding: 16px;\n-background-color: ${({ theme }) => theme.surface1};\n+background-color: ${({ theme }) => theme.surface2};\n   border-radius: 8px;\n   margin: 16px 0;\n `;\n \n"
+                },
+                {
+                    "date": 1756175659712,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -90,9 +90,9 @@\n   font-size: 14px;\n   max-height: 60vh;\n   overflow-y: auto;\n   padding: 16px;\n-background-color: ${({ theme }) => theme.surface2};\n+background-color: ${({ theme }) => th};\n   border-radius: 8px;\n   margin: 16px 0;\n `;\n \n"
+                },
+                {
+                    "date": 1756175666138,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -90,9 +90,9 @@\n   font-size: 14px;\n   max-height: 60vh;\n   overflow-y: auto;\n   padding: 16px;\n-background-color: ${({ theme }) => th};\n+background-color: ${({ theme }) => theme.text};\n   border-radius: 8px;\n   margin: 16px 0;\n `;\n \n"
+                },
+                {
+                    "date": 1756175711154,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -84,17 +84,17 @@\n `;\n \n const TermsContent = styled.div`\n   white-space: pre-wrap;\n-  line-height: 1.6;\n+line-height: 1.6;\n color: ${({ theme }) => theme.text};\n-  font-size: 14px;\n-  max-height: 60vh;\n-  overflow-y: auto;\n-  padding: 16px;\n-background-color: ${({ theme }) => theme.text};\n-  border-radius: 8px;\n-  margin: 16px 0;\n+font-size: 14px;\n+max-height: 60vh;\n+overflow-y: auto;\n+padding: 16px;\n+background-color: ${({ theme }) => theme.surface1};\n+border-radius: 8px;\n+margin: 16px 0;\n `;\n \n const TabsContainer = styled.div`\n   display: flex;\n"
+                },
+                {
+                    "date": 1756175718043,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -84,17 +84,17 @@\n `;\n \n const TermsContent = styled.div`\n   white-space: pre-wrap;\n-line-height: 1.6;\n+  line-height: 1.6;\n color: ${({ theme }) => theme.text};\n-font-size: 14px;\n-max-height: 60vh;\n-overflow-y: auto;\n-padding: 16px;\n-background-color: ${({ theme }) => theme.surface1};\n-border-radius: 8px;\n-margin: 16px 0;\n+  font-size: 14px;\n+  max-height: 60vh;\n+  overflow-y: auto;\n+  padding: 16px;\n+background-color: ${({ theme }) => theme.text};\n+  border-radius: 8px;\n+  margin: 16px 0;\n `;\n \n const TabsContainer = styled.div`\n   display: flex;\n"
+                },
+                {
+                    "date": 1756175746473,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -90,9 +90,9 @@\n   font-size: 14px;\n   max-height: 60vh;\n   overflow-y: auto;\n   padding: 16px;\n-background-color: ${({ theme }) => theme.text};\n+background-color: ${({ theme }) => theme.body};\n   border-radius: 8px;\n   margin: 16px 0;\n `;\n \n"
+                },
+                {
+                    "date": 1756175755905,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -85,14 +85,14 @@\n \n const TermsContent = styled.div`\n   white-space: pre-wrap;\n   line-height: 1.6;\n-color: ${({ theme }) => theme.text};\n+  color: #000 !important;\n   font-size: 14px;\n   max-height: 60vh;\n   overflow-y: auto;\n   padding: 16px;\n-background-color: ${({ theme }) => theme.body};\n+  background-color: #F7F7F7 !important;\n   border-radius: 8px;\n   margin: 16px 0;\n `;\n \n"
+                },
+                {
+                    "date": 1756175800509,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -90,9 +90,9 @@\n   font-size: 14px;\n   max-height: 60vh;\n   overflow-y: auto;\n   padding: 16px;\n-  background-color: #F7F7F7 !important;\n+    background-color: #F7F7F7 !important;\n   border-radius: 8px;\n   margin: 16px 0;\n `;\n \n"
+                },
+                {
+                    "date": 1756175831538,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -78,9 +78,9 @@\n   cursor: pointer;\n   font-size: 0.9em;\n   padding: 0.25rem 0.5rem;\n   &:hover {\n-    color: ${AppColors.secondary};\n+    // color: ${AppColors.secondary};\n   }\n `;\n \n const TermsContent = styled.div`\n@@ -90,9 +90,9 @@\n   font-size: 14px;\n   max-height: 60vh;\n   overflow-y: auto;\n   padding: 16px;\n-    background-color: #F7F7F7 !important;\n+  background-color: #F7F7F7 !important;\n   border-radius: 8px;\n   margin: 16px 0;\n `;\n \n"
+                },
+                {
+                    "date": 1756175850234,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -78,9 +78,9 @@\n   cursor: pointer;\n   font-size: 0.9em;\n   padding: 0.25rem 0.5rem;\n   &:hover {\n-    // color: ${AppColors.secondary};\n+    color: ${AppColors.secondary};\n   }\n `;\n \n const TermsContent = styled.div`\n"
+                },
+                {
+                    "date": 1756176050635,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -41,9 +41,9 @@\n   border-radius: 4px;\n   background-color: white;\n \n   &:checked {\n-    background-color: #202055;\n+    // background-color: #202055;\n     position: relative;\n \n     &:after {\n       content: '';\n"
+                },
+                {
+                    "date": 1756176057858,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -60,9 +60,9 @@\n   }\n \n   &:focus {\n     outline: none;\n-    border-color: #202055;\n+    // border-color: #202055;\n   }\n `;\n \n const CheckboxLabel = styled.label`\n"
+                },
+                {
+                    "date": 1756176216198,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -60,9 +60,9 @@\n   }\n \n   &:focus {\n     outline: none;\n-    // border-color: #202055;\n+    border-color: #202055;\n   }\n `;\n \n const CheckboxLabel = styled.label`\n"
+                },
+                {
+                    "date": 1756176226488,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -41,9 +41,9 @@\n   border-radius: 4px;\n   background-color: white;\n \n   &:checked {\n-    // background-color: #202055;\n+    background-color: #202055;\n     position: relative;\n \n     &:after {\n       content: '';\n"
+                }
+            ],
+            "date": 1756175405989,
+            "name": "Commit-0",
+            "content": "import { useState, useEffect } from 'react';\nimport styled from 'styled-components';\nimport { AppTextStyles } from '@/styles/textStyles';\nimport { AppColors } from '@/styles/colors';\nimport Modal from '@/components/common/Modal';\nimport { toast } from 'react-toastify';\n// 👈 userApi에서 약관 API를 가져옵니다.\nimport { termsGetList } from '@/lib/api/user/userApi';\n\ninterface TermsAgreementProps {\n  onAgreeChange: (privacyAgreed: boolean, termsAgreed: boolean) => void;\n  initialPrivacyAgreed?: boolean;\n  initialTermsAgreed?: boolean;\n}\n\nconst CheckboxContainer = styled.div`\n  margin-bottom: 16px;\n  padding-top: 16px;\n  border-top: 1px solid #dddddd;\n`;\n\nconst CheckboxGroup = styled.div`\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  margin-bottom: 12px;\n`;\n\nconst CheckboxLabelGroup = styled.div`\n  display: flex;\n  align-items: center;\n`;\n\nconst Checkbox = styled.input`\n  margin-right: 8px;\n  width: 20px;\n  height: 20px;\n  cursor: pointer;\n  appearance: none;\n  border: 1px solid #cccccc;\n  border-radius: 4px;\n  background-color: white;\n\n  &:checked {\n    background-color: #202055;\n    position: relative;\n\n    &:after {\n      content: '';\n      position: absolute;\n      display: block;\n      left: 6px;\n      top: 2px;\n      width: 5px;\n      height: 10px;\n      border: solid white;\n      border-width: 0 2px 2px 0;\n      transform: rotate(45deg);\n    }\n  }\n\n  &:focus {\n    outline: none;\n    border-color: #202055;\n  }\n`;\n\nconst CheckboxLabel = styled.label`\n  ${AppTextStyles.body2}\n  cursor: pointer;\n`;\n\nconst ViewButton = styled.button`\n  background: none;\n  border: none;\n  color: ${AppColors.primary};\n  text-decoration: underline;\n  cursor: pointer;\n  font-size: 0.9em;\n  padding: 0.25rem 0.5rem;\n  &:hover {\n    color: ${AppColors.secondary};\n  }\n`;\n\nconst TermsContent = styled.div`\n  white-space: pre-wrap;\n  line-height: 1.6;\n  color: ${({ theme }) => theme.text};\n  font-size: 14px;\n  max-height: 60vh;\n  overflow-y: auto;\n  padding: 16px;\n  // background-color: ${({ theme }) => theme.surface2};\n  border-radius: 8px;\n  margin: 16px 0;\n`;\n\nconst TabsContainer = styled.div`\n  display: flex;\n  border-bottom: 2px solid #ddd;\n  margin-bottom: 1rem;\n`;\n\nconst TabButton = styled.button<{ active: boolean }>`\n  background: none;\n  border: none;\n  padding: 10px 15px;\n  cursor: pointer;\n  font-weight: ${({ active }) => (active ? 'bold' : 'normal')};\n  color: ${({ active }) => (active ? AppColors.primary : '#555')};\n  border-bottom: 2px solid ${({ active }) => (active ? AppColors.primary : 'transparent')};\n  transition: all 0.2s;\n  &:hover {\n    color: ${AppColors.primary};\n  }\n`;\n\n// 약관 내용을 보여줄 모달 컴포넌트\ninterface TermsModalProps {\n  isOpen: boolean;\n  onClose: () => void;\n}\n\nconst termsTabs = [\n  { id: 1, key: 'terms', label: '이용약관' },\n  { id: 2, key: 'privacy', label: '개인정보 취급방침' },\n  { id: 3, key: 'company', label: '사업자 정보' },\n];\n\nconst TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {\n  const [activeTab, setActiveTab] = useState('terms');\n  const [allTermsData, setAllTermsData] = useState<any[]>([]);\n  const [isLoading, setIsLoading] = useState(false);\n\n  useEffect(() => {\n    if (isOpen) {\n      const fetchData = async () => {\n        setIsLoading(true);\n        try {\n          const termsResponse = await termsGetList(); \n          let termsList = termsResponse?.data || [];\n          \n          if (termsList) {\n            const sortedList = termsList.sort((a: any, b: any) => a._id - b._id);\n            setAllTermsData(sortedList);\n          } else {\n            setAllTermsData([]);\n          }\n        } finally {\n          setIsLoading(false);\n        }\n      };\n      fetchData();\n    }\n  }, [isOpen]);\n\n  \n  const getModalContent = () => {\n    if (isLoading) {\n      return '로딩 중...';\n    }\n    \n    const currentTabContent = allTermsData.find(term => term.language === 'KOR' && term._id.toString() === termsTabs.find(tab => tab.key === activeTab)?.id.toString());\n    \n    const content = currentTabContent?.content || '약관 내용을 불러오지 못했습니다.';\n    return <TermsContent dangerouslySetInnerHTML={{ __html: content }} />;\n  };\n\n  return (\n    <Modal open={isOpen} onClose={onClose} title=\"약관 보기\" width={600}>\n      <TabsContainer>\n        {termsTabs.map((tab) => (\n          <TabButton\n            key={tab.key}\n            active={activeTab === tab.key}\n            onClick={() => setActiveTab(tab.key)}\n          >\n            {tab.label}\n          </TabButton>\n        ))}\n      </TabsContainer>\n      {getModalContent()}\n    </Modal>\n  );\n};\n\n// 메인 컴포넌트\nconst TermsAgreement: React.FC<TermsAgreementProps> = ({\n  onAgreeChange,\n  initialPrivacyAgreed = false,\n  initialTermsAgreed = false,\n}) => {\n  const [allAgreed, setAllAgreed] = useState(false);\n  const [privacyAgreed, setPrivacyAgreed] = useState(initialPrivacyAgreed);\n  const [termsAgreed, setTermsAgreed] = useState(initialTermsAgreed);\n  \n  // 👈 모달 상태를 다시 추가합니다.\n  const [isModalOpen, setIsModalOpen] = useState(false); \n\n  useEffect(() => {\n    setPrivacyAgreed(initialPrivacyAgreed);\n    setTermsAgreed(initialTermsAgreed);\n    setAllAgreed(initialPrivacyAgreed && initialTermsAgreed);\n  }, [initialPrivacyAgreed, initialTermsAgreed]);\n\n  useEffect(() => {\n    onAgreeChange(privacyAgreed, termsAgreed);\n  }, [privacyAgreed, termsAgreed, onAgreeChange]);\n\n  const handleAllAgree = () => {\n    const newValue = !allAgreed;\n    setAllAgreed(newValue);\n    setPrivacyAgreed(newValue);\n    setTermsAgreed(newValue);\n  };\n\n  const handlePrivacyAgree = () => {\n    const newValue = !privacyAgreed;\n    setPrivacyAgreed(newValue);\n    if (newValue && termsAgreed) {\n      setAllAgreed(true);\n    } else {\n      setAllAgreed(false);\n    }\n  };\n\n  const handleTermsAgree = () => {\n    const newValue = !termsAgreed;\n    setTermsAgreed(newValue);\n    if (newValue && privacyAgreed) {\n      setAllAgreed(true);\n    } else {\n      setAllAgreed(false);\n    }\n  };\n\n  return (\n    <>\n      <CheckboxContainer>\n        <CheckboxGroup>\n          <CheckboxLabelGroup>\n            <Checkbox\n              type=\"checkbox\"\n              id=\"agree-all\"\n              checked={allAgreed}\n              onChange={handleAllAgree}\n            />\n            <CheckboxLabel htmlFor=\"agree-all\">전체 동의하기</CheckboxLabel>\n          </CheckboxLabelGroup>\n        </CheckboxGroup>\n\n        <CheckboxGroup>\n          <CheckboxLabelGroup>\n            <Checkbox\n              type=\"checkbox\"\n              id=\"agree-terms\"\n              checked={termsAgreed}\n              onChange={handleTermsAgree}\n            />\n            <CheckboxLabel htmlFor=\"agree-terms\">\n              [필수] 이용약관 동의\n            </CheckboxLabel>\n          </CheckboxLabelGroup>\n          {/* 👈 모달을 여는 onClick 핸들러를 다시 추가합니다. */}\n          <ViewButton onClick={() => setIsModalOpen(true)}>\n            보기\n          </ViewButton>\n        </CheckboxGroup>\n\n        <CheckboxGroup>\n          <CheckboxLabelGroup>\n            <Checkbox\n              type=\"checkbox\"\n              id=\"agree-privacy\"\n              checked={privacyAgreed}\n              onChange={handlePrivacyAgree}\n            />\n            <CheckboxLabel htmlFor=\"agree-privacy\">\n              [필수] 개인정보 취급방침 동의\n            </CheckboxLabel>\n          </CheckboxLabelGroup>\n          {/* 👈 모달을 여는 onClick 핸들러를 다시 추가합니다. */}\n          <ViewButton onClick={() => setIsModalOpen(true)}>\n            보기\n          </ViewButton>\n        </CheckboxGroup>\n\n       \n      </CheckboxContainer>\n\n      {/* 👈 TermsModal 렌더링 코드를 다시 추가합니다. */}\n      <TermsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />\n    </>\n  );\n};\n\nexport default TermsAgreement;"
+        }
+    ]
+}

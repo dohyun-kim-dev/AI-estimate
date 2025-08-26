@@ -3,11 +3,39 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 7,
             "patches": [
                 {
                     "date": 1756099756300,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756175883294,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,9 +12,9 @@\n   font-size: 14px;\n   max-height: 60vh;\n   overflow-y: auto;\n   padding: 16px;\n-  background-color: ${({ theme }) => theme.surface2};\n+  background-color: #F7F7F7 !important;\n   border-radius: 8px;\n   margin: 16px 0;\n `;\n \n"
+                },
+                {
+                    "date": 1756175907772,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,9 +7,9 @@\n \n const TermsContent = styled.div`\n   white-space: pre-wrap;\n   line-height: 1.6;\n-  color: ${({ theme }) => theme.text};\n+  color: #000 !important;\n   font-size: 14px;\n   max-height: 60vh;\n   overflow-y: auto;\n   padding: 16px;\n@@ -30,9 +30,9 @@\n   padding: 10px 15px;\n   cursor: pointer;\n   font-weight: ${({ active }) => (active ? 'bold' : 'normal')};\n   color: ${({ active }) => (active ? AppColors.primary : '#555')};\n-  border-bottom: 2px solid ${({ active }) => (active ? AppColors.primary : 'transparent')};\n+  border-bottom: 2px solid ${({ active }) => (active ? AppColors. : 'transparent')};\n   \n   transition: all 0.2s;\n   &:hover {\n     color: ${AppColors.primary};\n"
+                },
+                {
+                    "date": 1756175914124,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -30,9 +30,9 @@\n   padding: 10px 15px;\n   cursor: pointer;\n   font-weight: ${({ active }) => (active ? 'bold' : 'normal')};\n   color: ${({ active }) => (active ? AppColors.primary : '#555')};\n-  border-bottom: 2px solid ${({ active }) => (active ? AppColors. : 'transparent')};\n+  border-bottom: 2px solid #ddd;\n   \n   transition: all 0.2s;\n   &:hover {\n     color: ${AppColors.primary};\n"
+                },
+                {
+                    "date": 1756175919187,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -30,9 +30,9 @@\n   padding: 10px 15px;\n   cursor: pointer;\n   font-weight: ${({ active }) => (active ? 'bold' : 'normal')};\n   color: ${({ active }) => (active ? AppColors.primary : '#555')};\n-  border-bottom: 2px solid #ddd;\n+  border-bottom: 2px solid ${({ active }) => (active ? AppColors. : 'transparent')};\n   \n   transition: all 0.2s;\n   &:hover {\n     color: ${AppColors.primary};\n"
+                },
+                {
+                    "date": 1756175968584,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,13 +26,13 @@\n \n const TabButton = styled.button<{ active: boolean }>`\n   background: none;\n   border: none;\n-  padding: 10px 15px;\n+  padding: 12px 15px;\n   cursor: pointer;\n   font-weight: ${({ active }) => (active ? 'bold' : 'normal')};\n   color: ${({ active }) => (active ? AppColors.primary : '#555')};\n-  border-bottom: 2px solid ${({ active }) => (active ? AppColors. : 'transparent')};\n+  border-bottom: 2px solid ${({ active }) => (active ? AppColors.primary : 'transparent')};\n   \n   transition: all 0.2s;\n   &:hover {\n     color: ${AppColors.primary};\n"
+                },
+                {
+                    "date": 1756176012878,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,9 +26,11 @@\n \n const TabButton = styled.button<{ active: boolean }>`\n   background: none;\n   border: none;\n-  padding: 12px 15px;\n+  padding: 10px 15px;\n+    font-size: 14px;\n+\n   cursor: pointer;\n   font-weight: ${({ active }) => (active ? 'bold' : 'normal')};\n   color: ${({ active }) => (active ? AppColors.primary : '#555')};\n   border-bottom: 2px solid ${({ active }) => (active ? AppColors.primary : 'transparent')};\n"
+                },
+                {
+                    "date": 1756176019999,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,10 +27,9 @@\n const TabButton = styled.button<{ active: boolean }>`\n   background: none;\n   border: none;\n   padding: 10px 15px;\n-    font-size: 14px;\n-\n+  font-size: 16px;\n   cursor: pointer;\n   font-weight: ${({ active }) => (active ? 'bold' : 'normal')};\n   color: ${({ active }) => (active ? AppColors.primary : '#555')};\n   border-bottom: 2px solid ${({ active }) => (active ? AppColors.primary : 'transparent')};\n"
                 }
             ],
             "date": 1756099756300,

@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1755953872663,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756174446681,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,11 +4,10 @@\n     <meta charset=\"UTF-8\" />\n     <link rel=\"icon\" type=\"image/svg+xml\" href=\"/vite.svg\" />\n     <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n     <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n-    <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n-    <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap\" rel=\"stylesheet\">\n-    <title>AI Estimate</title>\n+<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n+<link href=\"https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap\" rel=\"stylesheet\"> <title>AI Estimate</title>\n   </head>\n   <body>\n     <div id=\"root\"></div>\n     <script type=\"module\" src=\"/src/main.tsx\"></script>\n"
                 }
             ],
             "date": 1755953872663,

@@ -14,7 +14,7 @@ const CardWrapper = styled.div`
   color: ${({ theme }) => theme.text};
   border-radius: 12px;
   overflow: hidden;
-  margin: 24px 0;
+  margin: 12px 0;
   padding: 20px;
 `;
 
@@ -26,18 +26,18 @@ const Header = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 0 0 32px 0;
+  margin: 0 0 20px 0;
 `;
 
 const SubText = styled.p`
-  font-size: 12px;
+  font-size: 14px;
   color: ${({ theme }) => theme.subtleText};
-  margin: 0 0 12px 0;
+  margin: 0 0 8px 0;
 `;
 const Title = styled.h2`
-  font-size: 20px;
+  font-size: 16px;
   font-style: normal;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.4;
   max-height: calc(1.4em * 2); /* 2줄까지만 표시 */
   overflow: hidden;
@@ -94,8 +94,7 @@ const ActionButtons = styled.div`
 
   display: flex;
   gap: 10px;
-  padding-top: 4px;
-  margin: 4px;
+  padding-top: 0px;
 `;
 
 const Line = styled.div`
@@ -104,15 +103,16 @@ const Line = styled.div`
 
 const ActionButton = styled.button<{ primary?: boolean }>`
   flex: 1;
-  padding: 12px;
-  border-radius: 8px;
+  padding: 8px;
+  border-radius: 4px;
+  height: 36px;
   border: none;
   background-color: ${({ theme }) => theme.cardButton };
   color: ${({ theme, primary }) => (primary ? (theme.body) : theme.text)};
   font-family: Roboto;
-  font-size: 16px;
+  font-size: 14px;
   font-style: normal;
-  font-weight: 600;
+  font-weight: 400;
   line-height: 160%; 
   letter-spacing: 0.28px;
   cursor: pointer;
@@ -189,10 +189,6 @@ const MyEstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
 
         <Flex>
         <Title>{estimate.project_name}</Title>
-        <Right>
-       
-        </Right>
-
         </Flex>
         {/* <Price>
           KRW {estimate.total_price}

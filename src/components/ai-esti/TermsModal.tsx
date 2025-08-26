@@ -8,12 +8,12 @@ import { termsGetList } from '@/lib/api/user/userApi'; // 사용자 API import
 const TermsContent = styled.div`
   white-space: pre-wrap;
   line-height: 1.6;
-  color: ${({ theme }) => theme.text};
+  color: #000 !important;
   font-size: 14px;
   max-height: 60vh;
   overflow-y: auto;
   padding: 16px;
-  background-color: ${({ theme }) => theme.surface2};
+  background-color: #F7F7F7 !important;
   border-radius: 8px;
   margin: 16px 0;
 `;
@@ -28,6 +28,7 @@ const TabButton = styled.button<{ active: boolean }>`
   background: none;
   border: none;
   padding: 10px 15px;
+  font-size: 16px;
   cursor: pointer;
   font-weight: ${({ active }) => (active ? 'bold' : 'normal')};
   color: ${({ active }) => (active ? AppColors.primary : '#555')};

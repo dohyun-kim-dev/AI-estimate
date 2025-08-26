@@ -1,13 +1,11 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import styled, { useTheme } from 'styled-components';
 import Icon from './Icon';
 import TextareaAutosize from 'react-textarea-autosize';
 import { customScrollbar } from '@/styles/commonStyles';
-import { useAuthStore } from '@/store/authStore'; // AuthStore import
-import { SocialLoginModal } from './SocialLoginModal'; // SocialLoginModal import
+import { useAuthStore } from '@/store/authStore';
+import { SocialLoginModal } from './SocialLoginModal';
 
-// UUID 생성 함수 (v4)
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -37,12 +35,13 @@ const InputContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 2px 16px;
   background-color: ${({ theme }) => theme.body};
-  border-radius: 50px;
+  border-radius: 20px;
   border: 1px solid ${({ theme }) => theme.border};
   width: 100%;
-  min-height: 56px;
+  min-height: 46px;
+  // height: 46px;
   transition: min-height 0.2s ease-in-out;
   @media (min-width: 1024px) {
     max-width: 1024px;
@@ -70,6 +69,7 @@ const AutoSizeInput = styled(TextareaAutosize)`
   justify-content:center;
   align-items:center;
   background-color: transparent;
+  font-size: 14px;
   border: none;
   outline: none;
   color: ${({ theme }) => theme.text};
@@ -109,18 +109,16 @@ interface BottomInputProps {
 const BottomInput: React.FC<BottomInputProps> = ({
   placeholder = "서비스 종류와 주요 기능, 예상 기간/예산을 입력! \n예시: '온라인 쇼핑몰, 결제/배송/회원가입",
   onSubmit,
-  maxSubmissions = 5
+  maxSubmissions = 30
 }) => {
   const [value, setValue] = useState('');
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [remainingCount, setRemainingCount] = useState(maxSubmissions);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); // 👈 로그인 모달 상태 추가
-  const remainingCountRef = useRef(remainingCount); 
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const remainingCountRef = useRef(remainingCount);
   const inputRef = useRef<HTMLInputElement>(null);
   const theme = useTheme();
   const isLightTheme = theme.body === '#FFFFFF';
-
-  // useAuthStore를 사용하여 로그인 상태 가져오기
   const { isAuthenticated } = useAuthStore();
   const isLoggedIn = isAuthenticated();
 
@@ -129,30 +127,39 @@ const BottomInput: React.FC<BottomInputProps> = ({
   }, [remainingCount]);
 
   useEffect(() => {
-    // 로그인 상태가 아닐 때만 횟수 로직 실행
     if (!isLoggedIn) {
-      let deviceId = localStorage.getItem('deviceId');
-      let lastResetDate = localStorage.getItem('lastResetDate');
-      const today = new Date().toDateString();
+      // ⭐️ 비회원 횟수 초기화 로직을 함수로 분리
+      const checkAndResetCount = () => {
+        let deviceId = localStorage.getItem('deviceId');
+        let lastResetDate = localStorage.getItem('lastResetDate');
+        const today = new Date().toDateString();
 
-      if (!deviceId) {
-        deviceId = generateUUID();
-        localStorage.setItem('deviceId', deviceId);
-      }
-      
-      if (lastResetDate !== today) {
-        localStorage.setItem('lastResetDate', today);
-        localStorage.setItem('remainingCount', String(maxSubmissions));
-        setRemainingCount(maxSubmissions);
-      } else {
-        const storedCount = localStorage.getItem('remainingCount');
-        if (storedCount) {
-          setRemainingCount(Number(storedCount));
-        } else {
+        if (!deviceId) {
+          deviceId = generateUUID();
+          localStorage.setItem('deviceId', deviceId);
+        }
+
+        if (lastResetDate !== today) {
+          localStorage.setItem('lastResetDate', today);
           localStorage.setItem('remainingCount', String(maxSubmissions));
           setRemainingCount(maxSubmissions);
+        } else {
+          const storedCount = localStorage.getItem('remainingCount');
+          if (storedCount) {
+            setRemainingCount(Number(storedCount));
+          } else {
+            localStorage.setItem('remainingCount', String(maxSubmissions));
+            setRemainingCount(maxSubmissions);
+          }
         }
-      }
+      };
+
+      checkAndResetCount(); // 컴포넌트 마운트 시 한 번 실행
+
+      // ⭐️ 1시간마다 초기화 함수를 실행하는 인터벌 설정
+      const intervalId = setInterval(checkAndResetCount, 60 * 60 * 1000); // 1시간 = 60분 * 60초 * 1000밀리초
+
+      return () => clearInterval(intervalId); // 클린업 함수
     }
   }, [isLoggedIn, maxSubmissions]);
 
@@ -173,14 +180,12 @@ const BottomInput: React.FC<BottomInputProps> = ({
 
   const handleSubmit = () => {
     if (value.trim() && onSubmit) {
-      // 로그인 상태인 경우, 횟수 제한 없이 바로 제출
       if (isLoggedIn) {
         onSubmit(value.trim());
         setValue('');
         return;
       }
 
-      // 비회원이고 횟수가 남아있는 경우
       if (remainingCountRef.current > 0) {
         onSubmit(value.trim());
         setValue('');
@@ -189,28 +194,45 @@ const BottomInput: React.FC<BottomInputProps> = ({
         setRemainingCount(newCount);
         localStorage.setItem('remainingCount', String(newCount));
       } else {
-        // 비회원이고 횟수가 0인 경우, 로그인 모달 열기
         setIsLoginModalOpen(true);
       }
     }
   };
-
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault(); 
-      handleSubmit();
+    if (e.key === 'Enter') {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // 모바일 환경
+        if (e.shiftKey) {
+            // 모바일에서 Shift+Enter는 제출
+            e.preventDefault();
+            handleSubmit();
+        } else {
+            // 모바일에서 Enter는 줄바꿈 (기본 동작)
+        }
+      } else {
+        // PC 환경
+        if (e.shiftKey) {
+          // PC에서 Shift + Enter는 줄바꿈 (기본 동작)
+        } else {
+          // PC에서 Enter만 누르면 제출
+          e.preventDefault();
+          handleSubmit();
+        }
+      }
     }
   };
 
   const renderRemainingCountText = () => {
     if (isLoggedIn) {
-      return null; // 로그인 상태일 때 텍스트 숨김
+      return null;
     }
 
     if (remainingCount > 0) {
       return `오늘 남은 횟수(비회원): ${remainingCount}회`;
     } else {
-      return "비회원 사용 한도를 전부 사용하셨습니다. 간편 구글 로그인으로 즐겨보세요";
+      return "비회원 사용 한도를 전부 사용하셨습니다";
     }
   };
 

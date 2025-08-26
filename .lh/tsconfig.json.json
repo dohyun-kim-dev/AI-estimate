@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 8,
             "patches": [
                 {
                     "date": 1755953227058,
@@ -20,6 +20,26 @@
                 {
                     "date": 1756113895506,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,11 +26,11 @@\n     /* Bundler mode */\n     \"composite\": true,\n     \"moduleResolution\": \"bundler\",\n     \"allowImportingTsExtensions\": true,\n+    \"noEmit\": true,\n     \"resolveJsonModule\": true,\n     \"isolatedModules\": true,\n-    \"noEmit\": false,\n     \"jsx\": \"react-jsx\",\n \n     /* Linting */\n     \"strict\": true,\n"
+                },
+                {
+                    "date": 1756170700481,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,8 +26,10 @@\n     /* Bundler mode */\n     \"composite\": true,\n     \"moduleResolution\": \"bundler\",\n     \"allowImportingTsExtensions\": true,\n+    \"outDir\": \"./dist\", // js 파일은 dist 폴더 안으로만 생성됨\n+    \"rootDir\": \"./src\",\n     \"noEmit\": true,\n     \"resolveJsonModule\": true,\n     \"isolatedModules\": true,\n     \"jsx\": \"react-jsx\",\n"
+                },
+                {
+                    "date": 1756170873634,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,15 +26,20 @@\n     /* Bundler mode */\n     \"composite\": true,\n     \"moduleResolution\": \"bundler\",\n     \"allowImportingTsExtensions\": true,\n-    \"outDir\": \"./dist\", // js 파일은 dist 폴더 안으로만 생성됨\n+    \"outDir\": \"./dist\", \n     \"rootDir\": \"./src\",\n     \"noEmit\": true,\n     \"resolveJsonModule\": true,\n     \"isolatedModules\": true,\n     \"jsx\": \"react-jsx\",\n \n+    \"skipLibCheck\": true,      // 라이브러리 타입 오류 무시\n+    \"noEmitOnError\": false,    // 에러가 있어도 .js 파일 생성\n+    \"noUnusedLocals\": false,   // 안 쓰는 변수/임포트 무시\n+    \"noUnusedParameters\": false\n+\n     /* Linting */\n     \"strict\": true,\n     \"noUnusedLocals\": true,\n     \"noUnusedParameters\": true,\n"
+                },
+                {
+                    "date": 1756170880356,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -36,9 +36,9 @@\n \n     \"skipLibCheck\": true,      // 라이브러리 타입 오류 무시\n     \"noEmitOnError\": false,    // 에러가 있어도 .js 파일 생성\n     \"noUnusedLocals\": false,   // 안 쓰는 변수/임포트 무시\n-    \"noUnusedParameters\": false\n+    \"noUnusedParameters\": false,\n \n     /* Linting */\n     \"strict\": true,\n     \"noUnusedLocals\": true,\n"
+                },
+                {
+                    "date": 1756171203898,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,12 +25,12 @@\n \n     /* Bundler mode */\n     \"composite\": true,\n     \"moduleResolution\": \"bundler\",\n-    \"allowImportingTsExtensions\": true,\n+    \"allowJs\": true,\n     \"outDir\": \"./dist\", \n     \"rootDir\": \"./src\",\n-    \"noEmit\": true,\n+    \"noEmit\": false,\n     \"resolveJsonModule\": true,\n     \"isolatedModules\": true,\n     \"jsx\": \"react-jsx\",\n \n@@ -39,12 +39,13 @@\n     \"noUnusedLocals\": false,   // 안 쓰는 변수/임포트 무시\n     \"noUnusedParameters\": false,\n \n     /* Linting */\n-    \"strict\": true,\n-    \"noUnusedLocals\": true,\n-    \"noUnusedParameters\": true,\n-    \"noFallthroughCasesInSwitch\": true\n+    \"strict\": false,\n+    \"noUnusedLocals\": false,\n+    \"noUnusedParameters\": false,\n+    \"noFallthroughCasesInSwitch\": false,\n+    \"noImplicitAny\": false\n   },\n   \"include\": [\"src\"],\n   \"references\": [{ \"path\": \"./tsconfig.node.json\" }]\n }\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756171397557,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,19 +33,16 @@\n     \"resolveJsonModule\": true,\n     \"isolatedModules\": true,\n     \"jsx\": \"react-jsx\",\n \n-    \"skipLibCheck\": true,      // 라이브러리 타입 오류 무시\n-    \"noEmitOnError\": false,    // 에러가 있어도 .js 파일 생성\n-    \"noUnusedLocals\": false,   // 안 쓰는 변수/임포트 무시\n-    \"noUnusedParameters\": false,\n-\n     /* Linting */\n     \"strict\": false,\n     \"noUnusedLocals\": false,\n     \"noUnusedParameters\": false,\n     \"noFallthroughCasesInSwitch\": false,\n-    \"noImplicitAny\": false\n+    \"noImplicitAny\": false,\n+    \"skipLibCheck\": true,      // 라이브러리 타입 오류 무시\n+    \"noEmitOnError\": false    // 에러가 있어도 .js 파일 생성\n   },\n   \"include\": [\"src\"],\n   \"references\": [{ \"path\": \"./tsconfig.node.json\" }]\n }\n\\ No newline at end of file\n"
                 }
             ],
             "date": 1755953227058,

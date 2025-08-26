@@ -12,7 +12,7 @@ export const GlobalStyle = createGlobalStyle`
   }
 
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    font-family: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
       Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     background-color: ${({ theme }) => theme.body};
     color: ${({ theme }) => theme.text};

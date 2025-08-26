@@ -13,7 +13,7 @@ const HeaderWrapper = styled.header`
   right: 0;
   height: 56px;
   background-color: ${({ theme }) => theme.body};
-  z-index: 100;
+  z-index: 1000;
 `
 
 const HeaderContent = styled.div`
@@ -116,7 +116,7 @@ const Header = ({ compact }: HeaderProps) => {
           <Profile onClick={handleProfileClick}>
             {isAuthenticated() && user ? (
               <>
-                <ProfileName>{user.name}</ProfileName>
+                {/* <ProfileName>{user.name}</ProfileName> */}
                 <ProfileImage>
                   <img 
                     src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} 

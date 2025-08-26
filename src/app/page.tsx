@@ -9,17 +9,24 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   background-color: ${({ theme }) => theme.body};
-
+  background-image: ${({ theme }) => (theme.body === '#FFFFFF' ? 'none' : 'url(/pr/bg_vector.png)')};
+   background-repeat: no-repeat;
+   background-position: center -20%;
+   background-size: 250%;
+   opacity: 0.9;
 
  @media (min-width: 1024px) {
-    max-width: 70vw;
+    // max-width: 70vw;
+    padding: 0 200px;
     margin: 0 auto;
+    background-position: center 150%;
+
   }
 `
 
 const MainContent = styled.div`
   flex: 1;
-  padding: 24px;
+  padding: 32px 24px;
   display: flex;
   flex-direction: column;
 `
@@ -29,7 +36,7 @@ const Header = styled.div`
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 25px;
 `
 
 const Logo = styled.h1`
@@ -48,8 +55,8 @@ const SubHeader = styled.p`
 
 const CustomInput = styled.div`
   padding: 0px;
-  background-color: ${({ theme }) => theme.body};
-  z-index: 1000;
+  // background-color: ${({ theme }) => theme.body};
+  z-index: 1;
   width: 100%;
   @media (min-width: 1024px) {
     padding: 16px;
@@ -60,14 +67,17 @@ const CustomInput = styled.div`
 `
 const InputWrapper = styled.div`
   display: flex;
-  gap: 12px;
+  gap: 0px;
   padding: 4px;
-  background-color: ${({ theme }) => theme.body};
+  // background-color: ${({ theme }) => theme.body};
   border-radius: 12px;
   border: 1px solid ${({ theme }) => theme.border};
   width: 100%;
-  min-height: 145px;
+  min-height: 105px;
   
+ 
+  opacity: 1;
+
 
   @media (min-width: 1024px) {
     max-width: 1024px;
@@ -75,20 +85,39 @@ const InputWrapper = styled.div`
   }
 `
 
-const Input = styled.input`
+const Input = styled.div`
   flex: 1;
   border: none;
-  background: none;
+  // background: none;
   color: ${({ theme }) => theme.subtleText || '#000'};
-  font-size: 16px;
+  font-size: 15px;
   padding-left: 16px;
-  align-self: flex-start;   /* 🔹 세로 상단 정렬 */
-  padding-top: 12px; 
-  caret-color: ${({ theme }) => theme.text || '#000'}; // 깜빡이는 커서 색
-  &:focus {
-    outline: none;
+  align-self: flex-start;
+  padding-top: 12px;
+  position: relative;
+  display: flex; // 텍스트와 커서 span을 한 줄에 표시하기 위해 flexbox 사용
+  align-items: center;
+  
+`
+const BlinkingCursor = styled.span`
+  display: inline-block;
+  width: 2px;
+  height: 1.2em; /* 폰트 크기에 맞게 조절 */
+  background-color: ${({ theme }) => theme.text || '#000'};
+  margin-left: 2px; /* 텍스트와 커서 사이 간격 */
+  animation: blink 1s step-end infinite;
+
+  @keyframes blink {
+    from, to {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
   }
 `
+
+
 
 const IconButton = styled.button`
   display: flex;
@@ -108,7 +137,7 @@ const IconButton = styled.button`
 
 
 const FeatureSection = styled.div`
-   margin-top: 40px;
+   margin-top: 50px;
 `
 
 const SectionTitle = styled.h2`
@@ -140,15 +169,16 @@ const FeatureCard = styled.div`
 `
 
 const FeatureIconWrapper = styled.div`
-  width: 32px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  margin-bottom: 8px;
+  // justify-content: center;
 `
 
 const FeatureIcon = styled.img`
   width: 40px;
   height: 40px;
+  margin-right: 16px;
 `
 
 const FeatureContent = styled.div`
@@ -160,8 +190,9 @@ const FeatureContent = styled.div`
 
 const FeatureSubtitle = styled.h3`
   color: ${({ theme }) => theme.text};
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
+  margin-bottom: 0px;
 `
 
 const FeatureText = styled.p`
@@ -214,7 +245,7 @@ const TestimonialFooter = styled.div`
 const StatsSection = styled.div`
   display: flex;
   gap: 12px;
-  margin-bottom: 40px;
+  margin-bottom: 50px;
 `
 
 const StatCard = styled.div`
@@ -222,24 +253,24 @@ const StatCard = styled.div`
   background-color: ${({ theme }) => theme.statBg};
   border: 1px solid ${({ theme }) => theme.cardBorder};
   border-radius: 12px;
-  padding: 16px;
+  padding: 16px 12px;
   text-align: center;
 `
 
 const StatValue = styled.div`
   color: ${({ theme }) => theme.cardText};
-  font-size: 24px;
+  font-size: 20px;
   font-weight: bold;
   margin-bottom: 4px;
 `
 
 const StatLabel = styled.div`
   color: ${({ theme }) => theme.subtleText};
-  font-size: 12px;
+  font-size: 14px;
 `
 
 const TestimonialSection = styled.div`
-  margin-bottom: 32px;
+  margin-bottom: 100px;
 `
 
 const ConsultButton = styled.button`
@@ -321,65 +352,75 @@ const NavItem = styled.button`
     color: ${({ theme }) => theme.accent};
   }
 `
-
 function TypingInput() {
-  const inputRef = useRef<HTMLInputElement>(null)
   const [displayText, setDisplayText] = useState('')
+  const [isTyping, setIsTyping] = useState(true) // ⭐️ isTyping 상태 추가
   const fullText = '저희 프로젝트 견적은 얼마일까요 ?'
 
   useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus()
-    }
-
     let i = 0
+    let intervalId: NodeJS.Timeout
+    
     const typing = () => {
       setDisplayText('')
+      setIsTyping(true); // ⭐️ 타이핑 시작 시 isTyping을 true로 설정
       i = 0
-      const interval = setInterval(() => {
+      intervalId = setInterval(() => {
         setDisplayText(fullText.slice(0, i + 1))
         i++
         if (i >= fullText.length) {
-          clearInterval(interval)
+          clearInterval(intervalId)
+          setIsTyping(false); // ⭐️ 타이핑이 완료되면 isTyping을 false로 설정
         }
       }, 100)
     }
 
-    typing() // 첫 실행
+    typing()
 
-    // 3초마다 반복
     const loop = setInterval(() => {
       typing()
     }, 5000)
 
-    return () => clearInterval(loop)
+    return () => {
+      clearInterval(intervalId) // 클린업 함수에 intervalId 추가
+      clearInterval(loop)
+    }
   }, [])
 
-  return <Input ref={inputRef} value={displayText} readOnly />
+  return (
+    <Input>
+      {displayText}
+      {/* 텍스트 뒤에 깜빡이는 커서 컴포넌트 추가 */}
+      {(displayText.length < fullText.length || !isTyping) && <BlinkingCursor />}
+    </Input>
+  )
 }
 
 export default function Home() {
   const navigate = useNavigate()
   const { isDarkMode } = useThemeStore()
 
-  
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [location.key]) // location.key가 변경될 때마다 이펙트 실행
+
   return (
     <Container>
       <MainContent>
         <Header>
-          <Logo>AIGO로 견적을 한 번에!</Logo>
+          <Logo>AIGO, 견적 새로고침하다</Logo>
           <SubHeader>
-            견적, 새로고침 하다<br />
-            견적AI서비스 AIGO로 3분만에 견적받기
+            {/* 견적, 새로고침 하다<br /> */}
+            견적 AI서비스로 3분만에 견적받기
           </SubHeader>
         </Header>
 
         <CustomInput>
           <InputWrapper>
             <TypingInput />
-            <IconButton>
+            <IconButton onClick={() => navigate('/ai')}>
               <img 
-                src={isDarkMode ? "/ai-estimate/enter_dark.png" : "/ai-estimate/enter.png"}
+                src={isDarkMode ? "/pr/enter_dark.png" : "/pr/enter.png"}
                 alt="전송"
                 width={36}
                 height={36}
@@ -391,14 +432,15 @@ export default function Home() {
         <FeatureSection>
           <SectionTitle>AIGO만의 핵심 기능</SectionTitle>
           <FeatureCard>
+            <FeatureContent>
+
             <FeatureIconWrapper>
-              <FeatureIcon 
+            <FeatureIcon 
                 src={isDarkMode ? '/pr/icon_pr_feature1_dark.png' : '/pr/icon_pr_feature1_light.png'} 
                 alt="AI 컨설팅" 
               />
-            </FeatureIconWrapper>
-            <FeatureContent>
               <FeatureSubtitle>AI 컨설팅 기반 견적 자동 산출</FeatureSubtitle>
+              </FeatureIconWrapper>
               <FeatureText>
               필요한 기능과 요구사항만 입력하면, <br />
               기다림 없이 바로 견적을 받아볼 수 있습니다
@@ -406,29 +448,31 @@ export default function Home() {
             </FeatureContent>
           </FeatureCard>
           <FeatureCard>
+            <FeatureContent>
             <FeatureIconWrapper>
               <FeatureIcon 
                 src={isDarkMode ? '/pr/icon_pr_feature2_dark.png' : '/pr/icon_pr_feature2_light.png'} 
                 alt="시간 단축" 
               />
-            </FeatureIconWrapper>
-            <FeatureContent>
               <FeatureSubtitle>획기적인 견적 시간 단축</FeatureSubtitle>
+
+            </FeatureIconWrapper>
               <FeatureText>
               복잡한 계산이나 여러 차례의 문의 없이, <br />
-              단 몇 분 만에 견적 예산을 확인할 수 있습니다
+              단 몇 분 만에 견적을 확인할 수 있습니다
               </FeatureText>
             </FeatureContent>
           </FeatureCard>
           <FeatureCard>
+            <FeatureContent>
+
             <FeatureIconWrapper>
               <FeatureIcon 
                 src={isDarkMode ? '/pr/icon_pr_feature3_dark.png' : '/pr/icon_pr_feature3_light.png'} 
                 alt="다국어 지원" 
               />
-            </FeatureIconWrapper>
-            <FeatureContent>
               <FeatureSubtitle>글로벌 다국어 언어 지원</FeatureSubtitle>
+              </FeatureIconWrapper>
               <FeatureText>
               다국어 지원으로 해외 팀이나 파트너와도 <br/>
               동일한 견적을 손쉽게 공유할 수 있습니다
@@ -455,7 +499,7 @@ export default function Home() {
         <TestimonialSection>
           <SectionTitle>고객 후기</SectionTitle>
           <SectionSubtitle>
-            다양한 기업들이 에이고 "견적 AI 서비스"로<br />
+            다양한 기업들이 에이고 "견적 AI서비스"로<br />
             견적 문의 시간을 획기적으로 단축 했습니다
           </SectionSubtitle>
           <TestimonialCard>

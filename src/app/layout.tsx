@@ -21,7 +21,7 @@ const Main = styled.main<{ $hideDefault?: boolean }>`
       min-height: 100vh;
       `
       : `
-      padding: 76px 0 84px;
+      padding: 56px 0 84px;
       min-height: 100vh;
       `}
 `;
