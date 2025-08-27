@@ -64,7 +64,7 @@ type AdminUser = {
   email: string;
   cellphone: string;
   createAt: string;
-  no: number;
+  memo?: string;
   emailYn?: 'Y' | 'N';
   smsYn?: 'Y' | 'N';
   description?: string;
@@ -200,31 +200,38 @@ const AdminMngPage: React.FC = () => {
   const handleSave = async () => {
     let valid = true;
   
+    // 아이디 검증
     if (!Validators.required(userId) || !Validators.id(userId)) {
       setIdError('아이디는 영문자와 숫자를 포함한 6~20자여야 합니다.');
       valid = false;
     } else setIdError(null);
   
-    if (!selectedUser && !Validators.password(password)) {
-      setPwdError('비밀번호는 영문, 숫자, 특수문자를 포함해 8자 이상이어야 합니다.');
-      valid = false;
-    } else setPwdError(null);
+    // 신규 등록 시 비밀번호 검증
+    if (!selectedUser) {
+      if (!Validators.password(password)) {
+        setPwdError('비밀번호는 영문, 숫자, 특수문자를 포함해 8자 이상이어야 합니다.');
+        valid = false;
+      } else setPwdError(null);
 
-    if (!selectedUser && password !== confirmPassword) {
-      setConfirmPwdError('비밀번호가 일치하지 않습니다.');
-      valid = false;
-    } else setConfirmPwdError(null);
+      if (password !== confirmPassword) {
+        setConfirmPwdError('비밀번호가 일치하지 않습니다.');
+        valid = false;
+      } else setConfirmPwdError(null);
+    }
   
+    // 이름 검증
     if (!Validators.required(name)) {
       setNameError('이름을 입력해주세요.');
       valid = false;
     } else setNameError(null);
   
+    // 이메일 검증
     if (!Validators.email(email)) {
       setEmailError('올바른 이메일 형식이 아닙니다.');
       valid = false;
     } else setEmailError(null);
   
+    // 연락처 검증
     if (!Validators.phone(cellphone)) {
       setCellphoneError('연락처는 숫자 11자리여야 합니다.');
       valid = false;
@@ -234,6 +241,7 @@ const AdminMngPage: React.FC = () => {
   
     try {
       if (selectedUser) {
+        // 수정 모드
         const updatePayload = {
           targetAdminId: userId,
           name,
@@ -244,38 +252,56 @@ const AdminMngPage: React.FC = () => {
           smsYn,
         };
   
-        const response = await adminUpdate(updatePayload) as ApiResponse<AdminUser>;
-        if (response.statusCode === 200 && response.message === 'success') {
+        const response = await adminUpdate(updatePayload) as unknown as ApiResponse<AdminUser>[];
+        const apiResponse = Array.isArray(response) ? response[0] : response;
+        
+        if (apiResponse && (apiResponse.statusCode === 200 || apiResponse.statusCode === '200') && apiResponse.message === 'success') {
           toast.success('관리자 정보가 수정되었습니다.');
           setIsPopupOpen(false);
-          listRef.current?.refetch();
+          
+          // 리스트 새로고침
+          setTimeout(() => {
+            listRef.current?.refetch();
+          }, 100);
         } else {
-          const errorMessage = response.error?.customMessage || response.message || '수정에 실패했습니다.';
+          const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '수정에 실패했습니다.';
           toast.error(errorMessage);
         }
       } else {
+        // 신규 등록 모드
         const createPayload = {
           adminId: userId,
           password,
           name,
           cellphone,
-          description,
+          memo: description, // description을 memo로 매핑
           email,
-          emailYn,
-          smsYn,
+          // companyCode는 통합관리자 생성이므로 제외
         };
   
-        const response = await adminCreate(createPayload) as ApiResponse<AdminUser>;
-        if (response.statusCode === 200 && response.message === 'success') {
+        console.log('Creating admin with payload:', createPayload);
+        const response = await adminCreate(createPayload) as unknown as ApiResponse<AdminUser>[];
+        
+        console.log('Create response:', response);
+        
+        // 배열의 첫 번째 요소를 사용 (API가 배열로 응답하는 경우)
+        const apiResponse = Array.isArray(response) ? response[0] : response;
+        
+        if (apiResponse && (apiResponse.statusCode === 200 || apiResponse.statusCode === '200') && apiResponse.message === 'success') {
           toast.success('관리자가 성공적으로 등록되었습니다.');
           setIsPopupOpen(false);
-          listRef.current?.refetch();
+          
+          // 리스트 새로고침
+          setTimeout(() => {
+            listRef.current?.refetch();
+          }, 100);
         } else {
-          const errorMessage = response.error?.customMessage || response.message || '등록에 실패했습니다.';
+          const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '등록에 실패했습니다.';
           toast.error(errorMessage);
         }
       }
     } catch (error) {
+      console.error('Save error:', error);
       const err = error as Error | { customMessage?: string };
       const errorMessage = 'customMessage' in err 
         ? err.customMessage 
@@ -290,17 +316,55 @@ const AdminMngPage: React.FC = () => {
 
   const fetchData = useCallback(
     async (params: FetchParams): Promise<FetchResult<AdminUser>> => {
-      const response = await adminGetList({ 
-        keyword: params.keyword || '',
-        fromDate: params.fromDate,
-        toDate: params.toDate
-      }) as ApiResponse<AdminUser>;
+      try {
+        const response = await adminGetList({ 
+          isRoot: true, // 슈퍼 관리자 조회
+          keyword: params.keyword || '',
+        }) as unknown as ApiResponse<AdminUser>[]; // 배열로 타입 캐스팅
 
-      return {
-        data: response.data || [],
-        totalItems: response.metadata.totalCnt,
-        allItems: response.metadata.allCnt
-      };
+        console.log('response', response);
+        
+        // 배열의 첫 번째 요소를 사용 (API가 배열로 응답하는 경우)
+        const apiResponse = Array.isArray(response) ? response[0] : response;
+        
+        if (apiResponse && (apiResponse.statusCode === 200 || apiResponse.statusCode === '200') && apiResponse.message === 'success') {
+          // API 응답 데이터를 AdminUser 타입에 맞게 매핑
+          const mappedData = (apiResponse.data || []).map((item: any) => ({
+            _id: item._id,
+            adminId: item.adminId,
+            name: item.name,
+            email: item.email,
+            cellphone: item.cellphone,
+            createAt: item.createAt,
+            memo: item.memo,
+            emailYn: item.emailYn,
+            smsYn: item.smsYn,
+            description: item.memo, // memo를 description으로 매핑
+          }));
+
+          console.log('Mapped data:', mappedData);
+
+          return {
+            data: mappedData,
+            totalItems: parseInt(apiResponse.metadata?.totalCnt) || 0,
+            allItems: parseInt(apiResponse.metadata?.allCnt) || 0
+          };
+        } else {
+          console.error('API Error:', apiResponse);
+          return {
+            data: [],
+            totalItems: 0,
+            allItems: 0
+          };
+        }
+      } catch (error) {
+        console.error('Fetch Error:', error);
+        return {
+          data: [],
+          totalItems: 0,
+          allItems: 0
+        };
+      }
     },
     []
   );
@@ -314,7 +378,7 @@ const AdminMngPage: React.FC = () => {
         const response = await adminUpdate({
           targetAdminId: adminId,
           [type]: newValue,
-        }) as ApiResponse<AdminUser>;
+        }) as unknown as ApiResponse<AdminUser>;
   
         if (response.statusCode === 200 && response.message === 'success') {
           toast.success(`${type === 'emailYn' ? '메일' : 'SMS'} 수신 설정이 변경되었습니다.`);
@@ -334,16 +398,14 @@ const AdminMngPage: React.FC = () => {
 
   const columns: ColumnDefinition<AdminUser>[] = useMemo(
     () => [
-      { header: 'No', accessor: 'no' },
+      {
+        header: 'No',
+        accessor: '_id',
+        formatter: (value, item, index) => index + 1,
+      },
       {
         header: '가입일',
         accessor: 'createAt',
-        sortable: true,
-        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '-'),
-      },
-      {
-        header: '최근 접속',
-        accessor: 'lastLoginTime',
         sortable: true,
         formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '-'),
       },
@@ -351,7 +413,11 @@ const AdminMngPage: React.FC = () => {
       { header: '아이디', accessor: 'adminId' },
       { header: '이메일', accessor: 'email' },
       { header: '전화번호', accessor: 'cellphone' },
-      { header: '비고', accessor: 'description' },
+      { 
+        header: '비고', 
+        accessor: 'memo',
+        formatter: (value) => value || '-',
+      },
     ],
     [handleDropdownChange]
   );
@@ -372,7 +438,7 @@ const AdminMngPage: React.FC = () => {
       ></ToastContainer>
 
     <CmsResponsiveContainer<AdminUser>
-  title="통합 관리자"
+  title="통합 관리자 관리"
   data={[]} // 초기값, fetchData가 있으면 무시됨
   columns={columns}
   fetchData={() => fetchData({})} // Promise<{ data, totalItems, allItems }>
@@ -385,7 +451,7 @@ const AdminMngPage: React.FC = () => {
   enableDateFilter={false}
 />
 <CmsPopup
-  title="관리자등록"
+  title={selectedUser ? "관리자 수정" : "관리자 등록"}
   isOpen={isPopupOpen}
   onClose={closePopup}
   isWide={false}
@@ -490,7 +556,7 @@ const AdminMngPage: React.FC = () => {
       labelColor="white"
       onChange={(e) => {
         const input = e.target.value;
-        if (/^\d*$/.test(input)) {
+        if (/^\d*$/.test(input) && input.length <= 11) {
           setCellphone(input);
         }
       }}
@@ -514,7 +580,7 @@ const AdminMngPage: React.FC = () => {
   )}
 
 
-    <SwitchInput
+    {/* <SwitchInput
       label="이메일 수신"
       value={emailYn}
       onChange={setEmailYn}
@@ -528,7 +594,7 @@ const AdminMngPage: React.FC = () => {
       onChange={setSmsYn}
       $labelPosition="horizontal"
       labelColor="white"
-    />
+    /> */}
 
     <TextField
       radius="0"

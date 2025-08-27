@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 19,
+            "activePatchIndex": 21,
             "patches": [
                 {
                     "date": 1755957874134,
@@ -84,6 +84,14 @@
                 {
                     "date": 1756175163860,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,9 +7,9 @@\n const Container = styled.div`\n   max-width: 960px;\n   margin: 0 auto;\n   margin-bottom: 100px;\n-  padding: 16px;\n+  padding: 0 16px;\n `\n \n const EmptyState = styled.div`\n   display: flex;\n@@ -49,9 +49,9 @@\n const GroupTitle = styled.h2`\n   font-size: 16px;\n   font-weight: 500;\n   color: ${({ theme }) => theme.text};\n-  margin: 32px 0 16px;\n+  margin: 32px 0 12px;\n `\n const mockEstimates: ProjectEstimate[] = [\n   {\n     project_name: \"AI 기반 쇼핑몰 자동화 시스템\",\n"
+                },
+                {
+                    "date": 1756194823497,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,9 +7,9 @@\n const Container = styled.div`\n   max-width: 960px;\n   margin: 0 auto;\n   margin-bottom: 100px;\n-  padding: 0 16px;\n+  // padding: 0 16px;\n `\n \n const EmptyState = styled.div`\n   display: flex;\n"
+                },
+                {
+                    "date": 1756195478833,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,9 +7,10 @@\n const Container = styled.div`\n   max-width: 960px;\n   margin: 0 auto;\n   margin-bottom: 100px;\n-  // padding: 0 16px;\n+  padding: 0 16px;\n+  back\n `\n \n const EmptyState = styled.div`\n   display: flex;\n"
                 }
             ],
             "date": 1755957874134,

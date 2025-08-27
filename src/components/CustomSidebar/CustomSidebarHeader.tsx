@@ -14,7 +14,7 @@ interface CustomSidebarHeaderProps {
 const CustomSidebarHeader: React.FC<CustomSidebarHeaderProps> = ({
   isCollapsed,
   showTime = true, // 기본값: 시간 표시
-  iconSrc = "/icon_user.png", // 기본값: 유저 아이콘
+  iconSrc = "/cms/cms_user.png", // 기본값: 유저 아이콘
   name = "User", // 기본값: User
   iconSize = 24, // 기본 아이콘 크기
 }) => {
@@ -93,8 +93,9 @@ const Header = styled.div`
 const Flex = styled.div`
   display: flex;
   width: 100%; // 너비 채움
+  height: 100%;
   padding-left: 20px; // 좌측 패딩 조정
-  align-items: center;
+  align-items: flex-start;
   color: #c4c5c9;
   margin-top: 10px; // 시간 표시와의 간격
 `;

@@ -31,7 +31,7 @@ const ChatBox = styled.div`
   border-radius: 8px;
   padding: 12px;
   min-height: 320px;
-
+  
 `
 
 const UserMessage = styled.div`
@@ -42,10 +42,12 @@ const UserMessage = styled.div`
   border-radius: 12px;
   max-width: 80%;
   white-space: pre-wrap;
+  font-size: 18px;
+  line-height: 2.0;
 `
 const StyledAiMessage = styled(AiResponseMessage)<{ isFullWidth?: boolean }>`
   padding: 0;
-  max-width: ${({ isFullWidth }) => (isFullWidth ? '100%' : '80%')};
+  max-width: ${({ isFullWidth }) => (isFullWidth ? '100%' : '100%')};
   align-self: flex-start;
 `
 
@@ -145,6 +147,13 @@ const AnimatedContainer = styled.div<{ $isvisible: boolean }>`
   }
 `;
 
+const StyledDiv = styled.div`
+  font-size: 18px;
+  line-height: 2.0;
+  // ⭐️ 테마에 따라 글씨 색상 조건부 적용
+  color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333333' : '#dddddd')};
+`;
+
 type ModelName = 'gemini-2.5-flash' | 'gemini-2.5-flash-lite' | 'gemini-2.0-flash';
 
 const extractEstimateData = (content: string): ProjectEstimate | null => {
@@ -230,10 +239,10 @@ const AiMessageContent: React.FC<{ content: string }> = ({ content }) => {
     // 견적서 UI 렌더링
   } else if (content.includes('<script')) {
     // JSON 파싱 중일 때 로딩 상태 표시
-    return <div>견적서를 불러오는 중...</div>;
+    return <StyledDiv>견적서를 불러오는 중...</StyledDiv>;
   }
   
-  return <div>{content}</div>;
+  return <StyledDiv>{content}</StyledDiv>;
 };
 
 export default function AiChatPage() {

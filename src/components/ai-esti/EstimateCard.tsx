@@ -20,15 +20,15 @@ const CardWrapper = styled.div`
 `;
 
 const Header = styled.div`
-  padding: 10px 8px 0 8px;
+  padding: 20px 20px 0 20px;
 
 `;
 
   const Flex = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  margin: 0 0 32px 0;
+  margin: 0 0 18px 0;
 `;
 
 const Title = styled.h2`
@@ -259,8 +259,14 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
         <Flex>
         <Title>{estimate.project_name}</Title>
         <Right>
-        <span><Icon onClick={() => setOpenShare(true)} src={'/ai-estimate/share2_dark.png'} width={36} height={36} /></span>
-        <span>
+        <span style={{ display: 'flex', gap: '8px' }}>
+        <Icon
+    onClick={() => setOpenShare(true)}
+    // ⭐️ isDarkMode 상태에 따라 이미지 경로를 변경
+    src={isDarkMode ? '/ai-estimate/share2_dark.png' : '/ai-estimate/share2_light.png'}
+    width={36}
+    height={36}
+  />
           <Icon 
             onClick={generatePDF}
             src={isDarkMode ? '/ai-estimate/download_dark.png' : '/ai-estimate/download_light.png'} 

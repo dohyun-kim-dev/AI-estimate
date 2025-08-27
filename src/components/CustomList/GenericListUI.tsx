@@ -542,11 +542,13 @@ const Container = styled.div<{ $themeMode: ThemeMode }>`
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  padding: 80px 30px 30px 30px; // 오른쪽 패딩 포함
+  padding: 80px 30px;
   background-color: ${({ $themeMode }) =>
     $themeMode === "light" ? THEME_COLORS.light.background : THEME_COLORS.dark.background};
   color: ${({ $themeMode }) =>
     $themeMode === "light" ? THEME_COLORS.light.text : THEME_COLORS.dark.text};
+  overflow-x: auto;
+  overflow-y: auto;
 `;
 
 
@@ -660,7 +662,7 @@ const CompanySearchInput = styled(BaseInput)`
 `;
 
 const SearchButton = styled.button<{ $themeMode: ThemeMode }>`
-  width: 60px;
+  width: 65px;
   height: 40px;
   margin-left: 10px;
   background: ${({ $themeMode }) =>

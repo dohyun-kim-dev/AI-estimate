@@ -4,6 +4,11 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { AppColors } from '@/styles/colors';
 
+// 모바일 디바이스 감지 함수
+const isMobileDevice = () => {
+  return window.innerWidth <= 768;
+};
+
 type CmsPopupProps = {
   title: string;
   children: React.ReactNode;
@@ -54,6 +59,13 @@ const PopupContainer = styled.div<{
   flex-direction: column;
   overflow: hidden;
   flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 95vw !important;
+    min-width: 95vw !important;
+    height: 90vh !important;
+    margin: 0 10px;
+  }
 `;
 
 
@@ -134,6 +146,17 @@ const CmsPopup: React.FC<CmsPopupProps> = ({
   
 }) => {
   const [scrollX, setScrollX] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(isMobileDevice());
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -149,7 +172,7 @@ const CmsPopup: React.FC<CmsPopupProps> = ({
   return (
     <Overlay $scrollX={scrollX}>
       <PopupContainer
-  $isWide={isWide}
+  $isWide={isWide || isMobile}
   $hasBottomFloating={!!bottomFloating}
   $customHeight={height ?? null}
   $backgroundColor={backgroundColor}

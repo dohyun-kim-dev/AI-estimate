@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/layout/ScrollAwareWrapper.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1756190761789,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756190890896,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -56,15 +56,10 @@\n   min-height: ${({ $scrollbarHeight }) =>\n     $scrollbarHeight !== undefined ? `calc(100vh - ${$scrollbarHeight}px)` : \"100vh\"};\n   background-color: #e3e4ea;\n   box-sizing: border-box;\n-  overflow: visible;\n-  display: flex;\n-  flex-direction: column;\n+  min-width: 1240px;\n \n-  @media (min-width: 1024px) {\n-    min-width: 1240px;\n-  }\n \n   @media (max-width: 768px) {\n     min-width: 100%;\n   }\n"
+                }
+            ],
+            "date": 1756190761789,
+            "name": "Commit-0",
+            "content": "import React, { useState, useLayoutEffect, useCallback } from \"react\";\nimport styled from \"styled-components\";\n\ninterface ScrollAwareWrapperProps {\n  children: React.ReactNode;\n}\n\nconst ScrollAwareWrapper: React.FC<ScrollAwareWrapperProps> = ({ children }) => {\n  const [scrollbar, setScrollbar] = useState({ width: 0, height: 0 });\n\n  const updateScrollbar = useCallback(() => {\n    requestAnimationFrame(() => {\n      const width = window.innerWidth - document.documentElement.clientWidth;\n      const height = window.innerHeight - document.documentElement.clientHeight;\n      const newWidth = width > 0 ? width : 0;\n      const newHeight = height > 0 ? height : 0;\n\n      setScrollbar((prev) => {\n        if (prev.width !== newWidth || prev.height !== newHeight) {\n          console.log(\"✅ [ScrollAwareWrapper] scrollbar updated:\", newWidth, newHeight);\n        }\n        return { width: newWidth, height: newHeight };\n      });\n    });\n  }, []);\n\n  useLayoutEffect(() => {\n    updateScrollbar(); // 최초\n    const observer = new ResizeObserver(updateScrollbar);\n    observer.observe(document.body);\n    window.addEventListener(\"resize\", updateScrollbar);\n\n    return () => {\n      observer.disconnect();\n      window.removeEventListener(\"resize\", updateScrollbar);\n    };\n  }, [updateScrollbar]);\n\n  return (\n    <OuterWrapper $scrollbarWidth={scrollbar.width} $scrollbarHeight={scrollbar.height}>\n      {children}\n    </OuterWrapper>\n  );\n};\n\nexport default ScrollAwareWrapper;\n\n// styled-components\nexport const OuterWrapper = styled.div<{\n  $scrollbarWidth?: number;\n  $scrollbarHeight?: number;\n}>`\n  width: 100vw;\n  max-width: ${({ $scrollbarWidth }) =>\n    $scrollbarWidth !== undefined ? `calc(100vw - ${$scrollbarWidth}px)` : \"100vw\"};\n  min-height: ${({ $scrollbarHeight }) =>\n    $scrollbarHeight !== undefined ? `calc(100vh - ${$scrollbarHeight}px)` : \"100vh\"};\n  background-color: #e3e4ea;\n  box-sizing: border-box;\n  overflow: visible;\n  display: flex;\n  flex-direction: column;\n\n  @media (min-width: 1024px) {\n    min-width: 1240px;\n  }\n\n  @media (max-width: 768px) {\n    min-width: 100%;\n  }\n`;\n"
+        }
+    ]
+}

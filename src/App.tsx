@@ -9,6 +9,9 @@ import { lightTheme, darkTheme } from '@styles/theme'
 import { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { GoogleOAuthProvider } from '@react-oauth/google'
+import { DeviceProvider } from '@/contexts/DeviceContext'
+import ScrollAwareWrapper from '@/layout/ScrollAwareWrapper'
+import ScreenWrapper from '@/layout/ScreenWrapper'
 
 const AppWrapper = styled.div`
   display: flex;
@@ -16,10 +19,10 @@ const AppWrapper = styled.div`
   min-height: 100vh;
   width: 100%;
   position: relative;
-  overflow-x: hidden;
 `
 
 const ContentWrapper = styled.main`
+  background-color: ${({ theme }) => theme.body};
   flex: 1;
   width: 100%;
   position: relative;
@@ -42,23 +45,29 @@ function App() {
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <BrowserRouter>
         <ThemeProvider theme={theme}>
-          <GlobalStyle />
-          <AppWrapper>
-            <ContentWrapper>
-              <AppRoutes />
-            </ContentWrapper>
-            <ToastContainer
-              position="top-right"
-              autoClose={3000}
-              newestOnTop
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="colored"
-            />
-          </AppWrapper>
+          <DeviceProvider>
+            <GlobalStyle />
+            <ScrollAwareWrapper>
+              <AppWrapper>
+                <ContentWrapper>
+                  {/* <ScreenWrapper> */}
+                    <AppRoutes />
+                  {/* </ScreenWrapper> */}
+                </ContentWrapper>
+                <ToastContainer
+                  position="top-right"
+                  autoClose={3000}
+                  newestOnTop
+                  closeOnClick
+                  rtl={false}
+                  pauseOnFocusLoss
+                  draggable
+                  pauseOnHover
+                  theme="colored"
+                />
+              </AppWrapper>
+            </ScrollAwareWrapper>
+          </DeviceProvider>
         </ThemeProvider>
       </BrowserRouter>
     </GoogleOAuthProvider>

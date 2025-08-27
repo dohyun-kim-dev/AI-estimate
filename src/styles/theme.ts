@@ -37,6 +37,8 @@ export const lightTheme = {
   testimonialBorder: '#E5E7EB',
   bottomNavBg: '#FFFFFF',
   bottomNavBorder: '#E5E7EB',
+  primaryButton: '#F0F4F9',
+  buttonBottom: "#486D8F"
 };
 
 export const darkTheme = {
@@ -77,6 +79,8 @@ export const darkTheme = {
   testimonialBorder: '#2F2F38',
   bottomNavBg: '#08080F',
   bottomNavBorder: '#2F2F38',
+  primaryButton: '#283139',
+  buttonBottom: "#3391FF"
 };
 
 export type Theme = typeof lightTheme;

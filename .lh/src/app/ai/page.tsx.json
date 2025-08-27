@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 32,
             "patches": [
                 {
                     "date": 1755958980678,
@@ -20,6 +20,122 @@
                 {
                     "date": 1756184915164,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -20,9 +20,9 @@\n   max-width: 960px;\n   margin: 0 auto;\n   padding: 16px;\n   padding-bottom: calc(76px + env(safe-area-inset-bottom));\n-  ma\n+  margin-bottom: 120px;\n `\n \n const ChatBox = styled.div`\n   display: flex;\n"
+                },
+                {
+                    "date": 1756185148247,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -20,9 +20,9 @@\n   max-width: 960px;\n   margin: 0 auto;\n   padding: 16px;\n   padding-bottom: calc(76px + env(safe-area-inset-bottom));\n-  margin-bottom: 120px;\n+  margin-bottom: 200px;\n `\n \n const ChatBox = styled.div`\n   display: flex;\n@@ -232,9 +232,9 @@\n     // JSON 파싱 중일 때 로딩 상태 표시\n     return <div>견적서를 불러오는 중...</div>;\n   }\n   \n-  return <div>{content}</div>;\n+  return <div style>{content}</div>;\n };\n \n export default function AiChatPage() {\n   const { modelName, setModelName, generate, sendChat, resetChat, testModel } = useAI('gemini-2.5-flash-lite')\n"
+                },
+                {
+                    "date": 1756185153949,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -232,9 +232,9 @@\n     // JSON 파싱 중일 때 로딩 상태 표시\n     return <div>견적서를 불러오는 중...</div>;\n   }\n   \n-  return <div style>{content}</div>;\n+  return <div style={{ font' }}>{content}</div>;\n };\n \n export default function AiChatPage() {\n   const { modelName, setModelName, generate, sendChat, resetChat, testModel } = useAI('gemini-2.5-flash-lite')\n"
+                },
+                {
+                    "date": 1756185171117,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -232,9 +232,9 @@\n     // JSON 파싱 중일 때 로딩 상태 표시\n     return <div>견적서를 불러오는 중...</div>;\n   }\n   \n-  return <div style={{ font' }}>{content}</div>;\n+  return <div style={{ fontSize: 16 }}>{content}</div>;\n };\n \n export default function AiChatPage() {\n   const { modelName, setModelName, generate, sendChat, resetChat, testModel } = useAI('gemini-2.5-flash-lite')\n"
+                },
+                {
+                    "date": 1756185297330,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -30,9 +30,9 @@\n   gap: 20px;\n   border-radius: 8px;\n   padding: 12px;\n   min-height: 320px;\n-\n+  font-size: 14px;\n `\n \n const UserMessage = styled.div`\n   align-self: flex-end;\n@@ -232,9 +232,9 @@\n     // JSON 파싱 중일 때 로딩 상태 표시\n     return <div>견적서를 불러오는 중...</div>;\n   }\n   \n-  return <div style={{ fontSize: 16 }}>{content}</div>;\n+  return <div style={{ fontSize: 14 }}>{content}</div>;\n };\n \n export default function AiChatPage() {\n   const { modelName, setModelName, generate, sendChat, resetChat, testModel } = useAI('gemini-2.5-flash-lite')\n"
+                },
+                {
+                    "date": 1756185349378,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -30,9 +30,9 @@\n   gap: 20px;\n   border-radius: 8px;\n   padding: 12px;\n   min-height: 320px;\n-  font-size: 14px;\n+  \n `\n \n const UserMessage = styled.div`\n   align-self: flex-end;\n@@ -44,9 +44,9 @@\n   white-space: pre-wrap;\n `\n const StyledAiMessage = styled(AiResponseMessage)<{ isFullWidth?: boolean }>`\n   padding: 0;\n-  max-width: ${({ isFullWidth }) => (isFullWidth ? '100%' : '80%')};\n+  max-width: ${({ isFullWidth }) => (isFullWidth ? '100%' : '100%')};\n   align-self: flex-start;\n `\n \n const Controls = styled.div`\n"
+                },
+                {
+                    "date": 1756185403052,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -232,9 +232,9 @@\n     // JSON 파싱 중일 때 로딩 상태 표시\n     return <div>견적서를 불러오는 중...</div>;\n   }\n   \n-  return <div style={{ fontSize: 14 }}>{content}</div>;\n+  return <div style={{ fontSize: 16 }}>{content}</div>;\n };\n \n export default function AiChatPage() {\n   const { modelName, setModelName, generate, sendChat, resetChat, testModel } = useAI('gemini-2.5-flash-lite')\n"
+                },
+                {
+                    "date": 1756185431277,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -232,9 +232,9 @@\n     // JSON 파싱 중일 때 로딩 상태 표시\n     return <div>견적서를 불러오는 중...</div>;\n   }\n   \n-  return <div style={{ fontSize: 16 }}>{content}</div>;\n+  return <div style={{ fontSize: 16 f }}>{content}</div>;\n };\n \n export default function AiChatPage() {\n   const { modelName, setModelName, generate, sendChat, resetChat, testModel } = useAI('gemini-2.5-flash-lite')\n"
+                },
+                {
+                    "date": 1756185437335,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -232,9 +232,9 @@\n     // JSON 파싱 중일 때 로딩 상태 표시\n     return <div>견적서를 불러오는 중...</div>;\n   }\n   \n-  return <div style={{ fontSize: 16 f }}>{content}</div>;\n+  return <div style={{ fontSize: 16, color: '#000' }}>{content}</div>;\n };\n \n export default function AiChatPage() {\n   const { modelName, setModelName, generate, sendChat, resetChat, testModel } = useAI('gemini-2.5-flash-lite')\n"
+                },
+                {
+                    "date": 1756185442751,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -232,9 +232,9 @@\n     // JSON 파싱 중일 때 로딩 상태 표시\n     return <div>견적서를 불러오는 중...</div>;\n   }\n   \n-  return <div style={{ fontSize: 16, color: '#000' }}>{content}</div>;\n+  return <div style={{ fontSize: 16, color: '#f9f9f9' }}>{content}</div>;\n };\n \n export default function AiChatPage() {\n   const { modelName, setModelName, generate, sendChat, resetChat, testModel } = useAI('gemini-2.5-flash-lite')\n"
+                },
+                {
+                    "date": 1756185452270,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -232,9 +232,9 @@\n     // JSON 파싱 중일 때 로딩 상태 표시\n     return <div>견적서를 불러오는 중...</div>;\n   }\n   \n-  return <div style={{ fontSize: 16, color: '#f9f9f9' }}>{content}</div>;\n+  return <div style={{ fontSize: 16, color: '#cccccc' }}>{content}</div>;\n };\n \n export default function AiChatPage() {\n   const { modelName, setModelName, generate, sendChat, resetChat, testModel } = useAI('gemini-2.5-flash-lite')\n"
+                },
+                {
+                    "date": 1756185510538,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -144,8 +144,14 @@\n     min-height: 0;\n   }\n `;\n \n+const StyledDiv = styled.div`\n+  font-size: 16px;\n+  // ⭐️ 테마에 따라 글씨 색상 조건부 적용\n+  color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#666666' : '#dddddd')};\n+`;\n+\n type ModelName = 'gemini-2.5-flash' | 'gemini-2.5-flash-lite' | 'gemini-2.0-flash';\n \n const extractEstimateData = (content: string): ProjectEstimate | null => {\n   try {\n@@ -232,9 +238,9 @@\n     // JSON 파싱 중일 때 로딩 상태 표시\n     return <div>견적서를 불러오는 중...</div>;\n   }\n   \n-  return <div style={{ fontSize: 16, color: '#cccccc' }}>{content}</div>;\n+  return <div style={{ fontSize: 16, color: '#dddddd' }}>{content}</div>;\n };\n \n export default function AiChatPage() {\n   const { modelName, setModelName, generate, sendChat, resetChat, testModel } = useAI('gemini-2.5-flash-lite')\n"
+                },
+                {
+                    "date": 1756185519795,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -238,9 +238,9 @@\n     // JSON 파싱 중일 때 로딩 상태 표시\n     return <div>견적서를 불러오는 중...</div>;\n   }\n   \n-  return <div style={{ fontSize: 16, color: '#dddddd' }}>{content}</div>;\n+  return <StyledDiv>{content}</StyledDiv>;\n };\n \n export default function AiChatPage() {\n   const { modelName, setModelName, generate, sendChat, resetChat, testModel } = useAI('gemini-2.5-flash-lite')\n"
+                },
+                {
+                    "date": 1756185538388,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -235,9 +235,9 @@\n   if (estimateData && estimateData.categories) {\n     // 견적서 UI 렌더링\n   } else if (content.includes('<script')) {\n     // JSON 파싱 중일 때 로딩 상태 표시\n-    return <div>견적서를 불러오는 중...</div>;\n+    return <dStyledDiviv>견적서를 불러오는 중...</div>;\n   }\n   \n   return <StyledDiv>{content}</StyledDiv>;\n };\n"
+                },
+                {
+                    "date": 1756185545040,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -235,9 +235,9 @@\n   if (estimateData && estimateData.categories) {\n     // 견적서 UI 렌더링\n   } else if (content.includes('<script')) {\n     // JSON 파싱 중일 때 로딩 상태 표시\n-    return <dStyledDiviv>견적서를 불러오는 중...</div>;\n+    return <StyledDiviv>견적서를 불러오는 중...</StyledDiv>;\n   }\n   \n   return <StyledDiv>{content}</StyledDiv>;\n };\n"
+                },
+                {
+                    "date": 1756185559931,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -147,9 +147,9 @@\n \n const StyledDiv = styled.div`\n   font-size: 16px;\n   // ⭐️ 테마에 따라 글씨 색상 조건부 적용\n-  color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#666666' : '#dddddd')};\n+  color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#000' : '#dddddd')};\n `;\n \n type ModelName = 'gemini-2.5-flash' | 'gemini-2.5-flash-lite' | 'gemini-2.0-flash';\n \n@@ -235,9 +235,9 @@\n   if (estimateData && estimateData.categories) {\n     // 견적서 UI 렌더링\n   } else if (content.includes('<script')) {\n     // JSON 파싱 중일 때 로딩 상태 표시\n-    return <StyledDiviv>견적서를 불러오는 중...</StyledDiv>;\n+    return <StyledDiv>견적서를 불러오는 중...</StyledDiv>;\n   }\n   \n   return <StyledDiv>{content}</StyledDiv>;\n };\n"
+                },
+                {
+                    "date": 1756185572186,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -147,9 +147,9 @@\n \n const StyledDiv = styled.div`\n   font-size: 16px;\n   // ⭐️ 테마에 따라 글씨 색상 조건부 적용\n-  color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#000' : '#dddddd')};\n+  color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333' : '#dddddd')};\n `;\n \n type ModelName = 'gemini-2.5-flash' | 'gemini-2.5-flash-lite' | 'gemini-2.0-flash';\n \n"
+                },
+                {
+                    "date": 1756191594639,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -145,11 +145,11 @@\n   }\n `;\n \n const StyledDiv = styled.div`\n-  font-size: 16px;\n+  font-size: 18px;\n   // ⭐️ 테마에 따라 글씨 색상 조건부 적용\n-  color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333' : '#dddddd')};\n+  color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333333' : '#dddddd')};\n `;\n \n type ModelName = 'gemini-2.5-flash' | 'gemini-2.5-flash-lite' | 'gemini-2.0-flash';\n \n"
+                },
+                {
+                    "date": 1756191703427,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -118,9 +118,9 @@\n   justify-content: center;\n   align-items: center;\n   text-align: center;\n   padding: 10px;\n-  font-size: 14px;\n+  font-size: 18px;\n   font-style: normal;\n   font-weight: 600;\n   line-height: 160%; \n   letter-spacing: 0.28px;\n"
+                },
+                {
+                    "date": 1756191905488,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -118,9 +118,9 @@\n   justify-content: center;\n   align-items: center;\n   text-align: center;\n   padding: 10px;\n-  font-size: 18px;\n+  font-size: 14px;\n   font-style: normal;\n   font-weight: 600;\n   line-height: 160%; \n   letter-spacing: 0.28px;\n@@ -146,8 +146,9 @@\n `;\n \n const StyledDiv = styled.div`\n   font-size: 18px;\n+  line-height: 1.5;\n   // ⭐️ 테마에 따라 글씨 색상 조건부 적용\n   color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333333' : '#dddddd')};\n `;\n \n"
+                },
+                {
+                    "date": 1756191930575,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -146,9 +146,9 @@\n `;\n \n const StyledDiv = styled.div`\n   font-size: 18px;\n-  line-height: 1.5;\n+  line-height: 2;\n   // ⭐️ 테마에 따라 글씨 색상 조건부 적용\n   color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333333' : '#dddddd')};\n `;\n \n"
+                },
+                {
+                    "date": 1756191939769,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -146,9 +146,9 @@\n `;\n \n const StyledDiv = styled.div`\n   font-size: 18px;\n-  line-height: 2;\n+  line-height: 1.6;\n   // ⭐️ 테마에 따라 글씨 색상 조건부 적용\n   color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333333' : '#dddddd')};\n `;\n \n"
+                },
+                {
+                    "date": 1756191949637,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -146,9 +146,9 @@\n `;\n \n const StyledDiv = styled.div`\n   font-size: 18px;\n-  line-height: 1.6;\n+  line-height: 1.5;\n   // ⭐️ 테마에 따라 글씨 색상 조건부 적용\n   color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333333' : '#dddddd')};\n `;\n \n"
+                },
+                {
+                    "date": 1756191956588,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -146,9 +146,9 @@\n `;\n \n const StyledDiv = styled.div`\n   font-size: 18px;\n-  line-height: 1.5;\n+  line-height: 1.7;\n   // ⭐️ 테마에 따라 글씨 색상 조건부 적용\n   color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333333' : '#dddddd')};\n `;\n \n"
+                },
+                {
+                    "date": 1756191969663,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -146,9 +146,9 @@\n `;\n \n const StyledDiv = styled.div`\n   font-size: 18px;\n-  line-height: 1.7;\n+  line-height: 1.5;\n   // ⭐️ 테마에 따라 글씨 색상 조건부 적용\n   color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333333' : '#dddddd')};\n `;\n \n"
+                },
+                {
+                    "date": 1756191978314,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -146,9 +146,9 @@\n `;\n \n const StyledDiv = styled.div`\n   font-size: 18px;\n-  line-height: 1.5;\n+  line-height: 2;\n   // ⭐️ 테마에 따라 글씨 색상 조건부 적용\n   color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333333' : '#dddddd')};\n `;\n \n"
+                },
+                {
+                    "date": 1756191983430,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -146,9 +146,9 @@\n `;\n \n const StyledDiv = styled.div`\n   font-size: 18px;\n-  line-height: 2;\n+  line-height: 1.8;\n   // ⭐️ 테마에 따라 글씨 색상 조건부 적용\n   color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333333' : '#dddddd')};\n `;\n \n"
+                },
+                {
+                    "date": 1756192393883,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -41,8 +41,10 @@\n   padding: 10px 12px;\n   border-radius: 12px;\n   max-width: 80%;\n   white-space: pre-wrap;\n+  font-size: 18px;\n+  line-height: 2.0;\n `\n const StyledAiMessage = styled(AiResponseMessage)<{ isFullWidth?: boolean }>`\n   padding: 0;\n   max-width: ${({ isFullWidth }) => (isFullWidth ? '100%' : '100%')};\n@@ -146,9 +148,9 @@\n `;\n \n const StyledDiv = styled.div`\n   font-size: 18px;\n-  line-height: 1.8;\n+  line-height: 2.0;\n   // ⭐️ 테마에 따라 글씨 색상 조건부 적용\n   color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333333' : '#dddddd')};\n `;\n \n"
+                },
+                {
+                    "date": 1756192524873,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,8 +21,10 @@\n   margin: 0 auto;\n   padding: 16px;\n   padding-bottom: calc(76px + env(safe-area-inset-bottom));\n   margin-bottom: 200px;\n+  position: relative;\n+  min-height: 100vh;\n `\n \n const ChatBox = styled.div`\n   display: flex;\n@@ -153,8 +155,27 @@\n   // ⭐️ 테마에 따라 글씨 색상 조건부 적용\n   color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333333' : '#dddddd')};\n `;\n \n+const FixedBottomInput = styled.div`\n+  position: fixed;\n+  bottom: 0;\n+  left: 0;\n+  right: 0;\n+  z-index: 1000;\n+  background: ${({ theme }) => theme.body};\n+  border-top: 1px solid ${({ theme }) => theme.border};\n+  padding: 16px;\n+  padding-bottom: calc(16px + env(safe-area-inset-bottom));\n+  \n+  @media (min-width: 1024px) {\n+    position: relative;\n+    border-top: none;\n+    padding: 0;\n+    margin-top: 20px;\n+  }\n+`;\n+\n type ModelName = 'gemini-2.5-flash' | 'gemini-2.5-flash-lite' | 'gemini-2.0-flash';\n \n const extractEstimateData = (content: string): ProjectEstimate | null => {\n   try {\n@@ -334,11 +355,13 @@\n         {/* ⭐️ 3. 채팅창 가장 아래에 빈 div를 추가하고 ref 연결 */}\n         <div ref={endOfMessagesRef} />\n       </ChatBox>\n \n-      <BottomInput \n-        placeholder=\"메시지를 입력하세요\"\n-        onSubmit={handleSubmit}\n-      />\n+      <FixedBottomInput>\n+        <BottomInput \n+          placeholder=\"메시지를 입력하세요\"\n+          onSubmit={handleSubmit}\n+        />\n+      </FixedBottomInput>\n     </Container>\n   )\n }\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756192664952,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,10 +21,8 @@\n   margin: 0 auto;\n   padding: 16px;\n   padding-bottom: calc(76px + env(safe-area-inset-bottom));\n   margin-bottom: 200px;\n-  position: relative;\n-  min-height: 100vh;\n `\n \n const ChatBox = styled.div`\n   display: flex;\n@@ -155,27 +153,8 @@\n   // ⭐️ 테마에 따라 글씨 색상 조건부 적용\n   color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333333' : '#dddddd')};\n `;\n \n-const FixedBottomInput = styled.div`\n-  position: fixed;\n-  bottom: 0;\n-  left: 0;\n-  right: 0;\n-  z-index: 1000;\n-  background: ${({ theme }) => theme.body};\n-  border-top: 1px solid ${({ theme }) => theme.border};\n-  padding: 16px;\n-  padding-bottom: calc(16px + env(safe-area-inset-bottom));\n-  \n-  @media (min-width: 1024px) {\n-    position: relative;\n-    border-top: none;\n-    padding: 0;\n-    margin-top: 20px;\n-  }\n-`;\n-\n type ModelName = 'gemini-2.5-flash' | 'gemini-2.5-flash-lite' | 'gemini-2.0-flash';\n \n const extractEstimateData = (content: string): ProjectEstimate | null => {\n   try {\n@@ -355,13 +334,11 @@\n         {/* ⭐️ 3. 채팅창 가장 아래에 빈 div를 추가하고 ref 연결 */}\n         <div ref={endOfMessagesRef} />\n       </ChatBox>\n \n-      <FixedBottomInput>\n-        <BottomInput \n-          placeholder=\"메시지를 입력하세요\"\n-          onSubmit={handleSubmit}\n-        />\n-      </FixedBottomInput>\n+      <BottomInput \n+        placeholder=\"메시지를 입력하세요\"\n+        onSubmit={handleSubmit}\n+      />\n     </Container>\n   )\n }\n\\ No newline at end of file\n"
                 }
             ],
             "date": 1755958980678,

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1755953227058,
@@ -16,6 +16,10 @@
                 {
                     "date": 1755960298778,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -15,20 +15,12 @@\n \n   return {\n     plugins: [\n       react({\n+        jsxImportSource: '@emotion/react',\n         babel: {\n           plugins: [\n-            [\n-              'styled-components',\n-              {\n-                displayName: true,\n-                fileName: true,\n-                meaninglessFileNames: [\"index\"],\n-                pure: true,\n-                transpileTemplateLiterals: true,\n-              },\n-            ],\n+            'babel-plugin-styled-components'\n           ],\n         },\n       }),\n     ],\n"
+                },
+                {
+                    "date": 1756186689455,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -49,10 +49,20 @@\n         // API 프록시 설정\n         '/api': {\n           target: API_URL,\n           changeOrigin: true,\n-          rewrite: (path) => path.replace(/^\\/api/, ''),\n           secure: false,\n+          configure: (proxy, options) => {\n+            proxy.on('error', (err, req, res) => {\n+              console.log('proxy error', err);\n+            });\n+            proxy.on('proxyReq', (proxyReq, req, res) => {\n+              console.log('Sending Request to the Target:', req.method, req.url);\n+            });\n+            proxy.on('proxyRes', (proxyRes, req, res) => {\n+              console.log('Received Response from the Target:', proxyRes.statusCode, req.url);\n+            });\n+          },\n         }\n       },\n       cors: true // CORS 활성화\n     },\n"
                 }
             ],
             "date": 1755953227058,

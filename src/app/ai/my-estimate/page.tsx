@@ -9,6 +9,7 @@ const Container = styled.div`
   margin: 0 auto;
   margin-bottom: 100px;
   padding: 0 16px;
+  background-color: ${({ theme }) => theme.body};
 `
 
 const EmptyState = styled.div`

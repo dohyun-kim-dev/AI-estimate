@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 27,
+            "activePatchIndex": 28,
             "patches": [
                 {
                     "date": 1756098354889,
@@ -116,6 +116,10 @@
                 {
                     "date": 1756184099535,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -199,17 +199,23 @@\n     }\n   };\n   const handleKeyPress = (e: React.KeyboardEvent) => {\n     if (e.key === 'Enter') {\n-      // ⭐️ 정규 표현식에 iPhone, iPad 등을 추가\n       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);\n       \n       if (isMobile) {\n-        e.preventDefault();\n-        handleSubmit();\n+        // 모바일 환경\n+        if (e.shiftKey) {\n+            // 모바일에서 Shift+Enter는 제출\n+            e.preventDefault();\n+            handleSubmit();\n+        } else {\n+            // 모바일에서 Enter는 줄바꿈 (기본 동작)\n+        }\n       } else {\n+        // PC 환경\n         if (e.shiftKey) {\n-          // PC에서 Shift + Enter는 줄바꿈\n+          // PC에서 Shift + Enter는 줄바꿈 (기본 동작)\n         } else {\n           // PC에서 Enter만 누르면 제출\n           e.preventDefault();\n           handleSubmit();\n"
+                },
+                {
+                    "date": 1756191685038,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -68,9 +68,9 @@\n   display:flex;\n   justify-content:center;\n   align-items:center;\n   background-color: transparent;\n-  font-size: 14px;\n+  font-size: 18px;\n   border: none;\n   outline: none;\n   color: ${({ theme }) => theme.text};\n   resize: none;\n"
                 }
             ],
             "date": 1756098354889,

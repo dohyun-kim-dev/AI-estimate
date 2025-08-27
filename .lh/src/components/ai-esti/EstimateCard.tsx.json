@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 14,
+            "activePatchIndex": 34,
             "patches": [
                 {
                     "date": 1756086290711,
@@ -64,6 +64,86 @@
                 {
                     "date": 1756088442613,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -194,16 +194,16 @@\n       let pageNumber = 1;\n \n       // 첫 페이지 추가 (JPEG 압축 사용)\n       const imageData = canvas.toDataURL('image/jpeg', 0.7);\n-      pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');\n+      pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);\n       heightLeft -= pageHeight;\n \n       // 남은 높이가 있으면 추가 페이지 생성\n       while (heightLeft >= 0) {\n         position = -(pageHeight * pageNumber);\n         pdf.addPage();\n-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);\n+        pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);\n         heightLeft -= pageHeight;\n         pageNumber++;\n       }\n \n"
+                },
+                {
+                    "date": 1756194452583,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -19,9 +19,9 @@\n   margin: 24px 0;\n `;\n \n const Header = styled.div`\n-  padding: 10px 8px 0 8px;\n+  padding: 20px 8px 0 8px;\n \n `;\n \n   const Flex = styled.div`\n"
+                },
+                {
+                    "date": 1756194490249,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -19,9 +19,9 @@\n   margin: 24px 0;\n `;\n \n const Header = styled.div`\n-  padding: 20px 8px 0 8px;\n+  padding: 20px 20px 0 20px;\n \n `;\n \n   const Flex = styled.div`\n"
+                },
+                {
+                    "date": 1756194496400,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -19,9 +19,9 @@\n   margin: 24px 0;\n `;\n \n const Header = styled.div`\n-  padding: 20px 20px 0 20px;\n+  padding: 10px 20px 0 20px;\n \n `;\n \n   const Flex = styled.div`\n"
+                },
+                {
+                    "date": 1756194514176,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -19,9 +19,9 @@\n   margin: 24px 0;\n `;\n \n const Header = styled.div`\n-  padding: 10px 20px 0 20px;\n+  padding: 20px 20px 0 20px;\n \n `;\n \n   const Flex = styled.div`\n"
+                },
+                {
+                    "date": 1756194551344,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -31,9 +31,9 @@\n   margin: 0 0 32px 0;\n `;\n \n const Title = styled.h2`\n-  font-size: 20px;\n+  font-size: 24px;\n font-style: normal;\n font-weight: 700;\n line-height: normal;\n `;\n"
+                },
+                {
+                    "date": 1756194580360,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -31,9 +31,9 @@\n   margin: 0 0 32px 0;\n `;\n \n const Title = styled.h2`\n-  font-size: 24px;\n+  font-size: 20px;\n font-style: normal;\n font-weight: 700;\n line-height: normal;\n `;\n"
+                },
+                {
+                    "date": 1756194594285,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,9 +27,9 @@\n   const Flex = styled.div`\n   display: flex;\n   align-items: center;\n   justify-content: space-between;\n-  margin: 0 0 32px 0;\n+  margin: 0 0 18px 0;\n `;\n \n const Title = styled.h2`\n   font-size: 20px;\n"
+                },
+                {
+                    "date": 1756194643915,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,9 +25,9 @@\n `;\n \n   const Flex = styled.div`\n   display: flex;\n-  align-items: center;\n+  align-items: flex-start;\n   justify-content: space-between;\n   margin: 0 0 18px 0;\n `;\n \n"
+                },
+                {
+                    "date": 1756195991041,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -258,10 +258,11 @@\n       <Header>\n         <Flex>\n         <Title>{estimate.project_name}</Title>\n         <Right>\n-        <span><Icon onClick={() => setOpenShare(true)} src={'/ai-estimate/share2_dark.png'} width={36} height={36} /></span>\n         <span>\n+          <Icon onClick={() => setOpenShare(true)} src={'/ai-estimate/share2_dark.png'} width={36} height={36} /></span>\n+        <span>\n           <Icon \n             onClick={generatePDF}\n             src={isDarkMode ? '/ai-estimate/download_dark.png' : '/ai-estimate/download_light.png'} \n             width={36} \n"
+                },
+                {
+                    "date": 1756195997298,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -258,11 +258,16 @@\n       <Header>\n         <Flex>\n         <Title>{estimate.project_name}</Title>\n         <Right>\n-        <span>\n-          <Icon onClick={() => setOpenShare(true)} src={'/ai-estimate/share2_dark.png'} width={36} height={36} /></span>\n-        <span>\n+        <Icon\n+    onClick={() => setOpenShare(true)}\n+    // ⭐️ isDarkMode 상태에 따라 이미지 경로를 변경\n+    src={isDarkMode ? '/ai-estimate/share2_dark.png' : '/ai-estimate/share2_light.png'}\n+    width={36}\n+    height={36}\n+  />\n+          <span>\n           <Icon \n             onClick={generatePDF}\n             src={isDarkMode ? '/ai-estimate/download_dark.png' : '/ai-estimate/download_light.png'} \n             width={36} \n"
+                },
+                {
+                    "date": 1756196003066,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -258,16 +258,16 @@\n       <Header>\n         <Flex>\n         <Title>{estimate.project_name}</Title>\n         <Right>\n+          \n         <Icon\n     onClick={() => setOpenShare(true)}\n     // ⭐️ isDarkMode 상태에 따라 이미지 경로를 변경\n     src={isDarkMode ? '/ai-estimate/share2_dark.png' : '/ai-estimate/share2_light.png'}\n     width={36}\n     height={36}\n   />\n-          <span>\n           <Icon \n             onClick={generatePDF}\n             src={isDarkMode ? '/ai-estimate/download_dark.png' : '/ai-estimate/download_light.png'} \n             width={36} \n"
+                },
+                {
+                    "date": 1756196089276,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -258,9 +258,9 @@\n       <Header>\n         <Flex>\n         <Title>{estimate.project_name}</Title>\n         <Right>\n-          \n+          <span style>\n         <Icon\n     onClick={() => setOpenShare(true)}\n     // ⭐️ isDarkMode 상태에 따라 이미지 경로를 변경\n     src={isDarkMode ? '/ai-estimate/share2_dark.png' : '/ai-estimate/share2_light.png'}\n"
+                },
+                {
+                    "date": 1756196099740,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -258,9 +258,9 @@\n       <Header>\n         <Flex>\n         <Title>{estimate.project_name}</Title>\n         <Right>\n-          <span style>\n+          <span style={{gap: '16px'}}>\n         <Icon\n     onClick={() => setOpenShare(true)}\n     // ⭐️ isDarkMode 상태에 따라 이미지 경로를 변경\n     src={isDarkMode ? '/ai-estimate/share2_dark.png' : '/ai-estimate/share2_light.png'}\n"
+                },
+                {
+                    "date": 1756196130149,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -258,9 +258,9 @@\n       <Header>\n         <Flex>\n         <Title>{estimate.project_name}</Title>\n         <Right>\n-          <span style={{gap: '16px'}}>\n+          <span >\n         <Icon\n     onClick={() => setOpenShare(true)}\n     // ⭐️ isDarkMode 상태에 따라 이미지 경로를 변경\n     src={isDarkMode ? '/ai-estimate/share2_dark.png' : '/ai-estimate/share2_light.png'}\n"
+                },
+                {
+                    "date": 1756196136689,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -266,8 +266,9 @@\n     src={isDarkMode ? '/ai-estimate/share2_dark.png' : '/ai-estimate/share2_light.png'}\n     width={36}\n     height={36}\n   />\n+  <div></div>\n           <Icon \n             onClick={generatePDF}\n             src={isDarkMode ? '/ai-estimate/download_dark.png' : '/ai-estimate/download_light.png'} \n             width={36} \n"
+                },
+                {
+                    "date": 1756196150994,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -266,9 +266,9 @@\n     src={isDarkMode ? '/ai-estimate/share2_dark.png' : '/ai-estimate/share2_light.png'}\n     width={36}\n     height={36}\n   />\n-  <div></div>\n+  <div style={{width:'36px'></div>\n           <Icon \n             onClick={generatePDF}\n             src={isDarkMode ? '/ai-estimate/download_dark.png' : '/ai-estimate/download_light.png'} \n             width={36} \n"
+                },
+                {
+                    "date": 1756196160845,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -266,9 +266,9 @@\n     src={isDarkMode ? '/ai-estimate/share2_dark.png' : '/ai-estimate/share2_light.png'}\n     width={36}\n     height={36}\n   />\n-  <div style={{width:'36px'></div>\n+  <span style={{width:'6px'}}></div>\n           <Icon \n             onClick={generatePDF}\n             src={isDarkMode ? '/ai-estimate/download_dark.png' : '/ai-estimate/download_light.png'} \n             width={36} \n"
+                },
+                {
+                    "date": 1756196166777,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -266,9 +266,9 @@\n     src={isDarkMode ? '/ai-estimate/share2_dark.png' : '/ai-estimate/share2_light.png'}\n     width={36}\n     height={36}\n   />\n-  <span style={{width:'6px'}}></div>\n+  <span style={{width:'16px'}}></span>\n           <Icon \n             onClick={generatePDF}\n             src={isDarkMode ? '/ai-estimate/download_dark.png' : '/ai-estimate/download_light.png'} \n             width={36} \n"
+                },
+                {
+                    "date": 1756196176251,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -266,9 +266,8 @@\n     src={isDarkMode ? '/ai-estimate/share2_dark.png' : '/ai-estimate/share2_light.png'}\n     width={36}\n     height={36}\n   />\n-  <span style={{width:'16px'}}></span>\n           <Icon \n             onClick={generatePDF}\n             src={isDarkMode ? '/ai-estimate/download_dark.png' : '/ai-estimate/download_light.png'} \n             width={36} \n"
+                },
+                {
+                    "date": 1756196236823,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -258,9 +258,9 @@\n       <Header>\n         <Flex>\n         <Title>{estimate.project_name}</Title>\n         <Right>\n-          <span >\n+        <span style={{ display: 'flex', gap: '8px' }}>\n         <Icon\n     onClick={() => setOpenShare(true)}\n     // ⭐️ isDarkMode 상태에 따라 이미지 경로를 변경\n     src={isDarkMode ? '/ai-estimate/share2_dark.png' : '/ai-estimate/share2_light.png'}\n"
                 }
             ],
             "date": 1756086290711,

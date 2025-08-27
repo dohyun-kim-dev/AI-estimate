@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1756102648089,
@@ -12,6 +12,22 @@
                 {
                     "date": 1756102677918,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,9 +10,9 @@\n  * Please keep the variable names and change the values according to your project design guidelines.\n  */\n \n export const Breakpoints = {\n-  mobile: 480,\n+  mobile: 770,\n   tablet: 1024,\n   desktop: 1200,\n } as const; // 화면 너비 기준점 | Screen width breakpoints\n \n"
+                },
+                {
+                    "date": 1756194934287,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -16,22 +16,22 @@\n   desktop: 1200,\n } as const; // 화면 너비 기준점 | Screen width breakpoints\n \n export const LayoutConstants = {\n-  screenPadding: {\n-    horizontal: {\n-      mobile: \"20px\",\n-      tablet: \"32px\",\n-      desktop: \"64px\",\n-    },\n-    top: {\n-      mobile: \"24px\",\n-      tablet: \"32px\",\n-      desktop: \"48px\",\n-    },\n-    bottom: {\n-      mobile: \"24px\",\n-      tablet: \"32px\",\n-      desktop: \"48px\",\n-    },\n-  },\n+  // screenPadding: {\n+  //   horizontal: {\n+  //     mobile: \"20px\",\n+  //     tablet: \"32px\",\n+  //     desktop: \"64px\",\n+  //   },\n+  //   top: {\n+  //     mobile: \"24px\",\n+  //     tablet: \"32px\",\n+  //     desktop: \"48px\",\n+  //   },\n+  //   bottom: {\n+  //     mobile: \"24px\",\n+  //     tablet: \"32px\",\n+  //     desktop: \"48px\",\n+  //   },\n+  // },\n }; // 화면 외곽 여백 | Outer screen padding\n"
+                },
+                {
+                    "date": 1756194959600,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -16,22 +16,22 @@\n   desktop: 1200,\n } as const; // 화면 너비 기준점 | Screen width breakpoints\n \n export const LayoutConstants = {\n-  // screenPadding: {\n-  //   horizontal: {\n-  //     mobile: \"20px\",\n-  //     tablet: \"32px\",\n-  //     desktop: \"64px\",\n-  //   },\n-  //   top: {\n-  //     mobile: \"24px\",\n-  //     tablet: \"32px\",\n-  //     desktop: \"48px\",\n-  //   },\n-  //   bottom: {\n-  //     mobile: \"24px\",\n-  //     tablet: \"32px\",\n-  //     desktop: \"48px\",\n-  //   },\n-  // },\n+  screenPadding: {\n+    horizontal: {\n+      mobile: \"20px\",\n+      tablet: \"32px\",\n+      desktop: \"64px\",\n+    },\n+    top: {\n+      mobile: \"24px\",\n+      tablet: \"32px\",\n+      desktop: \"48px\",\n+    },\n+    bottom: {\n+      mobile: \"24px\",\n+      tablet: \"32px\",\n+      desktop: \"48px\",\n+    },\n+  },\n }; // 화면 외곽 여백 | Outer screen padding\n"
+                },
+                {
+                    "date": 1756194968367,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -20,9 +20,9 @@\n   screenPadding: {\n     horizontal: {\n       mobile: \"20px\",\n       tablet: \"32px\",\n-      desktop: \"64px\",\n+      desktop: \"0px\",\n     },\n     top: {\n       mobile: \"24px\",\n       tablet: \"32px\",\n"
+                },
+                {
+                    "date": 1756194981903,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -20,9 +20,9 @@\n   screenPadding: {\n     horizontal: {\n       mobile: \"20px\",\n       tablet: \"32px\",\n-      desktop: \"0px\",\n+      desktop: \"64px\",\n     },\n     top: {\n       mobile: \"24px\",\n       tablet: \"32px\",\n"
                 }
             ],
             "date": 1756102648089,

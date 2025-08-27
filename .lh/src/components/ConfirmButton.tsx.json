@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/components/ConfirmButton.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1756195122877,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1756195122877,
+            "name": "Commit-0",
+            "content": "'use client'\n\nimport React, { useState } from 'react'\nimport styled from 'styled-components'\nimport Modal from '@/components/common/Modal'\nimport { AppColors } from '@/styles/colors'\n\ntype ConfirmButtonProps = {\n  title: string\n  content: string\n  confirmText?: string\n  cancelText?: string\n  onConfirm?: () => void\n  onCancel?: () => void\n  width?: number\n  buttonLabel?: string\n  disabled?: boolean\n}\n\nexport default function ConfirmButton({\n  title,\n  content,\n  confirmText = '저장',\n  cancelText = '취소',\n  onConfirm,\n  onCancel,\n  width = 520,\n  buttonLabel = '저장',\n  disabled = false,\n}: ConfirmButtonProps) {\n  const [open, setOpen] = useState(false)\n\n  const handleConfirm = () => {\n    setOpen(false)\n    onConfirm?.()\n  }\n\n  const handleCancel = () => {\n    setOpen(false)\n    onCancel?.()\n  }\n\n  return (\n    <>\n      <TriggerButton onClick={() => setOpen(true)} disabled={disabled}>\n        {buttonLabel}\n      </TriggerButton>\n\n      <Modal open={open} title={title} onClose={() => setOpen(false)} width={width}>\n        <ContentWrapper>\n          <Description>{content}</Description>\n          <Actions>\n            <PrimaryButton onClick={handleConfirm}>{confirmText}</PrimaryButton>\n            <SecondaryButton onClick={handleCancel}>{cancelText}</SecondaryButton>\n          </Actions>\n        </ContentWrapper>\n      </Modal>\n    </>\n  )\n}\n\nconst TriggerButton = styled.button`\n  justify-content:start;\n  padding: 0 20px;\n  border-radius: 8px;\n  border: none;\n  background: ${AppColors.primary};\n  color: #fff;\n  font-weight: 600;\n  cursor: pointer;\n\n  width: 120px;\n  height: 48px;\n  border-radius: 6px;\n  font-weight: bold;\n  font-size: 16px;\n\n  &:disabled { opacity: .6; cursor: not-allowed; }\n`\n\nconst ContentWrapper = styled.div`\n  // padding: 12px 32px;\n`\n\nconst Description = styled.p`\n  margin: 12px 0 32px;\n  font-size: 16px;\n  color: ${AppColors.onSurface};\n  white-space: pre-line;\n`\n\nconst SubText = styled.p`\n  margin: 0 0 28px;\n  font-size: 14px;\n  color: ${AppColors.onSurfaceVariant};\n`\n\nconst Actions = styled.div`\n  display: flex;\n  gap: 16px;\n  justify-content: space-between;\n`\n\nconst PrimaryButton = styled.button`\n  min-width: 140px;\n  width: 45%;\n  height: 48px;\n  border-radius: 4px;\n  border: none;\n  background: #2E3040;\n  color: #ffffff;\n  font-weight: 700;\n  font-size: 18px;\n  cursor: pointer;\n`\n\nconst SecondaryButton = styled.button`\n  min-width: 140px;\n    width:45%;\n  height: 48px;\n  border-radius: 4px;\n  border: 1px solid ${AppColors.borderLight};\n  background: #ffffff;\n  color: ${AppColors.onSurface};\n  font-weight: 700;\n  font-size: 18px;\n  cursor: pointer;\n`\n\n\n\n"
+        }
+    ]
+}

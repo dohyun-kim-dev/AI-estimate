@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 6,
+            "activePatchIndex": 11,
             "patches": [
                 {
                     "date": 1755958845616,
@@ -32,6 +32,26 @@
                 {
                     "date": 1756174587319,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,9 +11,9 @@\n     overflow-y: scroll; /* 항상 스크롤바 공간 확보 */\n   }\n \n   body {\n-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,\n+    font-family: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,\n       Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;\n     background-color: ${({ theme }) => theme.body};\n     color: ${({ theme }) => theme.text};\n     transition: background-color 0.3s ease, color 0.3s ease;\n"
+                },
+                {
+                    "date": 1756188537631,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,9 +27,10 @@\n     display: flex;\n     flex-direction: column;\n     min-height: 100vh;\n     position: relative;\n-    overflow: hidden;\n+    overflow-x: auto;\n+    overflow-y: hidden;\n   }\n \n   a {\n     color: inherit;\n"
+                },
+                {
+                    "date": 1756188599584,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,10 +27,9 @@\n     display: flex;\n     flex-direction: column;\n     min-height: 100vh;\n     position: relative;\n-    overflow-x: auto;\n-    overflow-y: hidden;\n+    overflow: hidden;\n   }\n \n   a {\n     color: inherit;\n"
+                },
+                {
+                    "date": 1756189621599,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,18 +7,18 @@\n     box-sizing: border-box;\n   }\n \n   html {\n-    overflow-y: scroll; /* 항상 스크롤바 공간 확보 */\n+    overflow-y: auto;\n+    overflow-x: auto;\n   }\n \n   body {\n     font-family: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,\n       Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;\n     background-color: ${({ theme }) => theme.body};\n     color: ${({ theme }) => theme.text};\n     transition: background-color 0.3s ease, color 0.3s ease;\n-    overflow-x: hidden; /* 가로 스크롤 방지 */\n     width: 100%;\n     min-height: 100vh;\n     position: relative;\n   }\n@@ -27,9 +27,8 @@\n     display: flex;\n     flex-direction: column;\n     min-height: 100vh;\n     position: relative;\n-    overflow: hidden;\n   }\n \n   a {\n     color: inherit;\n"
+                },
+                {
+                    "date": 1756195597217,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,9 +14,9 @@\n \n   body {\n     font-family: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,\n       Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;\n-    background-color: ${({ theme }) => theme.body};\n+    // background-color: ${({ theme }) => theme.body};\n     color: ${({ theme }) => theme.text};\n     transition: background-color 0.3s ease, color 0.3s ease;\n     width: 100%;\n     min-height: 100vh;\n"
+                },
+                {
+                    "date": 1756195610569,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,11 +14,12 @@\n \n   body {\n     font-family: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,\n       Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;\n-    // background-color: ${({ theme }) => theme.body};\n+    background-color: ${({ theme }) => theme.body};\n     color: ${({ theme }) => theme.text};\n     transition: background-color 0.3s ease, color 0.3s ease;\n+    overflow-x: hidden; /* 가로 스크롤 방지 */\n     width: 100%;\n     min-height: 100vh;\n     position: relative;\n   }\n"
                 }
             ],
             "date": 1755958845616,

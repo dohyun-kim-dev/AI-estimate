@@ -399,7 +399,7 @@ const AdminMngPage: React.FC = () => {
       ></ToastContainer>
 
     <CmsResponsiveContainer<AdminUser>
-  title="관리자 회원관리"
+  title="고객사 관리자 관리"
   data={[]} // 초기값, fetchData가 있으면 무시됨
   columns={columns}
   fetchData={() => fetchData({})} // Promise<{ data, totalItems, allItems }>

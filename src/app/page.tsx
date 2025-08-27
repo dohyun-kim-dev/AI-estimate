@@ -9,7 +9,8 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   background-color: ${({ theme }) => theme.body};
-  background-image: ${({ theme }) => (theme.body === '#FFFFFF' ? 'none' : 'url(/pr/bg_vector.png)')};
+  // background-image: ${({ theme }) => (theme.body === '#FFFFFF' ? 'none' : 'url(/pr/bg_vector.png)')};
+  background-image: url('/pr/bg_vector.png');
    background-repeat: no-repeat;
    background-position: center -20%;
    background-size: 250%;

@@ -69,7 +69,7 @@ const AutoSizeInput = styled(TextareaAutosize)`
   justify-content:center;
   align-items:center;
   background-color: transparent;
-  font-size: 14px;
+  font-size: 18px;
   border: none;
   outline: none;
   color: ${({ theme }) => theme.text};

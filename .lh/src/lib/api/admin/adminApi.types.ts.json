@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/lib/api/admin/adminApi.types.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1756187053867,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756199212352,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -15,12 +15,13 @@\n     adminId: string;\n     password: string;\n     name: string;\n     cellphone: string;\n-    description: string;\n+    memo?: string;\n     email: string;\n-    emailYn: string;\n-    smsYn: string;\n+    emailYn?: string;\n+    smsYn?: string;\n+    companyCode?: string; // 옵션: 없으면 통합관리자, 있으면 고객사 관리자\n   };\n \n   export type UnitPriceGetListParams = Record<string, never>;\n \n"
+                }
+            ],
+            "date": 1756187053867,
+            "name": "Commit-0",
+            "content": "export type AdminLoginParams = {\n    userId: string;\n    password: string;\n  };\n\n  export type AdminGetListParams = {\n    keyword?: string;\n    fromDate?: string;\n    toDate?: string;\n    isRoot: boolean;\n    companyCode?: string;\n  };\n\n  export type AdminCreateParams = {\n    adminId: string;\n    password: string;\n    name: string;\n    cellphone: string;\n    description: string;\n    email: string;\n    emailYn: string;\n    smsYn: string;\n  };\n\n  export type UnitPriceGetListParams = Record<string, never>;\n\n  export type AdminUpdateParams = {\n    targetAdminId: string; // 로그인 ID\n    name?: string;\n    cellphone?: string;\n    description?: string;\n    email?: string;\n    emailYn?: 'Y' | 'N';\n    smsYn?: 'Y' | 'N';\n  };\n\n  export type AdminPasswordUpdateParams = {\n    targetAdminId: string; // 로그인 ID\n    password: string;\n  };\n\n\n  export type TermGetListParams = {\n    index: number;\n    termsType: string;\n    content: string;\n  };\n\n  export type PromptGetListParams = {\n    keyword: string;\n  };\n\n  export type PromptHistoryGetListParams = {\n    index: number;\n  };\n\n  export type PromptUpdateParams = {\n    index: number;\n    content: string;\n  };\n\n"
+        }
+    ]
+}

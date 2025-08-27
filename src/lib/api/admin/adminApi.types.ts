@@ -4,7 +4,11 @@ export type AdminLoginParams = {
   };
 
   export type AdminGetListParams = {
-    keyword: string;
+    keyword?: string;
+    fromDate?: string;
+    toDate?: string;
+    isRoot: boolean;
+    companyCode?: string;
   };
 
   export type AdminCreateParams = {
@@ -12,10 +16,11 @@ export type AdminLoginParams = {
     password: string;
     name: string;
     cellphone: string;
-    description: string;
+    memo?: string;
     email: string;
-    emailYn: string;
-    smsYn: string;
+    emailYn?: string;
+    smsYn?: string;
+    companyCode?: string; // 옵션: 없으면 통합관리자, 있으면 고객사 관리자
   };
 
   export type UnitPriceGetListParams = Record<string, never>;

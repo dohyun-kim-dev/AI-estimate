@@ -95,7 +95,7 @@ const handleMenuToggle = (menuId: string) => {
     { id: 'dashboard', icon: <DashboardIcon />, title: '대시보드', path: '/cms' },
     { id: 'super-admin', icon: <WorkspacePremiumIcon />, title: '통합관리자 관리', path: '/cms/super-admin' },
     { id: 'company', icon: <BusinessIcon />, title: '고객사 관리', path: '/cms/company-management' },
-    { id: 'admin', icon: <AdminPanelSettingsIcon />, title: '고객사관리자 관리', path: '/cms/admin-management' },
+    { id: 'admin', icon: <AdminPanelSettingsIcon />, title: '고객사 관리자 관리', path: '/cms/admin-management' },
     { id: 'user', icon: <GroupIcon />, title: '고객 회원관리', path: '/cms/user-management' },
     {
       id: 'ai-data',
@@ -180,6 +180,7 @@ const OuterLayoutContainer = styled.div<{
   
   @media (min-width: 1024px) {
     min-width: 1200px;
+    overflow-x: auto;
   }
 `;
 

@@ -13,7 +13,7 @@ const ButtonsContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
-
+  padding-top: 24px;
   @media (min-width: 1024px) {
     margin-top: 0;
   }
@@ -27,7 +27,7 @@ const ActionButton = styled.button`
   padding: 20px;
   border: none;
   border-radius: 12px;
-  background-color: ${({ theme }) => theme.surface1};
+  background-color: ${({ theme, isPrimary }) => isPrimary ? theme.primaryButton : theme.surface2};
   color: ${({ theme }) => theme.text};
   cursor: pointer;
   transition: all 0.2s ease;
@@ -94,7 +94,7 @@ const Description = styled.div`
   @media (min-width: 1024px) {
     font-size: 16px;
     margin-top: 20px;
-    margin-bottom: 50px;
+    margin-bottom: 20px;
   }
 `;
 
@@ -111,7 +111,7 @@ const ChevronIcon = styled(IoChevronForward)`
   }
 `;
 
-const ActionButtonBottom = styled.div`
+const ActionButtonBottom = styled.div<{ isSecondary?: boolean }>`
   display: none;
   
   @media (min-width: 1024px) {
@@ -121,14 +121,18 @@ const ActionButtonBottom = styled.div`
     justify-content: center;
     align-items: center;
     height: 36px;
-    background-color: ${({ theme }) => theme.accent};
+    background-color: ${({ theme, isSecondary }) => 
+      isSecondary 
+        ? (theme.body === '#FFFFFF' ? '#2E2E48' : '#668EC0') 
+        : theme.buttonBottom
+    };
     color: white;
     border-radius: 4px;
     font-size: 14px;
     font-weight: 600;
     transition: opacity 0.2s ease;
 
-    &:hover {
+    &:hover { 
       opacity: 0.9;
     }
   }
@@ -186,21 +190,20 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
 
   return (
     <ButtonsContainer>
-      <ActionButton onClick={() => { setOpenConsult(true); onConsult?.() }}>
+      <ActionButton onClick={() => { setOpenConsult(true); onConsult?.() }} isPrimary>
         <LeftContent>
           <TextContent>
           <Flex>
           <IconWrapper>
             <Icon src="/ai-estimate/docs.png" width={24} height={24} />
-          </IconWrapper><Title>여기닷에게 문의하기</Title>
+          </IconWrapper><Title>여기닷에게 상담하기</Title>
           </Flex>
 
-            <Description>대표님의 예산에 맞춘 기능들을 
-            견적으로 <br></br>자세히 받아보세요 ~ 등등</Description>
+            <Description>해당 견적이 마음에 든다면, <br/>공급사와 최종 견적 상담을 진행해 보세요</Description>
                     </TextContent>
           </LeftContent>
           <ChevronIcon size={20} />
-          <ActionButtonBottom>문의하기</ActionButtonBottom>
+          <ActionButtonBottom>상담 요청 하기</ActionButtonBottom>
         </ActionButton>
 
         <ActionButton onClick={onAiEstimate}>
@@ -212,11 +215,12 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
             </IconWrapper><Title>AI 예산 줄이기</Title>
             </Flex>
 
-              <Description>기능을 조소화 하여 전략기준 <br></br>스마트하게 줄임</Description>
+              <Description>기능을 간소화 하여 견적가를 <br/>
+              스마트하게 절감</Description>
             </TextContent>
           </LeftContent>
           <ChevronIcon size={20} />
-          <ActionButtonBottom>AI 예산 줄이기</ActionButtonBottom>
+          <ActionButtonBottom isSecondary>AI 예산 줄이기</ActionButtonBottom>
         </ActionButton>
 
         <ActionButton onClick={onAiOptimize}>
@@ -228,11 +232,12 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
             </IconWrapper><Title>AI 맞춤 추천</Title>
             </Flex>
 
-              <Description>AI가 문제된 필수 기능들을 빠르게 제안,<br></br> 사업성장에 핵심기능들 추천</Description>
+              <Description>AI가 분석한 필수 기능을 <br/>
+              빠르게 확인</Description>
             </TextContent>
           </LeftContent>
           <ChevronIcon size={20} />
-          <ActionButtonBottom>AI 맞춤추천</ActionButtonBottom>
+          <ActionButtonBottom isSecondary>AI 맞춤추천</ActionButtonBottom>
         </ActionButton>
 
         <Modal open={openConsult} title="필수 정보 입력" centerTitle onClose={() => setOpenConsult(false)} width={520}>

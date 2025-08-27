@@ -28,16 +28,31 @@ export async function adminLogin(
 
 // ***************** 관리자
 
-export async function adminGetList(
-  params: AdminGetListParams) {
+export async function   adminGetList(params: AdminGetListParams) {
   const queryParams = new URLSearchParams();
+  
+  // 필수 파라미터
+  queryParams.append('isRoot', params.isRoot.toString());
+  
+  // 선택적 파라미터들
   if (params.keyword) queryParams.append('keyword', params.keyword);
   if (params.fromDate) queryParams.append('fromDate', params.fromDate);
   if (params.toDate) queryParams.append('toDate', params.toDate);
+  
+  // isRoot가 false일 때는 companyCode가 필수
+  if (!params.isRoot) {
+    if (!params.companyCode) {
+      throw new Error('companyCode is required when isRoot is false');
+    }
+    queryParams.append('companyCode', params.companyCode);
+  } else if (params.companyCode) {
+    // isRoot가 true일 때도 companyCode가 있으면 추가
+    queryParams.append('companyCode', params.companyCode);
+  }
 
   return callAdminApi({
-    title: '관리자 목록',
-    url: `${BASE_URL}/cms/admins${queryParams.toString() ? `?${queryParams.toString()}` : ''}`,
+    title: params.isRoot ? '슈퍼 관리자 목록' : '고객사 관리자 목록',
+    url: `${BASE_URL}/cms/admins?${queryParams.toString()}`,
     method: 'GET',
     isCallPageLoader: true,
   });
@@ -48,19 +63,33 @@ export async function adminCreate(
 
     console.log('params', params);
 
+  const requestBody: any = {
+    adminId: params.adminId,
+    password: params.password,
+    name: params.name,
+    email: params.email,
+    cellphone: params.cellphone,
+    memo: params.memo || null,
+  };
+
+  // companyCode가 있으면 추가 (고객사 관리자 생성)
+  if (params.companyCode) {
+    requestBody.companyCode = params.companyCode;
+  }
+
+  // emailYn, smsYn이 있으면 추가
+  if (params.emailYn) {
+    requestBody.emailYn = params.emailYn;
+  }
+  if (params.smsYn) {
+    requestBody.smsYn = params.smsYn;
+  }
+
   return callAdminApi({
-    title: '관리자 생성',
-    url: `${BASE_URL}/cms/admin/create`,
-    body: {
-      adminId: params.adminId,
-      password: params.password,
-      name: params.name,
-      cellphone: params.cellphone,
-      description: params.description,
-      email: params.email,
-      emailYn: params.emailYn,
-      smsYn: params.smsYn,
-    },
+    title: params.companyCode ? '고객사 관리자 생성' : '통합 관리자 생성',
+    url: `${BASE_URL}/cms/admins`,
+    method: 'POST',
+    body: requestBody,
     isCallPageLoader: true,
   });
 } 

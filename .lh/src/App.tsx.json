@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 4,
+            "activePatchIndex": 15,
             "patches": [
                 {
                     "date": 1755953751114,
@@ -24,6 +24,50 @@
                 {
                     "date": 1756098641022,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -49,9 +49,8 @@\n             </ContentWrapper>\n             <ToastContainer\n               position=\"top-right\"\n               autoClose={3000}\n-              hideProgressBar={false}\n               newestOnTop\n               closeOnClick\n               rtl={false}\n               pauseOnFocusLoss\n"
+                },
+                {
+                    "date": 1756185846582,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -8,8 +8,11 @@\n import { lightTheme, darkTheme } from '@styles/theme'\n import { useEffect, useState } from 'react'\n import styled from 'styled-components'\n import { GoogleOAuthProvider } from '@react-oauth/google'\n+import { DeviceProvider } from '@/contexts/DeviceContext'\n+import ScrollAwareWrapper from '@/layout/ScrollAwareWrapper'\n+import ScreenWrapper from '@/layout/ScreenWrapper'\n \n const AppWrapper = styled.div`\n   display: flex;\n   flex-direction: column;\n@@ -41,25 +44,31 @@\n   return (\n     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>\n       <BrowserRouter>\n         <ThemeProvider theme={theme}>\n-          <GlobalStyle />\n-          <AppWrapper>\n-            <ContentWrapper>\n-              <AppRoutes />\n-            </ContentWrapper>\n-            <ToastContainer\n-              position=\"top-right\"\n-              autoClose={3000}\n-              newestOnTop\n-              closeOnClick\n-              rtl={false}\n-              pauseOnFocusLoss\n-              draggable\n-              pauseOnHover\n-              theme=\"colored\"\n-            />\n-          </AppWrapper>\n+          <DeviceProvider>\n+            <GlobalStyle />\n+            <ScrollAwareWrapper>\n+              <AppWrapper>\n+                <ContentWrapper>\n+                  <ScreenWrapper>\n+                    <AppRoutes />\n+                  </ScreenWrapper>\n+                </ContentWrapper>\n+                <ToastContainer\n+                  position=\"top-right\"\n+                  autoClose={3000}\n+                  newestOnTop\n+                  closeOnClick\n+                  rtl={false}\n+                  pauseOnFocusLoss\n+                  draggable\n+                  pauseOnHover\n+                  theme=\"colored\"\n+                />\n+              </AppWrapper>\n+            </ScrollAwareWrapper>\n+          </DeviceProvider>\n         </ThemeProvider>\n       </BrowserRouter>\n     </GoogleOAuthProvider>\n   )\n"
+                },
+                {
+                    "date": 1756195067422,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -49,11 +49,11 @@\n             <GlobalStyle />\n             <ScrollAwareWrapper>\n               <AppWrapper>\n                 <ContentWrapper>\n-                  <ScreenWrapper>\n+                  {/* <ScreenWrapper> */}\n                     <AppRoutes />\n-                  </ScreenWrapper>\n+                  {/* </ScreenWrapper> */}\n                 </ContentWrapper>\n                 <ToastContainer\n                   position=\"top-right\"\n                   autoClose={3000}\n"
+                },
+                {
+                    "date": 1756195230023,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -48,13 +48,13 @@\n           <DeviceProvider>\n             <GlobalStyle />\n             <ScrollAwareWrapper>\n               <AppWrapper>\n-                <ContentWrapper>\n+                {/* <ContentWrapper> */}\n                   {/* <ScreenWrapper> */}\n                     <AppRoutes />\n                   {/* </ScreenWrapper> */}\n-                </ContentWrapper>\n+                {/* </ContentWrapper> */}\n                 <ToastContainer\n                   position=\"top-right\"\n                   autoClose={3000}\n                   newestOnTop\n"
+                },
+                {
+                    "date": 1756195238208,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,9 +47,9 @@\n         <ThemeProvider theme={theme}>\n           <DeviceProvider>\n             <GlobalStyle />\n             <ScrollAwareWrapper>\n-              <AppWrapper>\n+              {/* <AppWrapper> */}\n                 {/* <ContentWrapper> */}\n                   {/* <ScreenWrapper> */}\n                     <AppRoutes />\n                   {/* </ScreenWrapper> */}\n"
+                },
+                {
+                    "date": 1756195251637,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,14 +47,14 @@\n         <ThemeProvider theme={theme}>\n           <DeviceProvider>\n             <GlobalStyle />\n             <ScrollAwareWrapper>\n-              {/* <AppWrapper> */}\n-                {/* <ContentWrapper> */}\n+              <AppWrapper>\n+                <ContentWrapper>\n                   {/* <ScreenWrapper> */}\n                     <AppRoutes />\n                   {/* </ScreenWrapper> */}\n-                {/* </ContentWrapper> */}\n+                </ContentWrapper>\n                 <ToastContainer\n                   position=\"top-right\"\n                   autoClose={3000}\n                   newestOnTop\n"
+                },
+                {
+                    "date": 1756195335176,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,8 @@\n   flex-direction: column;\n   min-height: 100vh;\n   width: 100%;\n   position: relative;\n-  overflow-x: hidden;\n `\n \n const ContentWrapper = styled.main`\n   flex: 1;\n"
+                },
+                {
+                    "date": 1756195642646,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -48,11 +48,11 @@\n             <GlobalStyle />\n             <ScrollAwareWrapper>\n               <AppWrapper>\n                 <ContentWrapper>\n-                  {/* <ScreenWrapper> */}\n+                  <ScreenWrapper>\n                     <AppRoutes />\n-                  {/* </ScreenWrapper> */}\n+                  </ScreenWrapper>\n                 </ContentWrapper>\n                 <ToastContainer\n                   position=\"top-right\"\n                   autoClose={3000}\n"
+                },
+                {
+                    "date": 1756195653511,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -48,11 +48,11 @@\n             <GlobalStyle />\n             <ScrollAwareWrapper>\n               <AppWrapper>\n                 <ContentWrapper>\n-                  <ScreenWrapper>\n+                  {/* <ScreenWrapper> */}\n                     <AppRoutes />\n-                  </ScreenWrapper>\n+                  {/* </ScreenWrapper> */}\n                 </ContentWrapper>\n                 <ToastContainer\n                   position=\"top-right\"\n                   autoClose={3000}\n"
+                },
+                {
+                    "date": 1756195672233,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,8 +21,9 @@\n   position: relative;\n `\n \n const ContentWrapper = styled.main`\n+b\n   flex: 1;\n   width: 100%;\n   position: relative;\n   display: flex;\n"
+                },
+                {
+                    "date": 1756196914320,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,9 +21,9 @@\n   position: relative;\n `\n \n const ContentWrapper = styled.main`\n-b\n+  background-color: ${({ theme }) => theme.body};\n   flex: 1;\n   width: 100%;\n   position: relative;\n   display: flex;\n"
+                },
+                {
+                    "date": 1756196980799,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,9 +17,9 @@\n   display: flex;\n   flex-direction: column;\n   min-height: 100vh;\n   width: 100%;\n-  position: relative;\n+  // position: relative;\n `\n \n const ContentWrapper = styled.main`\n   background-color: ${({ theme }) => theme.body};\n"
                 }
             ],
             "date": 1755953751114,
