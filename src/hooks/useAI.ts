@@ -2,6 +2,9 @@ import { useCallback, useRef, useState } from 'react'
 import { getAI, getGenerativeModel, GenerativeModel, ChatSession } from 'firebase/ai'
 import { app } from '@/firebaseConfig'
 import { devLog } from '@/utils/devLogger'
+import { Part, FileData } from '@google/generative-ai';
+import { FileUploadData } from '@/firebase.functions';
+
 
 export type SimpleModel =
   | 'gemini-2.5-flash'
@@ -129,13 +132,49 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     return text
   }, [ensureModel, modelName])
 
-  const sendChat = useCallback(async (message: string): Promise<string> => {
-    const model = ensureModel()
-    if (!chatRef.current) chatRef.current = model.startChat()
-    const res = await chatRef.current.sendMessage(message)
-    logUsageAndCost('sendChat', String(modelName), res)
-    return res.response.text()
-  }, [ensureModel, modelName])
+  const sendChat = useCallback(async (
+    message: string,
+    files: FileUploadData[] = [] // ⭐ 선택적 파일 인자 추가
+  ): Promise<string> => {
+    const model = ensureModel();
+    if (!chatRef.current) chatRef.current = model.startChat();
+
+    // Part 객체 배열을 생성합니다.
+    const parts: Part[] = [];
+
+    // 텍스트 메시지를 Part에 추가합니다.
+    if (message) {
+      parts.push({ text: message });
+    }
+
+    // 파일이 있을 경우, 각 파일을 Part에 추가합니다.
+    // FileData 형식으로 변환하여 추가해야 합니다.
+    if (files.length > 0) {
+      files.forEach(file => {
+        parts.push({
+          fileData: {
+            mimeType: file.mimeType,
+            fileUri: file.fileUri,
+          } as FileData,
+        });
+      });
+    }
+
+    // 텍스트 메시지나 파일이 없으면 오류를 반환합니다.
+    if (parts.length === 0) {
+      return '';
+    }
+
+    try {
+      // ⭐ sendMessage 함수에 Part 배열을 전달합니다.
+      const res = await chatRef.current.sendMessage(parts); 
+      logUsageAndCost('sendChat', String(modelName), res);
+      return res.response.text();
+    } catch (error) {
+      console.error('Failed to send multi-modal message:', error);
+      throw error;
+    }
+  }, [ensureModel, modelName]);
 
   const resetChat = useCallback(() => {
     chatRef.current = null

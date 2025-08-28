@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 27,
+            "activePatchIndex": 32,
             "patches": [
                 {
                     "date": 1756192938761,
@@ -116,6 +116,26 @@
                 {
                     "date": 1756194257556,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -214,9 +214,9 @@\n               <Icon src=\"/ai-estimate/trending_down.png\" width={24} height={24} />\n             </IconWrapper><Title>AI 예산 줄이기</Title>\n             </Flex>\n \n-              <Description>기능을 간소화 하여 견적가를 \n+              <Description>기능을 간소화 하여 견적가를 <br/>\n               스마트하게 절감</Description>\n             </TextContent>\n           </LeftContent>\n           <ChevronIcon size={20} />\n@@ -231,9 +231,10 @@\n               <Icon src=\"/ai-estimate/awesome.png\" width={24} height={24} />\n             </IconWrapper><Title>AI 맞춤 추천</Title>\n             </Flex>\n \n-              <Description>AI가 문제된 필수 기능들을 빠르게 제안,<br></br> 사업성장에 핵심기능들 추천</Description>\n+              <Description>AI가 분석한 필수 기능을 \n+              빠르게 확인</Description>\n             </TextContent>\n           </LeftContent>\n           <ChevronIcon size={20} />\n           <ActionButtonBottom isSecondary>AI 맞춤추천</ActionButtonBottom>\n"
+                },
+                {
+                    "date": 1756345239845,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -120,9 +120,9 @@\n     display: flex;\n     justify-content: center;\n     align-items: center;\n     height: 36px;\n-    background-color: ${({ theme, isSecondary }) => \n+    background-color: ${({ theme, $isSecondary }) => \n       isSecondary \n         ? (theme.body === '#FFFFFF' ? '#2E2E48' : '#668EC0') \n         : theme.buttonBottom\n     };\n@@ -231,9 +231,9 @@\n               <Icon src=\"/ai-estimate/awesome.png\" width={24} height={24} />\n             </IconWrapper><Title>AI 맞춤 추천</Title>\n             </Flex>\n \n-              <Description>AI가 분석한 필수 기능을 \n+              <Description>AI가 분석한 필수 기능을 <br/>\n               빠르게 확인</Description>\n             </TextContent>\n           </LeftContent>\n           <ChevronIcon size={20} />\n"
+                },
+                {
+                    "date": 1756345253726,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -110,9 +110,9 @@\n     display: none;\n   }\n `;\n \n-const ActionButtonBottom = styled.div<{ isSecondary?: boolean }>`\n+const ActionButtonBottom = styled.div<{ $isSecondary?: boolean }>`\n   display: none;\n   \n   @media (min-width: 1024px) {\n   width:100%;\n@@ -121,9 +121,9 @@\n     justify-content: center;\n     align-items: center;\n     height: 36px;\n     background-color: ${({ theme, $isSecondary }) => \n-      isSecondary \n+      $isSecondary \n         ? (theme.body === '#FFFFFF' ? '#2E2E48' : '#668EC0') \n         : theme.buttonBottom\n     };\n     color: white;\n"
+                },
+                {
+                    "date": 1756345265511,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,9 +26,9 @@\n   width: 100%;\n   padding: 20px;\n   border: none;\n   border-radius: 12px;\n-  background-color: ${({ theme, isPrimary }) => isPrimary ? theme.primaryButton : theme.surface2};\n+  background-color: ${({ theme, $isPrimary }) => $isPrimary ? theme.primaryButton : theme.surface2};\n   color: ${({ theme }) => theme.text};\n   cursor: pointer;\n   transition: all 0.2s ease;\n   position: relative;\n"
+                },
+                {
+                    "date": 1756345271793,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,9 @@\n     margin-top: 0;\n   }\n `;\n \n-const ActionButton = styled.button`\n+const ActionButton = styled.button<{ $isPrimary?: boolean }>`\n   display: flex;\n   align-items: flex-start;\n   justify-content: space-between;\n   width: 100%;\n@@ -189,9 +189,9 @@\n   }\n \n   return (\n     <ButtonsContainer>\n-      <ActionButton onClick={() => { setOpenConsult(true); onConsult?.() }} isPrimary>\n+      <ActionButton onClick={() => { setOpenConsult(true); onConsult?.() }} $isPrimary>\n         <LeftContent>\n           <TextContent>\n           <Flex>\n           <IconWrapper>\n"
+                },
+                {
+                    "date": 1756345276984,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -219,9 +219,9 @@\n               스마트하게 절감</Description>\n             </TextContent>\n           </LeftContent>\n           <ChevronIcon size={20} />\n-          <ActionButtonBottom isSecondary>AI 예산 줄이기</ActionButtonBottom>\n+          <ActionButtonBottom $isSecondary>AI 예산 줄이기</ActionButtonBottom>\n         </ActionButton>\n \n         <ActionButton onClick={onAiOptimize}>\n           <LeftContent>\n@@ -236,9 +236,9 @@\n               빠르게 확인</Description>\n             </TextContent>\n           </LeftContent>\n           <ChevronIcon size={20} />\n-          <ActionButtonBottom isSecondary>AI 맞춤추천</ActionButtonBottom>\n+          <ActionButtonBottom $isSecondary>AI 맞춤추천</ActionButtonBottom>\n         </ActionButton>\n \n         <Modal open={openConsult} title=\"필수 정보 입력\" centerTitle onClose={() => setOpenConsult(false)} width={520}>\n           <div style={{ fontSize: 14, textAlign: 'center'}}>정확한 상담을 위해 필수 정보를 입력해주세요</div>\n"
                 }
             ],
             "date": 1756192938761,

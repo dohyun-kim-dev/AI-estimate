@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 25,
+            "activePatchIndex": 31,
             "patches": [
                 {
                     "date": 1755953626065,
@@ -108,6 +108,30 @@
                 {
                     "date": 1756201449495,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -251,15 +251,21 @@\n           emailYn,\n           smsYn,\n         };\n   \n-        const response = await adminUpdate(updatePayload) as unknown as ApiResponse<AdminUser>;\n-        if (response.statusCode === 200 && response.message === 'success') {\n+        const response = await adminUpdate(updatePayload) as unknown as ApiResponse<AdminUser>[];\n+        const apiResponse = Array.isArray(response) ? response[0] : response;\n+        \n+        if (apiResponse && (apiResponse.statusCode === 200 || apiResponse.statusCode === '200') && apiResponse.message === 'success') {\n           toast.success('관리자 정보가 수정되었습니다.');\n           setIsPopupOpen(false);\n-          listRef.current?.refetch();\n+          \n+          // 리스트 새로고침\n+          setTimeout(() => {\n+            listRef.current?.refetch();\n+          }, 100);\n         } else {\n-          const errorMessage = response.error?.customMessage || response.message || '수정에 실패했습니다.';\n+          const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '수정에 실패했습니다.';\n           toast.error(errorMessage);\n         }\n       } else {\n         // 신규 등록 모드\n@@ -283,9 +289,13 @@\n         \n         if (apiResponse && (apiResponse.statusCode === 200 || apiResponse.statusCode === '200') && apiResponse.message === 'success') {\n           toast.success('관리자가 성공적으로 등록되었습니다.');\n           setIsPopupOpen(false);\n-          listRef.current?.refetch();\n+          \n+          // 리스트 새로고침\n+          setTimeout(() => {\n+            listRef.current?.refetch();\n+          }, 100);\n         } else {\n           const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '등록에 실패했습니다.';\n           toast.error(errorMessage);\n         }\n"
+                },
+                {
+                    "date": 1756279163930,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -316,8 +316,10 @@\n \n   const fetchData = useCallback(\n     async (params: FetchParams): Promise<FetchResult<AdminUser>> => {\n       try {\n+        const fromDate = '2000-01-01';\n+      const toDate = dayjs().format('YYYY-MM-DD');\n         const response = await adminGetList({ \n           isRoot: true, // 슈퍼 관리자 조회\n           keyword: params.keyword || '',\n         }) as unknown as ApiResponse<AdminUser>[]; // 배열로 타입 캐스팅\n"
+                },
+                {
+                    "date": 1756279179654,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -317,9 +317,11 @@\n   const fetchData = useCallback(\n     async (params: FetchParams): Promise<FetchResult<AdminUser>> => {\n       try {\n         const fromDate = '2000-01-01';\n-      const toDate = dayjs().format('YYYY-MM-DD');\n+        const toDate = dayjs().format('YYYY-MM-DD');\n+        const dateRange = `${fromDate} - ${toDate}`;\n+\n         const response = await adminGetList({ \n           isRoot: true, // 슈퍼 관리자 조회\n           keyword: params.keyword || '',\n         }) as unknown as ApiResponse<AdminUser>[]; // 배열로 타입 캐스팅\n"
+                },
+                {
+                    "date": 1756279195453,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -318,13 +318,14 @@\n     async (params: FetchParams): Promise<FetchResult<AdminUser>> => {\n       try {\n         const fromDate = '2000-01-01';\n         const toDate = dayjs().format('YYYY-MM-DD');\n-        const dateRange = `${fromDate} - ${toDate}`;\n \n         const response = await adminGetList({ \n           isRoot: true, // 슈퍼 관리자 조회\n           keyword: params.keyword || '',\n+          fromDate: fromDate, // 추가된 부분\n+          toDate: toDate, // 추가된 부분\n         }) as unknown as ApiResponse<AdminUser>[]; // 배열로 타입 캐스팅\n \n         console.log('response', response);\n         \n"
+                },
+                {
+                    "date": 1756279210633,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -322,10 +322,10 @@\n \n         const response = await adminGetList({ \n           isRoot: true, // 슈퍼 관리자 조회\n           keyword: params.keyword || '',\n-          fromDate: fromDate, // 추가된 부분\n-          toDate: toDate, // 추가된 부분\n+          fromDate: fromDate, \n+          toDate: toDate, \n         }) as unknown as ApiResponse<AdminUser>[]; // 배열로 타입 캐스팅\n \n         console.log('response', response);\n         \n"
+                },
+                {
+                    "date": 1756280345668,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -413,8 +413,11 @@\n         accessor: 'createAt',\n         sortable: true,\n         formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '-'),\n       },\n+      {\n+        \n+      }\n       { header: '이름', accessor: 'name' },\n       { header: '아이디', accessor: 'adminId' },\n       { header: '이메일', accessor: 'email' },\n       { header: '전화번호', accessor: 'cellphone' },\n"
+                },
+                {
+                    "date": 1756280353034,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -414,9 +414,9 @@\n         sortable: true,\n         formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '-'),\n       },\n       {\n-        \n+        header: '최근 접속',\n       }\n       { header: '이름', accessor: 'name' },\n       { header: '아이디', accessor: 'adminId' },\n       { header: '이메일', accessor: 'email' },\n"
                 }
             ],
             "date": 1755953626065,

@@ -49,3 +49,69 @@ export async function googleLoginUpdate(params: GoogleLoginUpdateParams) {
     isCallPageLoader: true,
   });
 }
+
+
+// 채팅방 세션 응답 데이터 타입
+export interface ChatSessionData {
+  _id: string;
+  user: string;
+  title: string;
+  createAt: string;
+  updateAt: string;
+}
+
+// 메시지 페이로드 타입
+export interface ChatMessagePayload {
+  content: object;
+  role: 'USER' | 'AI';
+}
+
+/**
+ * @description 새 채팅방 세션을 생성하는 API 호출 함수
+ * @param {string} title - 채팅방 제목 (예: "임시제목")
+ * @returns {Promise<ApiResponse<ChatSessionData>>} 생성된 채팅 세션 정보
+ */
+export async function createChatSession(title: string) {
+  return callUserApi<ChatSessionData>({
+    title: '새 채팅 세션 생성',
+    url: '/api/company/chat/sessions',
+    method: 'PUT',
+    body: {
+      title,
+    },
+    isCallPageLoader: true,
+  });
+}
+
+/**
+ * @description 특정 채팅방에 메시지를 전송하는 API 호출 함수
+ * @param {string} sessionId - 메시지를 전송할 채팅 세션 ID
+ * @param {ChatMessagePayload} messagePayload - 전송할 메시지 내용과 역할
+ * @returns {Promise<ApiResponse<null>>} 성공 응답 (데이터 없음)
+ */
+export async function sendChatMessage(sessionId: string, messagePayload: ChatMessagePayload) {
+  return callUserApi<null>({
+    title: '채팅 메시지 전송',
+    url: `/api/company/chat/sessions/${sessionId}/messages`,
+    method: 'POST',
+    body: {
+      content: messagePayload.content,
+      role: messagePayload.role,
+    },
+    isCallPageLoader: false, // 메시지 전송은 로더를 표시하지 않아도 좋습니다.
+  });
+}
+
+/**
+ * @description 특정 채팅방 세션의 정보를 불러오는 API 호출 함수
+ * @param {string} sessionId - 불러올 채팅 세션 ID
+ * @returns {Promise<ApiResponse<ChatSessionData>>} 불러온 채팅 세션 정보
+ */
+export async function getChatSession(sessionId: string) {
+  return callUserApi<ChatSessionData>({
+    title: '채팅 세션 불러오기',
+    url: `/api/company/chat/sessions?id=${sessionId}`,
+    method: 'PUT', // PUT 메서드를 사용한다고 명시하셨지만, 일반적으로는 GET 메서드를 사용합니다.
+    isCallPageLoader: true,
+  });
+}

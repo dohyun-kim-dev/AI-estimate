@@ -317,9 +317,14 @@ const AdminMngPage: React.FC = () => {
   const fetchData = useCallback(
     async (params: FetchParams): Promise<FetchResult<AdminUser>> => {
       try {
+        const fromDate = '2000-01-01';
+        const toDate = dayjs().format('YYYY-MM-DD');
+
         const response = await adminGetList({ 
           isRoot: true, // 슈퍼 관리자 조회
           keyword: params.keyword || '',
+          fromDate: fromDate, 
+          toDate: toDate, 
         }) as unknown as ApiResponse<AdminUser>[]; // 배열로 타입 캐스팅
 
         console.log('response', response);
@@ -406,6 +411,12 @@ const AdminMngPage: React.FC = () => {
       {
         header: '가입일',
         accessor: 'createAt',
+        sortable: true,
+        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '-'),
+      },
+      {
+        header: '최근 접속',
+        accessor: 'lastLoginAt',
         sortable: true,
         formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '-'),
       },

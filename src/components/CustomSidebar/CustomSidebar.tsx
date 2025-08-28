@@ -33,13 +33,19 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
 
   const isActive = (path: string) => location.pathname === path;
+  
+  // ⭐️ 부모 메뉴의 경로로 시작하는지 확인하는 함수
+  const isParentActive = (item: MenuItemConfig) => {
+    return item.subMenu?.some(subItem => location.pathname.startsWith(subItem.path)) || location.pathname.startsWith(item.path);
+  };
 
-  const handleMenuToggle = (id: string, path?: string) => {
+  const handleMenuToggle = (id: string, path: string | undefined, hasSubMenu: boolean) => {
     setOpenMenus((prev) => ({
       ...prev,
       [id]: !prev[id],
     }));
-    if (path) {
+    // ⭐️ 서브메뉴가 없는 경우에만 페이지 이동
+    if (!hasSubMenu && path) {
       navigate(path);
     }
   };
@@ -74,8 +80,9 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({
                 <MenuItem
                   as="div"
                   $isCollapsed={isCollapsed}
-                  $active={active || expanded}
-                  onClick={() => handleMenuToggle(item.id, item.path)}
+                  // ⭐️ isParentActive 함수를 사용하도록 수정
+                  $active={isParentActive(item)}
+                  onClick={() => handleMenuToggle(item.id, item.path, hasSubMenu)}
                 >
                   <Center $isCollapsed={isCollapsed}>
                     <IconWrapper $isCollapsed={isCollapsed}>
@@ -97,6 +104,7 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({
                   to={item.path}
                   $isCollapsed={isCollapsed}
                   $active={active}
+                  onClick={() => handleMenuToggle(item.id, item.path, hasSubMenu)}
                 >
                   <Center $isCollapsed={isCollapsed}>
                     <IconWrapper $isCollapsed={isCollapsed}>
@@ -136,6 +144,7 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({
 };
 
 export default CustomSidebar;
+
 // --- Styled Components ---
 
 const SidebarContainer = styled.div<{ $isCollapsed: boolean }>`

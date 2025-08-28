@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1756187053867,
@@ -12,6 +12,10 @@
                 {
                     "date": 1756199212352,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -15,12 +15,13 @@\n     adminId: string;\n     password: string;\n     name: string;\n     cellphone: string;\n-    description: string;\n+    memo?: string;\n     email: string;\n-    emailYn: string;\n-    smsYn: string;\n+    emailYn?: string;\n+    smsYn?: string;\n+    companyCode?: string; // 옵션: 없으면 통합관리자, 있으면 고객사 관리자\n   };\n \n   export type UnitPriceGetListParams = Record<string, never>;\n \n"
+                },
+                {
+                    "date": 1756281734650,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,8 +25,9 @@\n \n   export type UnitPriceGetListParams = Record<string, never>;\n \n   export type AdminUpdateParams = {\n+    _id: string;\n     targetAdminId: string; // 로그인 ID\n     name?: string;\n     cellphone?: string;\n     description?: string;\n"
                 }
             ],
             "date": 1756187053867,

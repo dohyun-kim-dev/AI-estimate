@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
-import { Link, useLocation,useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useThemeStore } from '@/store/themeStore'
 import Icon, { IconName } from '@/components/ai-esti/Icon'
 
@@ -81,14 +81,16 @@ function getIconSrc(key: ItemKey, isDark: boolean, isActive: boolean) {
 
 const Footer: React.FC<FooterProps> = ({ compact }) => {
   const location = useLocation()
+  const navigate = useNavigate()
   const { isDarkMode } = useThemeStore()
-  const navigate = useNavigate()  
-  // 부모 창의 뷰포트 폭(Widget에서 전달)을 기반으로 임베드 모바일 여부 판정
+  const { companyCode } = useParams() // URL에서 companyCode를 가져옵니다.
+
   const [parentWidth, setParentWidth] = useState<number | null>(null)
   const [isEmbed, setIsEmbed] = useState(false)
   
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search)
+    console.log("searchParams!!!",searchParams , companyCode )
     setIsEmbed(searchParams.get('embed') === '1')
     const onMsg = (e: MessageEvent) => {
       if (e?.data?.type === 'aiw:parentViewport' && typeof e.data.width === 'number') {
@@ -102,21 +104,21 @@ const Footer: React.FC<FooterProps> = ({ compact }) => {
   const hideFull = isEmbed && parentWidth !== null && parentWidth <= 520
 
   const navItems: { key: ItemKey; href?: string; fallbackIcon: IconName; text: string; external?: boolean }[] = [
-    { key: 'consultation', href: '/', fallbackIcon: 'chat', text: '견적상담' },
-    { key: 'estimate', href: '/my-estimate', fallbackIcon: 'document', text: '나의견적' },
-    { key: 'setting', href: '/settings', fallbackIcon: 'settings', text: '설정' },
+    { key: 'consultation', href: `/aiclient/${companyCode}/`, fallbackIcon: 'chat', text: '견적상담' },
+    { key: 'estimate', href: `/aiclient/${companyCode}/my-estimate`, fallbackIcon: 'document', text: '나의견적' },
+    { key: 'setting', href: `/aiclient/${companyCode}/settings`, fallbackIcon: 'settings', text: '설정' },
     { key: 'full', fallbackIcon: 'expand', text: '전체화면', external: true },
   ]
 
   const handleConsultationClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault() // Link 컴포넌트의 기본 동작 방지
+    e.preventDefault()
 
-    if (location.pathname === '/') {
-      // 현재 경로가 '/'일 때만 스크롤을 맨 위로 부드럽게 올림
+    const currentPath = `/aiclient/${companyCode}/`
+
+    if (location.pathname === currentPath) {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else {
-      // 다른 경로에 있을 때는 '/'로 이동
-      navigate('/')
+      navigate(currentPath)
     }
   }
 
@@ -124,19 +126,16 @@ const Footer: React.FC<FooterProps> = ({ compact }) => {
     <FooterWrapper $compact={compact}>
       <FooterContent>
         {navItems.map((item, idx) => {
-          // 임베드 + 부모 모바일이면 전체화면 메뉴 숨김
           if (item.external && hideFull) return null
-
-          // '견적상담' 아이템을 별도로 처리
+          
           if (item.key === 'consultation') {
-            const isActive = location.pathname === item.href
+            const isActive = location.pathname === `/aiclient/${companyCode}/`
             const iconSrc = getIconSrc(item.key, isDarkMode, isActive)
             return (
               <ButtonLike key={item.href} $isActive={isActive} onClick={handleConsultationClick}>
                 <IconWrapper $isActive={isActive}>
                   <Icon src={iconSrc} width={80} height={60} fallbackIcon={item.fallbackIcon} />
                 </IconWrapper>
-                {/* <NavText>{item.text}</NavText> */}
               </ButtonLike>
             )
           }
@@ -150,23 +149,21 @@ const Footer: React.FC<FooterProps> = ({ compact }) => {
                 $isActive={false}
                 onClick={(e) => {
                   e.preventDefault()
-                  window.open('/ai-estimate', '_blank', 'noopener,noreferrer')
+                  window.open(`/aiclient/${companyCode}/ai`, '_blank', 'noopener,noreferrer')
                 }}
               >
                 <IconWrapper $isActive={false}>
                   <Icon src={iconSrc} width={80} height={60} fallbackIcon={item.fallbackIcon} />
                 </IconWrapper>
-                {/* <NavText>{item.text}</NavText> */}
               </ButtonLike>
             )
           }
 
           return (
-            <NavItem key={item.href} to={item.href!} $isActive={isActive}>
+            <NavItem key={item.href} to={item.href} $isActive={isActive}>
               <IconWrapper $isActive={isActive}>
                 <Icon src={iconSrc} width={80} height={60} fallbackIcon={item.fallbackIcon} />
               </IconWrapper>
-              {/* <NavText>{item.text}</NavText> */}
             </NavItem>
           )
         })}

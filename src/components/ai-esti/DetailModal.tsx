@@ -4,6 +4,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { EstimateItem } from '@/app/ai-estimate/types/estimateItem';
+import { IoCloseCircle } from 'react-icons/io5';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -20,12 +21,31 @@ const ModalOverlay = styled.div`
 
 const ModalContent = styled.div`
   background-color: ${({ theme }) => theme.surface1};
+  text-align: center;
   padding: 30px;
   border-radius: 12px;
   width: 90%;
   max-width: 500px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   color: ${({ theme }) => theme.text};
+  position: relative;
+`;
+
+const CloseButtonTop = styled.button`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  color: ${({ theme }) => theme.subtleText};
+  transition: color 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    color: ${({ theme }) => theme.text};
+    transform: scale(1.1);
+  }
 `;
 
 const ModalHeader = styled.h2`
@@ -37,13 +57,76 @@ const ModalHeader = styled.h2`
 const ModalPrice = styled.p`
   font-size: 1.2em;
   font-weight: bold;
-  margin: 0 0 20px 0;
 `;
 
-const ModalDescription = styled.p`
-  font-size: 1em;
+const FormContainer = styled.div`
+  width: 100%;
+  text-align: left;
+  margin-top: 20px;
+`;
+
+const Label = styled.div`
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  // color: ${({ theme }) => theme.subtleText};
+`;
+
+const DescriptionBox = styled.div`
+  background-color: #2F3741;
+  color: ${({ theme }) => theme.text};
+  padding: 16px;
+  border-radius: 4px;
+  height: 131px;
+  overflow-y: auto;
+  position: relative;
   line-height: 1.6;
-  color: ${({ theme }) => theme.subtleText};
+  font-size: 14px;
+  white-space: pre-wrap;
+  text-align: left;
+  margin-bottom: 20px;
+  
+  // 스크롤바 스타일링 (웹킷 기반 브라우저)
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: ${({ theme }) => theme.border};
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  // 하단 블러 효과
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20%;
+    background: linear-gradient(to top, #2F3741, transparent);
+    pointer-events: none;
+  }
+`;
+
+const CloseButtonBottom = styled.button`
+  width: 100%;
+  background-color: #557599; // #668EC0에 가까운 색상
+  // color: ${({ theme }) => theme.body};
+  border: none;
+  padding: 12px 24px;
+  margin-top: 20px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #668EC0;
+  }
 `;
 
 interface DetailModalProps {
@@ -55,9 +138,18 @@ const DetailModal: React.FC<DetailModalProps> = ({ item, onClose }) => {
   return (
     <ModalOverlay onClick={onClose}>
       <ModalContent onClick={(e) => e.stopPropagation()}>
+        <CloseButtonTop onClick={onClose}>
+          <IoCloseCircle size={30} />
+        </CloseButtonTop>
         <ModalHeader>{item.name}</ModalHeader>
         <ModalPrice>₩ {item.price}</ModalPrice>
-        <ModalDescription>{item.description}</ModalDescription>
+        <FormContainer>
+          <Label>상세 설명</Label>
+          <DescriptionBox>{item.description}</DescriptionBox>
+        </FormContainer>
+        <CloseButtonBottom onClick={onClose}>
+          닫기
+        </CloseButtonBottom>
       </ModalContent>
     </ModalOverlay>
   );

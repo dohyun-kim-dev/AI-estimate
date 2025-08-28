@@ -38,17 +38,8 @@ export async function   adminGetList(params: AdminGetListParams) {
   if (params.keyword) queryParams.append('keyword', params.keyword);
   if (params.fromDate) queryParams.append('fromDate', params.fromDate);
   if (params.toDate) queryParams.append('toDate', params.toDate);
-  
-  // isRoot가 false일 때는 companyCode가 필수
-  if (!params.isRoot) {
-    if (!params.companyCode) {
-      throw new Error('companyCode is required when isRoot is false');
-    }
-    queryParams.append('companyCode', params.companyCode);
-  } else if (params.companyCode) {
-    // isRoot가 true일 때도 companyCode가 있으면 추가
-    queryParams.append('companyCode', params.companyCode);
-  }
+  if(params.companyCode) queryParams.append('companyCode', params.companyCode);
+
 
   return callAdminApi({
     title: params.isRoot ? '슈퍼 관리자 목록' : '고객사 관리자 목록',
@@ -95,23 +86,39 @@ export async function adminCreate(
 } 
 
 //test0521 a!111111
+//관리자 수정
+export async function adminUpdate(params: AdminUpdateParams) {
+  // body에 들어갈 데이터 객체 생성
+  const requestBody: any = {
+    name: params.name,
+    email: params.email,
+    cellphone: params.cellphone,
+    memo: params.description || null, // description을 memo로 매핑
+  };
 
-export async function adminUpdate(
+  // password 필드는 선택적이므로, 존재할 때만 추가
+  if (params.password) {
+    requestBody.password = params.password;
+  }
 
-  params: AdminUpdateParams) {
-  console.log('params', params);
+  // companyCode 필드도 선택적이므로, 존재할 때만 추가
+  if (params.companyCode) {
+    requestBody.companyCode = params.companyCode;
+  }
+
+  // 이메일 및 SMS 수신 여부 필드 추가
+  if (params.emailYn) {
+    requestBody.emailYn = params.emailYn;
+  }
+  if (params.smsYn) {
+    requestBody.smsYn = params.smsYn;
+  }
+
   return callAdminApi({
     title: '관리자 수정',
-    url: `${BASE_URL}/cms/admin/update`,
-    body: {
-      targetAdminId: params.targetAdminId,
-      name: params.name,
-      cellphone: params.cellphone,
-      description: params.description,
-      email: params.email,
-      emailYn: params.emailYn,
-      smsYn: params.smsYn,
-    },
+    url: `${BASE_URL}/cms/admins/${params.targetAdminId}`, // URL에 :id 부분 추가
+    method: 'PATCH', // PUT 메서드로 변경
+    body: requestBody,
     isCallPageLoader: true,
   });
 }

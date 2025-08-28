@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 15,
+            "activePatchIndex": 33,
             "patches": [
                 {
                     "date": 1755953751114,
@@ -68,6 +68,78 @@
                 {
                     "date": 1756196980799,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,9 +17,9 @@\n   display: flex;\n   flex-direction: column;\n   min-height: 100vh;\n   width: 100%;\n-  position: relative;\n+  // position: relative;\n `\n \n const ContentWrapper = styled.main`\n   background-color: ${({ theme }) => theme.body};\n"
+                },
+                {
+                    "date": 1756393433691,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,9 +17,9 @@\n   display: flex;\n   flex-direction: column;\n   min-height: 100vh;\n   width: 100%;\n-  // position: relative;\n+  position: relative;\n `\n \n const ContentWrapper = styled.main`\n   background-color: ${({ theme }) => theme.body};\n@@ -51,9 +51,8 @@\n               <AppWrapper>\n                 <ContentWrapper>\n                   {/* <ScreenWrapper> */}\n                     <AppRoutes />\n-                  {/* </ScreenWrapper> */}\n                 </ContentWrapper>\n                 <ToastContainer\n                   position=\"top-right\"\n                   autoClose={3000}\n"
+                },
+                {
+                    "date": 1756393487923,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -45,13 +45,11 @@\n     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>\n       <BrowserRouter>\n         <ThemeProvider theme={theme}>\n           <DeviceProvider>\n-            <GlobalStyle />\n             <ScrollAwareWrapper>\n               <AppWrapper>\n                 <ContentWrapper>\n-                  {/* <ScreenWrapper> */}\n                     <AppRoutes />\n                 </ContentWrapper>\n                 <ToastContainer\n                   position=\"top-right\"\n"
+                },
+                {
+                    "date": 1756393515747,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -45,8 +45,9 @@\n     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>\n       <BrowserRouter>\n         <ThemeProvider theme={theme}>\n           <DeviceProvider>\n+            <GlobalStyle />\n             <ScrollAwareWrapper>\n               <AppWrapper>\n                 <ContentWrapper>\n                     <AppRoutes />\n"
+                },
+                {
+                    "date": 1756393626130,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,8 +47,11 @@\n         <ThemeProvider theme={theme}>\n           <DeviceProvider>\n             <GlobalStyle />\n             <ScrollAwareWrapper>\n+\n+      <PageLoaderProvider>\n+        <ToastProvider>\n               <AppWrapper>\n                 <ContentWrapper>\n                     <AppRoutes />\n                 </ContentWrapper>\n"
+                },
+                {
+                    "date": 1756393631610,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -66,8 +66,9 @@\n                   pauseOnHover\n                   theme=\"colored\"\n                 />\n               </AppWrapper>\n+              \n             </ScrollAwareWrapper>\n           </DeviceProvider>\n         </ThemeProvider>\n       </BrowserRouter>\n"
+                },
+                {
+                    "date": 1756393638180,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -48,10 +48,10 @@\n           <DeviceProvider>\n             <GlobalStyle />\n             <ScrollAwareWrapper>\n \n-      <PageLoaderProvider>\n-        <ToastProvider>\n+              <PageLoaderProvider>\n+                <ToastProvider>\n               <AppWrapper>\n                 <ContentWrapper>\n                     <AppRoutes />\n                 </ContentWrapper>\n@@ -66,9 +66,10 @@\n                   pauseOnHover\n                   theme=\"colored\"\n                 />\n               </AppWrapper>\n-              \n+              </ToastProvider>\n+              </PageLoaderProvider>\n             </ScrollAwareWrapper>\n           </DeviceProvider>\n         </ThemeProvider>\n       </BrowserRouter>\n"
+                },
+                {
+                    "date": 1756393646199,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -50,13 +50,13 @@\n             <ScrollAwareWrapper>\n \n               <PageLoaderProvider>\n                 <ToastProvider>\n-              <AppWrapper>\n-                <ContentWrapper>\n+                  <AppWrapper>\n+                    <ContentWrapper>\n                     <AppRoutes />\n-                </ContentWrapper>\n-                <ToastContainer\n+                    </ContentWrapper>\n+                    <ToastContainer\n                   position=\"top-right\"\n                   autoClose={3000}\n                   newestOnTop\n                   closeOnClick\n"
+                },
+                {
+                    "date": 1756393653791,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -52,21 +52,21 @@\n               <PageLoaderProvider>\n                 <ToastProvider>\n                   <AppWrapper>\n                     <ContentWrapper>\n-                    <AppRoutes />\n+                      <AppRoutes />\n                     </ContentWrapper>\n                     <ToastContainer\n-                  position=\"top-right\"\n-                  autoClose={3000}\n-                  newestOnTop\n-                  closeOnClick\n-                  rtl={false}\n-                  pauseOnFocusLoss\n-                  draggable\n-                  pauseOnHover\n-                  theme=\"colored\"\n-                />\n+                      position=\"top-right\"\n+                      autoClose={3000}\n+                      newestOnTop\n+                      closeOnClick\n+                      rtl={false}\n+                      pauseOnFocusLoss\n+                      draggable\n+                      pauseOnHover\n+                      theme=\"colored\"\n+                    />\n               </AppWrapper>\n               </ToastProvider>\n               </PageLoaderProvider>\n             </ScrollAwareWrapper>\n"
+                },
+                {
+                    "date": 1756393667708,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,8 +11,10 @@\n import { GoogleOAuthProvider } from '@react-oauth/google'\n import { DeviceProvider } from '@/contexts/DeviceContext'\n import ScrollAwareWrapper from '@/layout/ScrollAwareWrapper'\n import ScreenWrapper from '@/layout/ScreenWrapper'\n+import { ToastProvider } from '@components/common/ToastProvider'\n+import { PageLoaderProvider } from '@contexts/PageLoaderContext'\n \n const AppWrapper = styled.div`\n   display: flex;\n   flex-direction: column;\n@@ -65,10 +67,10 @@\n                       draggable\n                       pauseOnHover\n                       theme=\"colored\"\n                     />\n-              </AppWrapper>\n-              </ToastProvider>\n+                  </AppWrapper>\n+                </ToastProvider>\n               </PageLoaderProvider>\n             </ScrollAwareWrapper>\n           </DeviceProvider>\n         </ThemeProvider>\n"
+                },
+                {
+                    "date": 1756393753895,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -50,9 +50,8 @@\n           <DeviceProvider>\n             <GlobalStyle />\n             <ScrollAwareWrapper>\n \n-              <PageLoaderProvider>\n                 <ToastProvider>\n                   <AppWrapper>\n                     <ContentWrapper>\n                       <AppRoutes />\n@@ -69,9 +68,8 @@\n                       theme=\"colored\"\n                     />\n                   </AppWrapper>\n                 </ToastProvider>\n-              </PageLoaderProvider>\n             </ScrollAwareWrapper>\n           </DeviceProvider>\n         </ThemeProvider>\n       </BrowserRouter>\n"
+                },
+                {
+                    "date": 1756393761506,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -50,8 +50,9 @@\n           <DeviceProvider>\n             <GlobalStyle />\n             <ScrollAwareWrapper>\n \n+              <PageLoaderProvider\n                 <ToastProvider>\n                   <AppWrapper>\n                     <ContentWrapper>\n                       <AppRoutes />\n@@ -67,9 +68,9 @@\n                       pauseOnHover\n                       theme=\"colored\"\n                     />\n                   </AppWrapper>\n-                </ToastProvider>\n+              </PageLoaderProvider>\n             </ScrollAwareWrapper>\n           </DeviceProvider>\n         </ThemeProvider>\n       </BrowserRouter>\n"
+                },
+                {
+                    "date": 1756393767385,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -50,10 +50,9 @@\n           <DeviceProvider>\n             <GlobalStyle />\n             <ScrollAwareWrapper>\n \n-              <PageLoaderProvider\n-                <ToastProvider>\n+              <PageLoaderProvider>\n                   <AppWrapper>\n                     <ContentWrapper>\n                       <AppRoutes />\n                     </ContentWrapper>\n"
+                },
+                {
+                    "date": 1756393816345,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,12 +47,13 @@\n     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>\n       <BrowserRouter>\n         <ThemeProvider theme={theme}>\n           <DeviceProvider>\n-            <GlobalStyle />\n+              <GlobalStyle />\n             <ScrollAwareWrapper>\n \n               <PageLoaderProvider>\n+                <ToastProvider>\n                   <AppWrapper>\n                     <ContentWrapper>\n                       <AppRoutes />\n                     </ContentWrapper>\n@@ -67,8 +68,9 @@\n                       pauseOnHover\n                       theme=\"colored\"\n                     />\n                   </AppWrapper>\n+                </ToastProvider>\n               </PageLoaderProvider>\n             </ScrollAwareWrapper>\n           </DeviceProvider>\n         </ThemeProvider>\n"
+                },
+                {
+                    "date": 1756393822797,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,13 +47,12 @@\n     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>\n       <BrowserRouter>\n         <ThemeProvider theme={theme}>\n           <DeviceProvider>\n-              <GlobalStyle />\n-            <ScrollAwareWrapper>\n-\n-              <PageLoaderProvider>\n+            <GlobalStyle />\n+            <PageLoaderProvider>\n                 <ToastProvider>\n+                  \n                   <AppWrapper>\n                     <ContentWrapper>\n                       <AppRoutes />\n                     </ContentWrapper>\n"
+                },
+                {
+                    "date": 1756394617318,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -67,11 +67,12 @@\n                       pauseOnHover\n                       theme=\"colored\"\n                     />\n                   </AppWrapper>\n+                  <SocialLoginModal $isOpen={isLoginModalOpen} onClose={closeLoginModal} />\n+\n                 </ToastProvider>\n               </PageLoaderProvider>\n-            </ScrollAwareWrapper>\n           </DeviceProvider>\n         </ThemeProvider>\n       </BrowserRouter>\n     </GoogleOAuthProvider>\n"
+                },
+                {
+                    "date": 1756394633261,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -34,8 +34,9 @@\n \n function App() {\n   const { isDarkMode } = useThemeStore()\n   const [mounted, setMounted] = useState(false)\n+  const { isLoginModalOpen, closeLoginModal } = useModalStore();\n \n   useEffect(() => {\n     setMounted(true)\n   }, [])\n"
+                },
+                {
+                    "date": 1756394639150,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,8 +13,9 @@\n import ScrollAwareWrapper from '@/layout/ScrollAwareWrapper'\n import ScreenWrapper from '@/layout/ScreenWrapper'\n import { ToastProvider } from '@components/common/ToastProvider'\n import { PageLoaderProvider } from '@contexts/PageLoaderContext'\n+import { useModalStore } from '@store/modalStore'\n \n const AppWrapper = styled.div`\n   display: flex;\n   flex-direction: column;\n"
+                },
+                {
+                    "date": 1756394645792,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,8 +14,9 @@\n import ScreenWrapper from '@/layout/ScreenWrapper'\n import { ToastProvider } from '@components/common/ToastProvider'\n import { PageLoaderProvider } from '@contexts/PageLoaderContext'\n import { useModalStore } from '@store/modalStore'\n+import { SocialLoginModal } from '@components/ai-esti/SocialLoginModal'\n \n const AppWrapper = styled.div`\n   display: flex;\n   flex-direction: column;\n"
                 }
             ],
             "date": 1755953751114,

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useRef, useEffect } from 'react';
 import styled, { useTheme } from 'styled-components';
 import Icon from './Icon';
@@ -5,6 +7,8 @@ import TextareaAutosize from 'react-textarea-autosize';
 import { customScrollbar } from '@/styles/commonStyles';
 import { useAuthStore } from '@/store/authStore';
 import { SocialLoginModal } from './SocialLoginModal';
+import FileUploadSection from './FileUploadSection'; // ⭐️ 추가: 파일 업로드 섹션 컴포넌트 임포트
+import { FileUploadData } from '@/lib/firebase/firebase.functions'; // ⭐️ 추가: 파일 업로드 데이터 타입 임포트
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -94,22 +98,36 @@ const AutoSizeInput = styled(TextareaAutosize)`
 `;
 
 const RemainingCountText = styled.p`
-  ${({ theme }) => theme.body2};
   font-size: 12px;
   text-align: center;
   color: ${({ theme }) => theme.subtleText};
   padding: 4px 16px 0;
 `;
 
+// ⭐️ 추가: 파일 미리보기가 나타날 영역을 위한 스타일
+const FilePreviewArea = styled.div`
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 0 16px;
+`;
+
+
 interface BottomInputProps {
   placeholder?: string;
   onSubmit?: (value: string) => void;
   maxSubmissions?: number;
+  onFilesChange: (files: File[]) => void;
+  isUploading: boolean;
+  isProcessing: boolean;
 }
+
 const BottomInput: React.FC<BottomInputProps> = ({
   placeholder = "서비스 종류와 주요 기능, 예상 기간/예산을 입력! \n예시: '온라인 쇼핑몰, 결제/배송/회원가입",
   onSubmit,
-  maxSubmissions = 30
+  maxSubmissions = 30,
+  onFilesChange,
+  isUploading,
+  isProcessing,
 }) => {
   const [value, setValue] = useState('');
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
@@ -117,6 +135,12 @@ const BottomInput: React.FC<BottomInputProps> = ({
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const remainingCountRef = useRef(remainingCount);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ⭐️ 추가: 파일 업로드 상태 관리
+  const [uploadedFiles, setUploadedFiles] = useState<FileUploadData[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+
   const theme = useTheme();
   const isLightTheme = theme.body === '#FFFFFF';
   const { isAuthenticated } = useAuthStore();
@@ -128,7 +152,6 @@ const BottomInput: React.FC<BottomInputProps> = ({
 
   useEffect(() => {
     if (!isLoggedIn) {
-      // ⭐️ 비회원 횟수 초기화 로직을 함수로 분리
       const checkAndResetCount = () => {
         let deviceId = localStorage.getItem('deviceId');
         let lastResetDate = localStorage.getItem('lastResetDate');
@@ -154,12 +177,11 @@ const BottomInput: React.FC<BottomInputProps> = ({
         }
       };
 
-      checkAndResetCount(); // 컴포넌트 마운트 시 한 번 실행
+      checkAndResetCount();
 
-      // ⭐️ 1시간마다 초기화 함수를 실행하는 인터벌 설정
-      const intervalId = setInterval(checkAndResetCount, 60 * 60 * 1000); // 1시간 = 60분 * 60초 * 1000밀리초
+      const intervalId = setInterval(checkAndResetCount, 60 * 60 * 1000);
 
-      return () => clearInterval(intervalId); // 클린업 함수
+      return () => clearInterval(intervalId);
     }
   }, [isLoggedIn, maxSubmissions]);
 
@@ -198,30 +220,60 @@ const BottomInput: React.FC<BottomInputProps> = ({
       }
     }
   };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       
       if (isMobile) {
-        // 모바일 환경
         if (e.shiftKey) {
-            // 모바일에서 Shift+Enter는 제출
             e.preventDefault();
             handleSubmit();
-        } else {
-            // 모바일에서 Enter는 줄바꿈 (기본 동작)
         }
       } else {
-        // PC 환경
-        if (e.shiftKey) {
-          // PC에서 Shift + Enter는 줄바꿈 (기본 동작)
-        } else {
-          // PC에서 Enter만 누르면 제출
+        if (!e.shiftKey) {
           e.preventDefault();
           handleSubmit();
         }
       }
     }
+  };
+
+  const handleFileButtonClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      const maxSizeMB = 20;
+      const exceedsLimit = files.some(file => file.size > maxSizeMB * 1024 * 1024);
+
+      if (exceedsLimit) {
+        alert(`파일 크기가 ${maxSizeMB}MB를 초과했습니다.`);
+        e.target.value = '';
+        return;
+      }
+      
+      // ⭐️ 변경: 부모 컴포넌트로 파일을 전달하고, 이곳에서 미리보기 상태를 관리합니다.
+      const newFilesData = files.map(file => ({
+        fileUri: URL.createObjectURL(file), // 임시 URL 생성
+        name: file.name,
+        size: file.size,
+        mimeType: file.type,
+      }));
+      setUploadedFiles(prev => [...prev, ...newFilesData]);
+      onFilesChange(files);
+
+      e.target.value = '';
+    }
+  };
+
+  const handleDeleteFile = (fileUriToDelete: string) => {
+    setUploadedFiles(prev => prev.filter(file => file.fileUri !== fileUriToDelete));
+    // ⭐️ TODO: 실제 업로드된 파일의 경우, Firebase Storage에서 삭제하는 로직을 추가해야 합니다.
   };
 
   const renderRemainingCountText = () => {
@@ -241,8 +293,28 @@ const BottomInput: React.FC<BottomInputProps> = ({
       <InputWrapper style={{ 
         bottom: isKeyboardVisible ? window.visualViewport?.height - window.innerHeight : 0 
       }}>
+        {/* ⭐️ 추가: 파일 미리보기 및 진행률 섹션 */}
+        <FilePreviewArea>
+          <FileUploadSection
+            uploadedFiles={uploadedFiles}
+            uploadProgress={uploadProgress}
+            onDeleteFile={handleDeleteFile}
+            lang="ko" // 필요에 따라 언어 설정
+          />
+        </FilePreviewArea>
+
         <InputContainer>
-          <IconButton type="button">
+        <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            onChange={handleFileInputChange}
+            style={{ display: 'none' }}
+            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.hwp"
+            disabled={isUploading || isProcessing}
+          />
+          <IconButton type="button" onClick={handleFileButtonClick} disabled={isUploading || isProcessing}>
+            
             <Icon 
               src={isLightTheme ? "/ai-estimate/add_image.png" : "/ai-estimate/add_image_dark.png"} 
               width={36}
@@ -256,6 +328,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyPress}
+            disabled={isUploading || isProcessing}
           />
           <IconButton type="button" onClick={handleSubmit}>
             <Icon 

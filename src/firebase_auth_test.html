@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Firebase Anonymous Auth Test</title>
+  </head>
+  <body>
+    <h1>Firebase Anonymous Auth Test</h1>
+    <p>콘솔(F12)을 열어 결과를 확인하세요.</p>
+    <div id="message"></div>
+
+    <script type="module">
+      // Firebase SDK (v9+)
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+      import {
+        getAuth,
+        signInAnonymously,
+        onAuthStateChanged,
+      } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+
+      const firebaseConfig = {
+        apiKey: 'AIzaSyAclzwhawhQUksTGZ9qViIqFvEhTgr2S20',
+        authDomain: 'ai-invoice-d1b16.firebaseapp.com',
+        projectId: 'ai-invoice-d1b16',
+        storageBucket: 'ai-invoice-d1b16.firebasestorage.app',
+        messagingSenderId: '755775550544',
+        appId: '1:755775550544:web:1b709650fd6044514f8d55',
+      };
+
+      const messageDiv = document.getElementById('message');
+
+      try {
+        console.log('Initializing Firebase app with config:', firebaseConfig);
+        messageDiv.innerHTML += '<p>Initializing Firebase app...</p>';
+        const app = initializeApp(firebaseConfig);
+        console.log('Firebase app initialized:', app.name);
+        messageDiv.innerHTML +=
+          '<p>Firebase app initialized: ' + app.name + '</p>';
+
+        const auth = getAuth(app);
+        console.log('Firebase Auth instance_created.');
+        messageDiv.innerHTML += '<p>Firebase Auth instance created.</p>';
+
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            console.log('onAuthStateChanged - Anonymous user signed in:', user);
+            messageDiv.innerHTML += `<p style="color:green;"><b>SUCCESS:</b> Anonymously signed in! UID: ${user.uid}, isAnonymous: ${user.isAnonymous}</p>`;
+          } else {
+            console.log('onAuthStateChanged - User is signed out.');
+            messageDiv.innerHTML += '<p>User is currently signed out.</p>';
+          }
+        });
+
+        (async () => {
+          try {
+            console.log('Attempting to sign in anonymously...');
+            messageDiv.innerHTML +=
+              '<p>Attempting to sign in anonymously...</p>';
+            await signInAnonymously(auth);
+            console.log(
+              'signInAnonymously call finished. Waiting for onAuthStateChanged callback...'
+            );
+            // 성공 메시지는 onAuthStateChanged 콜백에서 처리
+          } catch (e) {
+            console.error('Error during signInAnonymously call:', e);
+            messageDiv.innerHTML += `<p style="color:red;"><b>signInAnonymously ERROR:</b> ${e.message} (Code: ${e.code})</p>`;
+          }
+        })();
+      } catch (e) {
+        console.error('Error during Firebase initial setup:', e);
+        messageDiv.innerHTML += `<p style="color:red;"><b>INITIAL SETUP ERROR:</b> ${e.message}</p>`;
+      }
+    </script>
+  </body>
+</html>

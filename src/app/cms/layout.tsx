@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
-import { useLocation, useNavigate, Outlet } from 'react-router-dom';
+import { useLocation, useNavigate, Outlet, useParams } from 'react-router-dom';
 import { AdminAuthProvider, useAdminAuth } from '@contexts/AdminAuthContext';
 import { useDevice } from '@contexts/DeviceContext';
 import { THEME_COLORS } from '@styles/theme_colors';
@@ -53,17 +53,18 @@ function ProtectedCmsLayout() {
   const { isLoggedIn, ready, logout } = useAdminAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { companyCode } = useParams(); // URL 파라미터 가져오기
   const device = useDevice();
-  const isLoginPage = location.pathname === '/cms/login';
+  const isLoginPage = location.pathname.includes('/cms/login');
 
   useEffect(() => {
     if (ready && !isLoggedIn && !isLoginPage) {
-      navigate('/cms/login', { replace: true });
-    } else if (ready && isLoggedIn && location.pathname === '/cms') {
+      navigate(`/aiclient/${companyCode}/cms/login`, { replace: true });
+    } else if (ready && isLoggedIn && location.pathname === `/aiclient/${companyCode}/cms`) {
       // 대시보드로 이동
-      navigate('/cms', { replace: true });
+      navigate(`/aiclient/${companyCode}/cms`, { replace: true });
     }
-  }, [ready, isLoggedIn, isLoginPage, location.pathname, navigate]);
+  }, [ready, isLoggedIn, isLoginPage, location.pathname, navigate, companyCode]);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -72,7 +73,7 @@ function ProtectedCmsLayout() {
 
   const handleLogout = () => {
     logout();
-    navigate('/cms/login', { replace: true });
+    navigate(`/aiclient/${companyCode}/cms/login`, { replace: true });
     toast.success('로그아웃 되었습니다');
   };
 
@@ -81,7 +82,7 @@ function ProtectedCmsLayout() {
     [device, isMobileSidebarOpen, isCollapsed]
   );
   const initialOpenMenus = JSON.parse(localStorage.getItem('openMenus') || '{}');
-  const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
+  const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>(initialOpenMenus);
 
 const handleMenuToggle = (menuId: string) => {
   setOpenMenus(prev => ({
@@ -90,50 +91,51 @@ const handleMenuToggle = (menuId: string) => {
   }));
 };
 
+  useEffect(() => {
+    localStorage.setItem('openMenus', JSON.stringify(openMenus));
+  }, [openMenus]);
+
 
   const menuItems: MenuItemConfig[] = [
-    { id: 'dashboard', icon: <DashboardIcon />, title: '대시보드', path: '/cms' },
-    { id: 'super-admin', icon: <WorkspacePremiumIcon />, title: '통합관리자 관리', path: '/cms/super-admin' },
-    { id: 'company', icon: <BusinessIcon />, title: '고객사 관리', path: '/cms/company-management' },
-    { id: 'admin', icon: <AdminPanelSettingsIcon />, title: '고객사 관리자 관리', path: '/cms/admin-management' },
-    { id: 'user', icon: <GroupIcon />, title: '고객 회원관리', path: '/cms/user-management' },
+    { id: 'dashboard', icon: <DashboardIcon />, title: '대시보드', path: `/aiclient/${companyCode}/cms` },
+    { id: 'super-admin', icon: <WorkspacePremiumIcon />, title: '통합관리자 관리', path: `/aiclient/${companyCode}/cms/super-admin` },
+    { id: 'company', icon: <BusinessIcon />, title: '고객사 관리', path: `/aiclient/${companyCode}/cms/company-management` },
+    { id: 'admin', icon: <AdminPanelSettingsIcon />, title: '고객사 관리자 관리', path: `/aiclient/${companyCode}/cms/admin-management` },
+    { id: 'user', icon: <GroupIcon />, title: '고객 회원관리', path: `/aiclient/${companyCode}/cms/user-management` },
     {
       id: 'ai-data',
       icon: <DatasetIcon />,
       title: 'AI 데이터 관리',
-      // path: '/cms/ai-data',
       isOpen: openMenus['ai-data'],
       subMenu: [
-        { id: 'ai-data-survey', icon: <AssessmentIcon />, title: '기초조사 관리', path: '/cms/ai-data/survey' },
-        { id: 'ai-data-prompt', icon: <TextFieldsIcon />, title: 'AI 프롬프트 관리', path: '/cms/ai-data/prompt' },
-        { id: 'ai-data-wrong', icon: <QuestionAnswerIcon />, title: 'AI 동문서답 관리', path: '/cms/ai-data/wrong-answer' },
-        { id: 'ai-data-conv', icon: <ChatIcon />, title: 'AI 대화이력 관리', path: '/cms/ai-data/conversation-history' },
+        { id: 'ai-data-survey', icon: <AssessmentIcon />, title: '기초조사 관리', path: `/aiclient/${companyCode}/cms/ai-data/survey` },
+        { id: 'ai-data-prompt', icon: <TextFieldsIcon />, title: 'AI 프롬프트 관리', path: `/aiclient/${companyCode}/cms/ai-data/prompt` },
+        { id: 'ai-data-wrong', icon: <QuestionAnswerIcon />, title: 'AI 동문서답 관리', path: `/aiclient/${companyCode}/cms/ai-data/wrong-answer` },
+        { id: 'ai-data-conv', icon: <ChatIcon />, title: 'AI 대화이력 관리', path: `/aiclient/${companyCode}/cms/ai-data/conversation-history` },
       ],
     },
     {
       id: 'ai-setting',
       icon: <SettingsIcon />,
       title: 'AI 설정',
-      // path: '/cms/ai-setting',
       isOpen: openMenus['ai-setting'],
       subMenu: [
-        { id: 'ai-setting-company', icon: <BusinessIcon />, title: '회사정보 관리', path: '/cms/ai-setting/company-info' },
-        { id: 'ai-setting-mng', icon: <TuneIcon />, title: 'AI 설정관리', path: '/cms/ai-setting/management' },
+        { id: 'ai-setting-company', icon: <BusinessIcon />, title: '회사정보 관리', path: `/aiclient/${companyCode}/cms/ai-setting/company-info` },
+        { id: 'ai-setting-mng', icon: <TuneIcon />, title: 'AI 설정관리', path: `/aiclient/${companyCode}/cms/ai-setting/management` },
       ],
     },
     {
       id: 'user-data',
       icon: <StorageIcon />,
       title: '고객 데이터 관리',
-      // path: '/cms/user-data',
       isOpen: openMenus['user-data'],
       subMenu: [
-        { id: 'user-data-price', icon: <RequestQuoteIcon />, title: '단가표 관리', path: '/cms/user-data/price' },
-        { id: 'user-data-proposal', icon: <DownloadIcon />, title: '견적 다운로드 현황', path: '/cms/user-data/proposal' },
-        { id: 'user-data-inquiry', icon: <ContactSupportIcon />, title: '견적 문의 관리', path: '/cms/user-data/inquiry' },
+        { id: 'user-data-price', icon: <RequestQuoteIcon />, title: '단가표 관리', path: `/aiclient/${companyCode}/cms/user-data/price` },
+        { id: 'user-data-proposal', icon: <DownloadIcon />, title: '견적 다운로드 현황', path: `/aiclient/${companyCode}/cms/user-data/proposal` },
+        { id: 'user-data-inquiry', icon: <ContactSupportIcon />, title: '견적 문의 관리', path: `/aiclient/${companyCode}/cms/user-data/inquiry` },
       ],
     },
-    { id: 'terms', icon: <DescriptionIcon />, title: '이용 약관', path: '/cms/terms' },
+    { id: 'terms', icon: <DescriptionIcon />, title: '이용 약관', path: `/aiclient/${companyCode}/cms/terms` },
   ];
 
   if (!ready || (!isLoggedIn && !isLoginPage)) return null;

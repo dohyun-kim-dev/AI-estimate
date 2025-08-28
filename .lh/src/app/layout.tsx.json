@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 18,
+            "activePatchIndex": 30,
             "patches": [
                 {
                     "date": 1755953872663,
@@ -80,6 +80,54 @@
                 {
                     "date": 1756194732102,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -20,9 +20,9 @@\n       ? `\n       min-height: 100vh;\n       `\n       : `\n-      padding: 56px 0 84px;\n+      padding: 56px 0 0;\n       min-height: 100vh;\n       `}\n `;\n \n"
+                },
+                {
+                    "date": 1756390558028,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -20,9 +20,9 @@\n       ? `\n       min-height: 100vh;\n       `\n       : `\n-      padding: 56px 0 0;\n+      padding: 56px 0 84px;\n       min-height: 100vh;\n       `}\n `;\n \n@@ -62,9 +62,9 @@\n     <ThemeProvider theme={theme}>\n       <GlobalStyle />\n       <PageLoaderProvider>\n         <ToastProvider>\n-          {!hideDefaultLayout && <HeaderWrapper isCompact={compact} />}\n+         <HeaderWrapper isCompact={compact} />}\n           <Main $hideDefault={hideDefaultLayout}>\n             <Outlet />\n           </Main>\n           {!hideDefaultLayout && <FooterWrapper isCompact={compact} />}\n"
+                },
+                {
+                    "date": 1756390563464,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -62,13 +62,13 @@\n     <ThemeProvider theme={theme}>\n       <GlobalStyle />\n       <PageLoaderProvider>\n         <ToastProvider>\n-         <HeaderWrapper isCompact={compact} />}\n+         <HeaderWrapper isCompact={compact} />\n           <Main $hideDefault={hideDefaultLayout}>\n             <Outlet />\n           </Main>\n-          {!hideDefaultLayout && <FooterWrapper isCompact={compact} />}\n+          <FooterWrapper isCompact={compact} />}\n           <SocialLoginModal $isOpen={isLoginModalOpen} onClose={closeLoginModal} />\n         </ToastProvider>\n       </PageLoaderProvider>\n     </ThemeProvider>\n"
+                },
+                {
+                    "date": 1756390608844,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -52,23 +52,18 @@\n   }, [location]);\n \n   const theme = mounted ? (isDarkMode ? darkTheme : lightTheme) : lightTheme;\n \n-  // 특정 경로에서는 기본 헤더/푸터를 숨김\n-  const hideDefaultLayout = location.pathname.startsWith(\"/cms\") || \n-                          location.pathname.startsWith(\"/ai\") || \n-                          location.pathname.startsWith(\"/ai-estimate\");\n-\n   return (\n     <ThemeProvider theme={theme}>\n       <GlobalStyle />\n       <PageLoaderProvider>\n         <ToastProvider>\n          <HeaderWrapper isCompact={compact} />\n-          <Main $hideDefault={hideDefaultLayout}>\n+          <Main >\n             <Outlet />\n           </Main>\n-          <FooterWrapper isCompact={compact} />}\n+          <FooterWrapper isCompact={compact} />\n           <SocialLoginModal $isOpen={isLoginModalOpen} onClose={closeLoginModal} />\n         </ToastProvider>\n       </PageLoaderProvider>\n     </ThemeProvider>\n"
+                },
+                {
+                    "date": 1756390614282,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,9 +12,9 @@\n import { Outlet } from \"react-router-dom\";\n import { useModalStore } from \"@store/modalStore\";\n import { SocialLoginModal } from \"@components/ai-esti/SocialLoginModal\";\n \n-const Main = styled.main<{ $hideDefault?: boolean }>`\n+const Main = styled.main<{ $hideDefault?: boolean }>` \n   width: 100vw;\n   ${({ $hideDefault }) =>\n     $hideDefault\n       ? `\n"
+                },
+                {
+                    "date": 1756390622656,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,14 +12,16 @@\n import { Outlet } from \"react-router-dom\";\n import { useModalStore } from \"@store/modalStore\";\n import { SocialLoginModal } from \"@components/ai-esti/SocialLoginModal\";\n \n-const Main = styled.main<{ $hideDefault?: boolean }>` \n+const Main = styled.main` \n   width: 100vw;\n   ${({ $hideDefault }) =>\n     $hideDefault\n       ? `\n-      min-height: 100vh;\n+      background-color: ${({ theme }) => theme.body};\n+      width: 100vw;\n+        min-height: 100vh;\n       `\n       : `\n       padding: 56px 0 84px;\n       min-height: 100vh;\n"
+                },
+                {
+                    "date": 1756390633655,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,11 +17,9 @@\n   width: 100vw;\n   ${({ $hideDefault }) =>\n     $hideDefault\n       ? `\n-      background-color: ${({ theme }) => theme.body};\n-      width: 100vw;\n-        min-height: 100vh;\n+      min-height: 100vh;\n       `\n       : `\n       padding: 56px 0 84px;\n       min-height: 100vh;\n"
+                },
+                {
+                    "date": 1756390646974,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,14 +14,8 @@\n import { SocialLoginModal } from \"@components/ai-esti/SocialLoginModal\";\n \n const Main = styled.main` \n   width: 100vw;\n-  ${({ $hideDefault }) =>\n-    $hideDefault\n-      ? `\n-      min-height: 100vh;\n-      `\n-      : `\n       padding: 56px 0 84px;\n       min-height: 100vh;\n       `}\n `;\n"
+                },
+                {
+                    "date": 1756390653876,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,11 +14,11 @@\n import { SocialLoginModal } from \"@components/ai-esti/SocialLoginModal\";\n \n const Main = styled.main` \n   width: 100vw;\n-      padding: 56px 0 84px;\n-      min-height: 100vh;\n-      `}\n+  padding: 56px 0 84px;\n+  min-height: 100vh;\n+      \n `;\n \n interface HeaderFooterProps {\n   isCompact?: boolean;\n"
+                },
+                {
+                    "date": 1756393518253,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -16,9 +16,8 @@\n const Main = styled.main` \n   width: 100vw;\n   padding: 56px 0 84px;\n   min-height: 100vh;\n-      \n `;\n \n interface HeaderFooterProps {\n   isCompact?: boolean;\n@@ -48,9 +47,8 @@\n   const theme = mounted ? (isDarkMode ? darkTheme : lightTheme) : lightTheme;\n \n   return (\n     <ThemeProvider theme={theme}>\n-      <GlobalStyle />\n       <PageLoaderProvider>\n         <ToastProvider>\n          <HeaderWrapper isCompact={compact} />\n           <Main >\n"
+                },
+                {
+                    "date": 1756393619178,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,10 +47,8 @@\n   const theme = mounted ? (isDarkMode ? darkTheme : lightTheme) : lightTheme;\n \n   return (\n     <ThemeProvider theme={theme}>\n-      <PageLoaderProvider>\n-        <ToastProvider>\n          <HeaderWrapper isCompact={compact} />\n           <Main >\n             <Outlet />\n           </Main>\n"
+                },
+                {
+                    "date": 1756393704439,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -16,8 +16,9 @@\n const Main = styled.main` \n   width: 100vw;\n   padding: 56px 0 84px;\n   min-height: 100vh;\n+\n `;\n \n interface HeaderFooterProps {\n   isCompact?: boolean;\n@@ -47,8 +48,11 @@\n   const theme = mounted ? (isDarkMode ? darkTheme : lightTheme) : lightTheme;\n \n   return (\n     <ThemeProvider theme={theme}>\n+      <GlobalStyle />\n+      <PageLoaderProvider>\n+        <ToastProvider>\n          <HeaderWrapper isCompact={compact} />\n           <Main >\n             <Outlet />\n           </Main>\n"
+                },
+                {
+                    "date": 1756393796349,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -16,9 +16,9 @@\n const Main = styled.main` \n   width: 100vw;\n   padding: 56px 0 84px;\n   min-height: 100vh;\n-\n+      \n `;\n \n interface HeaderFooterProps {\n   isCompact?: boolean;\n"
                 }
             ],
             "date": 1755953872663,

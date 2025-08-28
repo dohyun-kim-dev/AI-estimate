@@ -12,6 +12,10 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { DeviceProvider } from '@/contexts/DeviceContext'
 import ScrollAwareWrapper from '@/layout/ScrollAwareWrapper'
 import ScreenWrapper from '@/layout/ScreenWrapper'
+import { ToastProvider } from '@components/common/ToastProvider'
+import { PageLoaderProvider } from '@contexts/PageLoaderContext'
+import { useModalStore } from '@store/modalStore'
+import { SocialLoginModal } from '@components/ai-esti/SocialLoginModal'
 
 const AppWrapper = styled.div`
   display: flex;
@@ -33,6 +37,7 @@ const ContentWrapper = styled.main`
 function App() {
   const { isDarkMode } = useThemeStore()
   const [mounted, setMounted] = useState(false)
+  const { isLoginModalOpen, closeLoginModal } = useModalStore();
 
   useEffect(() => {
     setMounted(true)
@@ -47,26 +52,29 @@ function App() {
         <ThemeProvider theme={theme}>
           <DeviceProvider>
             <GlobalStyle />
-            <ScrollAwareWrapper>
-              <AppWrapper>
-                <ContentWrapper>
-                  {/* <ScreenWrapper> */}
-                    <AppRoutes />
-                  {/* </ScreenWrapper> */}
-                </ContentWrapper>
-                <ToastContainer
-                  position="top-right"
-                  autoClose={3000}
-                  newestOnTop
-                  closeOnClick
-                  rtl={false}
-                  pauseOnFocusLoss
-                  draggable
-                  pauseOnHover
-                  theme="colored"
-                />
-              </AppWrapper>
-            </ScrollAwareWrapper>
+            <PageLoaderProvider>
+                <ToastProvider>
+                  
+                  <AppWrapper>
+                    <ContentWrapper>
+                      <AppRoutes />
+                    </ContentWrapper>
+                    <ToastContainer
+                      position="top-right"
+                      autoClose={3000}
+                      newestOnTop
+                      closeOnClick
+                      rtl={false}
+                      pauseOnFocusLoss
+                      draggable
+                      pauseOnHover
+                      theme="colored"
+                    />
+                  </AppWrapper>
+                  <SocialLoginModal $isOpen={isLoginModalOpen} onClose={closeLoginModal} />
+
+                </ToastProvider>
+              </PageLoaderProvider>
           </DeviceProvider>
         </ThemeProvider>
       </BrowserRouter>

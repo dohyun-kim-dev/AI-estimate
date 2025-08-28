@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 8,
+            "activePatchIndex": 9,
             "patches": [
                 {
                     "date": 1755953227058,
@@ -40,6 +40,10 @@
                 {
                     "date": 1756171397557,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,19 +33,16 @@\n     \"resolveJsonModule\": true,\n     \"isolatedModules\": true,\n     \"jsx\": \"react-jsx\",\n \n-    \"skipLibCheck\": true,      // 라이브러리 타입 오류 무시\n-    \"noEmitOnError\": false,    // 에러가 있어도 .js 파일 생성\n-    \"noUnusedLocals\": false,   // 안 쓰는 변수/임포트 무시\n-    \"noUnusedParameters\": false,\n-\n     /* Linting */\n     \"strict\": false,\n     \"noUnusedLocals\": false,\n     \"noUnusedParameters\": false,\n     \"noFallthroughCasesInSwitch\": false,\n-    \"noImplicitAny\": false\n+    \"noImplicitAny\": false,\n+    \"skipLibCheck\": true,      // 라이브러리 타입 오류 무시\n+    \"noEmitOnError\": false    // 에러가 있어도 .js 파일 생성\n   },\n   \"include\": [\"src\"],\n   \"references\": [{ \"path\": \"./tsconfig.node.json\" }]\n }\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756343280683,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -39,9 +39,9 @@\n     \"noUnusedLocals\": false,\n     \"noUnusedParameters\": false,\n     \"noFallthroughCasesInSwitch\": false,\n     \"noImplicitAny\": false,\n-    \"skipLibCheck\": true,      // 라이브러리 타입 오류 무시\n+    // \"skipLibCheck\": true,      // 라이브러리 타입 오류 무시 (중복 제거)\n     \"noEmitOnError\": false    // 에러가 있어도 .js 파일 생성\n   },\n   \"include\": [\"src\"],\n   \"references\": [{ \"path\": \"./tsconfig.node.json\" }]\n"
                 }
             ],
             "date": 1755953227058,

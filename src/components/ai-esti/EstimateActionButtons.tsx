@@ -19,7 +19,7 @@ const ButtonsContainer = styled.div`
   }
 `;
 
-const ActionButton = styled.button`
+const ActionButton = styled.button<{ $isPrimary?: boolean }>`
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -27,7 +27,7 @@ const ActionButton = styled.button`
   padding: 20px;
   border: none;
   border-radius: 12px;
-  background-color: ${({ theme, isPrimary }) => isPrimary ? theme.primaryButton : theme.surface2};
+  background-color: ${({ theme, $isPrimary }) => $isPrimary ? theme.primaryButton : theme.surface2};
   color: ${({ theme }) => theme.text};
   cursor: pointer;
   transition: all 0.2s ease;
@@ -111,7 +111,7 @@ const ChevronIcon = styled(IoChevronForward)`
   }
 `;
 
-const ActionButtonBottom = styled.div<{ isSecondary?: boolean }>`
+const ActionButtonBottom = styled.div<{ $isSecondary?: boolean }>`
   display: none;
   
   @media (min-width: 1024px) {
@@ -121,8 +121,8 @@ const ActionButtonBottom = styled.div<{ isSecondary?: boolean }>`
     justify-content: center;
     align-items: center;
     height: 36px;
-    background-color: ${({ theme, isSecondary }) => 
-      isSecondary 
+    background-color: ${({ theme, $isSecondary }) => 
+      $isSecondary 
         ? (theme.body === '#FFFFFF' ? '#2E2E48' : '#668EC0') 
         : theme.buttonBottom
     };
@@ -190,7 +190,7 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
 
   return (
     <ButtonsContainer>
-      <ActionButton onClick={() => { setOpenConsult(true); onConsult?.() }} isPrimary>
+      <ActionButton onClick={() => { setOpenConsult(true); onConsult?.() }} $isPrimary>
         <LeftContent>
           <TextContent>
           <Flex>
@@ -220,7 +220,7 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
             </TextContent>
           </LeftContent>
           <ChevronIcon size={20} />
-          <ActionButtonBottom isSecondary>AI 예산 줄이기</ActionButtonBottom>
+          <ActionButtonBottom $isSecondary>AI 예산 줄이기</ActionButtonBottom>
         </ActionButton>
 
         <ActionButton onClick={onAiOptimize}>
@@ -237,7 +237,7 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
             </TextContent>
           </LeftContent>
           <ChevronIcon size={20} />
-          <ActionButtonBottom isSecondary>AI 맞춤추천</ActionButtonBottom>
+          <ActionButtonBottom $isSecondary>AI 맞춤추천</ActionButtonBottom>
         </ActionButton>
 
         <Modal open={openConsult} title="필수 정보 입력" centerTitle onClose={() => setOpenConsult(false)} width={520}>

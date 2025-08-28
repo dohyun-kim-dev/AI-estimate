@@ -17,10 +17,11 @@ const CardWrapper = styled.div`
   border-radius: 12px;
   overflow: hidden;
   margin: 24px 0;
+  padding: 20px 12px;
 `;
 
 const Header = styled.div`
-  padding: 20px 20px 0 20px;
+  padding: 0px;
 
 `;
 
@@ -83,7 +84,7 @@ color: ${({ theme }) => theme.subtleText};
 const ActionButtons = styled.div`
   display: flex;
   gap: 10px;
-  padding-top: 4px;
+  padding 20px 12px;
   border-top: 1px solid ${({ theme }) => theme.border};
   margin: 4px;
 `;
@@ -286,11 +287,11 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
           <span style={{marginRight: '4px'}}>{estimate.estimated_period}</span>
           <span className="p">{displayPeriod}</span>
         </Period>
-        <ActionButtons>
+        {/* <ActionButtons>
           <ActionButton>AI 예산 줄이기</ActionButton>
           <Line></Line>
           <ActionButton>AI 맞춤 추천</ActionButton>
-        </ActionButtons>
+        </ActionButtons> */}
       </Header>
 
       <Modal open={openShare} title="견적서 공유" onClose={() => setOpenShare(false)} width={520}>

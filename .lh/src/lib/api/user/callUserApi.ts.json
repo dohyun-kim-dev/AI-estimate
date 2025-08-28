@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/lib/api/user/callUserApi.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1756368834760,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756368916996,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,14 +21,16 @@\n   isCallPageLoader?: boolean;\n }): Promise<ApiResponse<T>> {\n   // ⭐️ zustand 스토어에서 user 정보 가져오기\n   const user = useAuthStore.getState().user;\n-  const isUsingHeredot = user?.data?.usingService?.includes('heredot');\n+  // ⭐️ usingService 배열을 직접 가져오도록 수정\n+  const usingServices = user?.data?.usingService;\n \n   // ⭐️ 헤더 객체 생성 및 조건부 추가\n   const headers = new Headers();\n-  if (isUsingHeredot) {\n-    headers.append('x-company-code', 'heredot');\n+  if (usingServices && usingServices.length > 0) {\n+    // ⭐️ 배열의 모든 값을 헤더에 추가 (쉼표로 구분)\n+    headers.append('x-company-code', usingServices.join(','));\n   }\n \n   let response: any;\n   \n"
+                }
+            ],
+            "date": 1756368834760,
+            "name": "Commit-0",
+            "content": "import { callApiPost } from '@/lib/methods/callApiPost';\nimport { callApiGet } from '@/lib/methods/callApiGet';\nimport { callApiPut } from '@/lib/methods/callApiPut';\nimport { callApiPatch } from '@/lib/methods/callApiPatch';\nimport { callApiDelete } from '@/lib/methods/callApiDelete';\nimport { callNullCheck } from '@/lib/utils/nullChecker';\nimport { ApiResponse } from './userApi.types';\nimport { useAuthStore } from '@/store/authStore'; // ⭐️ useAuthStore 임포트\n\nexport async function callUserApi<T>({\n  title,\n  url,\n  method = 'POST',\n  body,\n  isCallPageLoader = false,\n}: {\n  title: string;\n  url: string;\n  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';\n  body?: Record<string, unknown>;\n  isCallPageLoader?: boolean;\n}): Promise<ApiResponse<T>> {\n  // ⭐️ zustand 스토어에서 user 정보 가져오기\n  const user = useAuthStore.getState().user;\n  const isUsingHeredot = user?.data?.usingService?.includes('heredot');\n\n  // ⭐️ 헤더 객체 생성 및 조건부 추가\n  const headers = new Headers();\n  if (isUsingHeredot) {\n    headers.append('x-company-code', 'heredot');\n  }\n\n  let response: any;\n  \n  // 'method' 값에 따라 다른 API 호출 함수를 사용\n  if (method === 'GET') {\n    response = await callApiGet({\n      title,\n      url,\n      isCallPageLoader,\n      headers, // ⭐️ 헤더 전달\n    });\n  } else if (method === 'PUT') {\n    response = await callApiPut({\n      title,\n      url,\n      body,\n      isCallPageLoader,\n      headers, // ⭐️ 헤더 전달\n    });\n  } else if (method === 'PATCH') {\n    response = await callApiPatch({\n      title,\n      url,\n      body,\n      isCallPageLoader,\n      headers, // ⭐️ 헤더 전달\n    });\n  } else if (method === 'DELETE') {\n    response = await callApiDelete({\n      title,\n      url,\n      isCallPageLoader,\n      headers, // ⭐️ 헤더 전달\n    });\n  } else {\n    // 기본적으로 POST를 사용\n    response = await callApiPost({\n      title,\n      url,\n      body,\n      isCallPageLoader,\n      headers, // ⭐️ 헤더 전달\n    });\n  }\n\n  // 401 에러 처리 (기존 로직 유지)\n  if (response.statusCode === 401) {\n    return response as ApiResponse<T>;\n  }\n\n  return response as ApiResponse<T>;\n}\n"
+        }
+    ]
+}

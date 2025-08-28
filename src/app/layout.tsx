@@ -13,17 +13,11 @@ import { Outlet } from "react-router-dom";
 import { useModalStore } from "@store/modalStore";
 import { SocialLoginModal } from "@components/ai-esti/SocialLoginModal";
 
-const Main = styled.main<{ $hideDefault?: boolean }>`
+const Main = styled.main` 
   width: 100vw;
-  ${({ $hideDefault }) =>
-    $hideDefault
-      ? `
-      min-height: 100vh;
-      `
-      : `
-      padding: 56px 0 84px;
-      min-height: 100vh;
-      `}
+  padding: 56px 0 84px;
+  min-height: 100vh;
+      
 `;
 
 interface HeaderFooterProps {
@@ -53,21 +47,16 @@ export default function RootLayout() {
 
   const theme = mounted ? (isDarkMode ? darkTheme : lightTheme) : lightTheme;
 
-  // 특정 경로에서는 기본 헤더/푸터를 숨김
-  const hideDefaultLayout = location.pathname.startsWith("/cms") || 
-                          location.pathname.startsWith("/ai") || 
-                          location.pathname.startsWith("/ai-estimate");
-
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyle />
       <PageLoaderProvider>
         <ToastProvider>
-          {!hideDefaultLayout && <HeaderWrapper isCompact={compact} />}
-          <Main $hideDefault={hideDefaultLayout}>
+         <HeaderWrapper isCompact={compact} />
+          <Main >
             <Outlet />
           </Main>
-          {!hideDefaultLayout && <FooterWrapper isCompact={compact} />}
+          <FooterWrapper isCompact={compact} />
           <SocialLoginModal $isOpen={isLoginModalOpen} onClose={closeLoginModal} />
         </ToastProvider>
       </PageLoaderProvider>

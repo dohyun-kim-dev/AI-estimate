@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 12,
             "patches": [
                 {
                     "date": 1756187053867,
@@ -16,6 +16,46 @@
                 {
                     "date": 1756199212334,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -27,10 +27,9 @@\n }\n \n // ***************** 관리자\n \n-export async function \n-adminGetList(params: AdminGetListParams) {\n+export async function   adminGetList(params: AdminGetListParams) {\n   const queryParams = new URLSearchParams();\n   \n   // 필수 파라미터\n   queryParams.append('isRoot', params.isRoot.toString());\n@@ -63,21 +62,35 @@\n   params: AdminCreateParams) {\n \n     console.log('params', params);\n \n+  const requestBody: any = {\n+    adminId: params.adminId,\n+    password: params.password,\n+    name: params.name,\n+    email: params.email,\n+    cellphone: params.cellphone,\n+    memo: params.memo || null,\n+  };\n+\n+  // companyCode가 있으면 추가 (고객사 관리자 생성)\n+  if (params.companyCode) {\n+    requestBody.companyCode = params.companyCode;\n+  }\n+\n+  // emailYn, smsYn이 있으면 추가\n+  if (params.emailYn) {\n+    requestBody.emailYn = params.emailYn;\n+  }\n+  if (params.smsYn) {\n+    requestBody.smsYn = params.smsYn;\n+  }\n+\n   return callAdminApi({\n-    title: '관리자 생성',\n-    url: `${BASE_URL}/cms/admin/create`,\n-    body: {\n-      adminId: params.adminId,\n-      password: params.password,\n-      name: params.name,\n-      cellphone: params.cellphone,\n-      description: params.description,\n-      email: params.email,\n-      emailYn: params.emailYn,\n-      smsYn: params.smsYn,\n-    },\n+    title: params.companyCode ? '고객사 관리자 생성' : '통합 관리자 생성',\n+    url: `${BASE_URL}/cms/admins`,\n+    method: 'POST',\n+    body: requestBody,\n     isCallPageLoader: true,\n   });\n } \n \n"
+                },
+                {
+                    "date": 1756279768877,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -37,9 +37,9 @@\n   // 선택적 파라미터들\n   if (params.keyword) queryParams.append('keyword', params.keyword);\n   if (params.fromDate) queryParams.append('fromDate', params.fromDate);\n   if (params.toDate) queryParams.append('toDate', params.toDate);\n-  \n+  if([a])\n   // isRoot가 false일 때는 companyCode가 필수\n   if (!params.isRoot) {\n     if (!params.companyCode) {\n       throw new Error('companyCode is required when isRoot is false');\n"
+                },
+                {
+                    "date": 1756279775418,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -37,20 +37,9 @@\n   // 선택적 파라미터들\n   if (params.keyword) queryParams.append('keyword', params.keyword);\n   if (params.fromDate) queryParams.append('fromDate', params.fromDate);\n   if (params.toDate) queryParams.append('toDate', params.toDate);\n-  if([a])\n-  // isRoot가 false일 때는 companyCode가 필수\n-  if (!params.isRoot) {\n-    if (!params.companyCode) {\n-      throw new Error('companyCode is required when isRoot is false');\n-    }\n-    queryParams.append('companyCode', params.companyCode);\n-  } else if (params.companyCode) {\n-    // isRoot가 true일 때도 companyCode가 있으면 추가\n-    queryParams.append('companyCode', params.companyCode);\n-  }\n-\n+  if(params.companyCode) queryParams.append('companyCode', params.companyCode);\n   return callAdminApi({\n     title: params.isRoot ? '슈퍼 관리자 목록' : '고객사 관리자 목록',\n     url: `${BASE_URL}/cms/admins?${queryParams.toString()}`,\n     method: 'GET',\n"
+                },
+                {
+                    "date": 1756280687047,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -38,8 +38,10 @@\n   if (params.keyword) queryParams.append('keyword', params.keyword);\n   if (params.fromDate) queryParams.append('fromDate', params.fromDate);\n   if (params.toDate) queryParams.append('toDate', params.toDate);\n   if(params.companyCode) queryParams.append('companyCode', params.companyCode);\n+\n+\n   return callAdminApi({\n     title: params.isRoot ? '슈퍼 관리자 목록' : '고객사 관리자 목록',\n     url: `${BASE_URL}/cms/admins?${queryParams.toString()}`,\n     method: 'GET',\n@@ -83,25 +85,40 @@\n   });\n } \n \n //test0521 a!111111\n+export async function adminUpdate(params: AdminUpdateParams) {\n+  // body에 들어갈 데이터 객체 생성\n+  const requestBody: any = {\n+    name: params.name,\n+    email: params.email,\n+    cellphone: params.cellphone,\n+    memo: params.description || null, // description을 memo로 매핑\n+  };\n \n-export async function adminUpdate(\n+  // password 필드는 선택적이므로, 존재할 때만 추가\n+  if (params.password) {\n+    requestBody.password = params.password;\n+  }\n \n-  params: AdminUpdateParams) {\n-  console.log('params', params);\n+  // companyCode 필드도 선택적이므로, 존재할 때만 추가\n+  if (params.companyCode) {\n+    requestBody.companyCode = params.companyCode;\n+  }\n+\n+  // 이메일 및 SMS 수신 여부 필드 추가\n+  if (params.emailYn) {\n+    requestBody.emailYn = params.emailYn;\n+  }\n+  if (params.smsYn) {\n+    requestBody.smsYn = params.smsYn;\n+  }\n+\n   return callAdminApi({\n     title: '관리자 수정',\n-    url: `${BASE_URL}/cms/admin/update`,\n-    body: {\n-      targetAdminId: params.targetAdminId,\n-      name: params.name,\n-      cellphone: params.cellphone,\n-      description: params.description,\n-      email: params.email,\n-      emailYn: params.emailYn,\n-      smsYn: params.smsYn,\n-    },\n+    url: `${BASE_URL}/cms/admins/${params.targetAdminId}`, // URL에 :id 부분 추가\n+    method: 'PUT', // PUT 메서드로 변경\n+    body: requestBody,\n     isCallPageLoader: true,\n   });\n }\n \n"
+                },
+                {
+                    "date": 1756280697791,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -85,8 +85,9 @@\n   });\n } \n \n //test0521 a!111111\n+//관리자 수정\n export async function adminUpdate(params: AdminUpdateParams) {\n   // body에 들어갈 데이터 객체 생성\n   const requestBody: any = {\n     name: params.name,\n"
+                },
+                {
+                    "date": 1756281739896,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -115,9 +115,9 @@\n   }\n \n   return callAdminApi({\n     title: '관리자 수정',\n-    url: `${BASE_URL}/cms/admins/${params.targetAdminId}`, // URL에 :id 부분 추가\n+    url: `${BASE_URL}/cms/admins/${params.}`, // URL에 :id 부분 추가\n     method: 'PUT', // PUT 메서드로 변경\n     body: requestBody,\n     isCallPageLoader: true,\n   });\n"
+                },
+                {
+                    "date": 1756281755959,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -115,9 +115,9 @@\n   }\n \n   return callAdminApi({\n     title: '관리자 수정',\n-    url: `${BASE_URL}/cms/admins/${params.}`, // URL에 :id 부분 추가\n+    url: `${BASE_URL}/cms/admins/${params.targetAdminId}`, // URL에 :id 부분 추가\n     method: 'PUT', // PUT 메서드로 변경\n     body: requestBody,\n     isCallPageLoader: true,\n   });\n"
+                },
+                {
+                    "date": 1756281767748,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -85,9 +85,9 @@\n   });\n } \n \n //test0521 a!111111\n-//관리자 수정\n+//rhksf\n export async function adminUpdate(params: AdminUpdateParams) {\n   // body에 들어갈 데이터 객체 생성\n   const requestBody: any = {\n     name: params.name,\n"
+                },
+                {
+                    "date": 1756281780359,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -85,9 +85,9 @@\n   });\n } \n \n //test0521 a!111111\n-//rhksf\n+//관리자 수정\n export async function adminUpdate(params: AdminUpdateParams) {\n   // body에 들어갈 데이터 객체 생성\n   const requestBody: any = {\n     name: params.name,\n@@ -115,10 +115,10 @@\n   }\n \n   return callAdminApi({\n     title: '관리자 수정',\n-    url: `${BASE_URL}/cms/admins/${params.targetAdminId}`, // URL에 :id 부분 추가\n-    method: 'PUT', // PUT 메서드로 변경\n+    url: `${BASE_URL}/cms/admins/${params._id}`, // URL에 :id 부분 추가\n+    method: 'PATCH', // PUT 메서드로 변경\n     body: requestBody,\n     isCallPageLoader: true,\n   });\n }\n"
+                },
+                {
+                    "date": 1756282693567,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -115,9 +115,9 @@\n   }\n \n   return callAdminApi({\n     title: '관리자 수정',\n-    url: `${BASE_URL}/cms/admins/${params._id}`, // URL에 :id 부분 추가\n+    url: `${BASE_URL}/cms/admins/${_id}`, // URL에 :id 부분 추가\n     method: 'PATCH', // PUT 메서드로 변경\n     body: requestBody,\n     isCallPageLoader: true,\n   });\n"
+                },
+                {
+                    "date": 1756282703816,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -115,9 +115,9 @@\n   }\n \n   return callAdminApi({\n     title: '관리자 수정',\n-    url: `${BASE_URL}/cms/admins/${_id}`, // URL에 :id 부분 추가\n+    url: `${BASE_URL}/cms/admins/${params.targetAdminId}`, // URL에 :id 부분 추가\n     method: 'PATCH', // PUT 메서드로 변경\n     body: requestBody,\n     isCallPageLoader: true,\n   });\n"
                 }
             ],
             "date": 1756187053867,

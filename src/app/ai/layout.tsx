@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import Icon from '@components/ai-esti/Icon';
-import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet, useParams } from 'react-router-dom'; // useParams 추가
 import { useThemeStore } from '@store/themeStore';
 import { useChatStore } from '@store/chatStore';
 import { useToast } from '@components/common/ToastProvider';
@@ -87,7 +87,7 @@ const DropdownMenu = styled.div<{ $isOpen: boolean }>`
   display: ${({ $isOpen }) => ($isOpen ? 'block' : 'none')};
   z-index: 1000;
   overflow: hidden;
-`
+`;
 
 const DropdownItem = styled.button`
   width: 100%;
@@ -110,11 +110,19 @@ const DropdownItem = styled.button`
   &:not(:last-child) {
     border-bottom: 1px solid ${({ theme }) => theme.border};
   }
-`
+`;
 
 const ProfileIconWrapper = styled.div`
   position: relative;
-`
+`;
+
+
+const Main = styled.main` 
+  width: 100vw;
+  padding: 56px 0 84px;
+  min-height: 100vh;
+      
+`;
 
 const ShareInput = styled.div`
   display: flex;
@@ -148,6 +156,7 @@ const ShareInput = styled.div`
 export default function AILayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { companyCode } = useParams(); // URL에서 companyCode를 가져옵니다.
   const { isDarkMode, toggleTheme } = useThemeStore();
   const { success } = useToast();
   const resetChat = useChatStore((s) => s.clear);
@@ -156,7 +165,6 @@ export default function AILayout() {
   const { isAuthenticated } = useAuthStore();
   const { openLoginModal } = useModalStore();
 
-  // useEffect를 사용하여 컴포넌트 마운트 시 로컬 스토리지에서 테마를 불러옵니다.
   useEffect(() => {
     const storedTheme = localStorage.getItem('theme');
     if (storedTheme) {
@@ -174,7 +182,6 @@ export default function AILayout() {
     setting: isLightTheme ? '/ai-estimate/setting.png' : '/ai-estimate/setting_dark.png',
   };
 
-  // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -187,7 +194,8 @@ export default function AILayout() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  const pageTitle = location.pathname === '/ai/my-estimate' ? '내 견적서' : location.pathname === '/ai/setting' ? '설정' : null;
+  // 라우트 경로를 동적으로 처리하도록 수정
+  const pageTitle = location.pathname.includes('/ai/my-estimate') ? '내 견적서' : location.pathname.includes('/ai/setting') ? '설정' : null;
 
   const handleBack = () => {
     navigate(-1);
@@ -218,22 +226,28 @@ export default function AILayout() {
   };
 
   const handleGoToSettings = () => {
-    navigate('/ai/setting');
+    navigate(`/aiclient/${companyCode}/ai/setting`);
   };
 
   const handleGoToMyEstimate = () => {
-    navigate('/ai/my-estimate');
+    navigate(`/aiclient/${companyCode}/ai/my-estimate`);
   };
 
   const shareUrl = window.location.href;
+  
+  const isAiHome = location.pathname === `/aiclient/${companyCode}/ai`;
+  const isPC = typeof window !== 'undefined' && window.innerWidth >= 1024;
+  const shouldShowBackButton = !isAiHome || !isPC;
 
   return (
     <LayoutWrapper>
       <TopNav>
         <div className="left-icons">
-          <span className="icon" onClick={handleBack}>
-            <Icon src={icons.back} width={24} height={24} />
-          </span>
+          {shouldShowBackButton && (
+            <span className="icon" onClick={handleBack}>
+              <Icon src={icons.back} width={24} height={24} />
+            </span>
+          )}
           {pageTitle && <NavTitle>{pageTitle}</NavTitle>}
         </div>
         {!pageTitle && (
@@ -271,13 +285,15 @@ export default function AILayout() {
           </div>
         )}
       </TopNav>
-      
+      <Main >
+
       <div style={{ paddingTop: '80px' }}>
         <Outlet />
       </div>
 
+      </Main>
       <ThemeToggleButton onClick={toggleTheme}>
-        {isDarkMode ? '☀️' : '🌙'}
+        {isDarkMode ? '☀️' : '�'}
       </ThemeToggleButton>
 
       <Modal open={openShare} title="페이지 공유" onClose={handleCloseShare} width={520}>

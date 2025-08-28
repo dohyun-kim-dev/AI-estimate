@@ -4,13 +4,19 @@
 import React from 'react';
 import styled from 'styled-components';
 
-const SliderWrapper = styled.div`
+const SliderWrapper = styled.div<{ $isvisible: boolean }>`
+  max-height: ${({ $isvisible }) => ($isvisible ? '1000px' : '0')};
+  transition: max-height 0.6s ease-in-out;
+  overflow: hidden;
+`;
+
+// ⭐️ 실제 스타일과 패딩을 담당하는 내부 컨테이너
+const InnerContainer = styled.div`
   background-color: ${({ theme }) => theme.surface2};
   padding: 20px;
   border-radius: 12px;
   margin: 20px 0;
 `;
-
 const Title = styled.h3`
   font-size: 18px;
   color: ${({ theme }) => theme.text};
@@ -110,11 +116,13 @@ const Labels = styled.div`
 interface PeriodSliderProps {
   value: number;
   onChange: (value: number) => void;
+  $isvisible: boolean;
 }
 
-const PeriodSlider: React.FC<PeriodSliderProps> = ({ value, onChange }) => {
+const PeriodSlider: React.FC<PeriodSliderProps> = ({ value, onChange, $isvisible }) => {
   return (
-    <SliderWrapper>
+    <SliderWrapper $isvisible={$isvisible}>
+      <InnerContainer>
       <Title>프로젝트 기간 설정 <span className="p">(주 단위)</span></Title>
       <Description>견적기간을 늘릴 경우 할인된 금액으로 변경됩니다</Description>
       <SliderContainer>
@@ -134,6 +142,7 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({ value, onChange }) => {
           <span>36주</span>
         </Labels>
       </SliderContainer>
+      </InnerContainer>
     </SliderWrapper>
   );
 };

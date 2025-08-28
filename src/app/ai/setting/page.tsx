@@ -68,12 +68,18 @@ const SectionTitle = styled.h2`
   margin-bottom: 16px;
 `
 
+const MenuItemContainer = styled.div`
+  border-radius: 4px;
+  padding:4px;
+    background-color: ${({ theme }) => theme.surface3};
+`
+
 const MenuItem = styled.div`
   display: flex;
   align-items: center;
   padding: 16px;
   background-color: ${({ theme }) => theme.surface3};
-  border-radius: 4px;
+  // border-radius: 4px;
   cursor: pointer;
 
   &:hover {
@@ -132,6 +138,7 @@ export default function SettingsPage() {
 
       <Section>
         <SectionTitle>고객 서비스</SectionTitle>
+        <MenuItemContainer>
         <MenuItem onClick={handleViewTerms}>
           <MenuText>이용약관</MenuText>
           <ChevronIcon />
@@ -140,6 +147,7 @@ export default function SettingsPage() {
           <MenuText>로그아웃</MenuText>
           <ChevronIcon />
         </MenuItem>
+        </MenuItemContainer>
       </Section>
       
       {/* 👈 TermsModal 컴포넌트 렌더링 */}

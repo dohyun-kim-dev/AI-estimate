@@ -13,12 +13,13 @@
   const desktopVh = Number.isFinite(desktopVhAttr) ? Math.max(60, Math.min(95, desktopVhAttr)) : 85;
   const expandedVhAttr = Number(s.getAttribute('data-height-vh-expanded') || String(Math.min(95, desktopVh + 10)));
   const expandedVh = Number.isFinite(expandedVhAttr) ? Math.max(60, Math.min(95, expandedVhAttr)) : Math.min(95, desktopVh + 10);
-  
+  const mobileHeight = '90vh'
+
   // Styles
   const style = document.createElement('style');
   style.textContent = `
   .aiw-btn{position:fixed;${pos}:10px;bottom:-20px;z-index:2147483645;width:130px;height:130px;border-radius:50%;
-    background:transparent;box-shadow:0 8px 24px rgba(0,0,0,.25);cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;border:0;padding:0;transform:scale(1)}
+    background:transparent;box-shadow:0 0px 0px rgba(0,0,0,.25);cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;border:0;padding:0;transform:scale(1)}
   
   .aiw-icon-default, .aiw-icon-open {
     position: absolute;
@@ -53,8 +54,8 @@
   .aiw-iframe{width:100%;height:100%;border:0;background:#000}
   .aiw-loader{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;background:rgba(0,0,0,.25)}
   /* 라이트/다크 모드 테두리 대비 */
-  @media (prefers-color-scheme: light){ .aiw-wrap{ border-color:#6b7280; } }
-  @media (prefers-color-scheme: dark){ .aiw-wrap{ border-color:#374151; } }
+  // @media (prefers-color-scheme: light){ .aiw-wrap{ border-color:#6b7280; } }
+  // @media (prefers-color-scheme: dark){ .aiw-wrap{ border-color:#374151; } }
   /* 우측 상단에 걸치는 둥근 핸들 (고정 높이) */
   .aiw-handle{position:absolute;top:-30px;${pos}:-20px;width:46px;height:46px;background:${color};
     border-radius:100px;cursor:pointer;opacity:.95;transition:opacity .2s ease;display:none;display:flex;align-items:center;justify-content:center}
@@ -139,7 +140,7 @@ openIcon.className = 'aiw-icon-open';
 openIcon.innerHTML = `
   <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 128 128" fill="none">
     <g filter="url(#filter0_dd_491_680)">
-      <rect x="38" y="34" width="80" height="80" rx="40" fill="#08080F"/>
+      <rect x="44" y="34" width="80" height="80" rx="40" fill="#08080F"/>
     </g>
     
     <g transform="scale(1) translate(57, 53)"> 
@@ -183,8 +184,28 @@ btn.appendChild(openIcon);
   toggleIcon.setAttribute('viewBox','0 0 30 30');
   toggleIcon.setAttribute('fill','none');
 
-  // 다크 모드 여부에 따라 다른 아이콘 사용
-  const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+// body에 적용된 최종 스타일 정보 가져오기
+const body = document.body;
+
+const style2 = window.getComputedStyle(body);
+
+// 배경색 값(RGB) 가져오기
+const backgroundColor = style2.getPropertyValue('background-color');
+
+// RGB 값을 분석하여 어두운 계열인지 밝은 계열인지 판단
+// (예: RGB 값이 0, 0, 0에 가까우면 어둡다고 판단)
+// 이 부분은 명확한 기준이 없으므로 구현에 따라 달라질 수 있습니다.
+function isColorDark(rgb) {
+  // RGB 문자열에서 숫자만 추출하여 배열로 변환
+  const color = rgb.match(/\d+/g).map(Number);
+  // 간편한 명도 계산 (Y = 0.299*R + 0.587*G + 0.114*B)
+  const luminance = (0.299 * color[0] + 0.587 * color[1] + 0.114 * color[2]) / 255;
+  // 명도가 0.5 미만이면 어두운 색으로 판단 (이 값은 조절 가능)
+  return luminance < 0.5;
+}
+
+const isDarkMode = isColorDark(backgroundColor);
+
   if (isDarkMode) {
     // 다크 모드: 검은 동그라미에 흰색 화살표가 보이도록
     handle.style.background = '#08080F'; // 검은색 동그라미
@@ -234,7 +255,7 @@ btn.appendChild(openIcon);
       root.style.height = h + 'vh';
       root.style.maxHeight = '90vh';
     } else {
-      root.style.height = '90vh';
+      root.style.height = '80vh';
       root.style.maxHeight = '90vh';
     }
   };

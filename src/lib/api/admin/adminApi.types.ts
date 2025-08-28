@@ -26,6 +26,7 @@ export type AdminLoginParams = {
   export type UnitPriceGetListParams = Record<string, never>;
 
   export type AdminUpdateParams = {
+    _id: string;
     targetAdminId: string; // 로그인 ID
     name?: string;
     cellphone?: string;
