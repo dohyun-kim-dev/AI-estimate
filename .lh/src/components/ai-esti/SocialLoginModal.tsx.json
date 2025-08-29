@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 10,
+            "activePatchIndex": 12,
             "patches": [
                 {
                     "date": 1755958292977,
@@ -48,6 +48,14 @@
                 {
                     "date": 1756099628800,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,11 +4,11 @@\n import CloseIcon from '@mui/icons-material/Close';\n import { useEffect, useState } from 'react';\n import { useGoogleLogin } from '@react-oauth/google';\n import { useNavigate } from \"react-router-dom\";\n-import { toast } from 'react-toastify';\n import { useAuthStore } from '@/store/authStore';\n import { googleLoginInitial, googleLoginUpdate } from '@/lib/api/user/userApi';\n+import { useToast } from '@components/common/ToastProvider';\n \n const ModalOverlay = styled.div<{ $isOpen: boolean }>`\n   position: fixed;\n   top: 0;\n"
+                },
+                {
+                    "date": 1756431518388,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -183,9 +183,8 @@\n               providerId: userInfo.sub,\n               name: `${userInfo.family_name}${userInfo.given_name}`,\n               email: userInfo.email,\n               profileImage: userInfo.picture,\n-              cellphone: \"\",  // 추가 정보 모달에서 입력받을 예정\n             });\n \n             if (updateResponse.statusCode === 200) {\n               await login(updateResponse.data);\n"
+                },
+                {
+                    "date": 1756433203491,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -158,26 +158,39 @@\n   const { login, openAdditionalInfoModal } = useAuthStore();\n \n   const handleGoogleLogin = useGoogleLogin({\n     onSuccess: async (tokenResponse) => {\n-      setIsLoading(true);\n-      setLoginError(null);\n       try {\n-        // 1. 구글에서 사용자 정보 가져오기\n+        // 로직 1: 구글 사용자 정보 가져오기\n         const userInfoResponse = await fetch(\n           'https://www.googleapis.com/oauth2/v3/userinfo',\n           {\n             headers: { Authorization: `Bearer ${tokenResponse.access_token}` },\n           }\n         );\n         const userInfo = await userInfoResponse.json();\n-\n+    \n         // 2. providerId로 첫 번째 로그인 시도\n         const initialResponse = await googleLoginInitial({\n           providerId: userInfo.sub,\n         });\n-\n+    \n         if (initialResponse.statusCode === 200) {\n+          // ⭐️ 3. usingService 확인 및 회사 등록 로직 추가\n+          const usingServices = initialResponse.data.usingService || [];\n+          const companyCode = 'heredot'; // 👈 실제 로직에서는 URL에서 추출해야 함\n+    \n+          // usingService 배열에 companyCode가 포함되어 있는지 확인\n+          if (!usingServices.includes(companyCode)) {\n+            console.log(`[${companyCode}] 서비스에 가입되지 않아 등록을 진행합니다.`);\n+            const registerResponse = await companyRegister();\n+    \n+            if (registerResponse.statusCode === 200) {\n+              console.log(`${companyCode} 회사 등록 성공.`);\n+            } else {\n+              console.error(`${companyCode} 회사 등록 실패:`, registerResponse.error?.message);\n+            }\n+          }\n           if (initialResponse.data.isNew) {\n             // 3. 신규 사용자면 추가 정보와 함께 다시 요청\n             const updateResponse = await googleLoginUpdate({\n               providerId: userInfo.sub,\n"
                 }
             ],
             "date": 1755958292977,

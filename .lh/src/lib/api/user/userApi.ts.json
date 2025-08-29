@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 10,
             "patches": [
                 {
                     "date": 1756365362987,
@@ -16,6 +16,38 @@
                 {
                     "date": 1756368630514,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -73,9 +73,9 @@\n  */\n export async function createChatSession(title: string) {\n   return callUserApi<ChatSessionData>({\n     title: '새 채팅 세션 생성',\n-    url: '${BASE_URL}/company/chat/sessions',\n+    url: 'api/company/chat/sessions',\n     method: 'PUT',\n     body: {\n       title,\n     },\n"
+                },
+                {
+                    "date": 1756433036358,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -49,8 +49,18 @@\n     isCallPageLoader: true,\n   });\n }\n \n+export async function companyRegister() {\n+  return callUserApi({\n+    title: '고객사 등록',\n+    url: '/api/company/register',\n+    method: 'POST',\n+    // body에 필요하다면 추가 데이터를 넣을 수 있습니다. 현재는 비어있음.\n+    body: {}, \n+    isCallPageLoader: false,\n+  });\n+}\n \n // 채팅방 세션 응답 데이터 타입\n export interface ChatSessionData {\n   _id: string;\n@@ -73,9 +83,9 @@\n  */\n export async function createChatSession(title: string) {\n   return callUserApi<ChatSessionData>({\n     title: '새 채팅 세션 생성',\n-    url: 'api/company/chat/sessions',\n+    url: '/api/company/chat/sessions',\n     method: 'PUT',\n     body: {\n       title,\n     },\n@@ -91,9 +101,9 @@\n  */\n export async function sendChatMessage(sessionId: string, messagePayload: ChatMessagePayload) {\n   return callUserApi<null>({\n     title: '채팅 메시지 전송',\n-    url: `/company/chat/sessions/${sessionId}/messages`,\n+    url: `/api/company/chat/sessions/${sessionId}/messages`,\n     method: 'POST',\n     body: {\n       content: messagePayload.content,\n       role: messagePayload.role,\n@@ -109,9 +119,9 @@\n  */\n export async function getChatSession(sessionId: string) {\n   return callUserApi<ChatSessionData>({\n     title: '채팅 세션 불러오기',\n-    url: `/company/chat/sessions?id=${sessionId}`,\n+    url: `/api/company/chat/sessions?id=${sessionId}`,\n     method: 'PUT', // PUT 메서드를 사용한다고 명시하셨지만, 일반적으로는 GET 메서드를 사용합니다.\n     isCallPageLoader: true,\n   });\n }\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756436626205,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -123,5 +123,21 @@\n     url: `/api/company/chat/sessions?id=${sessionId}`,\n     method: 'PUT', // PUT 메서드를 사용한다고 명시하셨지만, 일반적으로는 GET 메서드를 사용합니다.\n     isCallPageLoader: true,\n   });\n-}\n\\ No newline at end of file\n+}\n+// ⭐️ 새로운 API 호출 함수를 userApi.ts에 추가한다고 가정합니다.\n+// export async function uploadEstimatePdf(sessionId: string, title: string, file: File) {\n+//   const formData = new FormData();\n+//   formData.append('file', file);\n+//   formData.append('title', title);\n+//   formData.append('chatSession', sessionId);\n+//\n+//   return callUserApi({\n+//     title: '견적서 PDF 업로드',\n+//     url: '/api/file/estimate/upload',\n+//     method: 'POST',\n+//     body: formData, // FormData는 JSON.stringify를 하지 않습니다.\n+//     headers: { 'Content-Type': 'multipart/form-data' }, // 헤더를 명시해야 합니다.\n+//     isCallPageLoader: true,\n+//   });\n+// }\n"
+                },
+                {
+                    "date": 1756436633509,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -124,20 +124,21 @@\n     method: 'PUT', // PUT 메서드를 사용한다고 명시하셨지만, 일반적으로는 GET 메서드를 사용합니다.\n     isCallPageLoader: true,\n   });\n }\n-// ⭐️ 새로운 API 호출 함수를 userApi.ts에 추가한다고 가정합니다.\n-// export async function uploadEstimatePdf(sessionId: string, title: string, file: File) {\n-//   const formData = new FormData();\n-//   formData.append('file', file);\n-//   formData.append('title', title);\n-//   formData.append('chatSession', sessionId);\n-//\n-//   return callUserApi({\n-//     title: '견적서 PDF 업로드',\n-//     url: '/api/file/estimate/upload',\n-//     method: 'POST',\n-//     body: formData, // FormData는 JSON.stringify를 하지 않습니다.\n-//     headers: { 'Content-Type': 'multipart/form-data' }, // 헤더를 명시해야 합니다.\n-//     isCallPageLoader: true,\n-//   });\n-// }\n+\n+\n+export async function uploadEstimatePdf(sessionId: string, title: string, file: File) {\n+  const formData = new FormData();\n+  formData.append('file', file);\n+  formData.append('title', title);\n+  formData.append('chatSession', sessionId);\n+\n+  return callUserApi({\n+    title: '견적서 PDF 업로드',\n+    url: '/api/file/estimate/upload',\n+    method: 'POST',\n+    body: formData, // FormData는 JSON.stringify를 하지 않습니다.\n+    headers: { 'Content-Type': 'multipart/form-data' }, // 헤더를 명시해야 합니다.\n+    isCallPageLoader: true,\n+  });\n+}\n"
+                },
+                {
+                    "date": 1756436648951,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -137,8 +137,7 @@\n     title: '견적서 PDF 업로드',\n     url: '/api/file/estimate/upload',\n     method: 'POST',\n     body: formData, // FormData는 JSON.stringify를 하지 않습니다.\n-    headers: { 'Content-Type': 'multipart/form-data' }, // 헤더를 명시해야 합니다.\n     isCallPageLoader: true,\n   });\n }\n"
+                },
+                {
+                    "date": 1756448691485,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -128,9 +128,9 @@\n \n \n export async function uploadEstimatePdf(sessionId: string, title: string, file: File) {\n   const formData = new FormData();\n-  formData.append('file', file);\n+  formData.append('files', file);\n   formData.append('title', title);\n   formData.append('chatSession', sessionId);\n \n   return callUserApi({\n"
+                },
+                {
+                    "date": 1756449029260,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -128,9 +128,9 @@\n \n \n export async function uploadEstimatePdf(sessionId: string, title: string, file: File) {\n   const formData = new FormData();\n-  formData.append('files', file);\n+  formData.append('file', file);\n   formData.append('title', title);\n   formData.append('chatSession', sessionId);\n \n   return callUserApi({\n"
+                },
+                {
+                    "date": 1756449204115,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -128,9 +128,9 @@\n \n \n export async function uploadEstimatePdf(sessionId: string, title: string, file: File) {\n   const formData = new FormData();\n-  formData.append('file', file);\n+  formData.append('files', file);\n   formData.append('title', title);\n   formData.append('chatSession', sessionId);\n \n   return callUserApi({\n"
+                },
+                {
+                    "date": 1756449285692,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -128,9 +128,9 @@\n \n \n export async function uploadEstimatePdf(sessionId: string, title: string, file: File) {\n   const formData = new FormData();\n-  formData.append('files', file);\n+  formData.append('file', file);\n   formData.append('title', title);\n   formData.append('chatSession', sessionId);\n \n   return callUserApi({\n"
                 }
             ],
             "date": 1756365362987,

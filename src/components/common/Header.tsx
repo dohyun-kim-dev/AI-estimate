@@ -1,10 +1,11 @@
 import styled from 'styled-components'
-import { useNavigate } from 'react-router-dom' // ✅ 추가
+import { useNavigate, useParams } from 'react-router-dom' // ✅ 추가
 
 import { useThemeStore } from '@/store/themeStore'
 import { useModalStore } from '@/store/modalStore'
 import { useAuthStore } from '@/store/authStore'
 import Icon from '@/components/ai-esti/Icon'
+
 
 const HeaderWrapper = styled.header`
   position: fixed;
@@ -55,8 +56,8 @@ const Profile = styled.div`
 `
 
 const ProfileImage = styled.div`
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   overflow: hidden;
   background-color: ${({ theme }) => theme.surface1};
@@ -86,13 +87,15 @@ const Header = ({ compact }: HeaderProps) => {
   const { openLoginModal } = useModalStore()
   const { user, logout, isAuthenticated } = useAuthStore()
   const navigate = useNavigate() // ✅ 추가
+  const { companyCode } = useParams() // URL에서 companyCode를 가져옵니다.
 
   const handleProfileClick = () => {
     if (!isAuthenticated()) {
       openLoginModal()
     }
     // TODO: 로그인된 경우 프로필 메뉴 표시
-  }
+    navigate(`/aiclient/${companyCode}/settings`)
+  } 
 
   return (
     <HeaderWrapper>
@@ -123,6 +126,7 @@ const Header = ({ compact }: HeaderProps) => {
                     alt="프로필" 
                     referrerPolicy="no-referrer"
                     crossOrigin="anonymous"
+                    style={{width: '36px', height: '36px'}}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = '/main/profile.png';

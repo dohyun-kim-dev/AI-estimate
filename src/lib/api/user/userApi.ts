@@ -50,6 +50,16 @@ export async function googleLoginUpdate(params: GoogleLoginUpdateParams) {
   });
 }
 
+export async function companyRegister() {
+  return callUserApi({
+    title: '고객사 등록',
+    url: '/api/company/register',
+    method: 'POST',
+    // body에 필요하다면 추가 데이터를 넣을 수 있습니다. 현재는 비어있음.
+    body: {}, 
+    isCallPageLoader: false,
+  });
+}
 
 // 채팅방 세션 응답 데이터 타입
 export interface ChatSessionData {
@@ -112,6 +122,22 @@ export async function getChatSession(sessionId: string) {
     title: '채팅 세션 불러오기',
     url: `/api/company/chat/sessions?id=${sessionId}`,
     method: 'PUT', // PUT 메서드를 사용한다고 명시하셨지만, 일반적으로는 GET 메서드를 사용합니다.
+    isCallPageLoader: true,
+  });
+}
+
+
+export async function uploadEstimatePdf(sessionId: string, title: string, file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('title', title);
+  formData.append('chatSession', sessionId);
+
+  return callUserApi({
+    title: '견적서 PDF 업로드',
+    url: '/api/file/estimate/upload',
+    method: 'POST',
+    body: formData, // FormData는 JSON.stringify를 하지 않습니다.
     isCallPageLoader: true,
   });
 }

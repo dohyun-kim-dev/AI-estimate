@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/lib/methods/callApiPut.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1756432635516,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756432669816,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,38 +1,28 @@\n-// ✅ 수정된 callApiPut 함수 (callApiPost와 동일한 로직)\n-import { devLog, devWarn } from '../utils/devLogger';\n+import { devLog } from '@/lib/utils/devLogger';\n \n-interface CallApiPutParams {\n+export async function callApiPut({\n+  title,\n+  url,\n+  body,\n+  isCallPageLoader = false,\n+}: {\n   title: string;\n   url: string;\n   body?: Record<string, unknown>;\n   isCallPageLoader?: boolean;\n-  headers?: Record<string, string>; // ⭐️ headers 매개변수 추가\n-}\n-\n-export async function callApiPut({\n-  title,\n-  url,\n-  body = {},\n-  isCallPageLoader = false,\n-  headers = {}, // ⭐️ 기본값 설정\n-}: CallApiPutParams) {\n+}) {\n   try {\n     // 로더 표시 로직 (isCallPageLoader가 true일 경우)\n     if (isCallPageLoader) {\n       // 로더를 보여주는 함수 호출\n     }\n \n-    // ⭐️ 전달받은 헤더를 기존 헤더와 병합\n-    const mergedHeaders = {\n-      'Content-Type': 'application/json',\n-      'Accept': 'application/json',\n-      ...headers, // ⭐️ 전달받은 헤더를 병합\n-    };\n-\n     const response = await fetch(url, {\n       method: 'PUT',\n-      headers: mergedHeaders, // ⭐️ 병합된 헤더 사용\n+      headers: {\n+        'Content-Type': 'application/json',\n+      },\n       body: JSON.stringify(body),\n     });\n \n     const data = await response.json();\n"
+                }
+            ],
+            "date": 1756432635516,
+            "name": "Commit-0",
+            "content": "// ✅ 수정된 callApiPut 함수 (callApiPost와 동일한 로직)\nimport { devLog, devWarn } from '../utils/devLogger';\n\ninterface CallApiPutParams {\n  title: string;\n  url: string;\n  body?: Record<string, unknown>;\n  isCallPageLoader?: boolean;\n  headers?: Record<string, string>; // ⭐️ headers 매개변수 추가\n}\n\nexport async function callApiPut({\n  title,\n  url,\n  body = {},\n  isCallPageLoader = false,\n  headers = {}, // ⭐️ 기본값 설정\n}: CallApiPutParams) {\n  try {\n    // 로더 표시 로직 (isCallPageLoader가 true일 경우)\n    if (isCallPageLoader) {\n      // 로더를 보여주는 함수 호출\n    }\n\n    // ⭐️ 전달받은 헤더를 기존 헤더와 병합\n    const mergedHeaders = {\n      'Content-Type': 'application/json',\n      'Accept': 'application/json',\n      ...headers, // ⭐️ 전달받은 헤더를 병합\n    };\n\n    const response = await fetch(url, {\n      method: 'PUT',\n      headers: mergedHeaders, // ⭐️ 병합된 헤더 사용\n      body: JSON.stringify(body),\n    });\n\n    const data = await response.json();\n    devLog(`✨ ${title} 응답`, data);\n\n    // 로더 숨김\n    if (isCallPageLoader) {\n      // 로더를 숨기는 함수 호출\n    }\n\n    return data;\n  } catch (error) {\n    console.error(`❌ ${title} 오류:`, error);\n    if (isCallPageLoader) {\n      // 로더를 숨기는 함수 호출\n    }\n    throw error;\n  }\n}"
+        }
+    ]
+}

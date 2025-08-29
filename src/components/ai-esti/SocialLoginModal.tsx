@@ -159,10 +159,8 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
-      setIsLoading(true);
-      setLoginError(null);
       try {
-        // 1. 구글에서 사용자 정보 가져오기
+        // 로직 1: 구글 사용자 정보 가져오기
         const userInfoResponse = await fetch(
           'https://www.googleapis.com/oauth2/v3/userinfo',
           {
@@ -170,13 +168,28 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
           }
         );
         const userInfo = await userInfoResponse.json();
-
+    
         // 2. providerId로 첫 번째 로그인 시도
         const initialResponse = await googleLoginInitial({
           providerId: userInfo.sub,
         });
-
+    
         if (initialResponse.statusCode === 200) {
+          // ⭐️ 3. usingService 확인 및 회사 등록 로직 추가
+          const usingServices = initialResponse.data.usingService || [];
+          const companyCode = 'heredot'; // 👈 실제 로직에서는 URL에서 추출해야 함
+    
+          // usingService 배열에 companyCode가 포함되어 있는지 확인
+          if (!usingServices.includes(companyCode)) {
+            console.log(`[${companyCode}] 서비스에 가입되지 않아 등록을 진행합니다.`);
+            const registerResponse = await companyRegister();
+    
+            if (registerResponse.statusCode === 200) {
+              console.log(`${companyCode} 회사 등록 성공.`);
+            } else {
+              console.error(`${companyCode} 회사 등록 실패:`, registerResponse.error?.message);
+            }
+          }
           if (initialResponse.data.isNew) {
             // 3. 신규 사용자면 추가 정보와 함께 다시 요청
             const updateResponse = await googleLoginUpdate({
@@ -184,7 +197,6 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
               name: `${userInfo.family_name}${userInfo.given_name}`,
               email: userInfo.email,
               profileImage: userInfo.picture,
-              cellphone: "",  // 추가 정보 모달에서 입력받을 예정
             });
 
             if (updateResponse.statusCode === 200) {

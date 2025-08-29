@@ -1,25 +1,32 @@
-import { devLog } from '@/lib/utils/devLogger';
+import { devLog, devWarn } from '@/lib/utils/devLogger'; // devWarn 추가
 
+// headers 매개변수 추가
 export async function callApiDelete({
   title,
   url,
   isCallPageLoader = false,
+  headers = {}, // ⭐️ 추가
 }: {
   title: string;
   url: string;
   isCallPageLoader?: boolean;
+  headers?: Record<string, string>; // ⭐️ 추가
 }) {
   try {
     if (isCallPageLoader) {
       // 로더를 보여주는 함수 호출
     }
+    
+    // ⭐️ 전달받은 헤더와 기본 헤더를 병합합니다.
+    const mergedHeaders = {
+      'Accept': 'application/json', // 추가
+      ...headers, // ⭐️ 전달받은 헤더를 덮어씁니다.
+    };
 
     const response = await fetch(url, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // DELETE는 보통 바디가 없지만, 서버에 따라 바디를 포함할 수도 있음
+      headers: mergedHeaders, // ⭐️ 병합된 헤더 사용
+      credentials: 'include', // 추가
     });
 
     const data = await response.json();

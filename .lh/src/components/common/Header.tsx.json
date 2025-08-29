@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 5,
+            "activePatchIndex": 16,
             "patches": [
                 {
                     "date": 1756083030310,
@@ -28,6 +28,50 @@
                 {
                     "date": 1756173224237,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -115,9 +115,9 @@\n           </ThemeToggle>\n           <Profile onClick={handleProfileClick}>\n             {isAuthenticated() && user ? (\n               <>\n-                <ProfileName>{user.name}</ProfileName>\n+                {/* <ProfileName>{user.name}</ProfileName> */}\n                 <ProfileImage>\n                   <img \n                     src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} \n                     alt=\"프로필\" \n"
+                },
+                {
+                    "date": 1756433674051,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -122,8 +122,10 @@\n                     src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} \n                     alt=\"프로필\" \n                     referrerPolicy=\"no-referrer\"\n                     crossOrigin=\"anonymous\"\n+                    width={32}\n+                    height={32}\n                     onError={(e) => {\n                       const target = e.target as HTMLImageElement;\n                       target.src = '/main/profile.png';\n                     }}\n"
+                },
+                {
+                    "date": 1756433682642,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -122,10 +122,10 @@\n                     src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} \n                     alt=\"프로필\" \n                     referrerPolicy=\"no-referrer\"\n                     crossOrigin=\"anonymous\"\n-                    width={32}\n-                    height={32}\n+                    width={36}\n+                    height={36}\n                     onError={(e) => {\n                       const target = e.target as HTMLImageElement;\n                       target.src = '/main/profile.png';\n                     }}\n"
+                },
+                {
+                    "date": 1756433687989,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -122,10 +122,9 @@\n                     src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} \n                     alt=\"프로필\" \n                     referrerPolicy=\"no-referrer\"\n                     crossOrigin=\"anonymous\"\n-                    width={36}\n-                    height={36}\n+                    style={{width: '32px', height: '32px'}}\n                     onError={(e) => {\n                       const target = e.target as HTMLImageElement;\n                       target.src = '/main/profile.png';\n                     }}\n"
+                },
+                {
+                    "date": 1756433701639,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -122,9 +122,9 @@\n                     src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} \n                     alt=\"프로필\" \n                     referrerPolicy=\"no-referrer\"\n                     crossOrigin=\"anonymous\"\n-                    style={{width: '32px', height: '32px'}}\n+                    style={{width: '52px', height: '42px'}}\n                     onError={(e) => {\n                       const target = e.target as HTMLImageElement;\n                       target.src = '/main/profile.png';\n                     }}\n"
+                },
+                {
+                    "date": 1756433706700,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -122,9 +122,9 @@\n                     src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} \n                     alt=\"프로필\" \n                     referrerPolicy=\"no-referrer\"\n                     crossOrigin=\"anonymous\"\n-                    style={{width: '52px', height: '42px'}}\n+                    style={{width: '32px', height: '32px'}}\n                     onError={(e) => {\n                       const target = e.target as HTMLImageElement;\n                       target.src = '/main/profile.png';\n                     }}\n"
+                },
+                {
+                    "date": 1756433719621,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -54,10 +54,10 @@\n   cursor: pointer;\n `\n \n const ProfileImage = styled.div`\n-  width: 32px;\n-  height: 32px;\n+  width: 36px;\n+  height: 36px;\n   border-radius: 50%;\n   overflow: hidden;\n   background-color: ${({ theme }) => theme.surface1};\n   display: flex;\n"
+                },
+                {
+                    "date": 1756433727906,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -122,9 +122,9 @@\n                     src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} \n                     alt=\"프로필\" \n                     referrerPolicy=\"no-referrer\"\n                     crossOrigin=\"anonymous\"\n-                    style={{width: '32px', height: '32px'}}\n+                    style={{width: '36px', height: '36px'}}\n                     onError={(e) => {\n                       const target = e.target as HTMLImageElement;\n                       target.src = '/main/profile.png';\n                     }}\n"
+                },
+                {
+                    "date": 1756433752278,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -91,8 +91,9 @@\n     if (!isAuthenticated()) {\n       openLoginModal()\n     }\n     // TODO: 로그인된 경우 프로필 메뉴 표시\n+    \n   }\n \n   return (\n     <HeaderWrapper>\n"
+                },
+                {
+                    "date": 1756433758218,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -91,9 +91,9 @@\n     if (!isAuthenticated()) {\n       openLoginModal()\n     }\n     // TODO: 로그인된 경우 프로필 메뉴 표시\n-    \n+    navigate('/settings')\n   }\n \n   return (\n     <HeaderWrapper>\n"
+                },
+                {
+                    "date": 1756433780938,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -91,9 +91,9 @@\n     if (!isAuthenticated()) {\n       openLoginModal()\n     }\n     // TODO: 로그인된 경우 프로필 메뉴 표시\n-    navigate('/settings')\n+    navigate('`/aiclient/${companyCode}/settings`')\n   }\n \n   return (\n     <HeaderWrapper>\n"
+                },
+                {
+                    "date": 1756433786507,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -91,9 +91,9 @@\n     if (!isAuthenticated()) {\n       openLoginModal()\n     }\n     // TODO: 로그인된 경우 프로필 메뉴 표시\n-    navigate(`/aiclient/${companyCode}/settings`')\n+    navigate(`/aiclient/${companyCode}/settings`)\n   }\n \n   return (\n     <HeaderWrapper>\n"
                 }
             ],
             "date": 1756083030310,

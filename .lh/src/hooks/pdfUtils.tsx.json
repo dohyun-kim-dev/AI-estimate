@@ -1,0 +1,66 @@
+{
+    "sourceFile": "src/hooks/pdfUtils.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 12,
+            "patches": [
+                {
+                    "date": 1756447097027,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756447107128,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,9 +3,8 @@\n import { uploadEstimatePdf } from '@/lib/api/user/userApi';\n import { jsPDF } from 'jspdf';\n import html2canvas from 'html2canvas';\n import { PrintableInvoice } from '@/components/ai-esti/PrintableInvoice'\n-import { createRoot } from 'react-dom/client';\n \n export async function generateAndUploadPdf(estimate: any, sessionId: string | null, title: string, success: (msg: string) => void, error: (msg: string) => void) {\n   if (!sessionId) {\n     console.error('세션 ID가 없어 PDF를 업로드할 수 없습니다.');\n"
+                },
+                {
+                    "date": 1756447370361,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,4 @@\n-\"use client\"\n-\n import { uploadEstimatePdf } from '@/lib/api/user/userApi';\n import { jsPDF } from 'jspdf';\n import html2canvas from 'html2canvas';\n import { PrintableInvoice } from '@/components/ai-esti/PrintableInvoice'\n@@ -48,9 +46,10 @@\n \n     const imageData = canvas.toDataURL('image/jpeg', 0.7);\n     pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);\n     heightLeft -= pageHeight;\n-\n+    console.log(\"imageData\", imageData?.slice(0,50)); // 앞 50자만\n+    console.log(\"width\", width, \"height\", height);\n     while (heightLeft >= 0) {\n       position = -(pageHeight * pageNumber);\n       pdf.addPage();\n       pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);\n"
+                },
+                {
+                    "date": 1756447376523,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -47,9 +47,9 @@\n     const imageData = canvas.toDataURL('image/jpeg', 0.7);\n     pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);\n     heightLeft -= pageHeight;\n     console.log(\"imageData\", imageData?.slice(0,50)); // 앞 50자만\n-    console.log(\"width\", width, \"height\", height);\n+    console.log(\"width\", imgWidth, \"height\", imgHeight);\n     while (heightLeft >= 0) {\n       position = -(pageHeight * pageNumber);\n       pdf.addPage();\n       pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);\n"
+                },
+                {
+                    "date": 1756447453033,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,9 +33,10 @@\n       logging: false,\n       imageTimeout: 0,\n       backgroundColor: null\n     });\n-    \n+    console.log(\"canvas size:\", canvas.width, canvas.height);\n+\n     const imgWidth = 210;\n     const pageHeight = 297;\n     const imgHeight = canvas.height * imgWidth / canvas.width;\n     const pdf = new jsPDF('p', 'mm');\n"
+                },
+                {
+                    "date": 1756447463016,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -39,9 +39,9 @@\n     const imgWidth = 210;\n     const pageHeight = 297;\n     const imgHeight = canvas.height * imgWidth / canvas.width;\n     const pdf = new jsPDF('p', 'mm');\n-\n+    \n     let heightLeft = imgHeight;\n     let position = 0;\n     let pageNumber = 1;\n \n"
+                },
+                {
+                    "date": 1756447480904,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -38,15 +38,19 @@\n \n     const imgWidth = 210;\n     const pageHeight = 297;\n     const imgHeight = canvas.height * imgWidth / canvas.width;\n+    console.log(\"calculated sizes:\", { imgWidth, imgHeight, pageHeight });\n+\n     const pdf = new jsPDF('p', 'mm');\n-    \n+\n     let heightLeft = imgHeight;\n     let position = 0;\n     let pageNumber = 1;\n \n     const imageData = canvas.toDataURL('image/jpeg', 0.7);\n+    console.log(\"imageData prefix:\", imageData.substring(0, 30));\n+\n     pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);\n     heightLeft -= pageHeight;\n     console.log(\"imageData\", imageData?.slice(0,50)); // 앞 50자만\n     console.log(\"width\", imgWidth, \"height\", imgHeight);\n"
+                },
+                {
+                    "date": 1756447578606,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -51,10 +51,8 @@\n     console.log(\"imageData prefix:\", imageData.substring(0, 30));\n \n     pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);\n     heightLeft -= pageHeight;\n-    console.log(\"imageData\", imageData?.slice(0,50)); // 앞 50자만\n-    console.log(\"width\", imgWidth, \"height\", imgHeight);\n     while (heightLeft >= 0) {\n       position = -(pageHeight * pageNumber);\n       pdf.addPage();\n       pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);\n"
+                },
+                {
+                    "date": 1756448985765,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -60,8 +60,10 @@\n       pageNumber++;\n     }\n \n     const pdfBlob = pdf.output('blob');\n+    console.log(\"PDF Blob 생성됨:\", pdfBlob);\n+\n     const pdfFile = new File([pdfBlob], `${title}.pdf`, { type: 'application/pdf' });\n     \n     const uploadResponse = await uploadEstimatePdf(sessionId, title, pdfFile);\n \n"
+                },
+                {
+                    "date": 1756448992609,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -63,9 +63,10 @@\n     const pdfBlob = pdf.output('blob');\n     console.log(\"PDF Blob 생성됨:\", pdfBlob);\n \n     const pdfFile = new File([pdfBlob], `${title}.pdf`, { type: 'application/pdf' });\n-    \n+    console.log(\"PDF File 객체 생성됨:\", pdfFile);\n+\n     const uploadResponse = await uploadEstimatePdf(sessionId, title, pdfFile);\n \n     if (uploadResponse && uploadResponse.statusCode === 200) {\n       success('PDF가 성공적으로 업로드되었습니다.');\n"
+                },
+                {
+                    "date": 1756449140036,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -65,9 +65,9 @@\n \n     const pdfFile = new File([pdfBlob], `${title}.pdf`, { type: 'application/pdf' });\n     console.log(\"PDF File 객체 생성됨:\", pdfFile);\n \n-    const uploadResponse = await uploadEstimatePdf(sessionId, title, pdfFile);\n+    const uploadResponse = await uploadEstimatePdf({sessionId, title, pdfFile});\n \n     if (uploadResponse && uploadResponse.statusCode === 200) {\n       success('PDF가 성공적으로 업로드되었습니다.');\n     } else {\n"
+                },
+                {
+                    "date": 1756449337155,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -65,9 +65,9 @@\n \n     const pdfFile = new File([pdfBlob], `${title}.pdf`, { type: 'application/pdf' });\n     console.log(\"PDF File 객체 생성됨:\", pdfFile);\n \n-    const uploadResponse = await uploadEstimatePdf({sessionId, title, pdfFile});\n+    const uploadResponse = await uploadEstimatePdf(sessionId, title, pdfFile);\n \n     if (uploadResponse && uploadResponse.statusCode === 200) {\n       success('PDF가 성공적으로 업로드되었습니다.');\n     } else {\n"
+                },
+                {
+                    "date": 1756449858805,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -61,12 +61,13 @@\n     }\n \n     const pdfBlob = pdf.output('blob');\n     console.log(\"PDF Blob 생성됨:\", pdfBlob);\n+    const safeTitle = encodeURIComponent(title);\n+    const pdfFile = new File([pdfBlob], `${safeTitle}.pdf`, { type: 'application/pdf' });\n+    console.log(\"인코딩된 PDF File 객체 생성됨:\", pdfFile);\n+    \n \n-    const pdfFile = new File([pdfBlob], `${title}.pdf`, { type: 'application/pdf' });\n-    console.log(\"PDF File 객체 생성됨:\", pdfFile);\n-\n     const uploadResponse = await uploadEstimatePdf(sessionId, title, pdfFile);\n \n     if (uploadResponse && uploadResponse.statusCode === 200) {\n       success('PDF가 성공적으로 업로드되었습니다.');\n"
+                }
+            ],
+            "date": 1756447097027,
+            "name": "Commit-0",
+            "content": "\"use client\"\n\nimport { uploadEstimatePdf } from '@/lib/api/user/userApi';\nimport { jsPDF } from 'jspdf';\nimport html2canvas from 'html2canvas';\nimport { PrintableInvoice } from '@/components/ai-esti/PrintableInvoice'\nimport { createRoot } from 'react-dom/client';\n\nexport async function generateAndUploadPdf(estimate: any, sessionId: string | null, title: string, success: (msg: string) => void, error: (msg: string) => void) {\n  if (!sessionId) {\n    console.error('세션 ID가 없어 PDF를 업로드할 수 없습니다.');\n    error('PDF 업로드에 실패했습니다: 채팅 세션 ID가 없습니다.');\n    return;\n  }\n  \n  try {\n    const tempDiv = document.createElement('div');\n    tempDiv.style.position = 'absolute';\n    tempDiv.style.left = '-9999px';\n    document.body.appendChild(tempDiv);\n    \n    const root = document.createElement('div');\n    root.style.width = '780px';\n    root.style.backgroundColor = 'white';\n    tempDiv.appendChild(root);\n\n    const { createRoot } = await import('react-dom/client');\n    const reactRoot = createRoot(root);\n    reactRoot.render(<PrintableInvoice estimate={estimate} />);\n\n    await new Promise(resolve => setTimeout(resolve, 100));\n\n    const canvas = await html2canvas(root, {\n      scale: 1.5,\n      useCORS: true,\n      logging: false,\n      imageTimeout: 0,\n      backgroundColor: null\n    });\n    \n    const imgWidth = 210;\n    const pageHeight = 297;\n    const imgHeight = canvas.height * imgWidth / canvas.width;\n    const pdf = new jsPDF('p', 'mm');\n\n    let heightLeft = imgHeight;\n    let position = 0;\n    let pageNumber = 1;\n\n    const imageData = canvas.toDataURL('image/jpeg', 0.7);\n    pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);\n    heightLeft -= pageHeight;\n\n    while (heightLeft >= 0) {\n      position = -(pageHeight * pageNumber);\n      pdf.addPage();\n      pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);\n      heightLeft -= pageHeight;\n      pageNumber++;\n    }\n\n    const pdfBlob = pdf.output('blob');\n    const pdfFile = new File([pdfBlob], `${title}.pdf`, { type: 'application/pdf' });\n    \n    const uploadResponse = await uploadEstimatePdf(sessionId, title, pdfFile);\n\n    if (uploadResponse && uploadResponse.statusCode === 200) {\n      success('PDF가 성공적으로 업로드되었습니다.');\n    } else {\n      throw new Error(uploadResponse?.error?.message || 'PDF 업로드에 실패했습니다.');\n    }\n    \n    reactRoot.unmount();\n    document.body.removeChild(tempDiv);\n\n  } catch (err) {\n    console.error('PDF 생성 및 업로드 중 오류:', err);\n    error('PDF 생성 및 업로드에 실패했습니다.');\n  }\n}"
+        }
+    ]
+}

@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1755951202965,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756431412299,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,39 +1,60 @@\n-import { create } from 'zustand'\n-import { persist } from 'zustand/middleware'\n-import { GoogleLoginResponse } from '@/lib/api/auth'\n+import { create } from 'zustand';\n+import { persist } from 'zustand/middleware';\n+import { GoogleLoginResponse } from '@/lib/api/user/userApi.types';\n \n export interface UserData extends GoogleLoginResponse {\n-  isLoggedIn: boolean\n+  isLoggedIn: boolean;\n+  updateAt?: string;\n+  cellphone?: string;\n }\n \n interface AuthState {\n-  user: UserData | null\n-  isAdditionalInfoModalOpen: boolean\n-  login: (userData: GoogleLoginResponse) => void\n-  logout: () => void\n-  openAdditionalInfoModal: () => void\n-  closeAdditionalInfoModal: () => void\n-  isAuthenticated: () => boolean\n+  user: UserData | null;\n+  isAdditionalInfoModalOpen: boolean;\n+  login: (userData: GoogleLoginResponse) => void;\n+  logout: () => void;\n+  openAdditionalInfoModal: () => void;\n+  closeAdditionalInfoModal: () => void;\n+  isAuthenticated: () => boolean;\n }\n \n export const useAuthStore = create<AuthState>()(\n   persist(\n     (set, get) => ({\n       user: null,\n       isAdditionalInfoModalOpen: false,\n+\n       login: (userData: GoogleLoginResponse) =>\n-        set({ user: { ...userData, isLoggedIn: true } }),\n-      logout: () => set({ user: null }),\n+        set({\n+          user: {\n+            ...userData,\n+            isLoggedIn: true,\n+          },\n+        }),\n+\n+      logout: () =>\n+        set({\n+          user: null,\n+        }),\n+\n       isAuthenticated: () => {\n-        const state = get()\n-        return !!(state.user?.isLoggedIn && state.user?.cellphone)\n+        const state = get();\n+        return !!(state.user?.isLoggedIn);\n       },\n-      openAdditionalInfoModal: () => set({ isAdditionalInfoModalOpen: true }),\n-      closeAdditionalInfoModal: () => set({ isAdditionalInfoModalOpen: false }),\n+\n+      openAdditionalInfoModal: () =>\n+        set({\n+          isAdditionalInfoModalOpen: true,\n+        }),\n+\n+      closeAdditionalInfoModal: () =>\n+        set({\n+          isAdditionalInfoModalOpen: false,\n+        }),\n     }),\n     {\n       name: 'auth-storage',\n-      partialize: (state) => ({ user: state.user }),\n+      partialize: (state) => ({ user: state.user }), // 로그인 상태만 저장\n     }\n   )\n-)\n+);\n"
                 }
             ],
             "date": 1755951202965,

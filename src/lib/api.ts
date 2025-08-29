@@ -3,29 +3,27 @@ import { devLog, devWarn } from '../utils/devLogger'
 
 // API 경로 생성 함수
 const createApiUrl = (endpoint: string) => {
-  // 앞쪽 슬래시 보장
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
-  // /api로 시작하지 않는 경우 추가
   const apiPath = cleanEndpoint.startsWith('/api') ? cleanEndpoint : `/api${cleanEndpoint}`
   
-  // 개발 환경에서는 상대 경로 사용 (프록시를 통해 요청)
   if (import.meta.env.DEV) {
     console.log('Development API Request:', apiPath)
     return apiPath
   }
   
-  // 프로덕션 환경에서는 전체 URL 사용
   const API_HOST = (import.meta.env.VITE_PUBLIC_API_HOST || 'http://121.157.229.40:8535').replace(/\/$/, '')
   const fullUrl = `${API_HOST}${apiPath}`
   console.log('Production API Request:', fullUrl)
   return fullUrl
 }
 
+// ⭐️ headers를 매개변수에 추가
 interface CallApiPostParams {
   title: string
-  endpoint: string // url 대신 endpoint를 받도록 변경
+  endpoint: string
   body?: Record<string, unknown>
   isCallPageLoader?: boolean
+  headers?: Headers | Record<string, string> // ⭐️ headers 매개변수 추가
 }
 
 export async function callApiPost<T = unknown>({
@@ -33,6 +31,7 @@ export async function callApiPost<T = unknown>({
   endpoint,
   body = {},
   isCallPageLoader = false,
+  headers = {}, // ⭐️ 기본값 설정
 }: CallApiPostParams): Promise<T> {
   const url = createApiUrl(endpoint)
   devLog(`📱 [${title}]`, url, body)
@@ -41,22 +40,20 @@ export async function callApiPost<T = unknown>({
   let returnValue = ''
 
   try {
-    const headers: Record<string, string> = {
+    // ⭐️ 기존 headers 객체와 병합 (여기에 'x-company-code' 하드코딩 추가)
+    const mergedHeaders = {
       'Content-Type': 'application/json',
-      'Accept': 'application/json'
+      'Accept': 'application/json',
+      'x-company-code': 'heredot', 
+      ...headers, 
     }
-
-    // 쿠키 인증으로 변경 - 액세스 토큰 제거
-    // if (accessToken) {
-    //   headers['Authorization'] = `Bearer ${accessToken}`
-    // }
 
     const response = await fetch(url, {
       method: 'POST',
-      headers,
+      headers: mergedHeaders,
       body: JSON.stringify(body),
-      credentials: 'include', // 쿠키를 포함하기 위해 추가
-      mode: 'cors', // CORS 모드 명시적 설정
+      credentials: 'include',
+      mode: 'cors',
     })
 
     returnValue = await response.text()
@@ -75,4 +72,3 @@ export async function callApiPost<T = unknown>({
     return [] as T
   }
 }
-

@@ -39,7 +39,7 @@ export const useAuthStore = create<AuthState>()(
 
       isAuthenticated: () => {
         const state = get();
-        return !!(state.user?.isLoggedIn && state.user?.cellphone);
+        return !!(state.user?.isLoggedIn);
       },
 
       openAdditionalInfoModal: () =>

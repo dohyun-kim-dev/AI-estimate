@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/lib/methods/callApiGet.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1756432725110,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1756432725110,
+            "name": "Commit-0",
+            "content": "import { devLog, devWarn } from '@/lib/utils/devLogger'; // devWarn 추가\n\n// headers 매개변수 추가\nexport async function callApiGet({\n  title,\n  url,\n  isCallPageLoader = false,\n  headers = {}, // ⭐️ 추가\n}: {\n  title: string;\n  url: string;\n  isCallPageLoader?: boolean;\n  headers?: Record<string, string>; // ⭐️ 추가\n}) {\n  try {\n    if (isCallPageLoader) {\n      // 로더를 보여주는 함수 호출\n    }\n\n    // ⭐️ 전달받은 헤더와 기본 헤더를 병합합니다.\n    const mergedHeaders = {\n      'Accept': 'application/json', // GET 요청이므로 'Content-Type'은 선택적\n      ...headers, // ⭐️ 전달받은 헤더를 덮어씁니다.\n    };\n\n    const response = await fetch(url, {\n      method: 'GET',\n      headers: mergedHeaders, // ⭐️ 병합된 헤더 사용\n      credentials: 'include', // 추가\n    });\n\n    const data = await response.json();\n    devLog(`✨ ${title} 응답`, data);\n\n    if (isCallPageLoader) {\n      // 로더를 숨기는 함수 호출\n    }\n\n    return data;\n  } catch (error) {\n    console.error(`❌ ${title} 오류:`, error);\n    if (isCallPageLoader) {\n      // 로더를 숨기는 함수 호출\n    }\n    throw error;\n  }\n}"
+        }
+    ]
+}

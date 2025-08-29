@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/lib/methods/callApiPatch.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1756432719004,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1756432719004,
+            "name": "Commit-0",
+            "content": "import { devLog, devWarn } from '@/lib/utils/devLogger'; // devWarn 추가\n\n// headers 매개변수 추가\nexport async function callApiPatch({\n  title,\n  url,\n  body = {}, // body 기본값 설정\n  isCallPageLoader = false,\n  headers = {}, // ⭐️ 추가\n}: {\n  title: string;\n  url: string;\n  body?: Record<string, unknown>;\n  isCallPageLoader?: boolean;\n  headers?: Record<string, string>; // ⭐️ 추가\n}) {\n  try {\n    if (isCallPageLoader) {\n      // 로더를 보여주는 함수 호출\n    }\n\n    // ⭐️ 전달받은 헤더와 기본 헤더를 병합합니다.\n    const mergedHeaders = {\n      'Content-Type': 'application/json',\n      'Accept': 'application/json', // 추가\n      ...headers, // ⭐️ 전달받은 헤더를 덮어씁니다.\n    };\n\n    const response = await fetch(url, {\n      method: 'PATCH',\n      headers: mergedHeaders, // ⭐️ 병합된 헤더 사용\n      body: JSON.stringify(body),\n      credentials: 'include', // 추가\n    });\n\n    const data = await response.json();\n    devLog(`✨ ${title} 응답`, data);\n\n    if (isCallPageLoader) {\n      // 로더를 숨기는 함수 호출\n    }\n\n    return data;\n  } catch (error) {\n    console.error(`❌ ${title} 오류:`, error);\n    if (isCallPageLoader) {\n      // 로더를 숨기는 함수 호출\n    }\n    throw error;\n  }\n}"
+        }
+    ]
+}

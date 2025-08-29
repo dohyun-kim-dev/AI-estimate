@@ -207,7 +207,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
         heightLeft -= pageHeight;
         pageNumber++;
       }
-
+      
       // PDF를 Blob으로 생성
       const pdfBlob = pdf.output('blob');
       
@@ -233,6 +233,13 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
     }
   };
 
+
+
+
+
+
+
+  
   // estimated_period가 '30주'와 같은 문자열일 경우를 가정하고 숫자만 추출합니다.
   const weekValue = parseInt(estimate.estimated_period);
 

@@ -1,3 +1,7 @@
+// src/lib/methods/callApiPost.ts
+
+import { requestPost } from '@/lib/methods/requestPost';
+import { ApiResponse } from '@/lib/types/ApiResponse';
 import { pageLoaderController } from "@/contexts/PageLoaderContext";
 import { devLog, devWarn } from "../utils/devLogger";
 
@@ -5,8 +9,10 @@ interface CallApiPostParams {
   title: string;
   url: string;
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-  body?: Record<string, unknown>;
+  body?: Record<string, unknown> | FormData; // FormData 타입 포함
   isCallPageLoader?: boolean;
+  headers?: Record<string, string>;
+  isFormData?: boolean; 
 }
 
 export async function callApiPost<T = unknown>({
@@ -15,6 +21,8 @@ export async function callApiPost<T = unknown>({
   method = 'POST',
   body = {},
   isCallPageLoader = false,
+  headers = {},
+  isFormData = false,
 }: CallApiPostParams): Promise<T> {
   devLog(`📱 [${title}]`, url, body);
   if (isCallPageLoader) pageLoaderController.open();
@@ -22,21 +30,26 @@ export async function callApiPost<T = unknown>({
   let returnValue = '';
 
   try {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+    const fetchOptions: RequestInit = {
+      method,
+      credentials: 'include',
     };
 
-    // 쿠키 인증으로 변경 - 액세스 토큰 제거
-    // if (accessToken) {
-    //   headers['Authorization'] = `Bearer ${accessToken}`;
-    // }
+    // FormData가 아닌 경우에만 Content-Type을 JSON으로 설정
+    if (!isFormData) {
+      fetchOptions.headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...headers,
+      };
+      fetchOptions.body = method !== 'GET' ? JSON.stringify(body) : undefined;
+    } else {
+      // FormData인 경우, Content-Type은 브라우저가 자동으로 multipart/form-data로 설정
+      fetchOptions.headers = headers;
+      fetchOptions.body = body as FormData;
+    }
 
-    const response = await fetch(url, {
-      method,
-      headers,
-      body: method !== 'GET' ? JSON.stringify(body) : undefined,
-      credentials: 'include', // 쿠키를 포함하기 위해 추가
-    });
+    const response = await fetch(url, fetchOptions);
 
     devLog(`📱 [${title}] 응답 상태:`, response.status, response.statusText);
     

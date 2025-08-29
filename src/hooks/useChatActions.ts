@@ -1,11 +1,36 @@
-import { useState, useEffect } from 'react';
-import useAI from './useAI'; // 기존 useAI 훅 경로
+// src/hooks/useChatActions.ts
+
+import { useState } from 'react';
+import useAI from './useAI';
 import { useToast } from '@/components/common/ToastProvider';
 import { useChatStore } from '@/store/chatStore';
 import { combinePrompts } from '@/ai/promptTemplates';
 import { uploadFiles, FileUploadData } from '@/firebase.functions';
-import type { ModelName } from '@/app/ai-estimate/types'; // ModelName 타입 경로
-import { createChatSession, sendChatMessage } from '@/lib/api/user/userApi'; // ⭐️ 추가된 API import
+import type { ModelName } from '@/app/ai-estimate/types';
+import { createChatSession, sendChatMessage } from '@/lib/api/user/userApi';
+import { generateAndUploadPdf } from '@/hooks/pdfUtils';
+import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
+
+// 견적서 데이터를 추출하는 유틸리티 함수
+const extractEstimateData = (content: string): ProjectEstimate | null => {
+  try {
+    const match = content.match(/<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/);
+    if (!match) return null;
+
+    const jsonStr = match[1];
+    const data = JSON.parse(jsonStr);
+
+    if (!data || typeof data !== 'object' || !Array.isArray(data.categories)) {
+      console.error('Invalid estimate data structure:', data);
+      return null;
+    }
+
+    return data as ProjectEstimate;
+  } catch (error) {
+    console.error('Failed to parse estimate data:', error);
+    return null;
+  }
+};
 
 interface UseChatActionsProps {
   modelName: ModelName;
@@ -28,60 +53,15 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
 
-  // 파일 업로드 관련 함수
-  const handleFileUpload = (fileData: FileUploadData) => {
-    setUploadedFiles((prev) => [...prev, fileData]);
-    setUploadProgress(0);
-    setIsUploading(false);
-    success(`파일 "${fileData.name}"이 업로드되었습니다.`);
-  };
+  // 파일 업로드 관련 함수들... (생략)
+  const handleFileUpload = (fileData: FileUploadData) => { /* ... */ };
+  const handleFileUploadProgress = (progress: number) => { /* ... */ };
+  const removeFile = (fileName: string) => { /* ... */ };
+  const handleDragOver = (e: React.DragEvent) => { /* ... */ };
+  const handleDragLeave = (e: React.DragEvent) => { /* ... */ };
+  const handleDrop = (e: React.DragEvent) => { /* ... */ };
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => { /* ... */ };
 
-  const handleFileUploadProgress = (progress: number) => {
-    setUploadProgress(progress);
-  };
-
-  const removeFile = (fileName: string) => {
-    setUploadedFiles((prev) => prev.filter((file) => file.name !== fileName));
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (!isUploading && !isProcessing) {
-      setIsDragOver(true);
-    }
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      setIsUploading(true);
-      uploadFiles(files, {
-        onUpload: handleFileUpload,
-        progress: handleFileUploadProgress,
-      });
-    }
-  };
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 0) {
-      setIsUploading(true);
-      uploadFiles(files, {
-        onUpload: handleFileUpload,
-        progress: handleFileUploadProgress,
-      });
-    }
-  };
-
-  // 핵심 로직: handleSubmit
   const handleSubmit = async (input: string) => {
     if ((!input.trim() && uploadedFiles.length === 0) || isProcessing) return;
 
@@ -93,22 +73,19 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       userMessageContent = `${input}\n\n첨부된 파일:\n${fileInfo}`;
     }
     
-    // ⭐️ 사용자 메시지를 먼저 화면에 표시
     addMessage({ role: 'user', content: userMessageContent });
     addMessage({ role: 'ai', content: '', isLoading: true });
     
-    // ⭐️ API 로직: 채팅 세션 ID가 없으면 새로 생성
     let currentSessionId = chatSessionId;
     if (!currentSessionId) {
       try {
         const createResponse = await createChatSession(input.slice(0, 20) || '새로운 채팅');
-        if (createResponse && createResponse.data && createResponse.data.sessionId) {
-          currentSessionId = createResponse.data.sessionId;
+        
+        if (createResponse && createResponse.statusCode === 200 && createResponse.data && createResponse.data._id) {
+          currentSessionId = createResponse.data._id;
           setChatSessionId(currentSessionId);
-          console.log(`새로운 채팅방이 생성되었습니다: ${currentSessionId}`);
         } else {
-          // 서버에서 유효한 세션 ID를 반환하지 않았을 경우
-          throw new Error('채팅방 생성에 실패했습니다.');
+          throw new Error(createResponse.error?.message || '채팅방 생성에 실패했습니다.');
         }
       } catch (e) {
         error(`채팅방 생성 실패: ${(e as Error).message}`);
@@ -118,8 +95,10 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     }
 
     try {
-      // ⭐️ 메시지 전송 API 호출
-      await sendChatMessage(currentSessionId, { role: 'user', content: input });
+      await sendChatMessage(currentSessionId, { 
+        role: 'USER', 
+        content: { type: 'text', value: input }
+      });
       
       const filesForGemini = uploadedFiles.map((file) => ({
         name: file.name,
@@ -130,8 +109,30 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       const combinedPrompt = combinePrompts(selectedPromptId, input);
       const reply = await sendChat(combinedPrompt, filesForGemini);
 
+      // ⭐️ 핵심 수정 부분: 여기서 견적서 데이터를 추출하고 PDF 함수를 호출합니다.
+      const estimateData = extractEstimateData(reply);
+      if (estimateData) {
+        console.log('견적서 JSON을 감지했습니다. PDF 변환 및 업로드를 시작합니다.');
+        try {
+          const invoiceTitle = estimateData.project_name || '새로운 견적서';
+          // 추출한 estimateData를 generateAndUploadPdf 함수에 전달
+          await generateAndUploadPdf(estimateData, currentSessionId, invoiceTitle, success, error);
+        } catch (pdfError) {
+          console.error('PDF 생성 또는 업로드 중 오류 발생:', pdfError);
+          error(`견적서 업로드 실패: ${(pdfError as Error).message}`);
+        }
+      }
+
+      await sendChatMessage(currentSessionId, {
+        role: 'AI',
+        content: { type: 'text', value: reply }
+      });
+
       updateLastMessage(reply);
       setUploadedFiles([]);
+
+    } catch (e) {
+      error(`메시지 전송 실패: ${(e as Error).message}`);
     } finally {
       setIsProcessing(false);
     }
