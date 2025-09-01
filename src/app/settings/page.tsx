@@ -103,8 +103,8 @@ export default function SettingsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { user, logout } = useAuthStore();
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     navigate('/')
   }
 

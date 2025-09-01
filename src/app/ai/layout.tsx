@@ -160,6 +160,7 @@ export default function AILayout() {
   const { isDarkMode, toggleTheme } = useThemeStore();
   const { success } = useToast();
   const resetChat = useChatStore((s) => s.clear);
+  const chatSessionId = useChatStore((s) => s.chatSessionId); // 세션 ID 가져오기
   const [openShare, setOpenShare] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { isAuthenticated } = useAuthStore();
@@ -210,7 +211,14 @@ export default function AILayout() {
   };
 
   const handleCopy = async () => {
-    const shareUrl = window.location.href;
+    // 세션 ID가 있으면 공유 URL에 포함, 없으면 현재 URL 사용
+    let shareUrl;
+    if (chatSessionId) {
+      shareUrl = `${window.location.origin}/aiclient/${companyCode}/ai/share/${chatSessionId}`;
+    } else {
+      shareUrl = window.location.href;
+    }
+    
     try {
       await navigator.clipboard.writeText(shareUrl);
       success('링크가 복사되었습니다.');
@@ -233,7 +241,10 @@ export default function AILayout() {
     navigate(`/aiclient/${companyCode}/ai/my-estimate`);
   };
 
-  const shareUrl = window.location.href;
+  // 세션 ID가 있으면 공유 URL에 포함, 없으면 현재 URL 사용
+  const shareUrl = chatSessionId 
+    ? `${window.location.origin}/aiclient/${companyCode}/ai/share/${chatSessionId}`
+    : window.location.href;
   
   const isAiHome = location.pathname === `/aiclient/${companyCode}/ai`;
   const isPC = typeof window !== 'undefined' && window.innerWidth >= 1024;
@@ -287,7 +298,7 @@ export default function AILayout() {
       </TopNav>
       <Main >
 
-      <div style={{ paddingTop: '80px' }}>
+      <div style={{ paddingTop: '0px' }}>
         <Outlet />
       </div>
 

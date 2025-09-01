@@ -1,15 +1,18 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import Icon from './Icon';
 import Modal from '@/components/common/Modal';
 import { useToast } from '@/components/common/ToastProvider';
 import { useThemeStore } from '@/store/themeStore';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-import { PrintableInvoice } from './PrintableInvoice';
+import { generatePDF } from '@/hooks/pdfUtils';
+import { getDownloadEstimateUrl, getDownloadEstimateUrlWithUserInfo } from '@/lib/api/user/userApi';
+import { useAuthStore } from '@/store/authStore';
+import { v4 as uuidv4 } from 'uuid';
+import TextField from '@/components/common/TextField';
+
 
 const CardWrapper = styled.div`
   background-color: ${({ theme }) => theme.surface1};
@@ -25,7 +28,7 @@ const Header = styled.div`
 
 `;
 
-  const Flex = styled.div`
+const Flex = styled.div`
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -143,123 +146,263 @@ letter-spacing: 0.32px;
   }
 `;
 
+const Form = styled.form`
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const FormField = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const Label = styled.label`
+  font-size: 14px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.text};
+`;
+
+const Input = styled.input`
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.border};
+  background: ${({ theme }) => theme.body};
+  color: ${({ theme }) => theme.text};
+  padding: 0 12px;
+  font-size: 14px;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.accent};
+  }
+`;
+
+const SubmitButton = styled.button`
+  height: 44px;
+  border-radius: 8px;
+  background: #2E2E48;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  margin-top: 16px;
+
+  &:hover {
+    opacity: 0.9;
+  }
+`;
+
+const Disclaimer = styled.p`
+  margin-top: 4px;
+  font-size: 12px;
+  color: #666666;
+`;
+
 interface EstimateCardProps {
   estimate: ProjectEstimate;
 }
 
 const EstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
-  const [openShare, setOpenShare] = useState(false)
-  const { success } = useToast()
-  const { isDarkMode } = useThemeStore()
+  const [openShare, setOpenShare] = useState(false);
+  const [openDownload, setOpenDownload] = useState(false);
+  const [openShareInput, setOpenShareInput] = useState(false);
+  const [userInfo, setUserInfo] = useState({ name: '', email: '', cellphone: '' });
+  const [shareUrl, setShareUrl] = useState('');
+  const { success, error } = useToast();
+  const { isDarkMode } = useThemeStore();
+  const { isAuthenticated } = useAuthStore();
 
-  const generatePDF = async () => {
-    try {
-      // 임시 컨테이너 생성
-      const tempDiv = document.createElement('div');
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      document.body.appendChild(tempDiv);
+  const getCompanyCode = () => {
+    const pathParts = window.location.pathname.split('/');
+    const companyCodeIndex = pathParts.indexOf('aiclient') + 1;
+    return (companyCodeIndex > 0 && pathParts.length > companyCodeIndex)
+      ? pathParts[companyCodeIndex]
+      : 'heredot';
+  };
 
-      // PrintableInvoice 렌더링
-      const root = document.createElement('div');
-      root.style.width = '780px';
-      root.style.backgroundColor = 'white';
-      tempDiv.appendChild(root);
-
-      // React 컴포넌트를 DOM에 렌더링
-      const { createRoot } = await import('react-dom/client');
-      const reactRoot = createRoot(root);
-      reactRoot.render(<PrintableInvoice estimate={estimate} />);
-
-      // 렌더링이 완료될 때까지 잠시 대기
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // HTML을 캔버스로 변환
-      const canvas = await html2canvas(root, {
-        scale: 1.5,
-        useCORS: true,
-        logging: false,
-        imageTimeout: 0,
-        backgroundColor: null
-      });
-
-      // PDF 생성
-      const imgWidth = 210; // A4 가로 크기 (mm)
-      const pageHeight = 297; // A4 세로 크기 (mm)
-      const imgHeight = canvas.height * imgWidth / canvas.width;
-      const pdf = new jsPDF('p', 'mm');
-
-      // 여러 페이지로 나누기
-      let heightLeft = imgHeight;
-      let position = 0;
-      let pageNumber = 1;
-
-      // 첫 페이지 추가 (JPEG 압축 사용)
-      const imageData = canvas.toDataURL('image/jpeg', 0.7);
-      pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      // 남은 높이가 있으면 추가 페이지 생성
-      while (heightLeft >= 0) {
-        position = -(pageHeight * pageNumber);
-        pdf.addPage();
-        pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-        pageNumber++;
+  const companyCode = getCompanyCode();
+  
+  // 회원일 경우 로컬스토리지에서 정보 불러오기
+  useEffect(() => {
+    if (isAuthenticated()) {
+      const authStorage = localStorage.getItem('auth-storage');
+      if (authStorage) {
+        const authData = JSON.parse(authStorage);
+        const user = authData.state?.user;
+        if (user) {
+          setUserInfo({
+            name: user.name || '',
+            email: user.email || '',
+            cellphone: user.cellphone || '',
+          });
+        }
       }
+    }
+  }, [isAuthenticated]);
+
+  const handleGeneratePDF = async () => {
+    try {
+      if (estimate.uuid) {
+        if (isAuthenticated()) {
+          const authStorage = localStorage.getItem('auth-storage');
+          if (authStorage) {
+            const authData = JSON.parse(authStorage);
+            const userData = authData.state?.user;
+            
+            if (userData) {
+              const downloadUrl = getDownloadEstimateUrlWithUserInfo(
+                companyCode,
+                estimate.uuid,
+                {
+                  id: userData._id,
+                  name: userData.name,
+                  email: userData.email,
+                  cellphone: userData.cellphone || ''
+                }
+              );
+              window.open(downloadUrl, '_blank');
+              success('PDF가 새 탭에서 열립니다.');
+              return;
+            }
+          }
+        } else {
+          setOpenDownload(true);
+          return;
+        }
+      }
+
+      const result = await generatePDF(estimate, { forPreview: true });
       
-      // PDF를 Blob으로 생성
-      const pdfBlob = pdf.output('blob');
-      
-      // Blob URL 생성
-      const blobUrl = URL.createObjectURL(pdfBlob);
-      
-      // 새 창에서 PDF 열기
-      window.open(blobUrl, '_blank');
-      
-      // React root 정리
-      reactRoot.unmount();
-      
-      // 메모리 누수 방지를 위해 일정 시간 후 Blob URL 해제
-      setTimeout(() => {
-        URL.revokeObjectURL(blobUrl);
-      }, 60000); // 1분 후 해제
-      
-      // 임시 요소들 제거
-      document.body.removeChild(tempDiv);
-      success('PDF가 생성되었습니다.');
-    } catch (error) {
-      console.error('PDF 생성 중 오류:', error);
+      if (result && 'blobUrl' in result && result.blobUrl) {
+        window.open(result.blobUrl, '_blank');
+        
+        setTimeout(() => {
+          URL.revokeObjectURL(result.blobUrl);
+        }, 60000); 
+        
+        success('PDF가 새 탭에서 열립니다.');
+      }
+    } catch (err) {
+      console.error('PDF 생성 중 오류:', err);
+      error('PDF 생성에 실패했습니다.');
     }
   };
 
+  const handleDownloadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      let guestUuid = localStorage.getItem('guest-uuid');
+      if (!guestUuid) {
+        guestUuid = uuidv4();
+        localStorage.setItem('guest-uuid', guestUuid);
+        console.log('새로운 비회원 UUID 생성:', guestUuid);
+      }
 
-
-
-
-
-
+      const downloadUrl = getDownloadEstimateUrlWithUserInfo(
+        companyCode,
+        estimate.uuid,
+        {
+          id: guestUuid,
+          name: userInfo.name,
+          email: userInfo.email,
+          cellphone: userInfo.cellphone
+        }
+      );
+      
+      window.open(downloadUrl, '_blank');
+      success('PDF가 새 탭에서 열립니다.');
+      setOpenDownload(false);
+      setUserInfo({ name: '', email: '', cellphone: '' });
+    } catch (err) {
+      console.error('PDF 다운로드 중 오류:', err);
+      error('PDF 다운로드에 실패했습니다.');
+    }
+  };
   
-  // estimated_period가 '30주'와 같은 문자열일 경우를 가정하고 숫자만 추출합니다.
-  const weekValue = parseInt(estimate.estimated_period);
+  const handleShareClick = () => {
+    // uuid가 있어야 공유 가능
+    if (!estimate.uuid) {
+      error('공유 가능한 견적서가 아닙니다.');
+      return;
+    }
 
-  // 1개월의 평균 주 수 (30.41일 / 7일)를 사용하여 개월 수를 계산하고 올림 처리합니다.
-  const weeksPerMonth = 4.345;
-  const monthValue = Math.ceil(weekValue / weeksPerMonth);
+    if (isAuthenticated()) {
+      // 회원인 경우 바로 공유 URL 생성 모달 표시
+      setOpenShare(true);
+      const authStorage = localStorage.getItem('auth-storage');
+      const authData = authStorage ? JSON.parse(authStorage) : null;
+      const user = authData?.state?.user;
 
-  // 최종적으로 보여줄 기간 문자열을 생성합니다.
-  const displayPeriod = `(약 ${monthValue}개월)`;
+      if (user) {
+        const newShareUrl = getDownloadEstimateUrlWithUserInfo(
+          companyCode,
+          estimate.uuid,
+          {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            cellphone: user.cellphone || ''
+          }
+        );
+        setShareUrl(newShareUrl);
+      }
+    } else {
+      // 비회원인 경우 필수 정보 입력 모달 표시
+      setOpenShareInput(true);
+    }
+  };
 
-  const shareUrl = typeof window !== 'undefined' ? window.location.href + `?estimate=${encodeURIComponent(estimate.project_name)}` : ''
+  const handleShareSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      let guestUuid = localStorage.getItem('guest-uuid');
+      if (!guestUuid) {
+        guestUuid = uuidv4();
+        localStorage.setItem('guest-uuid', guestUuid);
+      }
+
+      const newShareUrl = getDownloadEstimateUrlWithUserInfo(
+        companyCode,
+        estimate.uuid,
+        {
+          id: guestUuid,
+          name: userInfo.name,
+          email: userInfo.email,
+          cellphone: userInfo.cellphone
+        }
+      );
+      
+      setShareUrl(newShareUrl);
+      setOpenShareInput(false);
+      setOpenShare(true);
+      setUserInfo({ name: '', email: '', cellphone: '' });
+    } catch (err) {
+      console.error('공유 URL 생성 중 오류:', err);
+      error('공유 URL 생성에 실패했습니다.');
+    }
+  };
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl)
       success('링크가 복사되었습니다.')
+      setOpenShare(false)
     } catch {
-      // ignore
+      error('링크 복사에 실패했습니다.');
     }
   }
+
+  const weekValue = parseInt(estimate.estimated_period);
+  const weeksPerMonth = 4.345;
+  const monthValue = Math.ceil(weekValue / weeksPerMonth);
+  const displayPeriod = `(약 ${monthValue}개월)`;
 
   return (
     <CardWrapper>
@@ -269,14 +412,13 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
         <Right>
         <span style={{ display: 'flex', gap: '8px' }}>
         <Icon
-    onClick={() => setOpenShare(true)}
-    // ⭐️ isDarkMode 상태에 따라 이미지 경로를 변경
-    src={isDarkMode ? '/ai-estimate/share2_dark.png' : '/ai-estimate/share2_light.png'}
-    width={36}
-    height={36}
-  />
+            onClick={handleShareClick}
+            src={isDarkMode ? '/ai-estimate/share2_dark.png' : '/ai-estimate/share2_light.png'}
+            width={36}
+            height={36}
+          />
           <Icon 
-            onClick={generatePDF}
+            onClick={handleGeneratePDF}
             src={isDarkMode ? '/ai-estimate/download_dark.png' : '/ai-estimate/download_light.png'} 
             width={36} 
             height={36} 
@@ -286,28 +428,46 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
 
         </Flex>
         <Price>
-          KRW {estimate.total_price}
-          <span>(부가세 별도)</span>
+        KRW {new Intl.NumberFormat('ko-KR').format(estimate.total_price)}
+        <span>(부가세 별도)</span>
         </Price>
-        {/* 계산된 displayPeriod를 Period 컴포넌트에 적용 */}
         <Period>
           <span style={{marginRight: '4px'}}>{estimate.estimated_period}</span>
           <span className="p">{displayPeriod}</span>
         </Period>
-        {/* <ActionButtons>
-          <ActionButton>AI 예산 줄이기</ActionButton>
-          <Line></Line>
-          <ActionButton>AI 맞춤 추천</ActionButton>
-        </ActionButtons> */}
       </Header>
 
       <Modal open={openShare} title="견적서 공유" onClose={() => setOpenShare(false)} width={520}>
         <div style={{ color: '#A1A1AA', fontSize: 14, marginBottom: 32 }}>공유받은 사용자는 견적 내용을 확인할 수 있습니다.</div>
         <ShareInput>
           <input readOnly value={shareUrl} placeholder="https://aigocorp.com/id..." />
-          <button onClick={handleCopy}>링크복사</button>
+          <button onClick={handleCopy} >링크복사</button>
         </ShareInput>
       </Modal>
+
+      <Modal open={openDownload} title="필수 정보 입력" onClose={() => setOpenDownload(false)} width={520}>
+        <div style={{ fontSize: 14, textAlign: 'center', marginBottom: 32 }}>소중한 당신의 프로젝트, 견적서를 통해 지금 바로 확인해 보세요.</div>
+        <Form onSubmit={handleDownloadSubmit}>
+          <TextField id="name" label="이름" placeholder="이름을 입력해주세요" required value={userInfo.name} onChange={(e) => setUserInfo({...userInfo, name: e.target.value})} />
+          <TextField id="email" label="이메일" type="email" placeholder="이메일을 입력해주세요" required value={userInfo.email} onChange={(e) => setUserInfo({...userInfo, email: e.target.value})} />
+          <TextField id="phone" label="전화번호" placeholder="전화번호를 입력해주세요" required maxLength={11} value={userInfo.cellphone} onChange={(e) => setUserInfo({...userInfo, cellphone: e.target.value})} />
+          <Disclaimer>문의 시 개인정보 수집·이용에 동의한 것으로 간주됩니다.</Disclaimer>
+          <SubmitButton type="submit">PDF 다운로드</SubmitButton>
+        </Form>
+      </Modal>
+
+      {/* 공유 전 필수 정보 입력 모달 */}
+      <Modal open={openShareInput} title="필수 정보 입력" onClose={() => setOpenShareInput(false)} width={520}>
+        <div style={{ fontSize: 14, textAlign: 'center', marginBottom: 32 }}>견적서 공유를 위해 필수 정보를 입력해주세요.</div>
+        <Form onSubmit={handleShareSubmit}>
+          <TextField id="name" label="이름" placeholder="이름을 입력해주세요" required value={userInfo.name} onChange={(e) => setUserInfo({...userInfo, name: e.target.value})} />
+          <TextField id="email" label="이메일" type="email" placeholder="이메일을 입력해주세요" required value={userInfo.email} onChange={(e) => setUserInfo({...userInfo, email: e.target.value})} />
+          <TextField id="phone" label="전화번호" placeholder="전화번호를 입력해주세요" required maxLength={11} value={userInfo.cellphone} onChange={(e) => setUserInfo({...userInfo, cellphone: e.target.value})} />
+          <Disclaimer>문의 시 개인정보 수집·이용에 동의한 것으로 간주됩니다.</Disclaimer>
+          <SubmitButton type="submit">공유 링크 생성</SubmitButton>
+        </Form>
+      </Modal>
+
     </CardWrapper>
   );
 };

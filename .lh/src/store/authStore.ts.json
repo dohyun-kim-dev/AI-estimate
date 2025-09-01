@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1755951202965,
@@ -12,6 +12,22 @@
                 {
                     "date": 1756431412299,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,39 +1,60 @@\n-import { create } from 'zustand'\n-import { persist } from 'zustand/middleware'\n-import { GoogleLoginResponse } from '@/lib/api/auth'\n+import { create } from 'zustand';\n+import { persist } from 'zustand/middleware';\n+import { GoogleLoginResponse } from '@/lib/api/user/userApi.types';\n \n export interface UserData extends GoogleLoginResponse {\n-  isLoggedIn: boolean\n+  isLoggedIn: boolean;\n+  updateAt?: string;\n+  cellphone?: string;\n }\n \n interface AuthState {\n-  user: UserData | null\n-  isAdditionalInfoModalOpen: boolean\n-  login: (userData: GoogleLoginResponse) => void\n-  logout: () => void\n-  openAdditionalInfoModal: () => void\n-  closeAdditionalInfoModal: () => void\n-  isAuthenticated: () => boolean\n+  user: UserData | null;\n+  isAdditionalInfoModalOpen: boolean;\n+  login: (userData: GoogleLoginResponse) => void;\n+  logout: () => void;\n+  openAdditionalInfoModal: () => void;\n+  closeAdditionalInfoModal: () => void;\n+  isAuthenticated: () => boolean;\n }\n \n export const useAuthStore = create<AuthState>()(\n   persist(\n     (set, get) => ({\n       user: null,\n       isAdditionalInfoModalOpen: false,\n+\n       login: (userData: GoogleLoginResponse) =>\n-        set({ user: { ...userData, isLoggedIn: true } }),\n-      logout: () => set({ user: null }),\n+        set({\n+          user: {\n+            ...userData,\n+            isLoggedIn: true,\n+          },\n+        }),\n+\n+      logout: () =>\n+        set({\n+          user: null,\n+        }),\n+\n       isAuthenticated: () => {\n-        const state = get()\n-        return !!(state.user?.isLoggedIn && state.user?.cellphone)\n+        const state = get();\n+        return !!(state.user?.isLoggedIn);\n       },\n-      openAdditionalInfoModal: () => set({ isAdditionalInfoModalOpen: true }),\n-      closeAdditionalInfoModal: () => set({ isAdditionalInfoModalOpen: false }),\n+\n+      openAdditionalInfoModal: () =>\n+        set({\n+          isAdditionalInfoModalOpen: true,\n+        }),\n+\n+      closeAdditionalInfoModal: () =>\n+        set({\n+          isAdditionalInfoModalOpen: false,\n+        }),\n     }),\n     {\n       name: 'auth-storage',\n-      partialize: (state) => ({ user: state.user }),\n+      partialize: (state) => ({ user: state.user }), // 로그인 상태만 저장\n     }\n   )\n-)\n+);\n"
+                },
+                {
+                    "date": 1756702167165,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,8 @@\n import { create } from 'zustand';\n import { persist } from 'zustand/middleware';\n import { GoogleLoginResponse } from '@/lib/api/user/userApi.types';\n+import { logoutUser } from '@/lib/api/user/userApi';\n \n export interface UserData extends GoogleLoginResponse {\n   isLoggedIn: boolean;\n   updateAt?: string;\n@@ -31,12 +32,22 @@\n             isLoggedIn: true,\n           },\n         }),\n \n-      logout: () =>\n+      logout: async () => {\n+        try {\n+          // 로그아웃 API 호출\n+          await logoutUser();\n+        } catch (error) {\n+          console.error('로그아웃 API 호출 실패:', error);\n+          // API 호출이 실패해도 로컬 로그아웃은 진행\n+        }\n+        \n+        // 로컬 상태 초기화\n         set({\n           user: null,\n-        }),\n+        });\n+      },\n \n       isAuthenticated: () => {\n         const state = get();\n         return !!(state.user?.isLoggedIn);\n"
+                },
+                {
+                    "date": 1756704092602,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,8 +1,9 @@\n import { create } from 'zustand';\n import { persist } from 'zustand/middleware';\n import { GoogleLoginResponse } from '@/lib/api/user/userApi.types';\n import { logoutUser } from '@/lib/api/user/userApi';\n+import { useChatStore } from '@/store/chatStore';\n \n export interface UserData extends GoogleLoginResponse {\n   isLoggedIn: boolean;\n   updateAt?: string;\n@@ -45,8 +46,11 @@\n         // 로컬 상태 초기화\n         set({\n           user: null,\n         });\n+        \n+        // 채팅 스토어도 클리어\n+        useChatStore.getState().clear();\n       },\n \n       isAuthenticated: () => {\n         const state = get();\n"
+                },
+                {
+                    "date": 1756706928347,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n import { create } from 'zustand';\n import { persist } from 'zustand/middleware';\n import { GoogleLoginResponse } from '@/lib/api/user/userApi.types';\n import { logoutUser } from '@/lib/api/user/userApi';\n-import { useChatStore } from '@/store/chatStore';\n+import { useAuthStore } from '@/store/authStore'\n \n export interface UserData extends GoogleLoginResponse {\n   isLoggedIn: boolean;\n   updateAt?: string;\n"
+                },
+                {
+                    "date": 1756711582428,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n import { create } from 'zustand';\n import { persist } from 'zustand/middleware';\n import { GoogleLoginResponse } from '@/lib/api/user/userApi.types';\n import { logoutUser } from '@/lib/api/user/userApi';\n-import { useAuthStore } from '@/store/authStore'\n+import { useChatStore } from '@/store/chatStore';\n \n export interface UserData extends GoogleLoginResponse {\n   isLoggedIn: boolean;\n   updateAt?: string;\n"
                 }
             ],
             "date": 1755951202965,

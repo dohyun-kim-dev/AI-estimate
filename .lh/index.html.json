@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1755953872663,
@@ -12,6 +12,14 @@
                 {
                     "date": 1756174446681,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,11 +4,10 @@\n     <meta charset=\"UTF-8\" />\n     <link rel=\"icon\" type=\"image/svg+xml\" href=\"/vite.svg\" />\n     <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n     <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n-    <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n-    <link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap\" rel=\"stylesheet\">\n-    <title>AI Estimate</title>\n+<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n+<link href=\"https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap\" rel=\"stylesheet\"> <title>AI Estimate</title>\n   </head>\n   <body>\n     <div id=\"root\"></div>\n     <script type=\"module\" src=\"/src/main.tsx\"></script>\n"
+                },
+                {
+                    "date": 1756695678248,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,13 +1,42 @@\n <!doctype html>\n-<html lang=\"en\">\n+<html lang=\"ko\">\n   <head>\n     <meta charset=\"UTF-8\" />\n-    <link rel=\"icon\" type=\"image/svg+xml\" href=\"/vite.svg\" />\n+    \n+    <!-- 파비콘 설정 -->\n+    <link rel=\"icon\" type=\"image/png\" href=\"/favicon.png\" />\n+    <link rel=\"apple-touch-icon\" href=\"/favicon.png\" />\n+    \n     <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n+    \n+    <!-- 폰트 설정 -->\n     <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n-<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n-<link href=\"https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap\" rel=\"stylesheet\"> <title>AI Estimate</title>\n+    <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n+    <link href=\"https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap\" rel=\"stylesheet\">\n+    \n+    <!-- OG 이미지 및 메타 태그 설정 -->\n+    <meta property=\"og:title\" content=\"AI Estimate - AI 견적 서비스\" />\n+    <meta property=\"og:description\" content=\"AI가 도와주는 프로젝트 견적 서비스입니다. 웹사이트, 앱 개발 견적을 빠르고 정확하게 받아보세요.\" />\n+    <meta property=\"og:image\" content=\"/og_image.png\" />\n+    <meta property=\"og:image:width\" content=\"1200\" />\n+    <meta property=\"og:image:height\" content=\"630\" />\n+    <meta property=\"og:type\" content=\"website\" />\n+    <meta property=\"og:url\" content=\"\" />\n+    <meta property=\"og:site_name\" content=\"AI Estimate\" />\n+    \n+    <!-- Twitter Card 설정 -->\n+    <meta name=\"twitter:card\" content=\"summary_large_image\" />\n+    <meta name=\"twitter:title\" content=\"AI Estimate - AI 견적 서비스\" />\n+    <meta name=\"twitter:description\" content=\"AI가 도와주는 프로젝트 견적 서비스입니다. 웹사이트, 앱 개발 견적을 빠르고 정확하게 받아보세요.\" />\n+    <meta name=\"twitter:image\" content=\"/og_image.png\" />\n+    \n+    <!-- 기타 메타 태그 -->\n+    <meta name=\"description\" content=\"AI가 도와주는 프로젝트 견적 서비스입니다. 웹사이트, 앱 개발 견적을 빠르고 정확하게 받아보세요.\" />\n+    <meta name=\"keywords\" content=\"AI, 견적, 웹사이트, 앱, 개발, 프로젝트\" />\n+    <meta name=\"author\" content=\"AI Estimate\" />\n+    \n+    <title>AI Estimate - AI 견적 서비스</title>\n   </head>\n   <body>\n     <div id=\"root\"></div>\n     <script type=\"module\" src=\"/src/main.tsx\"></script>\n"
+                },
+                {
+                    "date": 1756713328288,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -34,9 +34,9 @@\n     <meta name=\"description\" content=\"AI가 도와주는 프로젝트 견적 서비스입니다. 웹사이트, 앱 개발 견적을 빠르고 정확하게 받아보세요.\" />\n     <meta name=\"keywords\" content=\"AI, 견적, 웹사이트, 앱, 개발, 프로젝트\" />\n     <meta name=\"author\" content=\"AI Estimate\" />\n     \n-    <title>AI Estimate - AI 견적 서비스</title>\n+    <title>에이고 - AI 견적 서비스</title>\n   </head>\n   <body>\n     <div id=\"root\"></div>\n     <script type=\"module\" src=\"/src/main.tsx\"></script>\n"
                 }
             ],
             "date": 1755953872663,

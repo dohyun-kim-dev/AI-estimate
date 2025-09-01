@@ -8,7 +8,7 @@ import { customScrollbar } from '@/styles/commonStyles';
 import { useAuthStore } from '@/store/authStore';
 import { SocialLoginModal } from './SocialLoginModal';
 import FileUploadSection from './FileUploadSection'; // ⭐️ 추가: 파일 업로드 섹션 컴포넌트 임포트
-import { FileUploadData } from '@/lib/firebase/firebase.functions'; // ⭐️ 추가: 파일 업로드 데이터 타입 임포트
+import { FileUploadData } from '@/firebase.functions'; // ⭐️ 수정: 올바른 경로로 변경
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -116,18 +116,24 @@ interface BottomInputProps {
   placeholder?: string;
   onSubmit?: (value: string) => void;
   maxSubmissions?: number;
-  onFilesChange: (files: File[]) => void;
+  onFileInput?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isUploading: boolean;
   isProcessing: boolean;
+  uploadedFiles: FileUploadData[]; // ⭐️ 추가: uploadedFiles를 props로 받음
+  uploadProgress: number; // ⭐️ 추가: uploadProgress를 props로 받음
+  onDeleteFile: (fileUri: string) => void; // ⭐️ 추가: onDeleteFile을 props로 받음
 }
 
 const BottomInput: React.FC<BottomInputProps> = ({
   placeholder = "서비스 종류와 주요 기능, 예상 기간/예산을 입력! \n예시: '온라인 쇼핑몰, 결제/배송/회원가입",
   onSubmit,
   maxSubmissions = 30,
-  onFilesChange,
+  onFileInput,
   isUploading,
   isProcessing,
+  uploadedFiles,
+  uploadProgress,
+  onDeleteFile,
 }) => {
   const [value, setValue] = useState('');
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
@@ -137,9 +143,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ⭐️ 추가: 파일 업로드 상태 관리
-  const [uploadedFiles, setUploadedFiles] = useState<FileUploadData[]>([]);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  // ⭐️ 파일 업로드 상태는 부모 컴포넌트에서 관리하므로 제거
 
   const theme = useTheme();
   const isLightTheme = theme.body === '#FFFFFF';
@@ -257,24 +261,16 @@ const BottomInput: React.FC<BottomInputProps> = ({
         return;
       }
       
-      // ⭐️ 변경: 부모 컴포넌트로 파일을 전달하고, 이곳에서 미리보기 상태를 관리합니다.
-      const newFilesData = files.map(file => ({
-        fileUri: URL.createObjectURL(file), // 임시 URL 생성
-        name: file.name,
-        size: file.size,
-        mimeType: file.type,
-      }));
-      setUploadedFiles(prev => [...prev, ...newFilesData]);
-      onFilesChange(files);
+      // ⭐️ 변경: 부모 컴포넌트로 파일을 전달
+      if (onFileInput) {
+        onFileInput(e);
+      }
 
       e.target.value = '';
     }
   };
 
-  const handleDeleteFile = (fileUriToDelete: string) => {
-    setUploadedFiles(prev => prev.filter(file => file.fileUri !== fileUriToDelete));
-    // ⭐️ TODO: 실제 업로드된 파일의 경우, Firebase Storage에서 삭제하는 로직을 추가해야 합니다.
-  };
+  // handleDeleteFile 함수는 제거 - 부모 컴포넌트의 onDeleteFile을 직접 사용
 
   const renderRemainingCountText = () => {
     if (isLoggedIn) {
@@ -298,7 +294,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
           <FileUploadSection
             uploadedFiles={uploadedFiles}
             uploadProgress={uploadProgress}
-            onDeleteFile={handleDeleteFile}
+            onDeleteFile={onDeleteFile}
             lang="ko" // 필요에 따라 언어 설정
           />
         </FilePreviewArea>

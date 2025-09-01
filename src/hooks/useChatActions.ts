@@ -4,12 +4,14 @@ import { useState } from 'react';
 import useAI from './useAI';
 import { useToast } from '@/components/common/ToastProvider';
 import { useChatStore } from '@/store/chatStore';
+import { useAuthStore } from '@/store/authStore';
 import { combinePrompts } from '@/ai/promptTemplates';
-import { uploadFiles, FileUploadData } from '@/firebase.functions';
-import type { ModelName } from '@/app/ai-estimate/types';
-import { createChatSession, sendChatMessage } from '@/lib/api/user/userApi';
+import { FileUploadData } from '@/firebase.functions';
+import type { SimpleModel } from './useAI';
+import { createChatSession, createGuestChatSession, sendChatMessage, sendMessageWithFiles, validateFileType, validateFileSize, uploadFiles } from '@/lib/api/user/userApi';
 import { generateAndUploadPdf } from '@/hooks/pdfUtils';
 import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
+import { v4 as uuidv4 } from 'uuid';
 
 // 견적서 데이터를 추출하는 유틸리티 함수
 const extractEstimateData = (content: string): ProjectEstimate | null => {
@@ -26,14 +28,69 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
     }
 
     return data as ProjectEstimate;
+
   } catch (error) {
     console.error('Failed to parse estimate data:', error);
     return null;
   }
 };
 
+// 파일 크기 검증 함수 (단일 파일 20MB, 복수 파일 합계 20MB)
+const validateFilesSize = (files: File[], maxSizeMB: number = 20): { isValid: boolean; errorMessage?: string } => {
+  const maxSizeBytes = maxSizeMB * 1024 * 1024;
+  
+  // 단일 파일 검증
+  for (const file of files) {
+    if (file.size > maxSizeBytes) {
+      return { 
+        isValid: false, 
+        errorMessage: `파일 "${file.name}"이(가) 20MB를 초과합니다.` 
+      };
+    }
+  }
+  
+  // 복수 파일 합계 검증
+  const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+  if (totalSize > maxSizeBytes) {
+    return { 
+      isValid: false, 
+      errorMessage: `전체 파일 크기가 20MB를 초과합니다. (${(totalSize / 1024 / 1024).toFixed(2)}MB)` 
+    };
+  }
+  
+  return { isValid: true };
+};
+
+// 파일을 base64로 인코딩하는 함수
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const result = reader.result as string;
+      // data:image/jpeg;base64, 부분을 제거하고 base64 부분만 반환
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = error => reject(error);
+  });
+};
+
+// 비회원 UUID 관리 함수
+const getOrCreateGuestUuid = (): string => {
+  const storedUuid = localStorage.getItem('guest-uuid');
+  if (storedUuid) {
+    return storedUuid;
+  }
+  
+  // UUID가 없으면 새로 생성
+  const newUuid = uuidv4();
+  localStorage.setItem('guest-uuid', newUuid);
+  return newUuid;
+};
+
 interface UseChatActionsProps {
-  modelName: ModelName;
+  modelName: SimpleModel;
   selectedPromptId: string;
 }
 
@@ -46,21 +103,83 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     chatSessionId: s.chatSessionId,
     setChatSessionId: s.setChatSessionId,
   }));
+  const { isAuthenticated } = useAuthStore();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<FileUploadData[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
-  // 파일 업로드 관련 함수들... (생략)
-  const handleFileUpload = (fileData: FileUploadData) => { /* ... */ };
-  const handleFileUploadProgress = (progress: number) => { /* ... */ };
-  const removeFile = (fileName: string) => { /* ... */ };
-  const handleDragOver = (e: React.DragEvent) => { /* ... */ };
-  const handleDragLeave = (e: React.DragEvent) => { /* ... */ };
-  const handleDrop = (e: React.DragEvent) => { /* ... */ };
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => { /* ... */ };
+  // 파일을 즉시 업로드하지 않고 미리보기만 추가
+  const handleFileUpload = (files: File[]) => {
+    if (files.length === 0) return;
+    
+    const invalidFiles = files.filter(file => !validateFileType(file));
+    if (invalidFiles.length > 0) {
+      error(`지원하지 않는 파일 형식입니다: ${invalidFiles.map(f => f.name).join(', ')}`);
+      return;
+    }
+    
+    const sizeValidation = validateFilesSize(files);
+    if (!sizeValidation.isValid) {
+      error(sizeValidation.errorMessage || '파일 크기 검증에 실패했습니다.');
+      return;
+    }
+    
+    const fileDataArray: FileUploadData[] = files.map(file => ({
+      name: file.name,
+      fileUri: URL.createObjectURL(file),
+      mimeType: file.type,
+      size: file.size,
+    }));
+    
+    setUploadedFiles(prev => [...prev, ...fileDataArray]);
+    setSelectedFiles(prev => [...prev, ...files]);
+    success(`파일 ${files.length}개가 추가되었습니다.`);
+  };
+
+  const handleFileUploadProgress = (progress: number) => {
+    setUploadProgress(progress);
+  };
+
+  const removeFile = (fileUri: string) => {
+    const fileToRemove = uploadedFiles.find(file => file.fileUri === fileUri);
+    if (fileToRemove) {
+      setUploadedFiles((prev) => prev.filter((file) => file.fileUri !== fileUri));
+      setSelectedFiles((prev) => prev.filter((file) => file.name !== fileToRemove.name));
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!isUploading && !isProcessing) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileUpload(files);
+    }
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      handleFileUpload(files);
+    }
+  };
 
   const handleSubmit = async (input: string) => {
     if ((!input.trim() && uploadedFiles.length === 0) || isProcessing) return;
@@ -69,20 +188,38 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
     let userMessageContent = input;
     if (uploadedFiles.length > 0) {
-      const fileInfo = uploadedFiles.map((file) => `[파일: ${file.name}]`).join('\n');
-      userMessageContent = `${input}\n\n첨부된 파일:\n${fileInfo}`;
+      const fileInfo = uploadedFiles.map((file) => `[첨부파일: ${file.name}]`).join('\n');
+      userMessageContent = `${input}\n\n${fileInfo}`;
     }
     
     addMessage({ role: 'user', content: userMessageContent });
     addMessage({ role: 'ai', content: '', isLoading: true });
     
     let currentSessionId = chatSessionId;
+    let userId: string | null = null; // userId 변수 초기화
+
+    if (isAuthenticated()) {
+      const authStorage = localStorage.getItem('auth-storage');
+      if (authStorage) {
+        const authData = JSON.parse(authStorage);
+        userId = authData.state?.user?._id;
+      }
+    } else {
+      userId = getOrCreateGuestUuid();
+    }
+
     if (!currentSessionId) {
       try {
-        const createResponse = await createChatSession(input.slice(0, 20) || '새로운 채팅');
+        let createResponse;
         
-        if (createResponse && createResponse.statusCode === 200 && createResponse.data && createResponse.data._id) {
-          currentSessionId = createResponse.data._id;
+        if (isAuthenticated()) {
+          createResponse = await createChatSession(input.slice(0, 20) || '새로운 채팅', userId);
+        } else {
+          createResponse = await createGuestChatSession(input.slice(0, 20) || '새로운 채팅', userId);
+        }
+        
+        if (createResponse && createResponse.statusCode === 200 && createResponse.data && createResponse.data.length > 0 && createResponse.data[0]._id) {
+          currentSessionId = createResponse.data[0]._id;
           setChatSessionId(currentSessionId);
         } else {
           throw new Error(createResponse.error?.message || '채팅방 생성에 실패했습니다.');
@@ -95,41 +232,127 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     }
 
     try {
+      let uploadedFileNames: string[] = [];
+      let filesForGemini: Array<{name: string, fileUri: string, mimeType: string, base64?: string}> = [];
+      
+      if (selectedFiles.length > 0) {
+        console.log('=== 파일 업로드 프로세스 시작 ===');
+        console.log('선택된 파일들:', selectedFiles.map(f => `${f.name} (${(f.size / 1024 / 1024).toFixed(2)}MB)`));
+        
+        const uploadResponse = await uploadFiles(selectedFiles);
+        console.log('파일 업로드 API 응답:', uploadResponse);
+        
+        if (uploadResponse && uploadResponse.statusCode === 200 && uploadResponse.data) {
+          uploadedFileNames = uploadResponse.data;
+          console.log('업로드된 파일명들:', uploadedFileNames);
+          
+          console.log('파일 URL 생성 및 base64 인코딩 시작...');
+          filesForGemini = await Promise.all(
+            uploadedFileNames.map(async (fileName, index) => {
+              const file = selectedFiles[index];
+              const base64 = await fileToBase64(file);
+              const fileUrl = `/api/file/download/${fileName}`;
+              console.log(`파일 처리 완료: ${file.name} -> ${fileUrl} (base64 길이: ${base64.length})`);
+              return {
+                name: file.name,
+                fileUri: fileUrl,
+                mimeType: file.type,
+                base64: base64
+              };
+            })
+          );
+          console.log('=== 파일 업로드 프로세스 완료 ===');
+          
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } else {
+          throw new Error(uploadResponse?.error?.message || '파일 업로드에 실패했습니다.');
+        }
+      }
+
+      const messageContent = {
+        content: input,
+        file: uploadedFileNames.length > 0 ? uploadedFileNames[0] : undefined
+      };
+
+      // 사용자 메시지 전송 API 호출 시 uid 추가
       await sendChatMessage(currentSessionId, { 
         role: 'USER', 
-        content: { type: 'text', value: input }
+        content: messageContent,
+        uid: userId
       });
       
-      const filesForGemini = uploadedFiles.map((file) => ({
+      const filesForAI = filesForGemini.map(file => ({
         name: file.name,
         fileUri: file.fileUri,
         mimeType: file.mimeType,
+        base64: file.base64
       }));
 
       const combinedPrompt = combinePrompts(selectedPromptId, input);
-      const reply = await sendChat(combinedPrompt, filesForGemini);
+      const reply = await sendChat(combinedPrompt, filesForAI);
 
-      // ⭐️ 핵심 수정 부분: 여기서 견적서 데이터를 추출하고 PDF 함수를 호출합니다.
       const estimateData = extractEstimateData(reply);
       if (estimateData) {
         console.log('견적서 JSON을 감지했습니다. PDF 변환 및 업로드를 시작합니다.');
         try {
           const invoiceTitle = estimateData.project_name || '새로운 견적서';
-          // 추출한 estimateData를 generateAndUploadPdf 함수에 전달
-          await generateAndUploadPdf(estimateData, currentSessionId, invoiceTitle, success, error);
+          const pdfUuid = uuidv4();
+          
+          if (!userId) {
+            throw new Error('사용자 ID를 가져올 수 없습니다.');
+          }
+
+          const uploadResponse = await generateAndUploadPdf(estimateData, currentSessionId, invoiceTitle, pdfUuid, userId, success, error);
+
+          if (uploadResponse && uploadResponse.statusCode === 200 && uploadResponse.data) {
+              const filePath = uploadResponse.data as string;
+              
+              const uuidMatch = filePath.match(/([a-f0-9-]+)\.pdf$/);
+              const extractedUuid = uuidMatch ? uuidMatch[1] : null;
+              
+              if (extractedUuid) {
+                  const updatedEstimateData = {
+                      ...estimateData,
+                      uuid: extractedUuid,
+                  };
+                  const updatedReply = `<script type="application/json" id="invoiceData">${JSON.stringify(updatedEstimateData)}</script>`;
+
+                  await sendChatMessage(currentSessionId, {
+                      role: 'AI',
+                      content: { type: 'text', value: updatedReply },
+                      uid: userId // AI 메시지에도 uid 추가
+                  });
+                  updateLastMessage(updatedReply);
+              } else {
+                  throw new Error('UUID를 추출할 수 없습니다.');
+              }
+
+          } else {
+              throw new Error(uploadResponse?.error?.message || 'PDF 업로드에 실패했습니다.');
+          }
+
         } catch (pdfError) {
           console.error('PDF 생성 또는 업로드 중 오류 발생:', pdfError);
           error(`견적서 업로드 실패: ${(pdfError as Error).message}`);
+          
+          await sendChatMessage(currentSessionId, {
+            role: 'AI',
+            content: { type: 'text', value: reply },
+            uid: userId // AI 메시지에도 uid 추가
+          });
+          updateLastMessage(reply);
         }
+      } else {
+        await sendChatMessage(currentSessionId, {
+            role: 'AI',
+            content: { type: 'text', value: reply },
+            uid: userId // AI 메시지에도 uid 추가
+        });
+        updateLastMessage(reply);
       }
 
-      await sendChatMessage(currentSessionId, {
-        role: 'AI',
-        content: { type: 'text', value: reply }
-      });
-
-      updateLastMessage(reply);
       setUploadedFiles([]);
+      setSelectedFiles([]);
 
     } catch (e) {
       error(`메시지 전송 실패: ${(e as Error).message}`);

@@ -1,0 +1,30 @@
+{
+    "sourceFile": "src/app/ai-estimate/types/projectEstimate.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1756614876289,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756615654964,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,8 +3,9 @@\n   total_price: string;\n   vat_included_price: string;\n   estimated_period: string;\n   categories: Category[];\n+  filePath?: string; // 서버에서 반환된 파일 경로\n }\n \n export interface Category {\n   category_name: string;\n"
+                },
+                {
+                    "date": 1756616071238,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -0,0 +1,29 @@\n+export interface ProjectEstimate {\n+  project_name: string;\n+  total_price: string;\n+  vat_included_price: string;\n+  estimated_period: string;\n+  categories: Category[];\n+  filePath?: string; // 서버에서 반환된 파일 경로\n+  uuid?: string; // 서버에서 반환된 UUID\n+}\n+\n+export interface Category {\n+  category_name: string;\n+  sub_categories: SubCategory[];\n+}\n+\n+export interface SubCategory {\n+  sub_category_name: string;\n+  items: EstimateItem[];\n+}\n+\n+export interface EstimateItem {\n+  name: string;\n+  price: string;\n+  description: string;\n+}\n+\n+export interface ExtractedEstimateData extends ProjectEstimate {\n+  uuid?: string; // uuid 속성 추가\n+}\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756624986208,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,33 +25,5 @@\n }\n \n export interface ExtractedEstimateData extends ProjectEstimate {\n   uuid?: string; // uuid 속성 추가\n-}\n-export interface ProjectEstimate {\n-  project_name: string;\n-  total_price: string;\n-  vat_included_price: string;\n-  estimated_period: string;\n-  categories: Category[];\n-  filePath?: string; // 서버에서 반환된 파일 경로\n-}\n-\n-export interface Category {\n-  category_name: string;\n-  sub_categories: SubCategory[];\n-}\n-\n-export interface SubCategory {\n-  sub_category_name: string;\n-  items: EstimateItem[];\n-}\n-\n-export interface EstimateItem {\n-  name: string;\n-  price: string;\n-  description: string;\n-}\n-\n-export interface ExtractedEstimateData extends ProjectEstimate {\n-  uuid?: string; // uuid 속성 추가\n }\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1756614876289,
+            "name": "Commit-0",
+            "content": "export interface ProjectEstimate {\n  project_name: string;\n  total_price: string;\n  vat_included_price: string;\n  estimated_period: string;\n  categories: Category[];\n}\n\nexport interface Category {\n  category_name: string;\n  sub_categories: SubCategory[];\n}\n\nexport interface SubCategory {\n  sub_category_name: string;\n  items: EstimateItem[];\n}\n\nexport interface EstimateItem {\n  name: string;\n  price: string;\n  description: string;\n}\n\nexport interface ExtractedEstimateData extends ProjectEstimate {\n  uuid?: string; // uuid 속성 추가\n}"
+        }
+    ]
+}

@@ -22,7 +22,7 @@ import { auth } from '@/firebaseConfig';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import FileUploadSection from '@/components/ai-esti/FileUploadSection'; 
 import { devLog } from '../../utils/devLogger';
-import { useChatActions } from '@/hooks/useChatActions';
+import { useChatActions ,handleSubmit} from '@/hooks/useChatActions';
 
 
 
@@ -58,6 +58,8 @@ const UserMessage = styled.div`
   line-height: 2.0;
 `;
 
+// 이미지 프리뷰 관련 스타일 컴포넌트들은 제거
+
 // FileUploadArea 스타일 수정: position: absolute로 Container 전체를 덮도록
 const FileUploadArea = styled.div<{ $isDragOver: boolean }>`
   position: absolute;
@@ -90,40 +92,7 @@ const FileUploadSubtext = styled.div`
   opacity: 0.8;
 `;
 
-const UploadedFilesContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
-  padding: 12px;
-  background: ${({ theme }) => theme.surface1};
-  border-radius: 8px;
-  border: 1px solid ${({ theme }) => theme.border};
-`;
-
-const UploadedFileItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: ${({ theme }) => theme.surface2};
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 14px;
-  color: ${({ theme }) => theme.text};
-`;
-
-const RemoveFileButton = styled.button`
-  background: none;
-  border: none;
-  color: ${({ theme }) => theme.subtleText};
-  cursor: pointer;
-  padding: 2px;
-  border-radius: 4px;
-
-  &:hover {
-    background: ${({ theme }) => theme.border};
-  }
-`;
+// 파일 프리뷰 관련 스타일 컴포넌트들은 바텀인풋에서만 사용하므로 제거
 
 const ProgressBar = styled.div<{ $progress: number }>`
   width: 80%;
@@ -145,7 +114,7 @@ const ProgressBar = styled.div<{ $progress: number }>`
 
 const StyledAiMessage = styled(AiResponseMessage)<{ isFullWidth?: boolean }>`
   padding: 0;
-  max-width: ${({ isFullWidth }) => (isFullWidth ? '100%' : '100%')};
+  max-width: 100%; 
   align-self: flex-start;
 `;
 
@@ -227,6 +196,10 @@ const DetailsToggle = styled.div`
   color: ${({ theme }) => theme.subtleText};
   cursor: pointer;
   margin: -20px 0 -20px;
+
+  @media (min-width: 1024px) {
+    display: none; /* PC 환경에서는 숨김 */
+  }
 `;
 
 const DetailsToggleIcon = styled.div`
@@ -242,6 +215,10 @@ const AnimatedContainer = styled.div<{ $isvisible: boolean }>`
 
   > * {
     min-height: 0;
+  }
+
+  @media (min-width: 1024px) {
+    grid-template-rows: 1fr; /* PC 환경에서는 항상 열려 있도록 설정 */
   }
 `;
 
@@ -266,18 +243,47 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
       return null;
     }
 
+    // uuid가 이미 JSON 데이터에 포함되어 있다고 가정
     return data as ProjectEstimate;
+
   } catch (error) {
     console.error('Failed to parse estimate data:', error);
     return null;
   }
 };
 
+// 메시지에서 파일 정보를 파싱하는 함수
+const parseMessageContent = (content: string) => {
+  const fileMatch = content.match(/\[첨부파일: (.+?)\]/);
+  if (fileMatch) {
+    const fileName = fileMatch[1];
+    const textContent = content.replace(/\[첨부파일: .+?\]/, '').trim();
+    const imageUrl = `/api/file/${fileName}`;
+    
+    // 이미지 파일인지 확인
+    const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
+    
+    return {
+      text: textContent,
+      fileName,
+      imageUrl,
+      isImage
+    };
+  }
+  
+  return {
+    text: content,
+    fileName: null,
+    imageUrl: null,
+    isImage: false
+  };
+};
+
 const AiMessageContent: React.FC<{ content: string }> = ({ content }) => {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
   const [projectPeriod, setProjectPeriod] = useState(20);
-
+  const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', selectedPromptId: 'default' });
   const estimateData = extractEstimateData(content);
 
   const handleItemClick = (item: EstimateItem) => {
@@ -317,8 +323,7 @@ const AiMessageContent: React.FC<{ content: string }> = ({ content }) => {
           <SideContent>
             <EstimateActionButtons
               onConsult={() => console.log('문의하기')}
-              onAiEstimate={() => console.log('AI 예산 줄이기')}
-              onAiOptimize={() => console.log('AI 맞춤 추천')}
+              onSubmit={handleSubmit}
             />
           </SideContent>
         </TopSection>
@@ -370,19 +375,12 @@ export default function AiChatPage() {
   } = useChatActions({ modelName, selectedPromptId });
 
   // ⭐️⭐️⭐️ AI가 먼저 말하는 메시지 설정 ⭐⭐⭐
-  const initialAiMessage = `안녕하세요! 저는 AI 프로젝트 매니저입니다. 만나뵙게 되어 반갑습니다. 어떤 종류의 프로젝트를 만들고 싶으신가요? 말씀해주시면 성공적인 프로젝트를 위한 최적의 솔루션과 예상 견적을 함께 논의해 드릴게요.
+  const initialAiMessage = `만나뵙게 되어 반갑습니다. 어떤 종류의 프로젝트를 만들고 싶으신가요?
   
   <strong style="font-size: 20px;">프로젝트의 큰 그림을 알려주세요</strong>
-  <ul><li><strong>프로젝트의 핵심 목표는 무엇인가요?</strong> 
-  이 프로젝트를 통해 가장 중요하게 달성하고자 하는 비즈니스 목표가 있다면 알려주세요. (예: 신규 고객 확보, 내부 업무 효율화, 브랜드 인지도 향상 등)</li>
-<li><strong>주요 사용자층은 누구인가요?</strong> 
-  이 서비스를 누가, 어떤 목적으로 사용하게 될까요? (예: 일반 소비자, 기업 고객, 내부 직원 등)</li>
-</ul><strong style="font-size: 20px;">핵심 기능과 아이디어를 구체화해 보세요</strong>
-  <ul><li><strong>꼭 필요한 핵심 기능은 무엇인가요?</strong> 
-  가장 먼저 구현해야 한다고 생각하는 필수 기능을 말씀해 주세요. (예: 회원가입/로그인, 상품 결제, 게시판, 실시간 채팅 등)</li>
-<li><strong>참고하고 싶은 서비스나 아이디어가 있나요?</strong> 
-  혹시 "네이버 쇼핑처럼 만들고 싶다"거나, "넷플릭스처럼 추천 기능을 넣고 싶다"와 같이 생각하고 계신 레퍼런스가 있다면 알려주세요. URL, 이미지, PDF 파일을 첨부해 주시면 더 좋습니다.</li>
-</ul>궁금하신 점이나 추가로 설명하고 싶으신 내용이 있다면 언제든지 편하게 이야기해주세요.`;
+  <ul style="padding-left: 30px;"><li><strong>프로젝트의 핵심 목표는 무엇인가요?</strong></li><li><strong>주요 사용자층은 누구인가요?</strong> 
+</li><li><strong>꼭 필요한 핵심 기능은 무엇인가요?</strong></li></ul>
+궁금하신 점이나 추가로 설명하고 싶으신 내용이 있다면 언제든지 편하게 이야기해주세요.`;
   const [hasShownInitialMessage, setHasShownInitialMessage] = useState(false);
 
 
@@ -488,7 +486,7 @@ export default function AiChatPage() {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <h1 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>AI 대화</h1>
+      {/* <h1 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>AI 대화</h1>
       <Controls>
         <Select value={modelName} onChange={handleModelChange}>
           <option value="gemini-2.5-flash">gemini-2.5-flash</option>
@@ -504,7 +502,7 @@ export default function AiChatPage() {
           selectedId={selectedPromptId}
           onSelect={setSelectedPromptId}
         />
-      </Controls>
+      </Controls> */}
 
       <FileUploadArea
         $isDragOver={isDragOver}
@@ -535,44 +533,47 @@ export default function AiChatPage() {
         accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.hwp"
       />
 
-      {uploadedFiles.length > 0 && (
-        <UploadedFilesContainer>
-          {uploadedFiles.map((file) => (
-            <UploadedFileItem key={file.name}>
-              <span>{file.name}</span>
-              <RemoveFileButton onClick={() => removeFile(file.name)}>
-                ✕
-              </RemoveFileButton>
-            </UploadedFileItem>
-          ))}
-        </UploadedFilesContainer>
-      )}
+      {/* 파일 프리뷰는 바텀인풋에서만 표시하도록 제거 */}
 
       <ChatBox>
-        {messages.map((m, idx) => (
-          m.role === 'user' ? (
-            <UserMessage key={idx}>{m.content}</UserMessage>
-          ) : (
-            <StyledAiMessage
-              key={idx}
-              content={<AiMessageContent content={m.content} />}
-              profileImage="/ai-estimate/pretty.png"
-              name="AI 에이전트"
-              isFullWidth={isEstimateMessage(m.content)}
-            />
-          )
-        ))}
+        {messages.map((m, idx) => {
+          if (m.role === 'user') {
+            const parsedContent = parseMessageContent(m.content);
+            
+            return (
+              <UserMessage key={idx}>
+                {parsedContent.text}
+                {parsedContent.fileName && (
+                  <div style={{ marginTop: '8px', fontSize: '14px', opacity: 0.7 }}>
+                    📎 {parsedContent.fileName}
+                  </div>
+                )}
+              </UserMessage>
+            );
+          } else {
+            return (
+              <StyledAiMessage
+                key={idx}
+                content={<AiMessageContent content={m.content} />}
+                profileImage="/ai-estimate/pretty.png"
+                name="강유하"
+                isFullWidth={isEstimateMessage(m.content)}
+              />
+            );
+          }
+        })}
         <div ref={endOfMessagesRef} />
       </ChatBox>
-      <FileUploadSection
-        uploadedFiles={uploadedFiles}
-        uploadProgress={uploadProgress}
-        onDeleteFile={removeFile}
-        lang="ko"
-      />
+      {/* FileUploadSection은 바텀인풋에서 처리하므로 제거 */}
       <BottomInput
         placeholder="메시지를 입력하세요"
         onSubmit={handleSubmit}
+        onFileInput={handleFileInput}
+        isUploading={isUploading}
+        isProcessing={isProcessing}
+        uploadedFiles={uploadedFiles}
+        uploadProgress={uploadProgress}
+        onDeleteFile={removeFile}
       />
     </Container>
   );

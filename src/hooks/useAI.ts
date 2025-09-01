@@ -140,7 +140,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     if (!chatRef.current) chatRef.current = model.startChat();
 
     // Part 객체 배열을 생성합니다.
-    const parts: Part[] = [];
+    const parts: any[] = [];
 
     // 텍스트 메시지를 Part에 추가합니다.
     if (message) {
@@ -148,16 +148,30 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     }
 
     // 파일이 있을 경우, 각 파일을 Part에 추가합니다.
-    // FileData 형식으로 변환하여 추가해야 합니다.
     if (files.length > 0) {
-      files.forEach(file => {
-        parts.push({
-          fileData: {
-            mimeType: file.mimeType,
-            fileUri: file.fileUri,
-          } as FileData,
-        });
-      });
+      for (const file of files) {
+        try {
+          // fileUri에서 파일을 가져와서 base64로 변환
+          const response = await fetch(file.fileUri);
+          if (!response.ok) {
+            console.warn(`Failed to fetch file from ${file.fileUri}:`, response.statusText);
+            continue;
+          }
+          
+          const arrayBuffer = await response.arrayBuffer();
+          const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+          
+          parts.push({
+            inlineData: {
+              data: base64Data,
+              mimeType: file.mimeType,
+            },
+          });
+        } catch (error) {
+          console.error(`Error processing file ${file.fileUri}:`, error);
+          continue;
+        }
+      }
     }
 
     // 텍스트 메시지나 파일이 없으면 오류를 반환합니다.

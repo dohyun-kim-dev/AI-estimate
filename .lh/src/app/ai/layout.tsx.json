@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 17,
+            "activePatchIndex": 20,
             "patches": [
                 {
                     "date": 1755957747785,
@@ -76,6 +76,18 @@
                 {
                     "date": 1756395753783,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -115,8 +115,16 @@\n const ProfileIconWrapper = styled.div`\n   position: relative;\n `;\n \n+\n+const Main = styled.main` \n+  width: 100vw;\n+  padding: 56px 0 84px;\n+  min-height: 100vh;\n+      \n+`;\n+\n const ShareInput = styled.div`\n   display: flex;\n   gap: 8px;\n   margin-top: 8px;\n@@ -282,8 +290,9 @@\n       <div style={{ paddingTop: '80px' }}>\n         <Outlet />\n       </div>\n \n+      </Main>\n       <ThemeToggleButton onClick={toggleTheme}>\n         {isDarkMode ? '☀️' : '�'}\n       </ThemeToggleButton>\n \n"
+                },
+                {
+                    "date": 1756636599344,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -159,8 +159,9 @@\n   const { companyCode } = useParams(); // URL에서 companyCode를 가져옵니다.\n   const { isDarkMode, toggleTheme } = useThemeStore();\n   const { success } = useToast();\n   const resetChat = useChatStore((s) => s.clear);\n+  const chatSessionId = useChatStore((s) => s.chatSessionId); // 세션 ID 가져오기\n   const [openShare, setOpenShare] = useState(false);\n   const [isDropdownOpen, setIsDropdownOpen] = useState(false);\n   const { isAuthenticated } = useAuthStore();\n   const { openLoginModal } = useModalStore();\n@@ -209,9 +210,16 @@\n     setOpenShare(false);\n   };\n \n   const handleCopy = async () => {\n-    const shareUrl = window.location.href;\n+    // 세션 ID가 있으면 공유 URL에 포함, 없으면 현재 URL 사용\n+    let shareUrl;\n+    if (chatSessionId) {\n+      shareUrl = `${window.location.origin}/aiclient/${companyCode}/ai/share/${chatSessionId}`;\n+    } else {\n+      shareUrl = window.location.href;\n+    }\n+    \n     try {\n       await navigator.clipboard.writeText(shareUrl);\n       success('링크가 복사되었습니다.');\n       handleCloseShare();\n@@ -232,9 +240,12 @@\n   const handleGoToMyEstimate = () => {\n     navigate(`/aiclient/${companyCode}/ai/my-estimate`);\n   };\n \n-  const shareUrl = window.location.href;\n+  // 세션 ID가 있으면 공유 URL에 포함, 없으면 현재 URL 사용\n+  const shareUrl = chatSessionId \n+    ? `${window.location.origin}/aiclient/${companyCode}/ai/share/${chatSessionId}`\n+    : window.location.href;\n   \n   const isAiHome = location.pathname === `/aiclient/${companyCode}/ai`;\n   const isPC = typeof window !== 'undefined' && window.innerWidth >= 1024;\n   const shouldShowBackButton = !isAiHome || !isPC;\n"
+                },
+                {
+                    "date": 1756641165713,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -297,9 +297,9 @@\n         )}\n       </TopNav>\n       <Main >\n \n-      <div style={{ paddingTop: '80px' }}>\n+      <div style={{ paddingTop: '20px' }}>\n         <Outlet />\n       </div>\n \n       </Main>\n"
+                },
+                {
+                    "date": 1756641479500,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -297,9 +297,9 @@\n         )}\n       </TopNav>\n       <Main >\n \n-      <div style={{ paddingTop: '20px' }}>\n+      <div style={{ paddingTop: '0px' }}>\n         <Outlet />\n       </div>\n \n       </Main>\n"
                 }
             ],
             "date": 1755957747785,

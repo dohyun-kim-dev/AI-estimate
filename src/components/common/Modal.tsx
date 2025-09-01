@@ -56,6 +56,7 @@ const CloseButton = styled.button`
   align-items: center;
   justify-content: center;
   color: #666666;
+  padding: 0;
 `
 
 const Body = styled.div`

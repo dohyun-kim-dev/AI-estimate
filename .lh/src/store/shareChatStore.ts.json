@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/store/shareChatStore.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1756639109962,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1756639109962,
+            "name": "Commit-0",
+            "content": "import { create } from 'zustand';\n\nexport interface ShareChatMessage {\n  role: 'user' | 'ai';\n  content: string;\n}\n\ninterface ShareChatStore {\n  messages: ShareChatMessage[];\n  sessionId: string | null;\n  addMessage: (message: ShareChatMessage) => void;\n  setMessages: (messages: ShareChatMessage[]) => void;\n  setSessionId: (sessionId: string) => void;\n  clearMessages: () => void;\n  clearSession: () => void;\n}\n\nexport const useShareChatStore = create<ShareChatStore>((set) => ({\n  messages: [],\n  sessionId: null,\n  addMessage: (message) =>\n    set((state) => ({\n      messages: [...state.messages, message],\n    })),\n  setMessages: (messages) =>\n    set(() => ({\n      messages,\n    })),\n  setSessionId: (sessionId) =>\n    set(() => ({\n      sessionId,\n    })),\n  clearMessages: () =>\n    set(() => ({\n      messages: [],\n    })),\n  clearSession: () =>\n    set(() => ({\n      messages: [],\n      sessionId: null,\n    })),\n}));\n"
+        }
+    ]
+}

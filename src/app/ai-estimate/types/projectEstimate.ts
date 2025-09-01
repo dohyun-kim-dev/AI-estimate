@@ -4,6 +4,8 @@ export interface ProjectEstimate {
   vat_included_price: string;
   estimated_period: string;
   categories: Category[];
+  filePath?: string; // 서버에서 반환된 파일 경로
+  uuid?: string; // 서버에서 반환된 UUID
 }
 
 export interface Category {
@@ -20,4 +22,8 @@ export interface EstimateItem {
   name: string;
   price: string;
   description: string;
+}
+
+export interface ExtractedEstimateData extends ProjectEstimate {
+  uuid?: string; // uuid 속성 추가
 }

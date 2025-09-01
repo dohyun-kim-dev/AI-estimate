@@ -5,6 +5,7 @@ export const mockEstimateData: ProjectEstimate = {
   total_price: "90,120,000",
   vat_included_price: "99,132,000",
   estimated_period: "22주",
+  uuid: "test-uuid-12345", // 테스트용 UUID 추가
   categories: [
     {
       category_name: "⚙️ 기본 공통",

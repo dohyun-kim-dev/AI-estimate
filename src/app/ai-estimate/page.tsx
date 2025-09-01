@@ -12,6 +12,7 @@ import PeriodSlider from '@/components/ai-esti/PeriodSlider';
 import EstimateAccordion from '@/components/ai-esti/EstimateAccordion';
 import DetailModal from '@/components/ai-esti/DetailModal';
 import EstimateActionButtons from '@/components/ai-esti/EstimateActionButtons';
+import { useChatActions ,handleSubmit} from '@/hooks/useChatActions';
 
 const PageWrapper = styled.div`
   background-color: ${({ theme }) => theme.body};
@@ -94,7 +95,7 @@ interface AiEstimatePageProps {
 const AiEstimatePage: React.FC<AiEstimatePageProps> = () => {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
-
+  const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', selectedPromptId: 'default' });
   const { 
     projectEstimate, 
     projectPeriod, 
@@ -138,8 +139,8 @@ const AiEstimatePage: React.FC<AiEstimatePageProps> = () => {
               <SideContent>
                 <EstimateActionButtons 
                   onConsult={() => console.log('문의하기')}
-                  onAiEstimate={() => console.log('AI 예산 줄이기')}
-                  onAiOptimize={() => console.log('AI 맞춤 추천')}
+                  onSubmit={() => handleSubmit('AI 예산 줄이기')}
+                  onSubmit={handleSubmit}
                 />
               </SideContent>
             </TopSection>

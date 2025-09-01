@@ -1,0 +1,46 @@
+{
+    "sourceFile": "src/components/ai-esti/ShareAiResponseMessage.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 7,
+            "patches": [
+                {
+                    "date": 1756639109982,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756639446126,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -55,9 +55,9 @@\n   };\n \n   const renderContent = () => {\n     if (isEstimateMessage(content)) {\n-      return <EstimateRenderer content={content} />;\n+      return <EstimateCard content={content} />;\n     }\n \n     // 일반 텍스트 메시지인 경우 <script> 태그 제거\n     const cleanContent = content.replace(/<script[^>]*>[\\s\\S]*?<\\/script>/g, '').trim();\n"
+                },
+                {
+                    "date": 1756639452776,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -55,9 +55,9 @@\n   };\n \n   const renderContent = () => {\n     if (isEstimateMessage(content)) {\n-      return <EstimateCard content={content} />;\n+      return <EstimateCard e={content} />;\n     }\n \n     // 일반 텍스트 메시지인 경우 <script> 태그 제거\n     const cleanContent = content.replace(/<script[^>]*>[\\s\\S]*?<\\/script>/g, '').trim();\n"
+                },
+                {
+                    "date": 1756639457804,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -55,9 +55,9 @@\n   };\n \n   const renderContent = () => {\n     if (isEstimateMessage(content)) {\n-      return <EstimateCard e={content} />;\n+      return <EstimateCard content={content} />;\n     }\n \n     // 일반 텍스트 메시지인 경우 <script> 태그 제거\n     const cleanContent = content.replace(/<script[^>]*>[\\s\\S]*?<\\/script>/g, '').trim();\n"
+                },
+                {
+                    "date": 1756639620901,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -55,9 +55,9 @@\n   };\n \n   const renderContent = () => {\n     if (isEstimateMessage(content)) {\n-      return <EstimateCard content={content} />;\n+      return <EstimateRenderer content={content} />;\n     }\n \n     // 일반 텍스트 메시지인 경우 <script> 태그 제거\n     const cleanContent = content.replace(/<script[^>]*>[\\s\\S]*?<\\/script>/g, '').trim();\n"
+                },
+                {
+                    "date": 1756640979784,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,8 +13,10 @@\n   width: 40px;\n   height: 40px;\n   border-radius: 50%;\n   object-fit: cover;\n+  position: relative;\n+  z-index: 1;\n `;\n \n const ContentWrapper = styled.div`\n   flex: 1;\n@@ -45,37 +47,49 @@\n   }\n `;\n \n interface ShareAiResponseMessageProps {\n-  content: string;\n+  content: string | React.ReactNode;\n+  profileImage?: string;\n+  name?: string;\n+  className?: string;\n+  isLoading?: boolean;\n }\n \n-const ShareAiResponseMessage: React.FC<ShareAiResponseMessageProps> = ({ content }) => {\n+const ShareAiResponseMessage: React.FC<ShareAiResponseMessageProps> = ({\n+  content,\n+  profileImage = \"/ai-estimate/pretty.png\",\n+  name = \"AI 컨설턴트\",\n+  className,\n+  isLoading = false\n+}) => {\n   const isEstimateMessage = (content: string) => {\n-    return content.includes('<script type=\"application/json\" id=\"invoiceData\">');\n+    return typeof content === 'string' && content.includes('<script type=\"application/json\" id=\"invoiceData\">');\n   };\n \n   const renderContent = () => {\n-    if (isEstimateMessage(content)) {\n+    if (typeof content === 'string' && isEstimateMessage(content)) {\n       return <EstimateRenderer content={content} />;\n     }\n \n-    // 일반 텍스트 메시지인 경우 <script> 태그 제거\n-    const cleanContent = content.replace(/<script[^>]*>[\\s\\S]*?<\\/script>/g, '').trim();\n-    \n-    if (cleanContent) {\n-      return <p>{cleanContent}</p>;\n+    if (typeof content === 'string') {\n+      // 일반 텍스트 메시지인 경우 <script> 태그 제거\n+      const cleanContent = content.replace(/<script[^>]*>[\\s\\S]*?<\\/script>/g, '').trim();\n+      \n+      if (cleanContent) {\n+        return <p>{cleanContent}</p>;\n+      }\n     }\n \n-    return null;\n+    return typeof content === 'string' ? <p>{content}</p> : content;\n   };\n \n   return (\n-    <MessageWrapper>\n+    <MessageWrapper className={className}>\n       <ContentWrapper>\n         <Header>\n-          <ProfileImage src=\"/ai-estimate/pretty.png\" alt=\"AI 컨설턴트\" />\n-          <h2>AI 컨설턴트</h2>\n+          <ProfileImage src={profileImage} alt={name} data-is-loading={isLoading} />\n+          <h2>{name}</h2>\n         </Header>\n         <MessageContent>\n           {renderContent()}\n         </MessageContent>\n"
+                },
+                {
+                    "date": 1756641842598,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -36,9 +36,9 @@\n   }\n `;\n \n const MessageContent = styled.div`\n-  font-size: 14px;\n+  font-size: 18px;\n   line-height: 160%;\n   color: ${({ theme }) => theme.text};\n   white-space: pre-wrap;\n   \n"
+                },
+                {
+                    "date": 1756641850816,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -37,8 +37,9 @@\n `;\n \n const MessageContent = styled.div`\n   font-size: 18px;\n+  line-height: 2.0;\n   line-height: 160%;\n   color: ${({ theme }) => theme.text};\n   white-space: pre-wrap;\n   \n"
+                }
+            ],
+            "date": 1756639109982,
+            "name": "Commit-0",
+            "content": "import React from 'react';\nimport styled from 'styled-components';\nimport EstimateRenderer from './EstimateRenderer';\n\nconst MessageWrapper = styled.div`\n  display: flex;\n  gap: 15px;\n  padding: 12px 0;\n  max-width: 800px;\n`;\n\nconst ProfileImage = styled.img`\n  width: 40px;\n  height: 40px;\n  border-radius: 50%;\n  object-fit: cover;\n`;\n\nconst ContentWrapper = styled.div`\n  flex: 1;\n`;\n\nconst Header = styled.div`\n  display: flex;\n  gap: 8px;\n  margin-bottom: 4px;\n\n  h2 {\n    font-size: 18px;\n    font-weight: 500;\n    line-height: 160%;\n    margin: 4px 0 4px 0;\n    color: ${({ theme }) => theme.text};\n  }\n`;\n\nconst MessageContent = styled.div`\n  font-size: 14px;\n  line-height: 160%;\n  color: ${({ theme }) => theme.text};\n  white-space: pre-wrap;\n  \n  p {\n    margin: 0;\n  }\n`;\n\ninterface ShareAiResponseMessageProps {\n  content: string;\n}\n\nconst ShareAiResponseMessage: React.FC<ShareAiResponseMessageProps> = ({ content }) => {\n  const isEstimateMessage = (content: string) => {\n    return content.includes('<script type=\"application/json\" id=\"invoiceData\">');\n  };\n\n  const renderContent = () => {\n    if (isEstimateMessage(content)) {\n      return <EstimateRenderer content={content} />;\n    }\n\n    // 일반 텍스트 메시지인 경우 <script> 태그 제거\n    const cleanContent = content.replace(/<script[^>]*>[\\s\\S]*?<\\/script>/g, '').trim();\n    \n    if (cleanContent) {\n      return <p>{cleanContent}</p>;\n    }\n\n    return null;\n  };\n\n  return (\n    <MessageWrapper>\n      <ContentWrapper>\n        <Header>\n          <ProfileImage src=\"/ai-estimate/pretty.png\" alt=\"AI 컨설턴트\" />\n          <h2>AI 컨설턴트</h2>\n        </Header>\n        <MessageContent>\n          {renderContent()}\n        </MessageContent>\n      </ContentWrapper>\n    </MessageWrapper>\n  );\n};\n\nexport default ShareAiResponseMessage;\n"
+        }
+    ]
+}

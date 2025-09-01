@@ -455,6 +455,7 @@ const UserMngPage: React.FC = () => {
             }
           }}
           placeholder="- 제외하고 입력하세요"
+          required maxLength={11}
           errorMessage={cellphoneError ?? undefined}
         />
         <MemoField

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 24,
+            "activePatchIndex": 28,
             "patches": [
                 {
                     "date": 1756086483613,
@@ -104,6 +104,22 @@
                 {
                     "date": 1756088892399,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -215,16 +215,16 @@\n                     paddingBottom: '4px'\n                   }}>{item.name}</td>\n                   <td style={{ \n                     ...valueCellStyle,\n-                    paddingTop: '10px',\n-                    paddingBottom: '10px'\n+                    paddingTop: '4px',\n+                    paddingBottom: '4px'\n                   }}>{item.description}</td>\n                   <td style={{ \n                     ...valueCellStyle, \n                     textAlign: 'right',\n-                    paddingTop: '10px',\n-                    paddingBottom: '10px'\n+                    paddingTop: '4px',\n+                    paddingBottom: '4px'\n                   }}>{item.price}</td>\n                 </tr>\n               );\n             });\n"
+                },
+                {
+                    "date": 1756678501726,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,8 +5,9 @@\n \n const PrintableInvoiceWrapper = styled.div`\n   width: 780px;\n   padding: 40px;\n+  padding-bottom: 60px; /* 하단 여백 추가 */\n   background-color: white;\n   color: black;\n   font-family: 'Pretendard', sans-serif;\n   box-sizing: border-box;\n"
+                },
+                {
+                    "date": 1756678740453,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,9 +5,8 @@\n \n const PrintableInvoiceWrapper = styled.div`\n   width: 780px;\n   padding: 40px;\n-  padding-bottom: 60px; /* 하단 여백 추가 */\n   background-color: white;\n   color: black;\n   font-family: 'Pretendard', sans-serif;\n   box-sizing: border-box;\n"
+                },
+                {
+                    "date": 1756678757432,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,8 +5,9 @@\n \n const PrintableInvoiceWrapper = styled.div`\n   width: 780px;\n   padding: 40px;\n+  padding-bottom: 100px; /* 하단 여백을 더 늘림 */\n   background-color: white;\n   color: black;\n   font-family: 'Pretendard', sans-serif;\n   box-sizing: border-box;\n"
+                },
+                {
+                    "date": 1756678846601,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,9 +5,8 @@\n \n const PrintableInvoiceWrapper = styled.div`\n   width: 780px;\n   padding: 40px;\n-  padding-bottom: 100px; /* 하단 여백을 더 늘림 */\n   background-color: white;\n   color: black;\n   font-family: 'Pretendard', sans-serif;\n   box-sizing: border-box;\n"
                 }
             ],
             "date": 1756086483613,

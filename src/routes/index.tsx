@@ -12,6 +12,7 @@ import Home from '@app/page';
 import AI from '@app/ai/page';
 import AIMyEstimate from '@app/ai/my-estimate/page';
 import AISetting from '@app/ai/setting/page';
+import AIShare from '@app/ai/share/page';
 import AIEstimate from '@app/ai-estimate/page';
 import CMS from '@app/cms/page';
 import CMSAdminMng from '@app/cms/adminMng/page';
@@ -35,6 +36,7 @@ import AigoSettingsPage from '@app/cms/aigo-settings/page';
 import InquiryPage from '../app/cms/userData/inquiry/page';
 import PriceListPage from '../app/cms/userData/price/page';
 import ProposalDownloadPage from '../app/cms/userData/proposal/page';
+import PDFPreview from './pdfPreview';
 
 export default function AppRoutes() {
   return (
@@ -54,6 +56,7 @@ export default function AppRoutes() {
           <Route path="ai" element={<AI />} />
           <Route path="ai/my-estimate" element={<AIMyEstimate />} />
           <Route path="ai/setting" element={<AISetting />} />
+          <Route path="ai/share/:sessionId" element={<AIShare />} />
         </Route>
 
         <Route element={<AIEstimateLayout />}>
@@ -96,6 +99,10 @@ export default function AppRoutes() {
 
         <Route path="*" element={<Navigate to="." replace />} />
       </Route>
+      
+      {/* PDF 미리보기 페이지 - 별도 경로로 설정 */}
+      <Route path="/pdf-preview" element={<PDFPreview />} />
+      
       <Route path="*" element={<Navigate to="/aiclient/default" replace />} />
     </Routes>
   )
