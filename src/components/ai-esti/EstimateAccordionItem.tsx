@@ -29,7 +29,7 @@ const ItemWrapper = styled.div<{ depth: number; $isOpen?: boolean }>`
 
     > * {
       position: relative;
-      z-index: 1;
+      // z-index: 1;
     }
   `}
 
@@ -39,7 +39,7 @@ const ItemWrapper = styled.div<{ depth: number; $isOpen?: boolean }>`
 
     &:last-child {
       border-bottom: none;
-      padding-bottom: ${theme.accordionLevel1 === '#ffffff' ? '12px' : '0'};
+      padding-bottom: ${theme.accordionLevel1 === '#ffffff' ? '12px' : '0px'};
     }
   `}
 `;
@@ -52,6 +52,7 @@ const Header = styled.div<{ depth: number; $isSelected: boolean; $isOpen: boolea
   cursor: pointer;
   background-color: ${({ theme, depth, $isSelected }) => 
     $isSelected ? theme.pick : theme[`accordionLevel${depth}`]};
+
   font-weight: 600;
   border-bottom: ${({ theme, $isOpen }) => $isOpen ? `1px solid ${theme.border}` : 'none'};
   transition: background-color 0.2s ease;
@@ -133,11 +134,12 @@ const ListItem = styled.div<{ $isSelected: boolean; depth?: number }>`
   font-size: 0.95em;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  background-color: ${({ theme, $isSelected }) => $isSelected ? theme.pick : 'transparent'};
+  // background-color: ${({ theme, $isSelected }) => $isSelected ? theme.pick : 'transparent'};
   border-bottom: 1px solid ${({ theme }) => theme.border};
 
   &:last-child {
     border-bottom: none;
+    padding-bottom: 24px;
   }
   
   .name {

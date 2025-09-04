@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 4,
+            "activePatchIndex": 17,
             "patches": [
                 {
                     "date": 1756432712308,
@@ -24,6 +24,58 @@
                 {
                     "date": 1756449675090,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,16 +1,19 @@\n+// src/lib/methods/callApiPost.ts\n+\n+import { requestPost } from '@/lib/methods/requestPost';\n+import { ApiResponse } from '@/lib/types/ApiResponse';\n import { pageLoaderController } from \"@/contexts/PageLoaderContext\";\n import { devLog, devWarn } from \"../utils/devLogger\";\n \n-// headers 매개변수를 추가하고 타입을 지정합니다.\n interface CallApiPostParams {\n   title: string;\n   url: string;\n   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';\n-  body?: Record<string, unknown>;\n+  body?: Record<string, unknown> | FormData; // FormData 타입 포함\n   isCallPageLoader?: boolean;\n-  headers?: Record<string, string>; // ⭐️ 추가\n-  isFormData?: boolean; // ⭐️ 새로 추가된 플래그\n+  headers?: Record<string, string>;\n+  isFormData?: boolean; \n }\n \n export async function callApiPost<T = unknown>({\n   title,\n@@ -26,22 +29,29 @@\n \n   let returnValue = '';\n \n   try {\n-    // ⭐️ 전달받은 헤더와 기본 헤더를 병합합니다.\n-    const mergedHeaders = {\n-      'Content-Type': 'application/json',\n-      'Accept': 'application/json', // 추가\n-      ...headers, // ⭐️ 전달받은 헤더를 덮어씁니다.\n-    };\n-\n-    const response = await fetch(url, {\n+    const fetchOptions: RequestInit = {\n       method,\n-      headers: mergedHeaders, // ⭐️ 병합된 헤더를 사용합니다.\n-      body: method !== 'GET' ? JSON.stringify(body) : undefined,\n       credentials: 'include',\n-    });\n+    };\n \n+    // FormData가 아닌 경우에만 Content-Type을 JSON으로 설정\n+    if (!isFormData) {\n+      fetchOptions.headers = {\n+        'Content-Type': 'application/json',\n+        'Accept': 'application/json',\n+        ...headers,\n+      };\n+      fetchOptions.body = method !== 'GET' ? JSON.stringify(body) : undefined;\n+    } else {\n+      // FormData인 경우, Content-Type은 브라우저가 자동으로 multipart/form-data로 설정\n+      fetchOptions.headers = headers;\n+      fetchOptions.body = body as FormData;\n+    }\n+\n+    const response = await fetch(url, fetchOptions);\n+\n     devLog(`📱 [${title}] 응답 상태:`, response.status, response.statusText);\n     \n     if (!response.ok) {\n       devLog(`❌ [${title}] HTTP 에러:`, response.status, response.statusText);\n"
+                },
+                {
+                    "date": 1756948722863,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -37,10 +37,13 @@\n \n     // FormData가 아닌 경우에만 Content-Type을 JSON으로 설정\n     if (!isFormData) {\n       fetchOptions.headers = {\n-        'Content-Type': 'application/json',\n-        'Accept': 'application/json',\n+        'Origin': 'https://aigopartners.com',\n+        'Referer': 'https://aigopartners.com/',\n+        'Access-Control-Allow-Origin': '*',\n+        'Access-Control-Allow-Methods': 'POST, OPTIONS',\n+        'Access-Control-Allow-Headers': 'Content-Type, Accept, x-company-code'\n         ...headers,\n       };\n       fetchOptions.body = method !== 'GET' ? JSON.stringify(body) : undefined;\n     } else {\n"
+                },
+                {
+                    "date": 1756948734128,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -37,13 +37,10 @@\n \n     // FormData가 아닌 경우에만 Content-Type을 JSON으로 설정\n     if (!isFormData) {\n       fetchOptions.headers = {\n-        'Origin': 'https://aigopartners.com',\n-        'Referer': 'https://aigopartners.com/',\n-        'Access-Control-Allow-Origin': '*',\n-        'Access-Control-Allow-Methods': 'POST, OPTIONS',\n-        'Access-Control-Allow-Headers': 'Content-Type, Accept, x-company-code'\n+        'Content-Type': 'application/json',\n+        'Accept': 'application/json',\n         ...headers,\n       };\n       fetchOptions.body = method !== 'GET' ? JSON.stringify(body) : undefined;\n     } else {\n"
+                },
+                {
+                    "date": 1756948741378,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -37,10 +37,13 @@\n \n     // FormData가 아닌 경우에만 Content-Type을 JSON으로 설정\n     if (!isFormData) {\n       fetchOptions.headers = {\n-        'Content-Type': 'application/json',\n-        'Accept': 'application/json',\n+        'Origin': 'https://aigopartners.com',\n+        'Referer': 'https://aigopartners.com/',\n+        'Access-Control-Allow-Origin': '*',\n+        'Access-Control-Allow-Methods': 'POST, OPTIONS',\n+        'Access-Control-Allow-Headers': 'Content-Type, Accept, x-company-code',\n         ...headers,\n       };\n       fetchOptions.body = method !== 'GET' ? JSON.stringify(body) : undefined;\n     } else {\n"
+                },
+                {
+                    "date": 1756948748322,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -41,9 +41,9 @@\n         'Origin': 'https://aigopartners.com',\n         'Referer': 'https://aigopartners.com/',\n         'Access-Control-Allow-Origin': '*',\n         'Access-Control-Allow-Methods': 'POST, OPTIONS',\n-        'Access-Control-Allow-Headers': 'Content-Type, Accept, x-company-code',\n+        'Access-Control-Allow-Headers': 'Content-Type, Accept, x-company-code'\n         ...headers,\n       };\n       fetchOptions.body = method !== 'GET' ? JSON.stringify(body) : undefined;\n     } else {\n"
+                },
+                {
+                    "date": 1756948823854,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -31,19 +31,16 @@\n \n   try {\n     const fetchOptions: RequestInit = {\n       method,\n-      credentials: 'include',\n+      // credentials: 'include',\n     };\n \n     // FormData가 아닌 경우에만 Content-Type을 JSON으로 설정\n     if (!isFormData) {\n       fetchOptions.headers = {\n-        'Origin': 'https://aigopartners.com',\n-        'Referer': 'https://aigopartners.com/',\n-        'Access-Control-Allow-Origin': '*',\n-        'Access-Control-Allow-Methods': 'POST, OPTIONS',\n-        'Access-Control-Allow-Headers': 'Content-Type, Accept, x-company-code'\n+        'Content-Type': 'application/json',\n+        'Accept': 'application/json',\n         ...headers,\n       };\n       fetchOptions.body = method !== 'GET' ? JSON.stringify(body) : undefined;\n     } else {\n"
+                },
+                {
+                    "date": 1756959342861,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,4 @@\n-// src/lib/methods/callApiPost.ts\n-\n import { requestPost } from '@/lib/methods/requestPost';\n import { ApiResponse } from '@/lib/types/ApiResponse';\n import { pageLoaderController } from \"@/contexts/PageLoaderContext\";\n import { devLog, devWarn } from \"../utils/devLogger\";\n@@ -8,9 +6,9 @@\n interface CallApiPostParams {\n   title: string;\n   url: string;\n   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';\n-  body?: Record<string, unknown> | FormData; // FormData 타입 포함\n+  body?: Record<string, unknown> | FormData;\n   isCallPageLoader?: boolean;\n   headers?: Record<string, string>;\n   isFormData?: boolean; \n }\n@@ -23,9 +21,18 @@\n   isCallPageLoader = false,\n   headers = {},\n   isFormData = false,\n }: CallApiPostParams): Promise<T> {\n-  devLog(`📱 [${title}]`, url, body);\n+  let fullUrl = url;\n+\n+  // 배포 환경에서 API_HOST를 사용하여 완전한 URL을 구성합니다.\n+  // import.meta.env는 Vite가 환경 변수를 노출하는 방식입니다.\n+  // 개발 환경에서는 프록시가 있으므로 상대 경로를 사용합니다.\n+  if (import.meta.env.VITE_ENV_NAME !== 'dev' && !url.startsWith('http')) {\n+    fullUrl = `${import.meta.env.VITE_API_HOST}${url}`;\n+  }\n+\n+  devLog(`📱 [${title}]`, fullUrl, body);\n   if (isCallPageLoader) pageLoaderController.open();\n \n   let returnValue = '';\n \n@@ -34,23 +41,22 @@\n       method,\n       // credentials: 'include',\n     };\n \n-    // FormData가 아닌 경우에만 Content-Type을 JSON으로 설정\n     if (!isFormData) {\n       fetchOptions.headers = {\n         'Content-Type': 'application/json',\n         'Accept': 'application/json',\n         ...headers,\n       };\n       fetchOptions.body = method !== 'GET' ? JSON.stringify(body) : undefined;\n     } else {\n-      // FormData인 경우, Content-Type은 브라우저가 자동으로 multipart/form-data로 설정\n       fetchOptions.headers = headers;\n       fetchOptions.body = body as FormData;\n     }\n \n-    const response = await fetch(url, fetchOptions);\n+    // 수정된 fullUrl 변수를 사용합니다.\n+    const response = await fetch(fullUrl, fetchOptions);\n \n     devLog(`📱 [${title}] 응답 상태:`, response.status, response.statusText);\n     \n     if (!response.ok) {\n@@ -71,5 +77,5 @@\n   } catch (e) {\n     devWarn(`⚠️ [${title}] JSON 파싱 실패`, e);\n     return [] as T;\n   }\n-}\n\\ No newline at end of file\n+}\n"
+                },
+                {
+                    "date": 1756959799005,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -65,9 +65,9 @@\n \n     returnValue = await response.text();\n     devLog(`📱 [${title}] 응답 내용:`, returnValue);\n   } catch (error) {\n-    devLog(`❌ [${title}] API 요청 에러`, error);\n+    devLog(`❌ [${title}] API 요청 에러: 네트워크 문제 또는 CORS 정책 위반이 원인일 수 있습니다.`, error);\n     returnValue = '[]';\n   } finally {\n     if (isCallPageLoader) pageLoaderController.close();\n   }\n"
+                },
+                {
+                    "date": 1756959924985,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -38,9 +38,9 @@\n \n   try {\n     const fetchOptions: RequestInit = {\n       method,\n-      // credentials: 'include',\n+      credentials: 'include',\n     };\n \n     if (!isFormData) {\n       fetchOptions.headers = {\n"
+                },
+                {
+                    "date": 1756960215754,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -35,9 +35,9 @@\n   if (isCallPageLoader) pageLoaderController.open();\n \n   let returnValue = '';\n \n-  try {\n+  try {w\n     const fetchOptions: RequestInit = {\n       method,\n       credentials: 'include',\n     };\n"
+                },
+                {
+                    "date": 1756960367155,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -35,12 +35,12 @@\n   if (isCallPageLoader) pageLoaderController.open();\n \n   let returnValue = '';\n \n-  try {w\n+  try {\n     const fetchOptions: RequestInit = {\n       method,\n-      credentials: 'include',\n+      // credentials: 'include',\n     };\n \n     if (!isFormData) {\n       fetchOptions.headers = {\n"
+                },
+                {
+                    "date": 1756960688615,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -41,17 +41,15 @@\n       method,\n       // credentials: 'include',\n     };\n \n-    if (!isFormData) {\n-      fetchOptions.headers = {\n-        'Content-Type': 'application/json',\n-        'Accept': 'application/json',\n-        ...headers,\n-      };\n-      fetchOptions.body = method !== 'GET' ? JSON.stringify(body) : undefined;\n-    } else {\n-      fetchOptions.headers = headers;\n+    // 상위에서 전달받은 헤더 사용\n+    fetchOptions.headers = headers;\n+    \n+    // body 설정\n+    if (!isFormData && method !== 'GET') {\n+      fetchOptions.body = JSON.stringify(body);\n+    } else if (isFormData) {\n       fetchOptions.body = body as FormData;\n     }\n \n     // 수정된 fullUrl 변수를 사용합니다.\n"
+                },
+                {
+                    "date": 1756963447106,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -38,9 +38,9 @@\n \n   try {\n     const fetchOptions: RequestInit = {\n       method,\n-      // credentials: 'include',\n+      credentials: 'include',\n     };\n \n     // 상위에서 전달받은 헤더 사용\n     fetchOptions.headers = headers;\n"
+                },
+                {
+                    "date": 1756964341348,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -39,8 +39,9 @@\n   try {\n     const fetchOptions: RequestInit = {\n       method,\n       credentials: 'include',\n+      mode: 'cors' as RequestMode,\n     };\n \n     // 상위에서 전달받은 헤더 사용\n     fetchOptions.headers = headers;\n"
                 }
             ],
             "date": 1756432712308,

@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/app/ai-estimate/types.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1756804119905,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756859857308,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,10 +6,10 @@\n   description: string;\n   people: number;\n   days: number;\n   cost: number;\n-  front_end_period?: number; // 프론트엔드 개발 기간\n-  back_end_period?: number;  // 백엔드 개발 기간\n+  front_end_period?: number | string;\n+  back_end_period?: number | string;\n }\n \n export interface Estimate {\n   totalCost: number;\n"
+                }
+            ],
+            "date": 1756804119905,
+            "name": "Commit-0",
+            "content": "// src/app/ai-estimate/types.ts\nexport interface EstimateItem {\n  id: string;\n  category: string;\n  task: string;\n  description: string;\n  people: number;\n  days: number;\n  cost: number;\n  front_end_period?: number; // 프론트엔드 개발 기간\n  back_end_period?: number;  // 백엔드 개발 기간\n}\n\nexport interface Estimate {\n  totalCost: number;\n  totalPeriod: number;\n  items: EstimateItem[];\n}\n\n"
+        }
+    ]
+}

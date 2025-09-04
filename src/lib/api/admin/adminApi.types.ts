@@ -34,6 +34,8 @@ export type AdminLoginParams = {
     email?: string;
     emailYn?: 'Y' | 'N';
     smsYn?: 'Y' | 'N';
+    password?: string;
+    companyCode?: string;
   };
 
   export type AdminPasswordUpdateParams = {
@@ -43,9 +45,10 @@ export type AdminLoginParams = {
 
 
   export type TermGetListParams = {
-    index: number;
+    index?: number;
     termsType: string;
     content: string;
+    language: string;
   };
 
   export type PromptGetListParams = {

@@ -12,7 +12,20 @@ import {
   UnitPriceGetListParams,
 } from './adminApi.types';
 
-const BASE_URL = '/api';
+// API URL 생성 헬퍼 함수
+const getBaseUrl = () => {
+  const ENV_NAME = import.meta.env.VITE_ENV_NAME;
+  return '/api';
+  // if (ENV_NAME === 'dev') {
+  //   // 개발 환경: /api 프리픽스 사용
+  //   return '/api';
+  // } else {
+  //   // 운영 환경: 직접 API 서버로 요청
+  //   return 'https://api.aigopartners.com';
+  // }
+};
+
+const BASE_URL = getBaseUrl();
 
 // ***************** 인증 관련
 

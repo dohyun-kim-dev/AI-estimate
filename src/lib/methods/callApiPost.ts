@@ -1,5 +1,3 @@
-// src/lib/methods/callApiPost.ts
-
 import { requestPost } from '@/lib/methods/requestPost';
 import { ApiResponse } from '@/lib/types/ApiResponse';
 import { pageLoaderController } from "@/contexts/PageLoaderContext";
@@ -9,7 +7,7 @@ interface CallApiPostParams {
   title: string;
   url: string;
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-  body?: Record<string, unknown> | FormData; // FormData 타입 포함
+  body?: Record<string, unknown> | FormData;
   isCallPageLoader?: boolean;
   headers?: Record<string, string>;
   isFormData?: boolean; 
@@ -24,7 +22,16 @@ export async function callApiPost<T = unknown>({
   headers = {},
   isFormData = false,
 }: CallApiPostParams): Promise<T> {
-  devLog(`📱 [${title}]`, url, body);
+  let fullUrl = url;
+
+  // 배포 환경에서 API_HOST를 사용하여 완전한 URL을 구성합니다.
+  // import.meta.env는 Vite가 환경 변수를 노출하는 방식입니다.
+  // 개발 환경에서는 프록시가 있으므로 상대 경로를 사용합니다.
+  if (import.meta.env.VITE_ENV_NAME !== 'dev' && !url.startsWith('http')) {
+    fullUrl = `${import.meta.env.VITE_API_HOST}${url}`;
+  }
+
+  devLog(`📱 [${title}]`, fullUrl, body);
   if (isCallPageLoader) pageLoaderController.open();
 
   let returnValue = '';
@@ -33,23 +40,21 @@ export async function callApiPost<T = unknown>({
     const fetchOptions: RequestInit = {
       method,
       credentials: 'include',
+      mode: 'cors' as RequestMode,
     };
 
-    // FormData가 아닌 경우에만 Content-Type을 JSON으로 설정
-    if (!isFormData) {
-      fetchOptions.headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...headers,
-      };
-      fetchOptions.body = method !== 'GET' ? JSON.stringify(body) : undefined;
-    } else {
-      // FormData인 경우, Content-Type은 브라우저가 자동으로 multipart/form-data로 설정
-      fetchOptions.headers = headers;
+    // 상위에서 전달받은 헤더 사용
+    fetchOptions.headers = headers;
+    
+    // body 설정
+    if (!isFormData && method !== 'GET') {
+      fetchOptions.body = JSON.stringify(body);
+    } else if (isFormData) {
       fetchOptions.body = body as FormData;
     }
 
-    const response = await fetch(url, fetchOptions);
+    // 수정된 fullUrl 변수를 사용합니다.
+    const response = await fetch(fullUrl, fetchOptions);
 
     devLog(`📱 [${title}] 응답 상태:`, response.status, response.statusText);
     
@@ -60,7 +65,7 @@ export async function callApiPost<T = unknown>({
     returnValue = await response.text();
     devLog(`📱 [${title}] 응답 내용:`, returnValue);
   } catch (error) {
-    devLog(`❌ [${title}] API 요청 에러`, error);
+    devLog(`❌ [${title}] API 요청 에러: 네트워크 문제 또는 CORS 정책 위반이 원인일 수 있습니다.`, error);
     returnValue = '[]';
   } finally {
     if (isCallPageLoader) pageLoaderController.close();

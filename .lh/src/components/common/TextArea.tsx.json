@@ -1,0 +1,46 @@
+{
+    "sourceFile": "src/components/common/TextArea.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 7,
+            "patches": [
+                {
+                    "date": 1756939398645,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756939453512,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -0,0 +1,30 @@\n+import React from 'react';\n+import styled from 'styled-components';\n+import { Field, FloatingLabel, ErrorText } from './TextField'; // 스타일 재활용\n+\n+interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {\n+  id: string;\n+  label: string;\n+  errorMessage?: string;\n+  height?: string;\n+}\n+\n+export default function TextArea({ \n+  id, \n+  label, \n+  errorMessage, \n+  height,\n+  ...props \n+}: TextAreaProps) {\n+  return (\n+    <Field>\n+      <FloatingLabel htmlFor={id}>{label}</FloatingLabel>\n+      <StyledTextArea \n+        id={id} \n+        $height={height} \n+        {...props} \n+      />\n+      {errorMessage && <ErrorText>{errorMessage}</ErrorText>}\n+    </Field>\n+  );\n+}\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756939527677,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -8,39 +8,9 @@\n   errorMessage?: string;\n   height?: string;\n }\n \n-export default function TextArea({ \n-  id, \n-  label, \n-  errorMessage, \n-  height,\n-  ...props \n-}: TextAreaProps) {\n-  return (\n-    <Field>\n-      <FloatingLabel htmlFor={id}>{label}</FloatingLabel>\n-      <StyledTextArea \n-        id={id} \n-        $height={height} \n-        {...props} \n-      />\n-      {errorMessage && <ErrorText>{errorMessage}</ErrorText>}\n-    </Field>\n-  );\n-}\n-// src/components/common/TextArea.tsx\n \n-import React from 'react';\n-import { Field, FloatingLabel, ErrorText } from './TextField'; // 스타일 재활용\n-\n-interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {\n-  id: string;\n-  label: string;\n-  errorMessage?: string;\n-  height?: string;\n-}\n-\n export default function TextArea({ \n   id, \n   label, \n   errorMessage, \n"
+                },
+                {
+                    "date": 1756939534426,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -9,8 +9,15 @@\n   height?: string;\n }\n \n \n+const ErrorText = styled.span`\n+  color: #EF4444;\n+  font-size: 12px;\n+  margin-top: 4px;\n+  margin-left: 4px;\n+  display: block;\n+`;\n export default function TextArea({ \n   id, \n   label, \n   errorMessage, \n"
+                },
+                {
+                    "date": 1756939546400,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -0,0 +1,56 @@\n+import React from 'react';\n+import styled from 'styled-components';\n+// import { Field, FloatingLabel, ErrorText } from './TextField'; // 스타일 재활용\n+\n+interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {\n+  id: string;\n+  label: string;\n+  errorMessage?: string;\n+  height?: string;\n+}\n+\n+\n+const ErrorText = styled.span`\n+  color: #EF4444;\n+  font-size: 12px;\n+  margin-top: 4px;\n+  margin-left: 4px;\n+  display: block;\n+`;\n+\n+const Field = styled.div`\n+  position: relative;\n+  width: 100%;\n+`;\n+\n+const FloatingLabel = styled.label`\n+  position: absolute;\n+  top: -10px;\n+  left: 12px;\n+  margin-top: 3px;\n+  padding: 0 4px;\n+  font-size: 12px;\n+  color: #666666;\n+  background: #ffffff;\n+  z-index: 1;\n+`;\n+\n+export default function TextArea({ \n+  id, \n+  label, \n+  errorMessage, \n+  height,\n+  ...props \n+}: TextAreaProps) {\n+  return (\n+    <Field>\n+      <FloatingLabel htmlFor={id}>{label}</FloatingLabel>\n+      <StyledTextArea \n+        id={id} \n+        $height={height} \n+        {...props} \n+      />\n+      {errorMessage && <ErrorText>{errorMessage}</ErrorText>}\n+    </Field>\n+  );\n+}\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756939706701,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,10 +7,37 @@\n   label: string;\n   errorMessage?: string;\n   height?: string;\n }\n+const StyledTextArea = styled.textarea<{ $height?: string }>`\n+  height: ${props => props.$height || '150px'};\n+  width: 100%;\n+  border-radius: 4px;\n+  border: 1px solid #e5e7eb;\n+  background: #ffffff;\n+  color: #111827;\n+  padding: 14px;\n+  font-size: 14px;\n+  transition: border-color 0.2s ease, box-shadow 0.2s ease;\n+  resize: vertical; /* 사용자가 세로 크기를 조절할 수 있도록 함 */\n+  \n+  &::placeholder {\n+    color: #666666;\n+    opacity: 0.6;\n+  }\n \n+  &:focus {\n+    outline: none;\n+    border-color: #3391FF;\n+    box-shadow: 0 0 0 2px rgba(51, 145, 255, 0.12);\n+  }\n \n+  &:disabled {\n+    background: #f3f4f6;\n+    cursor: not-allowed;\n+  }\n+`;\n+\n const ErrorText = styled.span`\n   color: #EF4444;\n   font-size: 12px;\n   margin-top: 4px;\n@@ -52,43 +79,5 @@\n       />\n       {errorMessage && <ErrorText>{errorMessage}</ErrorText>}\n     </Field>\n   );\n-}\n-import React from 'react';\n-import styled from 'styled-components';\n-import { Field, FloatingLabel, ErrorText } from './TextField'; // 스타일 재활용\n-\n-interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {\n-  id: string;\n-  label: string;\n-  errorMessage?: string;\n-  height?: string;\n-}\n-\n-\n-const ErrorText = styled.span`\n-  color: #EF4444;\n-  font-size: 12px;\n-  margin-top: 4px;\n-  margin-left: 4px;\n-  display: block;\n-`;\n-export default function TextArea({ \n-  id, \n-  label, \n-  errorMessage, \n-  height,\n-  ...props \n-}: TextAreaProps) {\n-  return (\n-    <Field>\n-      <FloatingLabel htmlFor={id}>{label}</FloatingLabel>\n-      <StyledTextArea \n-        id={id} \n-        $height={height} \n-        {...props} \n-      />\n-      {errorMessage && <ErrorText>{errorMessage}</ErrorText>}\n-    </Field>\n-  );\n }\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756939784555,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -66,8 +66,10 @@\n   id, \n   label, \n   errorMessage, \n   height,\n+  minLines, \n+  maxLines,\n   ...props \n }: TextAreaProps) {\n   return (\n     <Field>\n"
+                },
+                {
+                    "date": 1756939799551,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -64,10 +64,9 @@\n \n export default function TextArea({ \n   id, \n   label, \n-  errorMessage, \n-  height,\n+  errorMessage,\n   minLines, \n   maxLines,\n   ...props \n }: TextAreaProps) {\n@@ -75,9 +74,8 @@\n     <Field>\n       <FloatingLabel htmlFor={id}>{label}</FloatingLabel>\n       <StyledTextArea \n         id={id} \n-        $height={height} \n         {...props} \n       />\n       {errorMessage && <ErrorText>{errorMessage}</ErrorText>}\n     </Field>\n"
+                }
+            ],
+            "date": 1756939398645,
+            "name": "Commit-0",
+            "content": "// src/components/common/TextArea.tsx\n\nimport React from 'react';\nimport { Field, FloatingLabel, ErrorText } from './TextField'; // 스타일 재활용\n\ninterface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {\n  id: string;\n  label: string;\n  errorMessage?: string;\n  height?: string;\n}\n\nexport default function TextArea({ \n  id, \n  label, \n  errorMessage, \n  height,\n  ...props \n}: TextAreaProps) {\n  return (\n    <Field>\n      <FloatingLabel htmlFor={id}>{label}</FloatingLabel>\n      <StyledTextArea \n        id={id} \n        $height={height} \n        {...props} \n      />\n      {errorMessage && <ErrorText>{errorMessage}</ErrorText>}\n    </Field>\n  );\n}"
+        }
+    ]
+}

@@ -1,0 +1,54 @@
+{
+    "sourceFile": "src/components/common/TextField.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 9,
+            "patches": [
+                {
+                    "date": 1756935712100,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756936389644,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -82,9 +82,9 @@\n   margin-left: 4px;\n   display: block;\n `;\n \n-export default function TextField({ \n+export default function TextField2({ \n   id, \n   label, \n   errorMessage,\n   isPasswordField = false,\n"
+                },
+                {
+                    "date": 1756936556435,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -82,9 +82,9 @@\n   margin-left: 4px;\n   display: block;\n `;\n \n-export default function TextField2({ \n+export default function TextField({ \n   id, \n   label, \n   errorMessage,\n   isPasswordField = false,\n"
+                },
+                {
+                    "date": 1756937678252,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -40,9 +40,9 @@\n   border: 1px solid #e5e7eb;\n   background: #ffffff;\n   color: #111827;\n   padding: 0 14px;\n-  padding-right: ${props => props.$hasSuffix ? '40px' : '14px'};\n+  // padding-right: ${props => props.$hasSuffix ? '40px' : '14px'};\n   font-size: 14px;\n   transition: border-color 0.2s ease, box-shadow 0.2s ease;\n \n   &::placeholder {\n"
+                },
+                {
+                    "date": 1756937691072,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,9 +13,9 @@\n }\n \n const Field = styled.div`\n   position: relative;\n-  width: 100%;\n+  // width: 100%;\n `;\n \n const FloatingLabel = styled.label`\n   position: absolute;\n@@ -40,9 +40,9 @@\n   border: 1px solid #e5e7eb;\n   background: #ffffff;\n   color: #111827;\n   padding: 0 14px;\n-  // padding-right: ${props => props.$hasSuffix ? '40px' : '14px'};\n+  padding-right: ${props => props.$hasSuffix ? '40px' : '14px'};\n   font-size: 14px;\n   transition: border-color 0.2s ease, box-shadow 0.2s ease;\n \n   &::placeholder {\n"
+                },
+                {
+                    "date": 1756937720031,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,9 +13,9 @@\n }\n \n const Field = styled.div`\n   position: relative;\n-  // width: 100%;\n+  width: 100%;\n `;\n \n const FloatingLabel = styled.label`\n   position: absolute;\n@@ -72,8 +72,9 @@\n   justify-content: center;\n   cursor: pointer;\n   color: ${({ $isPasswordVisible }) =>\n     $isPasswordVisible ? '#3391FF' : '#9CA3AF'};\n+  z-index: 1000;\n `;\n \n const ErrorText = styled.span`\n   color: #EF4444;\n"
+                },
+                {
+                    "date": 1756937782210,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,16 +25,17 @@\n   padding: 0 4px;\n   font-size: 12px;\n   color: #666666;\n   background: #ffffff;\n+  z-index: 1;\n `;\n \n const InputWrapper = styled.div`\n   position: relative;\n   width: 100%;\n `;\n \n-const StyledInput = styled.input`\n+const StyledInput = styled.input<{ $hasSuffix?: boolean }>`\n   height: 56px;\n   width: 100%;\n   border-radius: 4px;\n   border: 1px solid #e5e7eb;\n@@ -72,9 +73,9 @@\n   justify-content: center;\n   cursor: pointer;\n   color: ${({ $isPasswordVisible }) =>\n     $isPasswordVisible ? '#3391FF' : '#9CA3AF'};\n-  z-index: 1000;\n+  \n `;\n \n const ErrorText = styled.span`\n   color: #EF4444;\n"
+                },
+                {
+                    "date": 1756939075075,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -9,8 +9,9 @@\n   label: string;\n   errorMessage?: string;\n   isPasswordField?: boolean;\n   showSuffixIcon?: boolean;\n+  height?: string;  // 높이 prop 추가\n }\n \n const Field = styled.div`\n   position: relative;\n@@ -33,10 +34,10 @@\n   position: relative;\n   width: 100%;\n `;\n \n-const StyledInput = styled.input<{ $hasSuffix?: boolean }>`\n-  height: 56px;\n+const StyledInput = styled.input<{ $hasSuffix?: boolean; $height?: string }>`\n+  height: ${props => props.$height || '56px'};\n   width: 100%;\n   border-radius: 4px;\n   border: 1px solid #e5e7eb;\n   background: #ffffff;\n@@ -92,8 +93,9 @@\n   isPasswordField = false,\n   showSuffixIcon = false,\n   type: propType,\n   className,\n+  height,\n   ...props \n }: TextFieldProps) {\n   const [isPasswordVisible, setIsPasswordVisible] = useState(false);\n \n@@ -112,8 +114,9 @@\n         <StyledInput \n           id={id} \n           type={inputType}\n           $hasSuffix={showSuffixIcon && isPasswordField}\n+          $height={height}\n           {...props} \n         />\n         {showSuffixIcon && isPasswordField && (\n           <SuffixIconWrapper\n"
+                },
+                {
+                    "date": 1756939115941,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -45,9 +45,9 @@\n   padding: 0 14px;\n   padding-right: ${props => props.$hasSuffix ? '40px' : '14px'};\n   font-size: 14px;\n   transition: border-color 0.2s ease, box-shadow 0.2s ease;\n-\n+a\n   &::placeholder {\n     color: #666666;\n     opacity: 0.6;\n   }\n"
+                },
+                {
+                    "date": 1756939122587,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -45,9 +45,10 @@\n   padding: 0 14px;\n   padding-right: ${props => props.$hasSuffix ? '40px' : '14px'};\n   font-size: 14px;\n   transition: border-color 0.2s ease, box-shadow 0.2s ease;\n-a\n+align-items: start;\n+\n   &::placeholder {\n     color: #666666;\n     opacity: 0.6;\n   }\n"
+                }
+            ],
+            "date": 1756935712100,
+            "name": "Commit-0",
+            "content": "'use client';\n\nimport React, { useState } from 'react';\nimport styled from 'styled-components';\nimport { Visibility, VisibilityOff } from '@mui/icons-material';\n\ninterface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {\n  id: string;\n  label: string;\n  errorMessage?: string;\n  isPasswordField?: boolean;\n  showSuffixIcon?: boolean;\n}\n\nconst Field = styled.div`\n  position: relative;\n  width: 100%;\n`;\n\nconst FloatingLabel = styled.label`\n  position: absolute;\n  top: -10px;\n  left: 12px;\n  margin-top: 3px;\n  padding: 0 4px;\n  font-size: 12px;\n  color: #666666;\n  background: #ffffff;\n`;\n\nconst InputWrapper = styled.div`\n  position: relative;\n  width: 100%;\n`;\n\nconst StyledInput = styled.input`\n  height: 56px;\n  width: 100%;\n  border-radius: 4px;\n  border: 1px solid #e5e7eb;\n  background: #ffffff;\n  color: #111827;\n  padding: 0 14px;\n  padding-right: ${props => props.$hasSuffix ? '40px' : '14px'};\n  font-size: 14px;\n  transition: border-color 0.2s ease, box-shadow 0.2s ease;\n\n  &::placeholder {\n    color: #666666;\n    opacity: 0.6;\n  }\n\n  &:focus {\n    outline: none;\n    border-color: #3391FF;\n    box-shadow: 0 0 0 2px rgba(51, 145, 255, 0.12);\n  }\n\n  &:disabled {\n    background: #f3f4f6;\n    cursor: not-allowed;\n  }\n`;\n\nconst SuffixIconWrapper = styled.div<{ $isPasswordVisible?: boolean }>`\n  position: absolute;\n  right: 12px;\n  top: 50%;\n  transform: translateY(-50%);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  cursor: pointer;\n  color: ${({ $isPasswordVisible }) =>\n    $isPasswordVisible ? '#3391FF' : '#9CA3AF'};\n`;\n\nconst ErrorText = styled.span`\n  color: #EF4444;\n  font-size: 12px;\n  margin-top: 4px;\n  margin-left: 4px;\n  display: block;\n`;\n\nexport default function TextField({ \n  id, \n  label, \n  errorMessage,\n  isPasswordField = false,\n  showSuffixIcon = false,\n  type: propType,\n  className,\n  ...props \n}: TextFieldProps) {\n  const [isPasswordVisible, setIsPasswordVisible] = useState(false);\n\n  const handleToggleVisibility = () => {\n    setIsPasswordVisible(prev => !prev);\n  };\n\n  const inputType = isPasswordField \n    ? (isPasswordVisible ? 'text' : 'password')\n    : propType || 'text';\n\n  return (\n    <Field className={className}>\n      <FloatingLabel htmlFor={id}>{label}</FloatingLabel>\n      <InputWrapper>\n        <StyledInput \n          id={id} \n          type={inputType}\n          $hasSuffix={showSuffixIcon && isPasswordField}\n          {...props} \n        />\n        {showSuffixIcon && isPasswordField && (\n          <SuffixIconWrapper\n            onClick={handleToggleVisibility}\n            $isPasswordVisible={isPasswordVisible}\n          >\n            {isPasswordVisible ? <VisibilityOff /> : <Visibility />}\n          </SuffixIconWrapper>\n        )}\n      </InputWrapper>\n      {errorMessage && <ErrorText>{errorMessage}</ErrorText>}\n    </Field>\n  );\n}"
+        }
+    ]
+}

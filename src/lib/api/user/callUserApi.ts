@@ -25,28 +25,45 @@ export async function callUserApi<T>({
   const user = useAuthStore.getState().user;
   const usingServices = user?.data?.usingService;
 
-  let companyCode = 'heredot';
+  // Company Code 설정
+  let companyCode = 'heredot';  // 기본값
+  
+  // URL에서 company code 추출 시도
   const pathParts = window.location.pathname.split('/');
   const companyCodeIndex = pathParts.indexOf('aiclient') + 1;
   if (companyCodeIndex > 0 && pathParts.length > companyCodeIndex) {
     companyCode = pathParts[companyCodeIndex];
   }
-
-  const headers = new Headers();
-  if (companyCode) {
-    headers.append('x-company-code', companyCode);
-  }
   
-  const headersAsRecord = Object.fromEntries(headers.entries());
+  console.log('[Company Code]', {
+    path: window.location.pathname,
+    pathParts,
+    companyCodeIndex,
+    finalCompanyCode: companyCode
+  });
 
-  console.log(`[API Request] Title: ${title}`);
-  console.log(`[API Request] Method: ${method}`);
-  console.log(`[API Request] URL: ${url}`);
-  if (body) {
-    // FormData일 경우 `API Request Body: FormData {}`로 출력
-    console.log('API Request Body:', body); 
-  }
-  console.log('API Request Headers:', headersAsRecord); 
+  // 공통 헤더 설정
+  const commonHeaders = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'x-company-code': companyCode
+  };
+
+  // FormData 여부에 따른 헤더 설정
+  const isFormData = body instanceof FormData;
+  const headers = isFormData ? 
+    { 'x-company-code': companyCode } : 
+    { ...commonHeaders };
+
+  // API 요청 정보 로깅
+  console.log('[API Request]', {
+    title,
+    method,
+    url,
+    companyCode,
+    headers,
+    body: body instanceof FormData ? 'FormData {}' : body
+  });
 
   let response: any;
   
@@ -55,7 +72,7 @@ export async function callUserApi<T>({
       title,
       url,
       isCallPageLoader,
-      headers: headersAsRecord, 
+      headers, 
     });
   } else if (method === 'PUT') {
     response = await callApiPut({
@@ -63,7 +80,7 @@ export async function callUserApi<T>({
       url,
       body,
       isCallPageLoader,
-      headers: headersAsRecord, 
+      headers, 
     });
   } else if (method === 'PATCH') {
     response = await callApiPatch({
@@ -71,14 +88,14 @@ export async function callUserApi<T>({
       url,
       body,
       isCallPageLoader,
-      headers: headersAsRecord, 
+      headers, 
     });
   } else if (method === 'DELETE') {
     response = await callApiDelete({
       title,
       url,
       isCallPageLoader,
-      headers: headersAsRecord, 
+      headers, 
     });
   } else {
     // FormData 타입에 따른 조건부 처리
@@ -88,7 +105,7 @@ export async function callUserApi<T>({
       url,
       body,
       isCallPageLoader,
-      headers: headersAsRecord,
+      headers,
       isFormData, // isFormData 플래그 전달
     });
   }

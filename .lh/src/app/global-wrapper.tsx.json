@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 4,
             "patches": [
                 {
                     "date": 1755956908707,
@@ -12,6 +12,18 @@
                 {
                     "date": 1755959502691,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -51,9 +51,9 @@\n       {/* HTML link preload 추가 */}\n       \n       <ToastContainer style={{ zIndex: 9999 }} />\n       <GoogleOAuthProvider\n-        clientId={process.env.VITE_GOOGLE_CLIENT_ID || ''}\n+        clientId={meta.env.VITE_GOOGLE_CLIENT_ID || ''}\n       >\n       {/* react-activation Provider | Keep components alive */}\n       {/* <ActivationProvider> */}\n         {/* 페이지 로딩 상태 전역 관리 | Global page loading state */}\n"
+                },
+                {
+                    "date": 1756968842014,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,15 +26,30 @@\n \n \n function ModalContainer() {\n   const { isLoginModalOpen, closeLoginModal } = useModalStore();\n-  const { isAdditionalInfoModalOpen, closeAdditionalInfoModal } = useAuthStore();\n+  const { isAdditionalInfoModalOpen, closeAdditionalInfoModal, loginWithGoogle } = useAuthStore();\n   \n+  const handleGoogleLoginSuccess = async (tokenResponse: any) => {\n+    try {\n+      await loginWithGoogle(tokenResponse);\n+      closeLoginModal();\n+    } catch (error) {\n+      console.error('Google login error:', error);\n+    }\n+  };\n+\n   return (\n     <>\n       <SocialLoginModal\n         $isOpen={isLoginModalOpen}\n         onClose={closeLoginModal}\n+        purpose=\"limitExceeded\"\n+        onGoogleLoginSuccess={handleGoogleLoginSuccess}\n+        onPrimaryButtonClick={() => {\n+          // 견적 요청 처리\n+          closeLoginModal();\n+        }}\n       />\n       <AdditionalInfoModal\n         open={isAdditionalInfoModalOpen}\n         onClose={closeAdditionalInfoModal}\n@@ -51,9 +66,9 @@\n       {/* HTML link preload 추가 */}\n       \n       <ToastContainer style={{ zIndex: 9999 }} />\n       <GoogleOAuthProvider\n-        clientId={meta.env.VITE_GOOGLE_CLIENT_ID || ''}\n+        clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}\n       >\n       {/* react-activation Provider | Keep components alive */}\n       {/* <ActivationProvider> */}\n         {/* 페이지 로딩 상태 전역 관리 | Global page loading state */}\n"
+                },
+                {
+                    "date": 1756969294113,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,30 +26,15 @@\n \n \n function ModalContainer() {\n   const { isLoginModalOpen, closeLoginModal } = useModalStore();\n-  const { isAdditionalInfoModalOpen, closeAdditionalInfoModal, loginWithGoogle } = useAuthStore();\n+  const { isAdditionalInfoModalOpen, closeAdditionalInfoModal } = useAuthStore();\n   \n-  const handleGoogleLoginSuccess = async (tokenResponse: any) => {\n-    try {\n-      await loginWithGoogle(tokenResponse);\n-      closeLoginModal();\n-    } catch (error) {\n-      console.error('Google login error:', error);\n-    }\n-  };\n-\n   return (\n     <>\n       <SocialLoginModal\n         $isOpen={isLoginModalOpen}\n         onClose={closeLoginModal}\n-        purpose=\"limitExceeded\"\n-        onGoogleLoginSuccess={handleGoogleLoginSuccess}\n-        onPrimaryButtonClick={() => {\n-          // 견적 요청 처리\n-          closeLoginModal();\n-        }}\n       />\n       <AdditionalInfoModal\n         open={isAdditionalInfoModalOpen}\n         onClose={closeAdditionalInfoModal}\n"
+                },
+                {
+                    "date": 1756970054378,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,8 +33,11 @@\n     <>\n       <SocialLoginModal\n         $isOpen={isLoginModalOpen}\n         onClose={closeLoginModal}\n+        purpose=\"limitExceeded\"\n+        onPrimaryButtonClick={() => {}}\n+        onGoogleLoginSuccess={() => {}}\n       />\n       <AdditionalInfoModal\n         open={isAdditionalInfoModalOpen}\n         onClose={closeAdditionalInfoModal}\n"
                 }
             ],
             "date": 1755956908707,

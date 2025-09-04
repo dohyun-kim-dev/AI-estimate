@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 28,
+            "activePatchIndex": 44,
             "patches": [
                 {
                     "date": 1756085046155,
@@ -120,6 +120,70 @@
                 {
                     "date": 1756194163145,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -36,9 +36,9 @@\n   testimonialBg: '#FFFFFF',\n   testimonialBorder: '#E5E7EB',\n   bottomNavBg: '#FFFFFF',\n   bottomNavBorder: '#E5E7EB',\n-  primaryButton: '#F0F4F9'\n+  primaryButton: '#F0F4F9',\n   buttonBottom: \"#486D8F\"\n };\n \n export const darkTheme = {\n"
+                },
+                {
+                    "date": 1756861377972,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -80,7 +80,8 @@\n   bottomNavBg: '#08080F',\n   bottomNavBorder: '#2F2F38',\n   primaryButton: '#283139',\n   buttonBottom: \"#3391FF\"\n+  detail\n };\n \n export type Theme = typeof lightTheme;\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756861390565,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -80,8 +80,8 @@\n   bottomNavBg: '#08080F',\n   bottomNavBorder: '#2F2F38',\n   primaryButton: '#283139',\n   buttonBottom: \"#3391FF\"\n-  detail\n+  detailModalBg: '#37414D',\n };\n \n export type Theme = typeof lightTheme;\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756861397816,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -37,9 +37,10 @@\n   testimonialBorder: '#E5E7EB',\n   bottomNavBg: '#FFFFFF',\n   bottomNavBorder: '#E5E7EB',\n   primaryButton: '#F0F4F9',\n-  buttonBottom: \"#486D8F\"\n+  buttonBottom: \"#486D8F\",\n+  \n };\n \n export const darkTheme = {\n   // 사용자가 제공한 다크 모드 색상\n"
+                },
+                {
+                    "date": 1756861409854,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -38,9 +38,9 @@\n   bottomNavBg: '#FFFFFF',\n   bottomNavBorder: '#E5E7EB',\n   primaryButton: '#F0F4F9',\n   buttonBottom: \"#486D8F\",\n-  \n+  detailModalBg: '#F5F5F5',\n };\n \n export const darkTheme = {\n   // 사용자가 제공한 다크 모드 색상\n@@ -80,9 +80,9 @@\n   testimonialBorder: '#2F2F38',\n   bottomNavBg: '#08080F',\n   bottomNavBorder: '#2F2F38',\n   primaryButton: '#283139',\n-  buttonBottom: \"#3391FF\"\n+  buttonBottom: \"#3391FF\",\n   detailModalBg: '#37414D',\n };\n \n export type Theme = typeof lightTheme;\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756861548168,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,8 +4,9 @@\n   body: '#FFFFFF', // 가장 바깥 배경\n   surface1: '#F0F4F9', // 컴포넌트 배경\n   surface2: '#F7F7F7', // 헤더 등 강조 영역 배경\n   surface3: '#FFFFFF', // 헤더 등 강조 영역 배경\n+  de\n   card: '#FFFFFF',\n   cardButton: '#D8DDE5',  \n   cardBorder: '#D8DDE5',\n   \n"
+                },
+                {
+                    "date": 1756861553439,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n   body: '#FFFFFF', // 가장 바깥 배경\n   surface1: '#F0F4F9', // 컴포넌트 배경\n   surface2: '#F7F7F7', // 헤더 등 강조 영역 배경\n   surface3: '#FFFFFF', // 헤더 등 강조 영역 배경\n-  de\n+  detailS\n   card: '#FFFFFF',\n   cardButton: '#D8DDE5',  \n   cardBorder: '#D8DDE5',\n   \n"
+                },
+                {
+                    "date": 1756861559122,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n   body: '#FFFFFF', // 가장 바깥 배경\n   surface1: '#F0F4F9', // 컴포넌트 배경\n   surface2: '#F7F7F7', // 헤더 등 강조 영역 배경\n   surface3: '#FFFFFF', // 헤더 등 강조 영역 배경\n-  detailS\n+  detailSurface1: '#FFFFFF',\n   card: '#FFFFFF',\n   cardButton: '#D8DDE5',  \n   cardBorder: '#D8DDE5',\n   \n"
+                },
+                {
+                    "date": 1756861564351,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -48,8 +48,9 @@\n   body: '#08080F', // 가장 바깥 배경\n   surface1: '#1F2937', // 컴포넌트 배경\n   surface2: '#171B23', // 헤더 등 강조 영역 배경\n   surface3: '#1E212D', // 헤더 등 강조 영역 배경\n+  detailSurface1: '#1F2937',\n   card: '#121212',\n   cardButton: '#27313F',\n   cardBorder: '#2F2F38',\n \n"
+                },
+                {
+                    "date": 1756861602076,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -0,0 +1,91 @@\n+// src/styles/theme.ts\n+export const lightTheme = {\n+  // 사용자가 제공한 라이트 모드 색상\n+  body: '#FFFFFF', // 가장 바깥 배경\n+  surface1: '#F0F4F9', // 컴포넌트 배경\n+  surface2: '#F7F7F7', // 헤더 등 강조 영역 배경\n+  surface3: '#FFFFFF', // 헤더 등 강조 영역 배경\n+  detailSurface1: '#FFFFFF',\n+  card: '#FFFFFF',\n+  cardButton: '#D8DDE5',  \n+  cardBorder: '#D8DDE5',\n+  \n+  // 텍스트 및 기타 색상\n+  text: '#171B23', // 기본 텍스트\n+  subtleText: '#666666', // 보조 텍스트\n+  border: '#CBCBCC', // 테두리\n+  accent: '#000000', // 강조색\n+  track: '#B5B5B5', // 슬라이더 트랙\n+  pick:'#D1D5DE', //선택된 색\n+\n+  accordionHeader: '#F8F8F8',\n+  subAccordionHeader: '#FFFFFF',\n+\n+  // 아코디언 레벨별 배경색\n+  accordionLevel1: '#ffffff',\n+  accordionLevel2: '#F8F8F8',\n+  accordionLevel3: '#f0f0f0',\n+\n+  actionButton: '#F3F3F3',\n+  inputBg: '#FFFFFF',\n+  inputBorder: '#E5E7EB',\n+  cardBg: '#FFFFFF',\n+  cardShadow: 'rgba(0, 0, 0, 0.1)',\n+  cardText: '#4263EB',\n+  statBg: '#F8F9FA',\n+  statText: '#4263EB',\n+  testimonialBg: '#FFFFFF',\n+  testimonialBorder: '#E5E7EB',\n+  bottomNavBg: '#FFFFFF',\n+  bottomNavBorder: '#E5E7EB',\n+  primaryButton: '#F0F4F9',\n+  buttonBottom: \"#486D8F\",\n+  detailModalBg: '#F5F5F5',\n+  de\n+};\n+\n+export const darkTheme = {\n+  // 사용자가 제공한 다크 모드 색상\n+  body: '#08080F', // 가장 바깥 배경\n+  surface1: '#1F2937', // 컴포넌트 배경\n+  surface2: '#171B23', // 헤더 등 강조 영역 배경\n+  surface3: '#1E212D', // 헤더 등 강조 영역 배경\n+  detailSurface1: '#1F2937',\n+  card: '#121212',\n+  cardButton: '#27313F',\n+  cardBorder: '#2F2F38',\n+\n+  track: '#374151', // 슬라이더 트랙\n+  // 텍스트 및 기타 색상\n+  text: '#F8F8F8', // 기본 텍스트\n+  subtleText: '#A1A1AA', // 보조 텍스트\n+  border: '#374151', // 테두리\n+  accent: '#3391FF', // 강조색\n+  pick : '#434B5D', //선택된 색\n+\n+  accordionHeader: '#1C2128',\n+  subAccordionHeader: '#21262D',\n+\n+  // 아코디언 레벨별 배경색\n+  accordionLevel1: '#1E1E24',\n+  accordionLevel2: '#1E1E24',\n+  accordionLevel3: '#1E1E24',\n+\n+  actionButton: '#283139',\n+  inputBg: '#1E1E2D',\n+  inputBorder: '#2F2F38',\n+  cardBg: '#1E1E2D',\n+  cardShadow: 'rgba(0, 0, 0, 0.3)',\n+  cardText: '#6366F1',\n+  statBg: '#0A0F1D',\n+  statText: '#3391FF',\n+  testimonialBg: '#1E1E2D',\n+  testimonialBorder: '#2F2F38',\n+  bottomNavBg: '#08080F',\n+  bottomNavBorder: '#2F2F38',\n+  primaryButton: '#283139',\n+  buttonBottom: \"#3391FF\",\n+  detailModalBg: '#37414D',\n+};\n+\n+export type Theme = typeof lightTheme;\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756861611099,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -40,9 +40,9 @@\n   bottomNavBorder: '#E5E7EB',\n   primaryButton: '#F0F4F9',\n   buttonBottom: \"#486D8F\",\n   detailModalBg: '#F5F5F5',\n-  de\n+  detailButton: ''\n };\n \n export const darkTheme = {\n   // 사용자가 제공한 다크 모드 색상\n@@ -87,95 +87,5 @@\n   buttonBottom: \"#3391FF\",\n   detailModalBg: '#37414D',\n };\n \n-export type Theme = typeof lightTheme;\n-// src/styles/theme.ts\n-export const lightTheme = {\n-  // 사용자가 제공한 라이트 모드 색상\n-  body: '#FFFFFF', // 가장 바깥 배경\n-  surface1: '#F0F4F9', // 컴포넌트 배경\n-  surface2: '#F7F7F7', // 헤더 등 강조 영역 배경\n-  surface3: '#FFFFFF', // 헤더 등 강조 영역 배경\n-  detailSurface1: '#FFFFFF',\n-  card: '#FFFFFF',\n-  cardButton: '#D8DDE5',  \n-  cardBorder: '#D8DDE5',\n-  \n-  // 텍스트 및 기타 색상\n-  text: '#171B23', // 기본 텍스트\n-  subtleText: '#666666', // 보조 텍스트\n-  border: '#CBCBCC', // 테두리\n-  accent: '#000000', // 강조색\n-  track: '#B5B5B5', // 슬라이더 트랙\n-  pick:'#D1D5DE', //선택된 색\n-\n-  accordionHeader: '#F8F8F8',\n-  subAccordionHeader: '#FFFFFF',\n-\n-  // 아코디언 레벨별 배경색\n-  accordionLevel1: '#ffffff',\n-  accordionLevel2: '#F8F8F8',\n-  accordionLevel3: '#f0f0f0',\n-\n-  actionButton: '#F3F3F3',\n-  inputBg: '#FFFFFF',\n-  inputBorder: '#E5E7EB',\n-  cardBg: '#FFFFFF',\n-  cardShadow: 'rgba(0, 0, 0, 0.1)',\n-  cardText: '#4263EB',\n-  statBg: '#F8F9FA',\n-  statText: '#4263EB',\n-  testimonialBg: '#FFFFFF',\n-  testimonialBorder: '#E5E7EB',\n-  bottomNavBg: '#FFFFFF',\n-  bottomNavBorder: '#E5E7EB',\n-  primaryButton: '#F0F4F9',\n-  buttonBottom: \"#486D8F\",\n-  detailModalBg: '#F5F5F5',\n-};\n-\n-export const darkTheme = {\n-  // 사용자가 제공한 다크 모드 색상\n-  body: '#08080F', // 가장 바깥 배경\n-  surface1: '#1F2937', // 컴포넌트 배경\n-  surface2: '#171B23', // 헤더 등 강조 영역 배경\n-  surface3: '#1E212D', // 헤더 등 강조 영역 배경\n-  detailSurface1: '#1F2937',\n-  card: '#121212',\n-  cardButton: '#27313F',\n-  cardBorder: '#2F2F38',\n-\n-  track: '#374151', // 슬라이더 트랙\n-  // 텍스트 및 기타 색상\n-  text: '#F8F8F8', // 기본 텍스트\n-  subtleText: '#A1A1AA', // 보조 텍스트\n-  border: '#374151', // 테두리\n-  accent: '#3391FF', // 강조색\n-  pick : '#434B5D', //선택된 색\n-\n-  accordionHeader: '#1C2128',\n-  subAccordionHeader: '#21262D',\n-\n-  // 아코디언 레벨별 배경색\n-  accordionLevel1: '#1E1E24',\n-  accordionLevel2: '#1E1E24',\n-  accordionLevel3: '#1E1E24',\n-\n-  actionButton: '#283139',\n-  inputBg: '#1E1E2D',\n-  inputBorder: '#2F2F38',\n-  cardBg: '#1E1E2D',\n-  cardShadow: 'rgba(0, 0, 0, 0.3)',\n-  cardText: '#6366F1',\n-  statBg: '#0A0F1D',\n-  statText: '#3391FF',\n-  testimonialBg: '#1E1E2D',\n-  testimonialBorder: '#2F2F38',\n-  bottomNavBg: '#08080F',\n-  bottomNavBorder: '#2F2F38',\n-  primaryButton: '#283139',\n-  buttonBottom: \"#3391FF\",\n-  detailModalBg: '#37414D',\n-};\n-\n export type Theme = typeof lightTheme;\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756861622527,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -40,9 +40,9 @@\n   bottomNavBorder: '#E5E7EB',\n   primaryButton: '#F0F4F9',\n   buttonBottom: \"#486D8F\",\n   detailModalBg: '#F5F5F5',\n-  detailButton: ''\n+  detailButton: '#2E2E48'\n };\n \n export const darkTheme = {\n   // 사용자가 제공한 다크 모드 색상\n"
+                },
+                {
+                    "date": 1756861632573,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -85,7 +85,8 @@\n   bottomNavBorder: '#2F2F38',\n   primaryButton: '#283139',\n   buttonBottom: \"#3391FF\",\n   detailModalBg: '#37414D',\n+  detailButton: '#668EC0'\n };\n \n export type Theme = typeof lightTheme;\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756861717681,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -40,9 +40,10 @@\n   bottomNavBorder: '#E5E7EB',\n   primaryButton: '#F0F4F9',\n   buttonBottom: \"#486D8F\",\n   detailModalBg: '#F5F5F5',\n-  detailButton: '#2E2E48'\n+  detailButton: '#2E2E48',\n+  det\n };\n \n export const darkTheme = {\n   // 사용자가 제공한 다크 모드 색상\n"
+                },
+                {
+                    "date": 1756861722900,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -41,9 +41,9 @@\n   primaryButton: '#F0F4F9',\n   buttonBottom: \"#486D8F\",\n   detailModalBg: '#F5F5F5',\n   detailButton: '#2E2E48',\n-  det\n+  detailSubtleText: '#2E2E48'\n };\n \n export const darkTheme = {\n   // 사용자가 제공한 다크 모드 색상\n"
+                },
+                {
+                    "date": 1756861736720,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -41,9 +41,9 @@\n   primaryButton: '#F0F4F9',\n   buttonBottom: \"#486D8F\",\n   detailModalBg: '#F5F5F5',\n   detailButton: '#2E2E48',\n-  detailSubtleText: '#2E2E48'\n+  detailSubtleText: '##6A6A6A'\n };\n \n export const darkTheme = {\n   // 사용자가 제공한 다크 모드 색상\n"
+                },
+                {
+                    "date": 1756861754366,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -41,9 +41,9 @@\n   primaryButton: '#F0F4F9',\n   buttonBottom: \"#486D8F\",\n   detailModalBg: '#F5F5F5',\n   detailButton: '#2E2E48',\n-  detailSubtleText: '##6A6A6A'\n+  detailSubtleText: '#6A6A6A'\n };\n \n export const darkTheme = {\n   // 사용자가 제공한 다크 모드 색상\n@@ -86,8 +86,9 @@\n   bottomNavBorder: '#2F2F38',\n   primaryButton: '#283139',\n   buttonBottom: \"#3391FF\",\n   detailModalBg: '#37414D',\n-  detailButton: '#668EC0'\n+  detailButton: '#668EC0',\n+  detailSubtleText: '#E3E3E3'\n };\n \n export type Theme = typeof lightTheme;\n\\ No newline at end of file\n"
                 }
             ],
             "date": 1756085046155,

@@ -8,11 +8,13 @@ import Modal from '@/components/common/Modal';
 import { useToast } from '@/components/common/ToastProvider';
 import { useThemeStore } from '@/store/themeStore';
 import { generatePDF } from '@/hooks/pdfUtils';
-import { getDownloadEstimateUrl, getDownloadEstimateUrlWithUserInfo } from '@/lib/api/user/userApi';
+import { getDownloadEstimateUrlWithUserInfo } from '@/lib/api/user/userApi';
 import { useAuthStore } from '@/store/authStore';
 import { v4 as uuidv4 } from 'uuid';
 import TextField from '@/components/common/TextField';
-
+import { SocialLoginModal } from './SocialLoginModal';
+import { useNavigate } from 'react-router-dom';
+import { googleLoginInitial, googleLoginUpdate } from '@/lib/api/user/userApi';
 
 const CardWrapper = styled.div`
   background-color: ${({ theme }) => theme.surface1};
@@ -205,17 +207,24 @@ const Disclaimer = styled.p`
 
 interface EstimateCardProps {
   estimate: ProjectEstimate;
+  discountedPrice: number;
+  projectPeriod: number;
 }
 
-const EstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
+const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, projectPeriod }) => {
   const [openShare, setOpenShare] = useState(false);
   const [openDownload, setOpenDownload] = useState(false);
   const [openShareInput, setOpenShareInput] = useState(false);
   const [userInfo, setUserInfo] = useState({ name: '', email: '', cellphone: '' });
   const [shareUrl, setShareUrl] = useState('');
+  const [isSocialLoginModalOpen, setIsSocialLoginModalOpen] = useState(false);
+  const [socialLoginPurpose, setSocialLoginPurpose] = useState<'share' | 'download' | null>(null);
+
   const { success, error } = useToast();
   const { isDarkMode } = useThemeStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, login, openAdditionalInfoModal } = useAuthStore();
+  const navigate = useNavigate();
+
 
   const getCompanyCode = () => {
     const pathParts = window.location.pathname.split('/');
@@ -271,7 +280,9 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
             }
           }
         } else {
-          setOpenDownload(true);
+          // 비회원일 경우 다운로드 목적으로 소셜 로그인 모달 열기
+          setSocialLoginPurpose('download');
+          setIsSocialLoginModalOpen(true);
           return;
         }
       }
@@ -290,6 +301,15 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
     } catch (err) {
       console.error('PDF 생성 중 오류:', err);
       error('PDF 생성에 실패했습니다.');
+    }
+  };
+  
+  const handlePrimaryButtonClick = () => {
+    setIsSocialLoginModalOpen(false);
+    if (socialLoginPurpose === 'share') {
+      setOpenShareInput(true); // 공유 전 정보 입력 모달
+    } else if (socialLoginPurpose === 'download') {
+      setOpenDownload(true); // 다운로드 전 정보 입력 모달
     }
   };
 
@@ -326,21 +346,19 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
   };
   
   const handleShareClick = () => {
-    // uuid가 있어야 공유 가능
     if (!estimate.uuid) {
       error('공유 가능한 견적서가 아닙니다.');
       return;
     }
 
     if (isAuthenticated()) {
-      // 회원인 경우 바로 공유 URL 생성 모달 표시
       setOpenShare(true);
       const authStorage = localStorage.getItem('auth-storage');
       const authData = authStorage ? JSON.parse(authStorage) : null;
       const user = authData?.state?.user;
 
       if (user) {
-        const newShareUrl = getDownloadEstimateUrlWithUserInfo(
+        const newShareUrl = `${window.location.origin}${getDownloadEstimateUrlWithUserInfo(
           companyCode,
           estimate.uuid,
           {
@@ -349,12 +367,12 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
             email: user.email,
             cellphone: user.cellphone || ''
           }
-        );
+        )}`;
         setShareUrl(newShareUrl);
       }
     } else {
-      // 비회원인 경우 필수 정보 입력 모달 표시
-      setOpenShareInput(true);
+      setSocialLoginPurpose('share');
+      setIsSocialLoginModalOpen(true);
     }
   };
 
@@ -391,15 +409,76 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(shareUrl)
-      success('링크가 복사되었습니다.')
-      setOpenShare(false)
+      const textToCopy = `${shareUrl}
+본 링크는 에이고(AIGO - AI 견적서)에서 
+발급된 링크입니다.
+
+회사명 : 주식회사 여기닷
+
+전화문의 : 031-111-1234
+
+링크주소 : https://heredotcorp.com/ai`;
+
+      await navigator.clipboard.writeText(textToCopy);
+
+      success('링크가 복사되었습니다.');
+      setOpenShare(false);
     } catch {
       error('링크 복사에 실패했습니다.');
     }
-  }
+  };
 
-  const weekValue = parseInt(estimate.estimated_period);
+  const handleSocialLoginSuccess = async (tokenResponse: any) => {
+    try {
+      const userInfoResponse = await fetch(
+        'https://www.googleapis.com/oauth2/v3/userinfo',
+        {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        }
+      );
+      const userInfo = await userInfoResponse.json();
+
+      const initialResponse = await googleLoginInitial({ providerId: userInfo.sub });
+
+      if (initialResponse.statusCode === 200) {
+        if (initialResponse.data.isNew) {
+          const updateResponse = await googleLoginUpdate({
+            providerId: userInfo.sub,
+            name: `${userInfo.family_name}${userInfo.given_name}`,
+            email: userInfo.email,
+            profileImage: userInfo.picture,
+          });
+          
+          if (updateResponse.statusCode === 200) {
+            await login(updateResponse.data);
+            setIsSocialLoginModalOpen(false);
+            openAdditionalInfoModal();
+          } else {
+            throw new Error(updateResponse.error?.message || '회원가입 중 오류가 발생했습니다.');
+          }
+        } else {
+          await login(initialResponse.data);
+          setIsSocialLoginModalOpen(false);
+          success('로그인되었습니다!');
+          
+          // 목적에 따라 다운로드 또는 공유 기능 실행
+          if (socialLoginPurpose === 'download') {
+            handleGeneratePDF();
+          } else if (socialLoginPurpose === 'share') {
+            handleShareClick();
+          }
+        }
+      } else {
+        throw new Error(initialResponse.error?.message || '로그인에 실패했습니다.');
+      }
+    } catch (err) {
+      console.error('Google 로그인 에러:', err);
+      error('로그인 처리 중 오류가 발생했습니다.');
+      throw err;
+    }
+  };
+
+  const weekValue = parseInt(estimate.estimated_period) + projectPeriod  ;
   const weeksPerMonth = 4.345;
   const monthValue = Math.ceil(weekValue / weeksPerMonth);
   const displayPeriod = `(약 ${monthValue}개월)`;
@@ -428,11 +507,13 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
 
         </Flex>
         <Price>
-        KRW {new Intl.NumberFormat('ko-KR').format(estimate.total_price)}
+        {/* KRW {new Intl.NumberFormat('ko-KR').format(estimate.total_price)} */}
+        KRW {discountedPrice.toLocaleString()}
         <span>(부가세 별도)</span>
         </Price>
+        {/* <span className="p">기획 및 디자인은 할인에서 제외됩니다</span> */}
         <Period>
-          <span style={{marginRight: '4px'}}>{estimate.estimated_period}</span>
+          <span style={{marginRight: '4px'}}>{parseInt(estimate.estimated_period) + projectPeriod}주</span>
           <span className="p">{displayPeriod}</span>
         </Period>
       </Header>
@@ -450,24 +531,30 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
         <Form onSubmit={handleDownloadSubmit}>
           <TextField id="name" label="이름" placeholder="이름을 입력해주세요" required value={userInfo.name} onChange={(e) => setUserInfo({...userInfo, name: e.target.value})} />
           <TextField id="email" label="이메일" type="email" placeholder="이메일을 입력해주세요" required value={userInfo.email} onChange={(e) => setUserInfo({...userInfo, email: e.target.value})} />
-          <TextField id="phone" label="전화번호" placeholder="전화번호를 입력해주세요" required maxLength={11} value={userInfo.cellphone} onChange={(e) => setUserInfo({...userInfo, cellphone: e.target.value})} />
+          <TextField id="phone" label="전화번호" placeholder="전화번호를 입력해주세요" required maxLength={11} value={userInfo.cellphone} pattern="[0-9]{10,11}" type="tel" onChange={(e) => setUserInfo({...userInfo, cellphone: e.target.value})} />
           <Disclaimer>문의 시 개인정보 수집·이용에 동의한 것으로 간주됩니다.</Disclaimer>
           <SubmitButton type="submit">PDF 다운로드</SubmitButton>
         </Form>
       </Modal>
 
-      {/* 공유 전 필수 정보 입력 모달 */}
       <Modal open={openShareInput} title="필수 정보 입력" onClose={() => setOpenShareInput(false)} width={520}>
         <div style={{ fontSize: 14, textAlign: 'center', marginBottom: 32 }}>견적서 공유를 위해 필수 정보를 입력해주세요.</div>
         <Form onSubmit={handleShareSubmit}>
           <TextField id="name" label="이름" placeholder="이름을 입력해주세요" required value={userInfo.name} onChange={(e) => setUserInfo({...userInfo, name: e.target.value})} />
           <TextField id="email" label="이메일" type="email" placeholder="이메일을 입력해주세요" required value={userInfo.email} onChange={(e) => setUserInfo({...userInfo, email: e.target.value})} />
-          <TextField id="phone" label="전화번호" placeholder="전화번호를 입력해주세요" required maxLength={11} value={userInfo.cellphone} onChange={(e) => setUserInfo({...userInfo, cellphone: e.target.value})} />
+          <TextField id="phone" label="전화번호" placeholder="전화번호를 입력해주세요" required maxLength={11} value={userInfo.cellphone} pattern="[0-9]{10,11}" type="tel" onChange={(e) => setUserInfo({...userInfo, cellphone: e.target.value})} />
           <Disclaimer>문의 시 개인정보 수집·이용에 동의한 것으로 간주됩니다.</Disclaimer>
           <SubmitButton type="submit">공유 링크 생성</SubmitButton>
         </Form>
       </Modal>
 
+      <SocialLoginModal
+        $isOpen={isSocialLoginModalOpen}
+        onClose={() => setIsSocialLoginModalOpen(false)}
+        purpose={socialLoginPurpose || 'share'}
+        onPrimaryButtonClick={handlePrimaryButtonClick}
+        onGoogleLoginSuccess={handleSocialLoginSuccess}
+      />
     </CardWrapper>
   );
 };

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 12,
+            "activePatchIndex": 18,
             "patches": [
                 {
                     "date": 1756187053867,
@@ -56,6 +56,30 @@
                 {
                     "date": 1756282703816,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -115,9 +115,9 @@\n   }\n \n   return callAdminApi({\n     title: '관리자 수정',\n-    url: `${BASE_URL}/cms/admins/${_id}`, // URL에 :id 부분 추가\n+    url: `${BASE_URL}/cms/admins/${params.targetAdminId}`, // URL에 :id 부분 추가\n     method: 'PATCH', // PUT 메서드로 변경\n     body: requestBody,\n     isCallPageLoader: true,\n   });\n"
+                },
+                {
+                    "date": 1756892238116,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,9 +11,9 @@\n   AdminPasswordUpdateParams,\n   UnitPriceGetListParams,\n } from './adminApi.types';\n \n-const BASE_URL = '/api';\n+const BASE_URL = import.meta.env.VITE_API_HOST || '/api';\n \n // ***************** 인증 관련\n \n export async function adminLogin(\n"
+                },
+                {
+                    "date": 1756933676345,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,9 +11,9 @@\n   AdminPasswordUpdateParams,\n   UnitPriceGetListParams,\n } from './adminApi.types';\n \n-const BASE_URL = import.meta.env.VITE_API_HOST || '/api';\n+const BASE_URL ='/api';\n \n // ***************** 인증 관련\n \n export async function adminLogin(\n"
+                },
+                {
+                    "date": 1756933696338,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,9 +11,9 @@\n   AdminPasswordUpdateParams,\n   UnitPriceGetListParams,\n } from './adminApi.types';\n \n-const BASE_URL ='/api';\n+const BASE_URL = '/api';\n \n // ***************** 인증 관련\n \n export async function adminLogin(\n"
+                },
+                {
+                    "date": 1756963249082,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,9 +11,9 @@\n   AdminPasswordUpdateParams,\n   UnitPriceGetListParams,\n } from './adminApi.types';\n \n-const BASE_URL = '/api';\n+const BASE_URL = '';\n \n // ***************** 인증 관련\n \n export async function adminLogin(\n"
+                },
+                {
+                    "date": 1756963647634,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,10 +11,23 @@\n   AdminPasswordUpdateParams,\n   UnitPriceGetListParams,\n } from './adminApi.types';\n \n-const BASE_URL = '';\n+// API URL 생성 헬퍼 함수\n+const getBaseUrl = () => {\n+  const ENV_NAME = import.meta.env.VITE_ENV_NAME;\n+  \n+  if (ENV_NAME === 'dev') {\n+    // 개발 환경: /api 프리픽스 사용\n+    return '/api';\n+  } else {\n+    // 운영 환경: 직접 API 서버로 요청\n+    return 'https://api.aigopartners.com';\n+  }\n+};\n \n+const BASE_URL = getBaseUrl();\n+\n // ***************** 인증 관련\n \n export async function adminLogin(\n   params: AdminLoginParams) {\n"
+                },
+                {
+                    "date": 1756966132200,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -15,15 +15,15 @@\n // API URL 생성 헬퍼 함수\n const getBaseUrl = () => {\n   const ENV_NAME = import.meta.env.VITE_ENV_NAME;\n   \n-  if (ENV_NAME === 'dev') {\n-    // 개발 환경: /api 프리픽스 사용\n-    return '/api';\n-  } else {\n-    // 운영 환경: 직접 API 서버로 요청\n-    return 'https://api.aigopartners.com';\n-  }\n+  // if (ENV_NAME === 'dev') {\n+  //   // 개발 환경: /api 프리픽스 사용\n+  //   return '/api';\n+  // } else {\n+  //   // 운영 환경: 직접 API 서버로 요청\n+  //   return 'https://api.aigopartners.com';\n+  // }\n };\n \n const BASE_URL = getBaseUrl();\n \n"
                 }
             ],
             "date": 1756187053867,

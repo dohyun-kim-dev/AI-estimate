@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import Icon from '@components/ai-esti/Icon';
-import { useNavigate, useLocation, Outlet, useParams } from 'react-router-dom'; // useParams 추가
+import { useNavigate, useLocation, Outlet, useParams } from 'react-router-dom';
 import { useThemeStore } from '@store/themeStore';
 import { useChatStore } from '@store/chatStore';
 import { useToast } from '@components/common/ToastProvider';
@@ -10,7 +10,7 @@ import { useAuthStore } from '@store/authStore';
 import { useModalStore } from '@store/modalStore';
 
 const LayoutWrapper = styled.div`
-  min-height: 100vh;
+  // min-height: 100vh;
   padding-bottom: calc(76px + env(safe-area-inset-bottom));
   background-color: ${({ theme }) => theme.body};
 `;
@@ -120,7 +120,7 @@ const ProfileIconWrapper = styled.div`
 const Main = styled.main` 
   width: 100vw;
   padding: 56px 0 84px;
-  min-height: 100vh;
+  min-height: auto;
       
 `;
 
@@ -156,11 +156,11 @@ const ShareInput = styled.div`
 export default function AILayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { companyCode } = useParams(); // URL에서 companyCode를 가져옵니다.
+  const { companyCode } = useParams();
   const { isDarkMode, toggleTheme } = useThemeStore();
   const { success } = useToast();
   const resetChat = useChatStore((s) => s.clear);
-  const chatSessionId = useChatStore((s) => s.chatSessionId); // 세션 ID 가져오기
+  const chatSessionId = useChatStore((s) => s.chatSessionId);
   const [openShare, setOpenShare] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { isAuthenticated } = useAuthStore();
@@ -195,7 +195,6 @@ export default function AILayout() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // 라우트 경로를 동적으로 처리하도록 수정
   const pageTitle = location.pathname.includes('/ai/my-estimate') ? '내 견적서' : location.pathname.includes('/ai/setting') ? '설정' : null;
 
   const handleBack = () => {
@@ -211,7 +210,6 @@ export default function AILayout() {
   };
 
   const handleCopy = async () => {
-    // 세션 ID가 있으면 공유 URL에 포함, 없으면 현재 URL 사용
     let shareUrl;
     if (chatSessionId) {
       shareUrl = `${window.location.origin}/aiclient/${companyCode}/ai/share/${chatSessionId}`;
@@ -234,14 +232,21 @@ export default function AILayout() {
   };
 
   const handleGoToSettings = () => {
-    navigate(`/aiclient/${companyCode}/ai/setting`);
+    if (isAuthenticated()) {
+      navigate(`/aiclient/${companyCode}/ai/setting`);
+    } else {
+      openLoginModal();
+    }
   };
 
   const handleGoToMyEstimate = () => {
-    navigate(`/aiclient/${companyCode}/ai/my-estimate`);
+    if (isAuthenticated()) {
+      navigate(`/aiclient/${companyCode}/ai/my-estimate`);
+    } else {
+      openLoginModal();
+    }
   };
 
-  // 세션 ID가 있으면 공유 URL에 포함, 없으면 현재 URL 사용
   const shareUrl = chatSessionId 
     ? `${window.location.origin}/aiclient/${companyCode}/ai/share/${chatSessionId}`
     : window.location.href;
@@ -265,7 +270,11 @@ export default function AILayout() {
           <div className="right-icons">
             <span className="icon" onClick={handleOpenShare}><Icon src={icons.share} width={36} height={36} /></span>
             <span className="icon" onClick={handleNewChat}><Icon src={icons.new} width={36} height={36} /></span>
+            
+            {/* 나의 견적 버튼 */}
             <span className="icon" onClick={handleGoToMyEstimate}><Icon src={icons.estimate} width={36} height={36} /></span>
+            
+            {/* 설정/로그인 버튼 */}
             <ProfileIconWrapper className="profile-menu">
               {isAuthenticated() ? (
                 <span className="icon" onClick={handleGoToSettings}>
@@ -297,15 +306,14 @@ export default function AILayout() {
         )}
       </TopNav>
       <Main >
-
-      <div style={{ paddingTop: '0px' }}>
-        <Outlet />
-      </div>
-
+        <div style={{ paddingTop: '0px' }}>
+          <Outlet />
+        </div>
       </Main>
-      <ThemeToggleButton onClick={toggleTheme}>
-        {isDarkMode ? '☀️' : '�'}
-      </ThemeToggleButton>
+
+      {/* <ThemeToggleButton onClick={toggleTheme}>
+        {isDarkMode ? '☀️' : '🌙'}
+      </ThemeToggleButton> */}
 
       <Modal open={openShare} title="페이지 공유" onClose={handleCloseShare} width={520}>
         <div style={{ color: '#A1A1AA', fontSize: 14, marginBottom: 32 }}>공유받은 사용자는 현재 페이지의 내용을 확인할 수 있습니다.</div>

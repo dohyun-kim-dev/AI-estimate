@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 23,
             "patches": [
                 {
                     "date": 1755953227058,
@@ -20,6 +20,86 @@
                 {
                     "date": 1756186689455,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -49,10 +49,20 @@\n         // API 프록시 설정\n         '/api': {\n           target: API_URL,\n           changeOrigin: true,\n-          rewrite: (path) => path.replace(/^\\/api/, ''),\n           secure: false,\n+          configure: (proxy, options) => {\n+            proxy.on('error', (err, req, res) => {\n+              console.log('proxy error', err);\n+            });\n+            proxy.on('proxyReq', (proxyReq, req, res) => {\n+              console.log('Sending Request to the Target:', req.method, req.url);\n+            });\n+            proxy.on('proxyRes', (proxyRes, req, res) => {\n+              console.log('Received Response from the Target:', proxyRes.statusCode, req.url);\n+            });\n+          },\n         }\n       },\n       cors: true // CORS 활성화\n     },\n"
+                },
+                {
+                    "date": 1756891550435,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,9 @@\n export default defineConfig(({ mode }) => {\n   // Load env file based on `mode` in the current working directory.\n   const env = loadEnv(mode, process.cwd(), '')\n   \n-  const API_URL = env.VITE_API_URL || 'http://121.157.229.40:8535'\n+  const API_URL = env.VITE_API_URL || 'http://121.157.229.40:8535/api'\n   const ENV = env.VITE_ENV || 'development'\n \n   console.log(`현재 환경: ${ENV}`)\n   console.log(`API URL: ${API_URL}`)\n"
+                },
+                {
+                    "date": 1756891753425,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,14 +6,27 @@\n export default defineConfig(({ mode }) => {\n   // Load env file based on `mode` in the current working directory.\n   const env = loadEnv(mode, process.cwd(), '')\n   \n-  const API_URL = env.VITE_API_URL || 'http://121.157.229.40:8535/api'\n-  const ENV = env.VITE_ENV || 'development'\n+  // 환경별 API URL 설정\n+  const API_URL = env.VITE_API_URL || (mode === 'production' \n+    ? 'https://api.aigo.com' \n+    : '/api')\n+  const ENV = mode\n \n   console.log(`현재 환경: ${ENV}`)\n   console.log(`API URL: ${API_URL}`)\n \n+  // 프록시 설정\n+  const proxyConfig = mode === 'development' ? {\n+    '/api': {\n+      target: 'http://localhost:8535',  // 개발 서버 주소\n+      changeOrigin: true,\n+      secure: false,\n+      rewrite: (path) => path.replace(/^\\/api/, '')\n+    }\n+  } : {}\n+\n   return {\n     plugins: [\n       react({\n         jsxImportSource: '@emotion/react',\n@@ -44,28 +57,11 @@\n         '@mui/icons-material': '@mui/icons-material/esm',\n       }\n     },\n     server: {\n-      proxy: {\n-        // API 프록시 설정\n-        '/api': {\n-          target: API_URL,\n-          changeOrigin: true,\n-          secure: false,\n-          configure: (proxy, options) => {\n-            proxy.on('error', (err, req, res) => {\n-              console.log('proxy error', err);\n-            });\n-            proxy.on('proxyReq', (proxyReq, req, res) => {\n-              console.log('Sending Request to the Target:', req.method, req.url);\n-            });\n-            proxy.on('proxyRes', (proxyRes, req, res) => {\n-              console.log('Received Response from the Target:', proxyRes.statusCode, req.url);\n-            });\n-          },\n-        }\n-      },\n-      cors: true // CORS 활성화\n+      proxy: proxyConfig,\n+      cors: true, // CORS 활성화\n+      host: true, // 외부 접속 허용\n     },\n     build: {\n       rollupOptions: {\n         // 번들 최적화 설정\n"
+                },
+                {
+                    "date": 1756891773556,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,9 @@\n \n   // 프록시 설정\n   const proxyConfig = mode === 'development' ? {\n     '/api': {\n-      target: 'http://localhost:8535',  // 개발 서버 주소\n+      target: 'http://localhost:8535/api',  // 개발 서버 주소\n       changeOrigin: true,\n       secure: false,\n       rewrite: (path) => path.replace(/^\\/api/, '')\n     }\n"
+                },
+                {
+                    "date": 1756891824971,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -18,9 +18,9 @@\n \n   // 프록시 설정\n   const proxyConfig = mode === 'development' ? {\n     '/api': {\n-      target: 'http://localhost:8535/api',  // 개발 서버 주소\n+      target: 'http://121.157.229.40:8535/api',  // 개발 서버 주소\n       changeOrigin: true,\n       secure: false,\n       rewrite: (path) => path.replace(/^\\/api/, '')\n     }\n"
+                },
+                {
+                    "date": 1756891918320,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,21 +6,19 @@\n export default defineConfig(({ mode }) => {\n   // Load env file based on `mode` in the current working directory.\n   const env = loadEnv(mode, process.cwd(), '')\n   \n-  // 환경별 API URL 설정\n-  const API_URL = env.VITE_API_URL || (mode === 'production' \n-    ? 'https://api.aigo.com' \n-    : '/api')\n-  const ENV = mode\n+  // 환경 변수 설정\n+  const API_HOST = env.VITE_API_HOST\n+  const ENV_NAME = env.VITE_ENV_NAME || mode\n \n-  console.log(`현재 환경: ${ENV}`)\n-  console.log(`API URL: ${API_URL}`)\n+  console.log(`현재 환경: ${ENV_NAME}`)\n+  console.log(`API HOST: ${API_HOST}`)\n \n-  // 프록시 설정\n-  const proxyConfig = mode === 'development' ? {\n+  // 프록시 설정 (개발 환경에서만 사용)\n+  const proxyConfig = ENV_NAME === 'dev' ? {\n     '/api': {\n-      target: 'http://121.157.229.40:8535/api',  // 개발 서버 주소\n+      target: API_HOST,\n       changeOrigin: true,\n       secure: false,\n       rewrite: (path) => path.replace(/^\\/api/, '')\n     }\n"
+                },
+                {
+                    "date": 1756892309692,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,10 +1,11 @@\n-import { defineConfig, loadEnv } from 'vite'\n+import { defineConfig, loadEnv, ConfigEnv, UserConfig } from 'vite'\n import react from '@vitejs/plugin-react'\n import path from 'path'\n+import type { ProxyOptions } from 'vite'\n \n // https://vitejs.dev/config/\n-export default defineConfig(({ mode }) => {\n+export default defineConfig(({ mode }: ConfigEnv): UserConfig => {\n   // Load env file based on `mode` in the current working directory.\n   const env = loadEnv(mode, process.cwd(), '')\n   \n   // 환경 변수 설정\n@@ -14,14 +15,14 @@\n   console.log(`현재 환경: ${ENV_NAME}`)\n   console.log(`API HOST: ${API_HOST}`)\n \n   // 프록시 설정 (개발 환경에서만 사용)\n-  const proxyConfig = ENV_NAME === 'dev' ? {\n+  const proxyConfig: Record<string, ProxyOptions> = ENV_NAME === 'dev' ? {\n     '/api': {\n       target: API_HOST,\n       changeOrigin: true,\n       secure: false,\n-      rewrite: (path) => path.replace(/^\\/api/, '')\n+      rewrite: (path: string) => path.replace(/^\\/api/, '')\n     }\n   } : {}\n \n   return {\n"
+                },
+                {
+                    "date": 1756934359206,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,8 +21,23 @@\n       target: API_HOST,\n       changeOrigin: true,\n       secure: false,\n       rewrite: (path: string) => path.replace(/^\\/api/, '')\n+    },\n+    '/company': {\n+      target: API_HOST,\n+      changeOrigin: true,\n+      secure: false\n+    },\n+    '/users': {\n+      target: API_HOST,\n+      changeOrigin: true,\n+      secure: false\n+    },\n+    '/file': {\n+      target: API_HOST,\n+      changeOrigin: true,\n+      secure: false\n     }\n   } : {}\n \n   return {\n"
+                },
+                {
+                    "date": 1756934572133,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,32 +14,17 @@\n \n   console.log(`현재 환경: ${ENV_NAME}`)\n   console.log(`API HOST: ${API_HOST}`)\n \n-  // 프록시 설정 (개발 환경에서만 사용)\n-  const proxyConfig: Record<string, ProxyOptions> = ENV_NAME === 'dev' ? {\n-    '/api': {\n+  // 프록시 설정\n+  const proxyConfig: Record<string, ProxyOptions> = {\n+    '^/api/.*': {\n       target: API_HOST,\n       changeOrigin: true,\n       secure: false,\n       rewrite: (path: string) => path.replace(/^\\/api/, '')\n-    },\n-    '/company': {\n-      target: API_HOST,\n-      changeOrigin: true,\n-      secure: false\n-    },\n-    '/users': {\n-      target: API_HOST,\n-      changeOrigin: true,\n-      secure: false\n-    },\n-    '/file': {\n-      target: API_HOST,\n-      changeOrigin: true,\n-      secure: false\n     }\n-  } : {}\n+  }\n \n   return {\n     plugins: [\n       react({\n"
+                },
+                {
+                    "date": 1756934860061,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -16,10 +16,10 @@\n   console.log(`API HOST: ${API_HOST}`)\n \n   // 프록시 설정\n   const proxyConfig: Record<string, ProxyOptions> = {\n-    '^/api/.*': {\n-      target: API_HOST,\n+    '/api': {\n+      target: ENV_NAME === 'dev' ? API_HOST : 'https://api.aigopartners.com',\n       changeOrigin: true,\n       secure: false,\n       rewrite: (path: string) => path.replace(/^\\/api/, '')\n     }\n"
+                },
+                {
+                    "date": 1756946911485,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,17 +14,17 @@\n \n   console.log(`현재 환경: ${ENV_NAME}`)\n   console.log(`API HOST: ${API_HOST}`)\n \n-  // 프록시 설정\n-  const proxyConfig: Record<string, ProxyOptions> = {\n+  // 프록시 설정 - 개발 환경에서만 사용\n+  const proxyConfig: Record<string, ProxyOptions> = ENV_NAME === 'dev' ? {\n     '/api': {\n-      target: ENV_NAME === 'dev' ? API_HOST : 'https://api.aigopartners.com',\n+      target: API_HOST,\n       changeOrigin: true,\n       secure: false,\n       rewrite: (path: string) => path.replace(/^\\/api/, '')\n     }\n-  }\n+  } : {}\n \n   return {\n     plugins: [\n       react({\n"
+                },
+                {
+                    "date": 1756947131336,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,9 +14,9 @@\n \n   console.log(`현재 환경: ${ENV_NAME}`)\n   console.log(`API HOST: ${API_HOST}`)\n \n-  // 프록시 설정 - 개발 환경에서만 사용\n+fkrh   // 프록시 설정 - 개발 환경에서만 사용\n   const proxyConfig: Record<string, ProxyOptions> = ENV_NAME === 'dev' ? {\n     '/api': {\n       target: API_HOST,\n       changeOrigin: true,\n"
+                },
+                {
+                    "date": 1756947585406,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,17 +14,20 @@\n \n   console.log(`현재 환경: ${ENV_NAME}`)\n   console.log(`API HOST: ${API_HOST}`)\n \n-fkrh   // 프록시 설정 - 개발 환경에서만 사용\n-  const proxyConfig: Record<string, ProxyOptions> = ENV_NAME === 'dev' ? {\n+    // 프록시 설정\n+  const proxyConfig: Record<string, ProxyOptions> = {\n     '/api': {\n-      target: API_HOST,\n+      target: ENV_NAME === 'dev' ? API_HOST : 'https://api.aigopartners.com',\n       changeOrigin: true,\n       secure: false,\n-      rewrite: (path: string) => path.replace(/^\\/api/, '')\n+      rewrite: (path: string) => path.replace(/^\\/api/, ''),\n+      headers: {\n+        'x-company-code': 'heredot'\n+      }\n     }\n-  } : {}\n+  }\n \n   return {\n     plugins: [\n       react({\n"
+                },
+                {
+                    "date": 1756947667789,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,20 +14,17 @@\n \n   console.log(`현재 환경: ${ENV_NAME}`)\n   console.log(`API HOST: ${API_HOST}`)\n \n-    // 프록시 설정\n-  const proxyConfig: Record<string, ProxyOptions> = {\n+    // 프록시 설정 - 개발 환경에서만 사용\n+  const proxyConfig: Record<string, ProxyOptions> = ENV_NAME === 'dev' ? {\n     '/api': {\n-      target: ENV_NAME === 'dev' ? API_HOST : 'https://api.aigopartners.com',\n+      target: API_HOST,\n       changeOrigin: true,\n       secure: false,\n-      rewrite: (path: string) => path.replace(/^\\/api/, ''),\n-      headers: {\n-        'x-company-code': 'heredot'\n-      }\n+      rewrite: (path: string) => path.replace(/^\\/api/, '')\n     }\n-  }\n+  } : {}\n \n   return {\n     plugins: [\n       react({\n"
+                },
+                {
+                    "date": 1756962459954,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -15,10 +15,10 @@\n   console.log(`현재 환경: ${ENV_NAME}`)\n   console.log(`API HOST: ${API_HOST}`)\n \n     // 프록시 설정 - 개발 환경에서만 사용\n-  const proxyConfig: Record<string, ProxyOptions> = ENV_NAME === 'dev' ? {\n-    '/api': {\n+  // const proxyConfig: Record<string, ProxyOptions> = ENV_NAME === 'dev' ? {\n+  //   '/api': {\n       target: API_HOST,\n       changeOrigin: true,\n       secure: false,\n       rewrite: (path: string) => path.replace(/^\\/api/, '')\n"
+                },
+                {
+                    "date": 1756962465184,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -15,10 +15,11 @@\n   console.log(`현재 환경: ${ENV_NAME}`)\n   console.log(`API HOST: ${API_HOST}`)\n \n     // 프록시 설정 - 개발 환경에서만 사용\n-  // const proxyConfig: Record<string, ProxyOptions> = ENV_NAME === 'dev' ? {\n-  //   '/api': {\n+  const proxyConfig: Record<string, ProxyOptions> = \n+  ENV_NAME === 'dev' ? {\n+    '/api': {\n       target: API_HOST,\n       changeOrigin: true,\n       secure: false,\n       rewrite: (path: string) => path.replace(/^\\/api/, '')\n"
+                },
+                {
+                    "date": 1756962610859,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,18 +14,20 @@\n \n   console.log(`현재 환경: ${ENV_NAME}`)\n   console.log(`API HOST: ${API_HOST}`)\n \n-    // 프록시 설정 - 개발 환경에서만 사용\n-  const proxyConfig: Record<string, ProxyOptions> = \n-  ENV_NAME === 'dev' ? {\n+    // 프록시 설정 - 모든 환경에서 사용\n+  const proxyConfig: Record<string, ProxyOptions> = {\n     '/api': {\n-      target: API_HOST,\n+      target: ENV_NAME === 'dev' ? API_HOST : 'https://api.aigopartners.com',\n       changeOrigin: true,\n       secure: false,\n-      rewrite: (path: string) => path.replace(/^\\/api/, '')\n+      rewrite: (path: string) => path.replace(/^\\/api/, ''),\n+      headers: {\n+        'x-company-code': 'heredot'\n+      }\n     }\n-  } : {}\n+  }\n \n   return {\n     plugins: [\n       react({\n"
+                },
+                {
+                    "date": 1756963076743,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,20 +14,20 @@\n \n   console.log(`현재 환경: ${ENV_NAME}`)\n   console.log(`API HOST: ${API_HOST}`)\n \n-    // 프록시 설정 - 모든 환경에서 사용\n-  const proxyConfig: Record<string, ProxyOptions> = {\n+    // 프록시 설정 - 개발 환경에서만 사용\n+  const proxyConfig: Record<string, ProxyOptions> = ENV_NAME === 'dev' ? {\n     '/api': {\n-      target: ENV_NAME === 'dev' ? API_HOST : 'https://api.aigopartners.com',\n+      target: API_HOST,\n       changeOrigin: true,\n       secure: false,\n       rewrite: (path: string) => path.replace(/^\\/api/, ''),\n       headers: {\n         'x-company-code': 'heredot'\n       }\n     }\n-  }\n+  } : {}\n \n   return {\n     plugins: [\n       react({\n"
+                },
+                {
+                    "date": 1756964581480,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,20 +14,20 @@\n \n   console.log(`현재 환경: ${ENV_NAME}`)\n   console.log(`API HOST: ${API_HOST}`)\n \n-    // 프록시 설정 - 개발 환경에서만 사용\n-  const proxyConfig: Record<string, ProxyOptions> = ENV_NAME === 'dev' ? {\n+    // 프록시 설정 - 모든 환경에서 사용\n+  const proxyConfig: Record<string, ProxyOptions> = {\n     '/api': {\n-      target: API_HOST,\n+      target: ENV_NAME === 'dev' ? API_HOST : 'https://api.aigopartners.com',\n       changeOrigin: true,\n       secure: false,\n       rewrite: (path: string) => path.replace(/^\\/api/, ''),\n       headers: {\n         'x-company-code': 'heredot'\n       }\n     }\n-  } : {}\n+  }\n \n   return {\n     plugins: [\n       react({\n"
+                },
+                {
+                    "date": 1756964740816,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,9 +17,9 @@\n \n     // 프록시 설정 - 모든 환경에서 사용\n   const proxyConfig: Record<string, ProxyOptions> = {\n     '/api': {\n-      target: ENV_NAME === 'dev' ? API_HOST : 'https://api.aigopartners.com',\n+      target: ENV_NAME === 'dev' ? API_HOST : 'https://aigopartners.com',\n       changeOrigin: true,\n       secure: false,\n       rewrite: (path: string) => path.replace(/^\\/api/, ''),\n       headers: {\n"
+                },
+                {
+                    "date": 1756964804132,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,9 +17,9 @@\n \n     // 프록시 설정 - 모든 환경에서 사용\n   const proxyConfig: Record<string, ProxyOptions> = {\n     '/api': {\n-      target: ENV_NAME === 'dev' ? API_HOST : 'https://aigopartners.com',\n+      target: ENV_NAME === 'dev' ? API_HOST : 'https://api.aigopartners.com/',\n       changeOrigin: true,\n       secure: false,\n       rewrite: (path: string) => path.replace(/^\\/api/, ''),\n       headers: {\n"
                 }
             ],
             "date": 1755953227058,

@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/utils/promptLogger.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1756862529395,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1756862529395,
+            "name": "Commit-0",
+            "content": "interface TokenInfo {\n  promptTokens: number;\n  completionTokens: number;\n  totalTokens: number;\n}\n\ninterface PromptLogInfo {\n  templateId: string;\n  userInput: string;\n  combinedPrompt: string;\n  tokenInfo?: TokenInfo;\n}\n\n// 토큰당 비용 (KRW)\nconst TOKEN_COSTS = {\n  prompt: 0.0001394,  // 100만 토큰당 $0.10 -> 0.0001394원\n  completion: 0.0005576 // 100만 토큰당 $0.40 -> 0.0005576원\n};\n\n// ANSI 색상 코드\nconst colors = {\n  reset: '\\x1b[0m',\n  bright: '\\x1b[1m',\n  dim: '\\x1b[2m',\n  underscore: '\\x1b[4m',\n  blink: '\\x1b[5m',\n  reverse: '\\x1b[7m',\n  hidden: '\\x1b[8m',\n  \n  black: '\\x1b[30m',\n  red: '\\x1b[31m',\n  green: '\\x1b[32m',\n  yellow: '\\x1b[33m',\n  blue: '\\x1b[34m',\n  magenta: '\\x1b[35m',\n  cyan: '\\x1b[36m',\n  white: '\\x1b[37m',\n  \n  bgBlack: '\\x1b[40m',\n  bgRed: '\\x1b[41m',\n  bgGreen: '\\x1b[42m',\n  bgYellow: '\\x1b[43m',\n  bgBlue: '\\x1b[44m',\n  bgMagenta: '\\x1b[45m',\n  bgCyan: '\\x1b[46m',\n  bgWhite: '\\x1b[47m'\n};\n\nexport const logPromptInfo = (info: PromptLogInfo) => {\n  console.group(`${colors.bright}${colors.cyan}🤖 AI Chat Log${colors.reset}`);\n  \n  // 템플릿 ID\n  console.log(`${colors.yellow}Template ID:${colors.reset} ${info.templateId}`);\n  \n  // 사용자 입력\n  console.log(`${colors.yellow}User Input:${colors.reset} ${info.userInput}`);\n  \n  // 결합된 프롬프트 (접었다 펼 수 있게)\n  console.groupCollapsed(`${colors.yellow}Combined Prompt:${colors.reset}`);\n  console.log(info.combinedPrompt);\n  console.groupEnd();\n  \n  // 토큰 정보가 있는 경우\n  if (info.tokenInfo) {\n    const { promptTokens, completionTokens, totalTokens } = info.tokenInfo;\n    \n    // 비용 계산\n    const promptCost = promptTokens * TOKEN_COSTS.prompt;\n    const completionCost = completionTokens * TOKEN_COSTS.completion;\n    const totalCost = promptCost + completionCost;\n    \n    console.group(`${colors.yellow}Token Usage & Cost:${colors.reset}`);\n    console.log(`${colors.green}Prompt Tokens:${colors.reset} ${promptTokens.toLocaleString()} (₩${promptCost.toFixed(2)})`);\n    console.log(`${colors.green}Completion Tokens:${colors.reset} ${completionTokens.toLocaleString()} (₩${completionCost.toFixed(2)})`);\n    console.log(`${colors.green}Total Tokens:${colors.reset} ${totalTokens.toLocaleString()}`);\n    console.log(`${colors.bright}${colors.green}Total Cost:${colors.reset} ₩${totalCost.toFixed(2)}`);\n    console.groupEnd();\n  }\n  \n  console.groupEnd();\n};\n\n// 토큰 수를 대략적으로 추정하는 함수\nexport const estimateTokens = (text: string): number => {\n  // 영어 기준으로 단어 당 약 1.3 토큰\n  // 한글은 글자 당 약 2~3 토큰\n  const words = text.split(/\\s+/).length;\n  const koreanChars = (text.match(/[\\u3131-\\u314e\\u314f-\\u3163\\uac00-\\ud7a3]/g) || []).length;\n  \n  return Math.ceil(words * 1.3 + koreanChars * 2.5);\n};\n"
+        }
+    ]
+}

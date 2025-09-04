@@ -1,0 +1,30 @@
+{
+    "sourceFile": "src/components/CustomList/ResponsiveList/CmsResponsiveContainer.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1756797610883,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756797620352,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -51,8 +51,9 @@\n   defaultViewMode = 'detail',\n   enableDateFilter,\n   onCompanySelect,\n   enableCompanySearch,\n+  isShowExcelTemplate,\n   \n }: CmsResponsiveContainerProps<T>) {\n   \n   // 공통 props\n"
+                },
+                {
+                    "date": 1756798079565,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,8 +33,10 @@\n   enableDateFilter: boolean;\n   // 고객사 검색 관련 props\n   enableCompanySearch?: boolean;\n   onCompanySelect?: (company: { id: string; name: string }) => void;\n+  isShowExcelTemplate?: boolean;\n+  excelUploadBtnCallBack?: () => void;\n }\n \n export default function CmsResponsiveContainer<T extends BaseRecord = AdminUser>({\n   title,\n@@ -52,9 +54,9 @@\n   enableDateFilter,\n   onCompanySelect,\n   enableCompanySearch,\n   isShowExcelTemplate,\n-  \n+  excelUploadBtnCallBack,\n }: CmsResponsiveContainerProps<T>) {\n   \n   // 공통 props\n   const commonProps = {\n@@ -70,9 +72,11 @@\n     compactFieldCount,\n     defaultViewMode,\n     enableDateFilter,\n     enableCompanySearch,\n-    onCompanySelect\n+    onCompanySelect,\n+    isShowExcelTemplate,\n+    excelUploadBtnCallBack,\n \n   };\n \n   return (\n"
+                },
+                {
+                    "date": 1756798086011,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -55,8 +55,9 @@\n   onCompanySelect,\n   enableCompanySearch,\n   isShowExcelTemplate,\n   excelUploadBtnCallBack,\n+  excelTemplateBtnCallBack,\n }: CmsResponsiveContainerProps<T>) {\n   \n   // 공통 props\n   const commonProps = {\n"
+                }
+            ],
+            "date": 1756797610883,
+            "name": "Commit-0",
+            "content": "\"use client\";\n\nimport React from \"react\";\nimport ResponsiveView from \"@/layout/ResponsiveView\";\nimport { AdminUser } from \"../types\";\nimport { ColumnDefinition } from \"@/components/CustomList/GenericDataTable\";\nimport CmsMobileView from \"./CmsMobileView\";\nimport CmsDesktopView from \"./CmsDesktopView\";\n\n// BaseRecord 타입 정의\ninterface BaseRecord {\n  id?: string | number;\n  index?: number;\n  [key: string]: any;\n}\n\n// ViewMode 타입 추가\ntype ViewMode = 'detail' | 'compact' | 'large';\n\ninterface CmsResponsiveContainerProps<T extends BaseRecord> {\n  title: string;\n  data: T[];\n  columns: ColumnDefinition<T>[];\n  onRowClick?: (item: T) => void;\n  onAdd?: () => void;\n  addButtonLabel?: string;\n  onExport?: () => void;\n  isLoading?: boolean;\n  fetchData?: () => Promise<{ data: T[]; totalItems: number; allItems: number; }>;\n  themeMode?: \"light\" | \"dark\";\n  compactFieldCount?: number;\n  defaultViewMode?: ViewMode; // 모바일에서 기본 보기 모드\n  enableDateFilter: boolean;\n  // 고객사 검색 관련 props\n  enableCompanySearch?: boolean;\n  onCompanySelect?: (company: { id: string; name: string }) => void;\n}\n\nexport default function CmsResponsiveContainer<T extends BaseRecord = AdminUser>({\n  title,\n  data,\n  columns,\n  onRowClick,\n  onAdd,\n  addButtonLabel,\n  onExport,\n  isLoading = false,\n  fetchData,\n  themeMode = \"light\",\n  compactFieldCount = 3,\n  defaultViewMode = 'detail',\n  enableDateFilter,\n  onCompanySelect,\n  enableCompanySearch,\n  \n}: CmsResponsiveContainerProps<T>) {\n  \n  // 공통 props\n  const commonProps = {\n    title,\n    data,\n    columns,\n    onRowClick,\n    onAdd,\n    onExport,\n    isLoading,\n    fetchData,\n    themeMode,\n    compactFieldCount,\n    defaultViewMode,\n    enableDateFilter,\n    enableCompanySearch,\n    onCompanySelect\n\n  };\n\n  return (\n    <ResponsiveView\n      mobileView={<CmsMobileView {...commonProps} />}\n      desktopView={<CmsDesktopView {...commonProps} addButtonLabel={addButtonLabel} />}\n    />\n  );\n}\n"
+        }
+    ]
+}

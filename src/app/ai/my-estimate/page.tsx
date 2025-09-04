@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import styled from 'styled-components'
 import { useEstimateStore } from '@/store/estimateStore'
 import { useNavigate } from "react-router-dom";
 import MyEstimateCard from '../../../components/ai-esti/MyEstimateCard'
+import { getEstimateHistory, getDownloadEstimateUrlWithUserInfo, EstimateHistory } from '@/lib/api/user/userApi';
 
 const Container = styled.div`
   max-width: 960px;
@@ -87,13 +88,126 @@ const mockEstimates: ProjectEstimate[] = [
 ];
 
 
-
 export default function MyEstimatePage() {
   const navigate = useNavigate();
-  // const { estimates } = useEstimateStore(); // 여러 견적을 저장한다고 가정
-  const estimates = mockEstimates;
+  const [estimates, setEstimates] = useState<EstimateHistory[]>([]);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const observerTarget = useRef(null);
 
-  if (!estimates || estimates.length === 0) {
+  const getCompanyCode = () => {
+    // URL에서 회사 코드 추출
+    const pathParts = window.location.pathname.split('/');
+    const companyCodeIndex = pathParts.indexOf('aiclient') + 1;
+    return (companyCodeIndex > 0 && pathParts.length > companyCodeIndex)
+      ? pathParts[companyCodeIndex]
+      : 'heredot';
+  };
+  const companyCode = getCompanyCode();
+
+  const fetchEstimates = async () => {
+    if (loading || !hasMore) return;
+
+    setLoading(true);
+    try {
+      const response = await getEstimateHistory(offset);
+      
+      if (response.data && response.data.length > 0) {
+        setEstimates(prev => [...prev, ...response.data]);
+        setOffset(prev => prev + response.data.length);
+        if (response.data.length < 30) {
+          setHasMore(false);
+        }
+      } else {
+        setHasMore(false);
+      }
+    } catch (e) {
+      console.error('견적서 목록을 가져오는 데 실패했습니다:', e);
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEstimates();
+  }, []); // 빈 의존성 배열을 사용하여 컴포넌트가 처음 마운트될 때만 실행
+
+  // ⭐️ 2. 무한 스크롤 로직을 위한 useEffect는 그대로 유지
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          fetchEstimates();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.disconnect();
+      }
+    };
+  }, [hasMore, loading, offset]);
+
+  useEffect(() => {
+    // Intersection Observer를 사용하여 무한 스크롤 구현
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          fetchEstimates();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.disconnect();
+      }
+    };
+  }, [hasMore, loading, offset]);
+
+  // 날짜별 그룹화 로직
+  const groupedEstimates = estimates.reduce((acc, estimate) => {
+    const date = estimate.createAt.split(' ')[0];
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+    acc[date].push(estimate);
+    return acc;
+  }, {} as Record<string, EstimateHistory[]>);
+
+  const sortedDates = Object.keys(groupedEstimates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
+  const getDisplayTitle = (date: string) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    
+    if (date === today) return '오늘';
+    if (date === yesterday) return '어제';
+    
+    // 일주일 전 그룹화는 이전에 구현된 로직보다 유동적으로 변경
+    const oneWeekAgo = new Date(Date.now() - 7 * 86400000);
+    const estimateDate = new Date(date);
+    if (estimateDate >= oneWeekAgo) {
+      return '일주일 전';
+    }
+    
+    return date;
+  };
+  
+  if (estimates.length === 0 && !loading) {
     return (
       <Container>
         <EmptyState>
@@ -105,43 +219,41 @@ export default function MyEstimatePage() {
     )
   }
 
-  // 날짜 비교용
-  const today = new Date().toISOString().slice(0, 10)
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
-  const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
-
-  const todayEstimates = estimates.filter(e => e.created_at === today)
-  const yesterdayEstimates = estimates.filter(e => e.created_at === yesterday)
-  const weekEstimates = estimates.filter(e => e.created_at <= weekAgo)
-
-  return (
-    <Container>
-      {todayEstimates.length > 0 && (
-        <>
-          <GroupTitle>오늘</GroupTitle>
-          {todayEstimates.map((estimate, idx) => (
-            <MyEstimateCard key={`today-${idx}`} estimate={estimate} />
-          ))}
-        </>
-      )}
-
-      {yesterdayEstimates.length > 0 && (
-        <>
-          <GroupTitle>어제</GroupTitle>
-          {yesterdayEstimates.map((estimate, idx) => (
-            <MyEstimateCard key={`yesterday-${idx}`} estimate={estimate} />
-          ))}
-        </>
-      )}
-
-      {weekEstimates.length > 0 && (
-        <>
-          <GroupTitle>일주일 전</GroupTitle>
-          {weekEstimates.map((estimate, idx) => (
-            <MyEstimateCard key={`week-${idx}`} estimate={estimate} />
-          ))}
-        </>
-      )}
-    </Container>
-  )
+return (
+  <Container>
+    {sortedDates.map(date => (
+      <React.Fragment key={date}>
+        <GroupTitle>{getDisplayTitle(date)}</GroupTitle>
+        {groupedEstimates[date].map((estimate, index) => {
+          // 사용자 ID를 포함한 다운로드 URL 생성
+          const authStorage = localStorage.getItem('auth-storage');
+          const authData = authStorage ? JSON.parse(authStorage) : null;
+          const user = authData?.state?.user;
+          const userId = user ? user._id : localStorage.getItem('guest-uuid');
+  
+          const downloadUrl = `${window.location.origin}${getDownloadEstimateUrlWithUserInfo(
+            companyCode,
+            estimate.file,
+            { id: userId || '' }
+          )}`;
+  
+          // 👇 MyEstimateCard에 고유한 key를 추가했습니다.
+          return (
+            <MyEstimateCard
+              key={`${estimate._id}-${index}`} 
+              estimate={{
+                project_name: estimate.title,
+                created_at: estimate.createAt.split(' ')[0],
+                file: estimate.file,
+              }}
+              downloadUrl={downloadUrl}
+            />
+          );
+        })}
+      </React.Fragment>
+    ))}
+    <div ref={observerTarget}></div>
+    {loading && <p>불러오는 중...</p>}
+  </Container>
+);
 }

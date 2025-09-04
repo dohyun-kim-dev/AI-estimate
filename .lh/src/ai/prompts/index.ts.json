@@ -1,0 +1,94 @@
+{
+    "sourceFile": "src/ai/prompts/index.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 19,
+            "patches": [
+                {
+                    "date": 1756863412246,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1756863445332,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n import { systemPrompt } from './system';\n import { personaPrompt } from './persona';\n import { guidelinePrompt } from './guideline';\n import { schemaPrompt } from './schema';\n-impo\n+import { user } from './priceDate';\n \n export const combineSystemPrompts = () => {\n-  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n+  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${priceDatePrompt}`;\n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756863454254,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n import { systemPrompt } from './system';\n import { personaPrompt } from './persona';\n import { guidelinePrompt } from './guideline';\n import { schemaPrompt } from './schema';\n-import { user } from './priceDate';\n+import { userFeatures, } from './priceDate';\n \n export const combineSystemPrompts = () => {\n   return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${priceDatePrompt}`;\n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756863469192,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n import { systemPrompt } from './system';\n import { personaPrompt } from './persona';\n import { guidelinePrompt } from './guideline';\n import { schemaPrompt } from './schema';\n-import { userFeatures, } from './priceDate';\n+import { userFeatures, adminFeatures,} from './priceDate';\n \n export const combineSystemPrompts = () => {\n   return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${priceDatePrompt}`;\n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756863479125,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n import { systemPrompt } from './system';\n import { personaPrompt } from './persona';\n import { guidelinePrompt } from './guideline';\n import { schemaPrompt } from './schema';\n-import { userFeatures, adminFeatures,} from './priceDate';\n+import { userFeatures, adminFeatures,commonFeatures} from './priceDate';\n \n export const combineSystemPrompts = () => {\n-  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${priceDatePrompt}`;\n+  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${priceDatePrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756863484265,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,6 +4,6 @@\n import { schemaPrompt } from './schema';\n import { userFeatures, adminFeatures,commonFeatures} from './priceDate';\n \n export const combineSystemPrompts = () => {\n-  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${priceDatePrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n+  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756863523695,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,5 +5,7 @@\n import { userFeatures, adminFeatures,commonFeatures} from './priceDate';\n \n export const combineSystemPrompts = () => {\n   return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n+  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n+\n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756863530244,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,7 +5,7 @@\n import { userFeatures, adminFeatures,commonFeatures} from './priceDate';\n \n export const combineSystemPrompts = () => {\n   return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n-  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n+  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n \n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756863547066,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,8 +4,8 @@\n import { schemaPrompt } from './schema';\n import { userFeatures, adminFeatures,commonFeatures} from './priceDate';\n \n export const combineSystemPrompts = () => {\n-  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n+  // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n   return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n \n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756863556054,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,8 +4,8 @@\n import { schemaPrompt } from './schema';\n import { userFeatures, adminFeatures,commonFeatures} from './priceDate';\n \n export const combineSystemPrompts = () => {\n-  // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n-  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n+  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n+  // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n \n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756863671658,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,8 +4,8 @@\n import { schemaPrompt } from './schema';\n import { userFeatures, adminFeatures,commonFeatures} from './priceDate';\n \n export const combineSystemPrompts = () => {\n-  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n-  // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n+  // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n+  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n \n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756863923155,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,7 +5,7 @@\n import { userFeatures, adminFeatures,commonFeatures} from './priceDate';\n \n export const combineSystemPrompts = () => {\n   // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n-  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n+  // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n \n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756867494206,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,7 +5,7 @@\n import { userFeatures, adminFeatures,commonFeatures} from './priceDate';\n \n export const combineSystemPrompts = () => {\n   // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n-  // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n+  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n \n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756868100758,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,8 +4,8 @@\n import { schemaPrompt } from './schema';\n import { userFeatures, adminFeatures,commonFeatures} from './priceDate';\n \n export const combineSystemPrompts = () => {\n-  // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n-  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n+  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n+  // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n \n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756874059947,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,8 +3,9 @@\n import { guidelinePrompt } from './guideline';\n import { schemaPrompt } from './schema';\n import { userFeatures, adminFeatures,commonFeatures} from './priceDate';\n \n+\n export const combineSystemPrompts = () => {\n   return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n   // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n \n"
+                },
+                {
+                    "date": 1756874065283,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,11 +2,11 @@\n import { personaPrompt } from './persona';\n import { guidelinePrompt } from './guideline';\n import { schemaPrompt } from './schema';\n import { userFeatures, adminFeatures,commonFeatures} from './priceDate';\n+import { discountPrompt } from './discount';\n \n-\n export const combineSystemPrompts = () => {\n-  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n+  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}\\n\\n${discountPrompt}`;\n   // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n \n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756874073449,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,8 +5,8 @@\n import { userFeatures, adminFeatures,commonFeatures} from './priceDate';\n import { discountPrompt } from './discount';\n \n export const combineSystemPrompts = () => {\n-  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}\\n\\n${discountPrompt}`;\n+  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n\\n\\n${discountPrompt}${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n   // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n \n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756876674171,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,8 +5,8 @@\n import { userFeatures, adminFeatures,commonFeatures} from './priceDate';\n import { discountPrompt } from './discount';\n \n export const combineSystemPrompts = () => {\n-  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n\\n\\n${discountPrompt}${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n+  return `${systemPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${discountPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n   // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n \n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756877079771,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,8 +5,21 @@\n import { userFeatures, adminFeatures,commonFeatures} from './priceDate';\n import { discountPrompt } from './discount';\n \n export const combineSystemPrompts = () => {\n-  return `${systemPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${discountPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n+  // AI가 priceDate.ts의 내용을 <DATA>로 인식할 수 있도록 명확한 구조화\n+  const dataStructure = `\n+**<DATA> 구성 요소:**\n+\n+${commonFeatures}\n+\n+${userFeatures}\n+\n+${adminFeatures}\n+\n+**중요: 위의 모든 표 데이터는 <DATA>로 참조되어야 하며, AI는 이 구조를 이해하고 활용해야 합니다.**\n+`;\n+\n+  return `${systemPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${discountPrompt}\\n\\n${dataStructure}`;\n   // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n \n };\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756877184668,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,21 +5,8 @@\n import { userFeatures, adminFeatures,commonFeatures} from './priceDate';\n import { discountPrompt } from './discount';\n \n export const combineSystemPrompts = () => {\n-  // AI가 priceDate.ts의 내용을 <DATA>로 인식할 수 있도록 명확한 구조화\n-  const dataStructure = `\n-**<DATA> 구성 요소:**\n-\n-${commonFeatures}\n-\n-${userFeatures}\n-\n-${adminFeatures}\n-\n-**중요: 위의 모든 표 데이터는 <DATA>로 참조되어야 하며, AI는 이 구조를 이해하고 활용해야 합니다.**\n-`;\n-\n-  return `${systemPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${discountPrompt}\\n\\n${dataStructure}`;\n+  return `${systemPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}\\n\\n${discountPrompt}\\n\\n${userFeatures}\\n\\n${adminFeatures}\\n\\n${commonFeatures}`;\n   // return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n \n };\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1756863412246,
+            "name": "Commit-0",
+            "content": "import { systemPrompt } from './system';\nimport { personaPrompt } from './persona';\nimport { guidelinePrompt } from './guideline';\nimport { schemaPrompt } from './schema';\nimpo\n\nexport const combineSystemPrompts = () => {\n  return `${systemPrompt}\\n\\n${personaPrompt}\\n\\n${guidelinePrompt}\\n\\n${schemaPrompt}`;\n};"
+        }
+    ]
+}

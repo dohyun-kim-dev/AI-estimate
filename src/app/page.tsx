@@ -459,7 +459,7 @@ export default function Home() {
             <FeatureContent>
               <FeatureIconWrapper>
                 <FeatureIcon
-                  src={isDarkMode ? '/pr/icon_pr_feature3_dark.png' : '/pr/pr/icon_pr_feature3_light.png'}
+                  src={isDarkMode ? '/pr/icon_pr_feature3_dark.png' : '/pr/icon_pr_feature3_light.png'}
                   alt="다국어 지원"
                 />
                 <FeatureSubtitle>글로벌 다국어 언어 지원</FeatureSubtitle>

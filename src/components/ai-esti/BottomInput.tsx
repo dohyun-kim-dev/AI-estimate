@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useState, useRef, useEffect } from 'react';
 import styled, { useTheme } from 'styled-components';
@@ -7,8 +7,10 @@ import TextareaAutosize from 'react-textarea-autosize';
 import { customScrollbar } from '@/styles/commonStyles';
 import { useAuthStore } from '@/store/authStore';
 import { SocialLoginModal } from './SocialLoginModal';
-import FileUploadSection from './FileUploadSection'; // ⭐️ 추가: 파일 업로드 섹션 컴포넌트 임포트
-import { FileUploadData } from '@/firebase.functions'; // ⭐️ 수정: 올바른 경로로 변경
+import FileUploadSection from './FileUploadSection';
+import { FileUploadData } from '@/firebase.functions';
+import Modal from '@/components/common/Modal';
+import TextField from '@/components/common/TextField';
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -45,7 +47,6 @@ const InputContainer = styled.div`
   border: 1px solid ${({ theme }) => theme.border};
   width: 100%;
   min-height: 46px;
-  // height: 46px;
   transition: min-height 0.2s ease-in-out;
   @media (min-width: 1024px) {
     max-width: 1024px;
@@ -104,13 +105,40 @@ const RemainingCountText = styled.p`
   padding: 4px 16px 0;
 `;
 
-// ⭐️ 추가: 파일 미리보기가 나타날 영역을 위한 스타일
 const FilePreviewArea = styled.div`
   max-width: 1024px;
   margin: 0 auto;
   padding: 0 16px;
 `;
 
+const Form = styled.form`
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const Disclaimer = styled.p`
+  margin-top: 4px;
+  font-size: 12px;
+  color: #666666;
+`;
+
+const SubmitButton = styled.button`
+  height: 44px;
+  border-radius: 8px;
+  background: #2E2E48;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  margin-top: 16px;
+  &:hover {
+    opacity: 0.9;
+  }
+`;
 
 interface BottomInputProps {
   placeholder?: string;
@@ -119,31 +147,42 @@ interface BottomInputProps {
   onFileInput?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isUploading: boolean;
   isProcessing: boolean;
-  uploadedFiles: FileUploadData[]; // ⭐️ 추가: uploadedFiles를 props로 받음
-  uploadProgress: number; // ⭐️ 추가: uploadProgress를 props로 받음
-  onDeleteFile: (fileUri: string) => void; // ⭐️ 추가: onDeleteFile을 props로 받음
+  uploadedFiles: FileUploadData[];
+  uploadProgress: number;
+  onDeleteFile: (fileUri: string) => void;
+  // ⭐️ 수정: onInfoSubmit이 인자를 2개 받도록 타입 변경
+  onInfoSubmit: (userInfo: { name: string; email: string; cellphone: string }, estimateData: ProjectEstimate | null, chatSessionId: string) => void;
+  // ⭐️ 추가: 견적 데이터와 채팅 세션 ID를 props로 받음
+  estimateDataForConsult: ProjectEstimate | null;
+  chatSessionId: string;
 }
 
 const BottomInput: React.FC<BottomInputProps> = ({
   placeholder = "서비스 종류와 주요 기능, 예상 기간/예산을 입력! \n예시: '온라인 쇼핑몰, 결제/배송/회원가입",
   onSubmit,
-  maxSubmissions = 30,
+  maxSubmissions = 1,
   onFileInput,
   isUploading,
   isProcessing,
   uploadedFiles,
   uploadProgress,
   onDeleteFile,
+  onInfoSubmit,
+  estimateDataForConsult, // ⭐️ 추가
+  chatSessionId, // ⭐️ 추가
 }) => {
   const [value, setValue] = useState('');
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [remainingCount, setRemainingCount] = useState(maxSubmissions);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [loginModalPurpose, setLoginModalPurpose] = useState<'limitReached' | 'limitExceeded' | null>(null);
+  const [userInfo, setUserInfo] = useState({ name: '', email: '', cellphone: '' });
+  const [hasUsedExtraCount, setHasUsedExtraCount] = useState(false);
+
   const remainingCountRef = useRef(remainingCount);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // ⭐️ 파일 업로드 상태는 부모 컴포넌트에서 관리하므로 제거
 
   const theme = useTheme();
   const isLightTheme = theme.body === '#FFFFFF';
@@ -169,7 +208,9 @@ const BottomInput: React.FC<BottomInputProps> = ({
         if (lastResetDate !== today) {
           localStorage.setItem('lastResetDate', today);
           localStorage.setItem('remainingCount', String(maxSubmissions));
+          localStorage.removeItem('hasUsedExtraCount');
           setRemainingCount(maxSubmissions);
+          setHasUsedExtraCount(false);
         } else {
           const storedCount = localStorage.getItem('remainingCount');
           if (storedCount) {
@@ -178,13 +219,13 @@ const BottomInput: React.FC<BottomInputProps> = ({
             localStorage.setItem('remainingCount', String(maxSubmissions));
             setRemainingCount(maxSubmissions);
           }
+          const storedHasUsedExtraCount = localStorage.getItem('hasUsedExtraCount');
+          setHasUsedExtraCount(storedHasUsedExtraCount === 'true');
         }
       };
-
+      
       checkAndResetCount();
-
       const intervalId = setInterval(checkAndResetCount, 60 * 60 * 1000);
-
       return () => clearInterval(intervalId);
     }
   }, [isLoggedIn, maxSubmissions]);
@@ -212,15 +253,23 @@ const BottomInput: React.FC<BottomInputProps> = ({
         return;
       }
 
-      if (remainingCountRef.current > 0) {
+      const storedCount = Number(localStorage.getItem('remainingCount') || maxSubmissions);
+      
+      if (storedCount > 0) {
         onSubmit(value.trim());
         setValue('');
         
-        const newCount = remainingCountRef.current - 1;
+        const newCount = storedCount - 1;
         setRemainingCount(newCount);
         localStorage.setItem('remainingCount', String(newCount));
       } else {
-        setIsLoginModalOpen(true);
+        if (hasUsedExtraCount) {
+          setLoginModalPurpose('limitExceeded');
+          setIsLoginModalOpen(true);
+        } else {
+          setLoginModalPurpose('limitReached');
+          setIsLoginModalOpen(true);
+        }
       }
     }
   };
@@ -261,16 +310,12 @@ const BottomInput: React.FC<BottomInputProps> = ({
         return;
       }
       
-      // ⭐️ 변경: 부모 컴포넌트로 파일을 전달
       if (onFileInput) {
         onFileInput(e);
       }
-
       e.target.value = '';
     }
   };
-
-  // handleDeleteFile 함수는 제거 - 부모 컴포넌트의 onDeleteFile을 직접 사용
 
   const renderRemainingCountText = () => {
     if (isLoggedIn) {
@@ -283,19 +328,59 @@ const BottomInput: React.FC<BottomInputProps> = ({
       return "비회원 사용 한도를 전부 사용하셨습니다";
     }
   };
+  
+  const handlePrimaryButtonClick = () => {
+    setIsLoginModalOpen(false);
+    if (loginModalPurpose === 'limitReached') {
+      const newCount = 10;
+      setRemainingCount(newCount);
+      localStorage.setItem('remainingCount', String(newCount));
+      localStorage.setItem('hasUsedExtraCount', 'true');
+      setHasUsedExtraCount(true);
+    } else if (loginModalPurpose === 'limitExceeded') {
+      setIsInfoModalOpen(true);
+    }
+  };
+  
+  const handleInfoSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onInfoSubmit) {
+      // ⭐️ 수정: 필요한 모든 인자를 부모로부터 받아와 전달
+      onInfoSubmit(userInfo, estimateDataForConsult, chatSessionId); 
+    }
+    console.log("정보 입력 후 견적 요청:", userInfo);
+    setIsInfoModalOpen(false);
+  };
+
+  const handleGoogleLoginSuccess = async (tokenResponse: any) => {
+    try {
+      // 구글 로그인 성공 후 처리
+      console.log('Google login success:', tokenResponse);
+      
+      // 로그인 성공 시 견적서 모달 표시를 위해 3초 대기
+      setTimeout(() => {
+        setIsLoginModalOpen(false);
+        if (loginModalPurpose === 'limitExceeded') {
+          setIsInfoModalOpen(true);
+        }
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Google login error:', error);
+    }
+  };
 
   return (
     <>
       <InputWrapper style={{ 
         bottom: isKeyboardVisible ? window.visualViewport?.height - window.innerHeight : 0 
       }}>
-        {/* ⭐️ 추가: 파일 미리보기 및 진행률 섹션 */}
         <FilePreviewArea>
           <FileUploadSection
             uploadedFiles={uploadedFiles}
             uploadProgress={uploadProgress}
             onDeleteFile={onDeleteFile}
-            lang="ko" // 필요에 따라 언어 설정
+            lang="ko"
           />
         </FilePreviewArea>
 
@@ -310,7 +395,6 @@ const BottomInput: React.FC<BottomInputProps> = ({
             disabled={isUploading || isProcessing}
           />
           <IconButton type="button" onClick={handleFileButtonClick} disabled={isUploading || isProcessing}>
-            
             <Icon 
               src={isLightTheme ? "/ai-estimate/add_image.png" : "/ai-estimate/add_image_dark.png"} 
               width={36}
@@ -338,10 +422,32 @@ const BottomInput: React.FC<BottomInputProps> = ({
           {renderRemainingCountText()}
         </RemainingCountText>
       </InputWrapper>
+      
       <SocialLoginModal
         $isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
+        purpose={loginModalPurpose || 'limitReached'}
+        onPrimaryButtonClick={handlePrimaryButtonClick}
+        onGoogleLoginSuccess={handleGoogleLoginSuccess}
       />
+      
+      <Modal 
+        open={isInfoModalOpen} 
+        title="필수 정보 입력" 
+        onClose={() => setIsInfoModalOpen(false)} 
+        width={520}
+      >
+        <div style={{ fontSize: 14, textAlign: 'center', marginBottom: 32 }}>
+          더 자세한 견적 요청을 위해 정보를 입력해주세요.
+        </div>
+        <Form onSubmit={handleInfoSubmit}>
+          <TextField id="name" label="이름" placeholder="이름을 입력해주세요" required value={userInfo.name} onChange={(e) => setUserInfo({...userInfo, name: e.target.value})} />
+          <TextField id="email" label="이메일" type="email" placeholder="이메일을 입력해주세요" required value={userInfo.email} onChange={(e) => setUserInfo({...userInfo, email: e.target.value})} />
+          <TextField id="phone" label="전화번호" placeholder="전화번호를 입력해주세요" required maxLength={11} value={userInfo.cellphone} pattern="[0-9]{10,11}" type="tel" onChange={(e) => setUserInfo({...userInfo, cellphone: e.target.value})} />
+          <Disclaimer>문의 시 개인정보 수집·이용에 동의한 것으로 간주됩니다.</Disclaimer>
+          <SubmitButton type="submit">정보 입력 후 견적 요청하기</SubmitButton>
+        </Form>
+      </Modal>
     </>
   );
 };

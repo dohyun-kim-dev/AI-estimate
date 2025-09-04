@@ -1,4 +1,3 @@
-// src/app/ai-estimate/components/PeriodSlider.tsx
 "use client";
 
 import React from 'react';
@@ -10,24 +9,25 @@ const SliderWrapper = styled.div<{ $isvisible: boolean }>`
   overflow: hidden;
 `;
 
-// ⭐️ 실제 스타일과 패딩을 담당하는 내부 컨테이너
 const InnerContainer = styled.div`
   background-color: ${({ theme }) => theme.surface2};
   padding: 20px;
   border-radius: 12px;
-  margin: 20px 0;
+  margin: 20px 0 20px 0;
+  position: relative; /* Tooltip 위치 지정을 위해 추가 */
 `;
+
 const Title = styled.h3`
   font-size: 18px;
   color: ${({ theme }) => theme.text};
   font-weight: 600;
   margin: 0 0 5px 0;
 
-  .p{
-  font-size: 14px;
-  font-style: normal;
-  font-weight: 400;
-  line-height: normal;
+  .p {
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
   }
 `;
 
@@ -37,6 +37,7 @@ const Description = styled.p`
   font-weight: 400;
   line-height: normal;
   color: ${({ theme }) => theme.subtleText};
+  padding-bottom: 10px;
   margin: 0 0 20px 0;
 `;
 
@@ -51,6 +52,16 @@ const WeekDisplay = styled.p`
   font-weight: 700;
   line-height: normal;
   color: ${({ theme }) => theme.text};
+  margin-bottom: 15px;
+`;
+
+const DiscountDisplay = styled.p`
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+  // color: ${({ theme }) => theme.accent};
+  margin-top: -10px;
   margin-bottom: 15px;
 `;
 
@@ -110,39 +121,97 @@ const Labels = styled.div`
   font-weight: 400;
   line-height: normal;
   color: ${({ theme }) => theme.subtleText};
-  margin-top:0px;
+  margin-top: 0px;
 `;
+
+// 말풍선 컴포넌트 추가
+const Tooltip = styled.div<{ $left: string }>`
+  position: absolute;
+  top: 135px; /* SliderContainer 위쪽으로 위치 조정 및 20px 아래로 이동 */
+  transform: translateX(-50%);
+  left: ${({ $left }) => $left};
+  background-color: #333;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0; /* 초기에는 숨김 */
+  transition: opacity 0.3s ease;
+  z-index: 10;
+  pointer-events: none; /* 클릭 이벤트 방지 */
+
+  ${SliderContainer}:hover & {
+    opacity: 1; /* 호버 시 나타남 */
+  }
+`;
+
+// 말풍선 위쪽의 삼각형 컴포넌트 (방향 변경)
+const TooltipArrow = styled.div`
+  position: absolute;
+  top: -6px; /* 위쪽으로 위치 */
+  left: 50%;
+  transform: translateX(-50%) rotate(225deg); /* 위를 향하도록 회전 */
+  width: 10px;
+  height: 10px;
+  background-color: #333;
+`;
+
 
 interface PeriodSliderProps {
   value: number;
   onChange: (value: number) => void;
   $isvisible: boolean;
+  min: number;
+  max: number;
+  discountedPrice: number;
+  basePrice: number;
 }
 
-const PeriodSlider: React.FC<PeriodSliderProps> = ({ value, onChange, $isvisible }) => {
+const PeriodSlider: React.FC<PeriodSliderProps> = ({ value, onChange, $isvisible, min, max, discountedPrice, basePrice }) => {
+  const discountPercentage = ((value - min) / (max - min)) * 10;
+  const discountAmount = basePrice - discountedPrice;
+  // const tooltipPosition = `calc(${((value - min) / (max - min)) * 50}% + 75px)`;
+  const tooltipPosition = `275px`;
   return (
     <SliderWrapper $isvisible={$isvisible}>
       <InnerContainer>
-      <Title>프로젝트 기간 설정 <span className="p">(주 단위)</span></Title>
-      <Description>견적기간을 늘릴 경우 할인된 금액으로 변경됩니다</Description>
-      <SliderContainer>
-        <WeekDisplay>{value}주</WeekDisplay>
-        <Slider 
-          type="range" 
-          min="12" 
-          max="36" 
-          value={value} 
-          onChange={(e) => onChange(parseInt(e.target.value, 10))}
-          $value={value}
-          $min="12"
-          $max="36"
-        />
-        <Labels>
-          <span>12주</span>
-          <span>36주</span>
-        </Labels>
-      </SliderContainer>
+        <Title>프로젝트 기간 설정 <span className="p">(주 단위)</span></Title>
+        <Description>견적기간을 늘릴 경우 할인된 금액으로 변경됩니다</Description>
+        <SliderContainer>
+          <Tooltip $left={tooltipPosition}>
+            {discountPercentage.toFixed(1)}% 할인이 적용되었어요! 
+          {value > min && (
+            <DiscountDisplay>
+              (- {Math.floor(discountAmount).toLocaleString()}원)
+            </DiscountDisplay>
+          )}
+            <TooltipArrow />
+          </Tooltip>
+          <WeekDisplay>{value}주 연장</WeekDisplay>
+          {value > min && (
+            <DiscountDisplay>
+              {/* {discountPercentage.toFixed(1)}% 할인 ({Math.floor(discountAmount).toLocaleString()}원) */}
+            </DiscountDisplay>
+          )}
+          <Slider 
+            type="range" 
+            min={min.toString()} 
+            max={max.toString()} 
+            value={value} 
+            onChange={(e) => onChange(parseInt(e.target.value, 10))}
+            $value={value}
+            $min={min.toString()}
+            $max={max.toString()}
+          />
+          <Labels>
+            <span>{min}주</span>
+            <span>{max}주</span>
+          </Labels>
+        </SliderContainer>
       </InnerContainer>
+      <Description>기획 및 디자인은 할인에서 제외됩니다</Description>
     </SliderWrapper>
   );
 };

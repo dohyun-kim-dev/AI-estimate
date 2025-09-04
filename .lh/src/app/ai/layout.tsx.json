@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 20,
+            "activePatchIndex": 32,
             "patches": [
                 {
                     "date": 1755957747785,
@@ -88,6 +88,54 @@
                 {
                     "date": 1756641479500,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -297,9 +297,9 @@\n         )}\n       </TopNav>\n       <Main >\n \n-      <div style={{ paddingTop: '20px' }}>\n+      <div style={{ paddingTop: '0px' }}>\n         <Outlet />\n       </div>\n \n       </Main>\n"
+                },
+                {
+                    "date": 1756716701043,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,8 +1,8 @@\n import React, { useState, useEffect, useRef } from 'react';\n import styled from 'styled-components';\n import Icon from '@components/ai-esti/Icon';\n-import { useNavigate, useLocation, Outlet, useParams } from 'react-router-dom'; // useParams 추가\n+import { useNavigate, useLocation, Outlet, useParams } from 'react-router-dom';\n import { useThemeStore } from '@store/themeStore';\n import { useChatStore } from '@store/chatStore';\n import { useToast } from '@components/common/ToastProvider';\n import Modal from '@components/common/Modal';\n@@ -155,13 +155,13 @@\n \n export default function AILayout() {\n   const navigate = useNavigate();\n   const location = useLocation();\n-  const { companyCode } = useParams(); // URL에서 companyCode를 가져옵니다.\n+  const { companyCode } = useParams();\n   const { isDarkMode, toggleTheme } = useThemeStore();\n   const { success } = useToast();\n   const resetChat = useChatStore((s) => s.clear);\n-  const chatSessionId = useChatStore((s) => s.chatSessionId); // 세션 ID 가져오기\n+  const chatSessionId = useChatStore((s) => s.chatSessionId);\n   const [openShare, setOpenShare] = useState(false);\n   const [isDropdownOpen, setIsDropdownOpen] = useState(false);\n   const { isAuthenticated } = useAuthStore();\n   const { openLoginModal } = useModalStore();\n@@ -194,9 +194,8 @@\n     document.addEventListener('click', handleClickOutside);\n     return () => document.removeEventListener('click', handleClickOutside);\n   }, []);\n \n-  // 라우트 경로를 동적으로 처리하도록 수정\n   const pageTitle = location.pathname.includes('/ai/my-estimate') ? '내 견적서' : location.pathname.includes('/ai/setting') ? '설정' : null;\n \n   const handleBack = () => {\n     navigate(-1);\n@@ -210,9 +209,8 @@\n     setOpenShare(false);\n   };\n \n   const handleCopy = async () => {\n-    // 세션 ID가 있으면 공유 URL에 포함, 없으면 현재 URL 사용\n     let shareUrl;\n     if (chatSessionId) {\n       shareUrl = `${window.location.origin}/aiclient/${companyCode}/ai/share/${chatSessionId}`;\n     } else {\n@@ -233,16 +231,23 @@\n     success('새로운 채팅 세션이 시작되었습니다.');\n   };\n \n   const handleGoToSettings = () => {\n-    navigate(`/aiclient/${companyCode}/ai/setting`);\n+    if (isAuthenticated()) {\n+      navigate(`/aiclient/${companyCode}/ai/setting`);\n+    } else {\n+      openLoginModal();\n+    }\n   };\n \n   const handleGoToMyEstimate = () => {\n-    navigate(`/aiclient/${companyCode}/ai/my-estimate`);\n+    if (isAuthenticated()) {\n+      navigate(`/aiclient/${companyCode}/ai/my-estimate`);\n+    } else {\n+      openLoginModal();\n+    }\n   };\n \n-  // 세션 ID가 있으면 공유 URL에 포함, 없으면 현재 URL 사용\n   const shareUrl = chatSessionId \n     ? `${window.location.origin}/aiclient/${companyCode}/ai/share/${chatSessionId}`\n     : window.location.href;\n   \n@@ -264,9 +269,13 @@\n         {!pageTitle && (\n           <div className=\"right-icons\">\n             <span className=\"icon\" onClick={handleOpenShare}><Icon src={icons.share} width={36} height={36} /></span>\n             <span className=\"icon\" onClick={handleNewChat}><Icon src={icons.new} width={36} height={36} /></span>\n+            \n+            {/* 나의 견적 버튼 */}\n             <span className=\"icon\" onClick={handleGoToMyEstimate}><Icon src={icons.estimate} width={36} height={36} /></span>\n+            \n+            {/* 설정/로그인 버튼 */}\n             <ProfileIconWrapper className=\"profile-menu\">\n               {isAuthenticated() ? (\n                 <span className=\"icon\" onClick={handleGoToSettings}>\n                   <Icon src={icons.profile} width={36} height={36} />\n@@ -296,16 +305,15 @@\n           </div>\n         )}\n       </TopNav>\n       <Main >\n+        <div style={{ paddingTop: '0px' }}>\n+          <Outlet />\n+        </div>\n+      </Main>\n \n-      <div style={{ paddingTop: '0px' }}>\n-        <Outlet />\n-      </div>\n-\n-      </Main>\n       <ThemeToggleButton onClick={toggleTheme}>\n-        {isDarkMode ? '☀️' : '�'}\n+        {isDarkMode ? '☀️' : '🌙'}\n       </ThemeToggleButton>\n \n       <Modal open={openShare} title=\"페이지 공유\" onClose={handleCloseShare} width={520}>\n         <div style={{ color: '#A1A1AA', fontSize: 14, marginBottom: 32 }}>공유받은 사용자는 현재 페이지의 내용을 확인할 수 있습니다.</div>\n@@ -315,5 +323,5 @@\n         </ShareInput>\n       </Modal>\n     </LayoutWrapper>\n   );\n-}\n+}\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756873278031,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -310,11 +310,11 @@\n           <Outlet />\n         </div>\n       </Main>\n \n-      <ThemeToggleButton onClick={toggleTheme}>\n+      {/* <ThemeToggleButton onClick={toggleTheme}>\n         {isDarkMode ? '☀️' : '🌙'}\n-      </ThemeToggleButton>\n+      </ThemeToggleButton> */}\n \n       <Modal open={openShare} title=\"페이지 공유\" onClose={handleCloseShare} width={520}>\n         <div style={{ color: '#A1A1AA', fontSize: 14, marginBottom: 32 }}>공유받은 사용자는 현재 페이지의 내용을 확인할 수 있습니다.</div>\n         <ShareInput>\n"
+                },
+                {
+                    "date": 1756892853940,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -289,9 +289,9 @@\n                     <DropdownItem onClick={() => {\n                       setIsDropdownOpen(false);\n                       openLoginModal();\n                     }}>\n-                      로그인 하기\n+                      로그인 하기2\n                     </DropdownItem>\n                     <DropdownItem onClick={() => {\n                       setIsDropdownOpen(false);\n                       toggleTheme();\n"
+                },
+                {
+                    "date": 1756892965912,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -289,9 +289,9 @@\n                     <DropdownItem onClick={() => {\n                       setIsDropdownOpen(false);\n                       openLoginModal();\n                     }}>\n-                      로그인 하기2\n+                      로그인 하기\n                     </DropdownItem>\n                     <DropdownItem onClick={() => {\n                       setIsDropdownOpen(false);\n                       toggleTheme();\n"
+                },
+                {
+                    "date": 1756950319747,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -9,9 +9,9 @@\n import { useAuthStore } from '@store/authStore';\n import { useModalStore } from '@store/modalStore';\n \n const LayoutWrapper = styled.div`\n-  min-height: 100vh;\n+  min-height: 50vh;\n   padding-bottom: calc(76px + env(safe-area-inset-bottom));\n   background-color: ${({ theme }) => theme.body};\n `;\n \n"
+                },
+                {
+                    "date": 1756950339121,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -9,9 +9,9 @@\n import { useAuthStore } from '@store/authStore';\n import { useModalStore } from '@store/modalStore';\n \n const LayoutWrapper = styled.div`\n-  min-height: 50vh;\n+  min-height: 100vh;\n   padding-bottom: calc(76px + env(safe-area-inset-bottom));\n   background-color: ${({ theme }) => theme.body};\n `;\n \n"
+                },
+                {
+                    "date": 1756951332542,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -119,9 +119,9 @@\n \n const Main = styled.main` \n   width: 100vw;\n   padding: 56px 0 84px;\n-  min-height: 100vh;\n+  min-height: 190vh;\n       \n `;\n \n const ShareInput = styled.div`\n"
+                },
+                {
+                    "date": 1756951351388,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -119,9 +119,9 @@\n \n const Main = styled.main` \n   width: 100vw;\n   padding: 56px 0 84px;\n-  min-height: 190vh;\n+  min-height: 50vh;\n       \n `;\n \n const ShareInput = styled.div`\n"
+                },
+                {
+                    "date": 1756951367035,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -119,9 +119,9 @@\n \n const Main = styled.main` \n   width: 100vw;\n   padding: 56px 0 84px;\n-  min-height: 50vh;\n+  min-height: 100vh;\n       \n `;\n \n const ShareInput = styled.div`\n"
+                },
+                {
+                    "date": 1756951434739,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -119,9 +119,9 @@\n \n const Main = styled.main` \n   width: 100vw;\n   padding: 56px 0 84px;\n-  min-height: 100vh;\n+  min-height: auto;\n       \n `;\n \n const ShareInput = styled.div`\n"
+                },
+                {
+                    "date": 1756951442573,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -9,9 +9,9 @@\n import { useAuthStore } from '@store/authStore';\n import { useModalStore } from '@store/modalStore';\n \n const LayoutWrapper = styled.div`\n-  min-height: 100vh;\n+  // min-height: 100vh;\n   padding-bottom: calc(76px + env(safe-area-inset-bottom));\n   background-color: ${({ theme }) => theme.body};\n `;\n \n"
+                },
+                {
+                    "date": 1756951472759,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -9,9 +9,9 @@\n import { useAuthStore } from '@store/authStore';\n import { useModalStore } from '@store/modalStore';\n \n const LayoutWrapper = styled.div`\n-  // min-height: 100vh;\n+  min-height: 100vh;\n   padding-bottom: calc(76px + env(safe-area-inset-bottom));\n   background-color: ${({ theme }) => theme.body};\n `;\n \n"
                 }
             ],
             "date": 1755957747785,

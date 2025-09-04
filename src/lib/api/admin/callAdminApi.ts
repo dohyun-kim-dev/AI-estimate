@@ -16,9 +16,24 @@ export async function callAdminApi<T = unknown>({
   title: string;
   url: string;
   body?: Record<string, unknown>;
-  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; // 타입에 PATCH와 DELETE 추가
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   isCallPageLoader?: boolean;
 }): Promise<T[]> {
+  // Company Code 설정
+  let companyCode = 'heredot';  // 기본값
+  const pathParts = window.location.pathname.split('/');
+  const companyCodeIndex = pathParts.indexOf('aiclient') + 1;
+  if (companyCodeIndex > 0 && pathParts.length > companyCodeIndex) {
+    companyCode = pathParts[companyCodeIndex];
+  }
+
+  // 공통 헤더 설정
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'x-company-code': companyCode
+  };
+
   let raw: any;
 
   // 'method' 값에 따라 다른 API 호출 함수를 사용
@@ -27,6 +42,7 @@ export async function callAdminApi<T = unknown>({
       title,
       url,
       isCallPageLoader,
+      headers,
     });
   } else if (method === 'PUT') {
     raw = await callApiPut({
@@ -34,6 +50,7 @@ export async function callAdminApi<T = unknown>({
       url,
       body,
       isCallPageLoader,
+      headers,
     });
   } else if (method === 'PATCH') {
     raw = await callApiPatch({
@@ -41,12 +58,14 @@ export async function callAdminApi<T = unknown>({
       url,
       body,
       isCallPageLoader,
+      headers,
     });
   } else if (method === 'DELETE') {
     raw = await callApiDelete({
       title,
       url,
       isCallPageLoader,
+      headers,
     });
   } else {
     // 기본적으로 POST를 사용
@@ -55,6 +74,7 @@ export async function callAdminApi<T = unknown>({
       url,
       body,
       isCallPageLoader,
+      headers,
     });
   }
 

@@ -20,7 +20,7 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContent = styled.div`
-  background-color: ${({ theme }) => theme.surface1};
+  background-color: ${({ theme }) => theme.detailSurface1};
   text-align: center;
   padding: 30px;
   border-radius: 12px;
@@ -57,6 +57,7 @@ const ModalHeader = styled.h2`
 const ModalPrice = styled.p`
   font-size: 1.2em;
   font-weight: bold;
+  color: ${({ theme }) => theme.detailSubtleText};
 `;
 
 const FormContainer = styled.div`
@@ -69,11 +70,11 @@ const Label = styled.div`
   font-size: 16px;
   font-weight: bold;
   margin-bottom: 8px;
-  // color: ${({ theme }) => theme.subtleText};
+  color: ${({ theme }) => theme.detailSubtleText};
 `;
 
 const DescriptionBox = styled.div`
-  background-color: #2F3741;
+  background-color: ${({ theme }) => theme.detailModalBg};
   color: ${({ theme }) => theme.text};
   padding: 16px;
   border-radius: 4px;
@@ -106,15 +107,15 @@ const DescriptionBox = styled.div`
     left: 0;
     right: 0;
     height: 20%;
-    background: linear-gradient(to top, #2F3741, transparent);
+    background: linear-gradient(to top, ${({ theme }) => theme.detailModalBg}, transparent);
     pointer-events: none;
   }
 `;
 
 const CloseButtonBottom = styled.button`
   width: 100%;
-  background-color: #557599; // #668EC0에 가까운 색상
-  // color: ${({ theme }) => theme.body};
+  background-color: ${({ theme }) => theme.detailButton}; // #668EC0에 가까운 색상
+  color: white;
   border: none;
   padding: 12px 24px;
   margin-top: 20px;
@@ -139,10 +140,10 @@ const DetailModal: React.FC<DetailModalProps> = ({ item, onClose }) => {
     <ModalOverlay onClick={onClose}>
       <ModalContent onClick={(e) => e.stopPropagation()}>
         <CloseButtonTop onClick={onClose}>
-          <IoCloseCircle size={30} />
+          {/* <IoCloseCircle size={30} /> */}
         </CloseButtonTop>
-        <ModalHeader>{item.name}</ModalHeader>
-        <ModalPrice>₩ {item.price}</ModalPrice>
+        <ModalHeader>{item.task}</ModalHeader>
+        <ModalPrice>₩ {item.cost.toLocaleString()}</ModalPrice>
         <FormContainer>
           <Label>상세 설명</Label>
           <DescriptionBox>{item.description}</DescriptionBox>

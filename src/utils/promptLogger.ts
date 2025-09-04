@@ -13,8 +13,8 @@ interface PromptLogInfo {
 
 // 토큰당 비용 (KRW)
 const TOKEN_COSTS = {
-  prompt: 0.001,     // 입력 토큰당 0.001원
-  completion: 0.002  // 출력 토큰당 0.002원
+  prompt: 0.0001394,  // 100만 토큰당 $0.10 -> 0.0001394원
+  completion: 0.0005576 // 100만 토큰당 $0.40 -> 0.0005576원
 };
 
 // ANSI 색상 코드

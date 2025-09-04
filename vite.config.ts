@@ -1,17 +1,32 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig, loadEnv, ConfigEnv, UserConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import type { ProxyOptions } from 'vite'
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   // Load env file based on `mode` in the current working directory.
   const env = loadEnv(mode, process.cwd(), '')
   
-  const API_URL = env.VITE_API_URL || 'http://121.157.229.40:8535'
-  const ENV = env.VITE_ENV || 'development'
+  // 환경 변수 설정
+  const API_HOST = env.VITE_API_HOST
+  const ENV_NAME = env.VITE_ENV_NAME || mode
 
-  console.log(`현재 환경: ${ENV}`)
-  console.log(`API URL: ${API_URL}`)
+  console.log(`현재 환경: ${ENV_NAME}`)
+  console.log(`API HOST: ${API_HOST}`)
+
+    // 프록시 설정 - 모든 환경에서 사용
+  const proxyConfig: Record<string, ProxyOptions> = {
+    '/api': {
+      target: ENV_NAME === 'dev' ? API_HOST : 'https://api.aigopartners.com',
+      changeOrigin: true,
+      secure: false,
+      rewrite: (path: string) => path.replace(/^\/api/, ''),
+      headers: {
+        'x-company-code': 'heredot'
+      }
+    }
+  }
 
   return {
     plugins: [
@@ -45,26 +60,9 @@ export default defineConfig(({ mode }) => {
       }
     },
     server: {
-      proxy: {
-        // API 프록시 설정
-        '/api': {
-          target: API_URL,
-          changeOrigin: true,
-          secure: false,
-          configure: (proxy, options) => {
-            proxy.on('error', (err, req, res) => {
-              console.log('proxy error', err);
-            });
-            proxy.on('proxyReq', (proxyReq, req, res) => {
-              console.log('Sending Request to the Target:', req.method, req.url);
-            });
-            proxy.on('proxyRes', (proxyRes, req, res) => {
-              console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
-            });
-          },
-        }
-      },
-      cors: true // CORS 활성화
+      proxy: proxyConfig,
+      cors: true, // CORS 활성화
+      host: true, // 외부 접속 허용
     },
     build: {
       rollupOptions: {

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import CmsPopup from '@/components/CmsPopup';
-import { TextField } from '@/components/TextField';
+import CommonTextField from '@/components/common/TextField';
 import { Validators } from '@/lib/utils/validators';
 import { toast } from 'react-toastify';
 import { adminPasswordUpdate } from '@/lib/api/admin';
@@ -89,7 +89,7 @@ const PasswordPopup: React.FC<PasswordPopupProps> = ({ adminId, isOpen, onClose 
 
         <InputRow>
           <Label>새 비밀번호</Label>
-          <TextField
+          <CommonTextField
             radius="0"
             value={password}
             autoComplete="new-password"
@@ -104,7 +104,7 @@ const PasswordPopup: React.FC<PasswordPopupProps> = ({ adminId, isOpen, onClose 
 
         <InputRow>
           <Label>새 비밀번호 확인</Label>
-          <TextField
+          <CommonTextField
             radius="0"
             value={confirmPassword}
             autoComplete="new-password"

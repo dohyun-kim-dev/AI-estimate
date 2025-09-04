@@ -22,6 +22,8 @@ export interface EstimateItem {
   name: string;
   price: string;
   description: string;
+  front_end_period?: number | string;
+  back_end_period?: number | string;
 }
 
 export interface ExtractedEstimateData extends ProjectEstimate {

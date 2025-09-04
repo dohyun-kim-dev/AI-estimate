@@ -28,6 +28,8 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   // 고객사 검색 관련 props
   enableCompanySearch?: boolean;
   onCompanySelect?: (company: { id: string; name: string }) => void;
+  isShowExcelTemplate?: boolean;
+  excelUploadBtnCallBack?: () => void;
 }
 
 export default function CmsDesktopView<T extends BaseRecord>({
@@ -43,7 +45,10 @@ export default function CmsDesktopView<T extends BaseRecord>({
   themeMode = "light",
   enableDateFilter,
   enableCompanySearch,
-  onCompanySelect
+  onCompanySelect,
+  isShowExcelTemplate,
+  excelUploadBtnCallBack,
+  excelTemplateBtnCallBack,
 }: CmsDesktopViewProps<T>) {
   const listRef = useRef<{ refetch: () => void } | null>(null);
 
@@ -73,6 +78,9 @@ export default function CmsDesktopView<T extends BaseRecord>({
       enableDateFilter={enableDateFilter}
       enableCompanySearch={enableCompanySearch}
       onCompanySelect={onCompanySelect}
+      isShowExcelTemplate={isShowExcelTemplate}
+      excelUploadBtnCallBack={excelUploadBtnCallBack}
+      excelTemplateBtnCallBack={excelTemplateBtnCallBack}
     />
   );
 }

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 import useAI from '@/hooks/useAI';
 import { useToast } from '@/components/common/ToastProvider';
@@ -20,21 +20,19 @@ import type { EstimateItem } from '@/app/ai-estimate/types';
 import { uploadFiles, FileUploadData } from '@/firebase.functions';
 import { auth } from '@/firebaseConfig';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
-import FileUploadSection from '@/components/ai-esti/FileUploadSection'; 
+import FileUploadSection from '@/components/ai-esti/FileUploadSection';
 import { devLog } from '../../utils/devLogger';
-import { useChatActions ,handleSubmit} from '@/hooks/useChatActions';
+import { useChatActions } from '@/hooks/useChatActions';
+import { requestEstimateConsult } from '@/lib/api/user/userApi';
 
 
-
-// ... (나머지 styled-components 및 함수들은 동일)
-// Container 스타일 수정: position: relative 추가
 const Container = styled.div`
   max-width: 960px;
   margin: 0 auto;
   padding: 16px;
-  padding-bottom: calc(276px + env(safe-area-inset-bottom));
-  position: relative; /* FileUploadArea를 absolute로 띄우기 위함 */
-  min-height: 100vh; /* 드래그 영역을 충분히 확보 */
+  padding-bottom: calc(0px + env(safe-area-inset-bottom));
+  position: relative;
+  // min-height: 100vh;
 `;
 
 const ChatBox = styled.div`
@@ -58,9 +56,6 @@ const UserMessage = styled.div`
   line-height: 2.0;
 `;
 
-// 이미지 프리뷰 관련 스타일 컴포넌트들은 제거
-
-// FileUploadArea 스타일 수정: position: absolute로 Container 전체를 덮도록
 const FileUploadArea = styled.div<{ $isDragOver: boolean }>`
   position: absolute;
   top: 0;
@@ -92,8 +87,6 @@ const FileUploadSubtext = styled.div`
   opacity: 0.8;
 `;
 
-// 파일 프리뷰 관련 스타일 컴포넌트들은 바텀인풋에서만 사용하므로 제거
-
 const ProgressBar = styled.div<{ $progress: number }>`
   width: 80%;
   height: 8px;
@@ -114,7 +107,7 @@ const ProgressBar = styled.div<{ $progress: number }>`
 
 const StyledAiMessage = styled(AiResponseMessage)<{ isFullWidth?: boolean }>`
   padding: 0;
-  max-width: 100%; 
+  max-width: 100%;
   align-self: flex-start;
 `;
 
@@ -187,7 +180,7 @@ const DetailsToggle = styled.div`
   justify-content: center;
   align-items: center;
   text-align: center;
-  padding: 10px ;
+  padding: 10px;
   font-size: 14px;
   font-style: normal;
   font-weight: 600;
@@ -198,7 +191,7 @@ const DetailsToggle = styled.div`
   margin: -20px 0 -20px;
 
   @media (min-width: 1024px) {
-    display: none; /* PC 환경에서는 숨김 */
+    display: none;
   }
 `;
 
@@ -218,7 +211,7 @@ const AnimatedContainer = styled.div<{ $isvisible: boolean }>`
   }
 
   @media (min-width: 1024px) {
-    grid-template-rows: 1fr; /* PC 환경에서는 항상 열려 있도록 설정 */
+    grid-template-rows: 1fr;
   }
 `;
 
@@ -243,26 +236,20 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
       return null;
     }
 
-    // uuid가 이미 JSON 데이터에 포함되어 있다고 가정
     return data as ProjectEstimate;
-
   } catch (error) {
     console.error('Failed to parse estimate data:', error);
     return null;
   }
 };
 
-// 메시지에서 파일 정보를 파싱하는 함수
 const parseMessageContent = (content: string) => {
   const fileMatch = content.match(/\[첨부파일: (.+?)\]/);
   if (fileMatch) {
     const fileName = fileMatch[1];
     const textContent = content.replace(/\[첨부파일: .+?\]/, '').trim();
     const imageUrl = `/api/file/${fileName}`;
-    
-    // 이미지 파일인지 확인
     const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
-    
     return {
       text: textContent,
       fileName,
@@ -270,7 +257,6 @@ const parseMessageContent = (content: string) => {
       isImage
     };
   }
-  
   return {
     text: content,
     fileName: null,
@@ -282,66 +268,186 @@ const parseMessageContent = (content: string) => {
 const AiMessageContent: React.FC<{ content: string }> = ({ content }) => {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
-  const [projectPeriod, setProjectPeriod] = useState(20);
-  const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', selectedPromptId: 'default' });
   const estimateData = extractEstimateData(content);
+const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', selectedPromptId: 'default' });
+  const { total_amount: basePrice, total_period: basePeriod } = useMemo(() => {
+    // ⭐️ 수정: estimateData 또는 categories가 유효한지 확인하는 로직 추가
+    if (!estimateData || !Array.isArray(estimateData.categories)) {
+      return { total_amount: 0, total_period: 0 };
+    }
 
-  const handleItemClick = (item: EstimateItem) => {
-    setSelectedItem(item);
+    const total_amount = estimateData.categories.reduce((sum, category) => {
+      if (!category.sub_categories || !Array.isArray(category.sub_categories)) {
+        return sum;
+      }
+      
+      const categoryTotal = category.sub_categories.reduce((subSum, subCategory) => {
+        if (!subCategory.items || !Array.isArray(subCategory.items)) {
+          return subSum;
+        }
+        
+        const subTotal = subCategory.items.reduce((itemSum, item) => {
+          const itemPrice = typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : item.price;
+          return itemSum + (isNaN(itemPrice) ? 0 : itemPrice);
+        }, 0);
+        return subSum + subTotal;
+      }, 0);
+      return sum + categoryTotal;
+    }, 0);
+    
+    const total_period = estimateData.categories.reduce((sum, category) => {
+      if (!category.sub_categories || !Array.isArray(category.sub_categories)) {
+        return sum;
+      }
+      
+      const categoryPeriod = category.sub_categories.reduce((subSum, subCategory) => {
+        if (!subCategory.items || !Array.isArray(subCategory.items)) {
+          return subSum;
+        }
+        
+        const subPeriod = subCategory.items.reduce((itemSum, item) => {
+          const frontPeriod = typeof item.front_end_period === 'string' ? parseFloat(item.front_end_period) : (item.front_end_period || 0);
+          const backPeriod = typeof item.back_end_period === 'string' ? parseFloat(item.back_end_period) : (item.back_end_period || 0);
+          return itemSum + (isNaN(frontPeriod) ? 0 : frontPeriod) + (isNaN(backPeriod) ? 0 : backPeriod);
+        }, 0);
+        return subSum + subPeriod;
+      }, 0);
+      return sum + categoryPeriod;
+    }, 0);
+
+    return { total_amount, total_period };
+  }, [estimateData]);
+
+  const [projectPeriod, setProjectPeriod] = useState(basePeriod);
+  const [discountedPrice, setDiscountedPrice] = useState(basePrice);
+
+  useEffect(() => {
+    if (basePeriod > 0) {
+      setProjectPeriod(basePeriod);
+    }
+    setDiscountedPrice(basePrice);
+  }, [basePeriod, basePrice]);
+
+  useEffect(() => {
+    const baseCommonCategory = estimateData?.categories
+    .flatMap(category => category.sub_categories)
+    .find(subCategory => subCategory.sub_category_name === '기반 공통');
+
+  const nonDiscountableSum = baseCommonCategory?.items.reduce((sum, item) => {
+    const price = typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : item.price;
+    return sum + (price || 0);
+  }, 0) || 0;
+
+  const discountableBase = basePrice - nonDiscountableSum;
+
+  let discountPercentage = 0;
+  const maxPeriod = basePeriod + 8;
+  const periodDiff = projectPeriod - basePeriod;
+  const maxPeriodDiff = maxPeriod - basePeriod;
+
+  if (periodDiff > 0 && maxPeriodDiff > 0) {
+    // 슬라이더 위치에 비례하여 0%부터 최대 20%까지 할인율 적용
+    discountPercentage = (periodDiff / maxPeriodDiff) * 0.1;
+  }
+
+  const newDiscountedPrice = discountableBase * (1 - discountPercentage) + nonDiscountableSum;
+  setDiscountedPrice(newDiscountedPrice);
+  }, [projectPeriod, basePeriod, basePrice]);
+
+  const handleItemClick = (item: { name: string; price: string; description: string }) => {
+    // EstimateItem 타입으로 변환
+    const estimateItem: EstimateItem = {
+      id: item.name, // 임시로 name을 id로 사용
+      category: '', // 빈 문자열로 설정
+      task: item.name,
+      description: item.description,
+      people: 1, // 기본값
+      days: 1, // 기본값
+      cost: typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : parseFloat(item.price),
+      // const: item.price,
+      front_end_period: 0, // 기본값
+      back_end_period: 0 // 기본값
+    };
+    setSelectedItem(estimateItem);
   };
+
+  // const handleSubmit = () => {
+  //   console.log('견적서 제출');
+  //   // TODO: 견적서 제출 로직 구현
+  // };
 
   const handleCloseModal = () => {
     setSelectedItem(null);
   };
 
-  if (estimateData && estimateData.categories) {
-    return (
-      <EstimateContainer>
-        {content.split('<script')[0].trim() && (
-          <div style={{ marginBottom: '16px' }}>
-            {content.split('<script')[0].trim()}
-          </div>
-        )}
+  // 메시지 내용을 견적서와 일반 텍스트로 분리
+  const parts = content.split('<script');
+  const textContent = parts[0].replace(/\\n/g, '<br/>').trim();  // \n을 <br/>로 변환
+  const hasEstimate = estimateData && estimateData.categories;
 
-        <TopSection>
-          <MainContent>
-            <EstimateCard estimate={estimateData} />
-            <DetailsToggle onClick={() => setIsDetailsVisible(!isDetailsVisible)}>
-              상세견적 보기 {isDetailsVisible ?
-                <DetailsToggleIcon><IoChevronUp size={24} /></DetailsToggleIcon> :
-                <DetailsToggleIcon><IoChevronDown size={24} /></DetailsToggleIcon>
-              }
-            </DetailsToggle>
-            <PeriodSlider value={projectPeriod} onChange={setProjectPeriod} $isvisible={isDetailsVisible} />
-            <AnimatedContainer $isvisible={isDetailsVisible}>
-              <EstimateAccordion
-                data={estimateData}
-                onItemClick={handleItemClick}
+  return (
+    <div>
+      {/* 일반 텍스트 메시지 표시 */}
+      {textContent && (
+        <StyledDiv 
+          style={{ 
+            marginBottom: hasEstimate ? '24px' : '0',
+            fontSize: '18px',
+            lineHeight: '1.6'
+          }}
+          dangerouslySetInnerHTML={{ __html: textContent }} 
+        />
+      )}
+
+      {/* 견적서가 있는 경우 표시 */}
+      {hasEstimate && (
+        <EstimateContainer>
+          <TopSection>
+            <MainContent>
+              <EstimateCard 
+                estimate={estimateData} 
+                discountedPrice={discountedPrice}
+                projectPeriod={projectPeriod}
               />
-            </AnimatedContainer>
-          </MainContent>
-          <SideContent>
-            <EstimateActionButtons
-              onConsult={() => console.log('문의하기')}
-              onSubmit={handleSubmit}
+              <DetailsToggle onClick={() => setIsDetailsVisible(!isDetailsVisible)}>
+                상세견적 보기 {isDetailsVisible ?
+                  <DetailsToggleIcon><IoChevronUp size={24} /></DetailsToggleIcon> :
+                  <DetailsToggleIcon><IoChevronDown size={24} /></DetailsToggleIcon>
+                }
+              </DetailsToggle>
+              <PeriodSlider 
+                value={projectPeriod}
+                onChange={setProjectPeriod}
+                $isvisible={isDetailsVisible}
+                min={basePeriod}
+                max={basePeriod + 8}
+                discountedPrice={discountedPrice}
+                basePrice={basePrice}
+              />            
+              <AnimatedContainer $isvisible={isDetailsVisible}>
+                <EstimateAccordion
+                  data={estimateData}
+                  onItemClick={handleItemClick}
+                />
+              </AnimatedContainer>
+            </MainContent>
+            <SideContent>
+              <EstimateActionButtons
+                onConsult={() => console.log('문의하기')}
+                onSubmit={() => handleSubmit(content)}
+              />
+            </SideContent>
+          </TopSection>
+          {selectedItem && (
+            <DetailModal
+              item={selectedItem}
+              onClose={handleCloseModal}
             />
-          </SideContent>
-        </TopSection>
-
-        {selectedItem && (
-          <DetailModal
-            item={selectedItem}
-            onClose={handleCloseModal}
-          />
-        )}
-      </EstimateContainer>
-    );
-  }
-  if (content.includes('<script')) {
-    return <StyledDiv>견적서를 불러오는 중...</StyledDiv>;
-  }
-
-  return <StyledDiv dangerouslySetInnerHTML={{ __html: content }} />;
+          )}
+        </EstimateContainer>
+      )}
+    </div>
+  );
 };
 
 export default function AiChatPage() {
@@ -353,13 +459,9 @@ export default function AiChatPage() {
   const [selectedPromptId, setSelectedPromptId] = useState('default');
   const updateLastMessage = useChatStore((s) => s.updateLastMessage);
 
-  // 파일 업로드 관련 상태
   const [isFirebaseChecking, setIsFirebaseChecking] = useState(true);
-
-  // ⭐️ 1. useRef 훅으로 스크롤을 위한 ref 생성
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
-  //useChatActions 훅을 사용하여 모든 로직을 가져옵니다.
   const {
     handleSubmit,
     isProcessing,
@@ -373,92 +475,127 @@ export default function AiChatPage() {
     handleFileInput,
     removeFile,
   } = useChatActions({ modelName, selectedPromptId });
-
-  // ⭐️⭐️⭐️ AI가 먼저 말하는 메시지 설정 ⭐⭐⭐
-  const initialAiMessage = `만나뵙게 되어 반갑습니다. 어떤 종류의 프로젝트를 만들고 싶으신가요?
   
+  const [estimateDataForConsult, setEstimateDataForConsult] = useState<ProjectEstimate | null>(null);
+  const [chatSessionId, setChatSessionId] = useState(''); // ⭐️ 추가: chatSessionId 상태
+
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.role === 'ai') {
+      const extractedData = extractEstimateData(lastMessage.content);
+      if (extractedData) {
+        setEstimateDataForConsult(extractedData);
+      }
+    }
+  }, [messages]);
+
+  useEffect(() => {
+      // ⭐️ 추가: 로컬 스토리지에서 채팅 세션 ID 가져오기
+      const storedChatSessionId = localStorage.getItem('chatSessionId');
+      if (storedChatSessionId) {
+        setChatSessionId(storedChatSessionId);
+      }
+  }, []);
+
+  const handleInfoSubmit = useCallback(async (
+    userInfo: { name: string; email: string; cellphone: string }, 
+    estimateData: ProjectEstimate | null, // ⭐️ 인자로 받음
+    chatSessionId: string // ⭐️ 인자로 받음
+  ) => {
+    if (!estimateData) {
+      error('견적 정보가 없습니다. 다시 시도해주세요.');
+      return;
+    }
+    const { project_name, uuid } = estimateData;
+
+    if (!uuid || !chatSessionId) {
+      error('필수 정보가 누락되었습니다.');
+      return;
+    }
+
+    const userForApi = {
+      id: localStorage.getItem('guest-uuid') || 'anonymous',
+      name: userInfo.name,
+      email: userInfo.email,
+      cellphone: userInfo.cellphone,
+    };
+    
+    try {
+      const response = await requestEstimateConsult(
+        project_name,
+        uuid,
+        chatSessionId,
+        userForApi
+      );
+      if (response.statusCode === 200) {
+        success('성공적으로 견적 요청이 접수되었습니다. 곧 연락드리겠습니다.');
+      } else {
+        error(`견적 요청에 실패했습니다: ${response.error?.message || '알 수 없는 오류'}`);
+      }
+    } catch (e) {
+      console.error(e);
+      error('네트워크 오류로 견적 요청에 실패했습니다.');
+    }
+  }, [error, success]);
+  
+  const initialAiMessage = `AI 컨설턴트 강유하 입니다 만나 뵙게 되어 반갑습니다
+어떤 종류의 프로젝트를 만들고 싶으신가요?
+
   <strong style="font-size: 20px;">프로젝트의 큰 그림을 알려주세요</strong>
   <ul style="padding-left: 30px;"><li><strong>프로젝트의 핵심 목표는 무엇인가요?</strong></li><li><strong>주요 사용자층은 누구인가요?</strong> 
 </li><li><strong>꼭 필요한 핵심 기능은 무엇인가요?</strong></li></ul>
 궁금하신 점이나 추가로 설명하고 싶으신 내용이 있다면 언제든지 편하게 이야기해주세요.`;
   const [hasShownInitialMessage, setHasShownInitialMessage] = useState(false);
 
-
-  //  컴포넌트 마운트 시 AI 메시지 출력 useEffect 
   useEffect(() => {
     if (messages.length === 0 && !hasShownInitialMessage) {
       const timer = setTimeout(() => {
         addMessage({ role: 'ai', content: initialAiMessage });
         setHasShownInitialMessage(true);
-      }, 1000); // 1초 지연
-
-      return () => clearTimeout(timer); // 언마운트 시 타이머 정리
+      }, 1000);
+      return () => clearTimeout(timer);
     }
   }, [messages, hasShownInitialMessage, addMessage, initialAiMessage]);
 
   useEffect(() => {
     devLog('[AiPageContent] Firebase auth listener - MOUNTING');
     setIsFirebaseChecking(true);
-
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      devLog(
-        '[AiPageContent] onAuthStateChanged CALLBACK TRIGGERED. Firebase user:',
-        user
-      );
+      devLog('[AiPageContent] onAuthStateChanged CALLBACK TRIGGERED. Firebase user:', user);
       if (user) {
-        devLog(
-          `[AiPageContent] Firebase user DETECTED (UID: ${user.uid}, Anonymous: ${user.isAnonymous})`
-        );
+        devLog(`[AiPageContent] Firebase user DETECTED (UID: ${user.uid}, Anonymous: ${user.isAnonymous})`);
         setIsFirebaseChecking(false);
       } else {
-        devLog(
-          '[AiPageContent] No Firebase user DETECTED. Attempting anonymous sign-in...'
-        );
+        devLog('[AiPageContent] No Firebase user DETECTED. Attempting anonymous sign-in...');
         try {
           await signInAnonymously(auth);
-          devLog(
-            '[AiPageContent] Firebase anonymous sign-in attempt successful. Waiting for new auth state.'
-          );
+          devLog('[AiPageContent] Firebase anonymous sign-in attempt successful. Waiting for new auth state.');
         } catch (error) {
-          console.error(
-            '[AiPageContent] Firebase anonymous sign-in FAILED:',
-            error
-          );
+          console.error('[AiPageContent] Firebase anonymous sign-in FAILED:', error);
           setIsFirebaseChecking(false);
         }
       }
     });
-
     return () => {
-      devLog(
-        '[AiPageContent] Firebase auth listener - UNMOUNTING. Unsubscribing.'
-      );
+      devLog('[AiPageContent] Firebase auth listener - UNMOUNTING. Unsubscribing.');
       unsubscribe();
     };
   }, []);
 
-
-  // Firebase 인증 상태 리스너 추가
   useEffect(() => {
-    // setIsFirebaseChecking(true); // 이 상태가 컴포넌트에 없으므로 제거
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // console.log(`[AiChatPage] Firebase user DETECTED (UID: ${user.uid}, Anonymous: ${user.isAnonymous})`);
       } else {
-        // console.log('[AiChatPage] No Firebase user DETECTED. Attempting anonymous sign-in...');
         try {
           await signInAnonymously(auth);
-          // console.log('[AiChatPage] Firebase anonymous sign-in attempt successful. Waiting for new auth state.');
         } catch (error) {
           console.error('[AiChatPage] Firebase anonymous sign-in FAILED:', error);
         }
       }
     });
-
     return () => unsubscribe();
   }, []);
 
-  // 2. 메시지가 업데이트될 때마다 스크롤을 맨 아래로 이동
   useEffect(() => {
     if (endOfMessagesRef.current) {
       endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -468,7 +605,6 @@ export default function AiChatPage() {
   const isEstimateMessage = (content: string) => {
     return content.includes('<script type="application/json" id="invoiceData">');
   };
-
 
   const onTestModel = async () => {
     const r = await testModel();
@@ -486,24 +622,6 @@ export default function AiChatPage() {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* <h1 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>AI 대화</h1>
-      <Controls>
-        <Select value={modelName} onChange={handleModelChange}>
-          <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-          <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
-          <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-        </Select>
-        <Button type="button" onClick={onTestModel}>모델 테스트</Button>
-        <Button type="button" onClick={resetChat} style={{ background: '#374151' }}>채팅 세션 초기화</Button>
-        <Button type="button" onClick={clear} style={{ background: '#6b7280' }}>메시지 비우기</Button>
-
-        <PromptSelector
-          templates={promptTemplates}
-          selectedId={selectedPromptId}
-          onSelect={setSelectedPromptId}
-        />
-      </Controls> */}
-
       <FileUploadArea
         $isDragOver={isDragOver}
       >
@@ -523,7 +641,6 @@ export default function AiChatPage() {
           </Button>
         )}
       </FileUploadArea>
-
       <input
         id="file-input"
         type="file"
@@ -532,14 +649,10 @@ export default function AiChatPage() {
         onChange={handleFileInput}
         accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.hwp"
       />
-
-      {/* 파일 프리뷰는 바텀인풋에서만 표시하도록 제거 */}
-
       <ChatBox>
         {messages.map((m, idx) => {
           if (m.role === 'user') {
             const parsedContent = parseMessageContent(m.content);
-            
             return (
               <UserMessage key={idx}>
                 {parsedContent.text}
@@ -564,7 +677,6 @@ export default function AiChatPage() {
         })}
         <div ref={endOfMessagesRef} />
       </ChatBox>
-      {/* FileUploadSection은 바텀인풋에서 처리하므로 제거 */}
       <BottomInput
         placeholder="메시지를 입력하세요"
         onSubmit={handleSubmit}
@@ -574,6 +686,9 @@ export default function AiChatPage() {
         uploadedFiles={uploadedFiles}
         uploadProgress={uploadProgress}
         onDeleteFile={removeFile}
+        onInfoSubmit={handleInfoSubmit}
+        estimateDataForConsult={estimateDataForConsult} // ⭐️ 수정: props로 전달
+        chatSessionId={chatSessionId} // ⭐️ 수정: props로 전달
       />
     </Container>
   );

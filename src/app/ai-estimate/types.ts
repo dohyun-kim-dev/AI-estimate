@@ -7,6 +7,8 @@ export interface EstimateItem {
   people: number;
   days: number;
   cost: number;
+  front_end_period?: number | string;
+  back_end_period?: number | string;
 }
 
 export interface Estimate {

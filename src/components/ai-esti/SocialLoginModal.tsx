@@ -1,13 +1,14 @@
+// 파일: @components/common/SocialLoginModal.tsx (새 파일)
 import styled from 'styled-components';
 import { AppColors } from '@/styles/colors';
 import { AppTextStyles } from '@/styles/textStyles';
 import CloseIcon from '@mui/icons-material/Close';
-import { useEffect, useState } from 'react';
-import { useGoogleLogin } from '@react-oauth/google';
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, useMemo, ReactNode } from 'react';
+import { EstimateConfirmModal } from './EstimateConfirmModal';
 import { useAuthStore } from '@/store/authStore';
+import { useToast } from '@/components/common/ToastProvider';
 import { googleLoginInitial, googleLoginUpdate } from '@/lib/api/user/userApi';
-import { useToast } from '@components/common/ToastProvider';
+import { useGoogleLogin } from '@react-oauth/google';
 
 const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
@@ -22,7 +23,7 @@ const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   z-index: 1000;
 `;
 
-  const ModalContent = styled.div`
+const ModalContent = styled.div`
   background-color: white;
   color: ${AppColors.onSurface};
   padding: 0;
@@ -59,14 +60,14 @@ const PageSubtitle = styled.p`
 
 const GradientTitleText = styled.h2`
   ${AppTextStyles.headline2}
-  font-size: 32px;
+  font-size: 24px;
   font-weight: bold;
-  background: linear-gradient(to right, #63a4ff, #8e54e9);
+  background: linear-gradient(90deg, #0314CF 33.86%, #AFB2D4 74.02%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   margin-top: 0;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   line-height: 1.2;
 `;
 
@@ -75,12 +76,53 @@ const MainSloganText = styled.h3`
   font-size: 24px;
   font-weight: bold;
   color: ${AppColors.onSurface};
-  margin-bottom: 40px;
+  margin-bottom: 20px;
   white-space: pre-line;
-  line-height: 1.3;
+  line-height: 2;
 `;
 
-const GoogleLoginButton = styled.button`
+const SubSloganText = styled.h3`
+  ${AppTextStyles.title1}
+  font-size: 13px;
+  font-weight: 500;
+  color: ${AppColors.onSurfaceVariant};
+  margin-bottom: 50px;
+  white-space: pre-line;
+  line-height: 2;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+
+`;
+
+const PrimaryButton = styled.button`
+  background-color: #2E2E48;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 100%;
+
+  &:hover {
+    background-color: #4B4B6F;
+  }
+
+  &:disabled {
+    background-color: #e0e0e0;
+    cursor: not-allowed;
+  }
+`;
+
+const SecondaryButton = styled.button`
   background-color: white;
   color: #3c4043;
   border: 1px solid #dadce0;
@@ -95,15 +137,9 @@ const GoogleLoginButton = styled.button`
   gap: 12px;
   transition: background-color 0.2s;
   width: 100%;
-  max-width: 320px;
 
   &:hover {
     background-color: #f8f9fa;
-  }
-
-  img {
-    width: 20px;
-    height: 20px;
   }
 
   &:disabled {
@@ -131,36 +167,35 @@ const StyledCloseButton = styled.button`
     color: ${AppColors.onSurface};
   }
 `;
+
 interface SocialLoginModalProps {
   $isOpen: boolean;
   onClose: () => void;
+  purpose: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded';
+  onGoogleLoginSuccess: (tokenResponse: any) => void;
+  onPrimaryButtonClick: () => void;
 }
 
 export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
   $isOpen,
   onClose,
+  purpose,
+  onGoogleLoginSuccess,
+  onPrimaryButtonClick
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const { success } = useToast();
 
-  // const store = useAuthStore();
-  // const login = store.login;
-  // const openAdditionalInfoModal = store.openAdditionalInfoModal;
-  // const loginModalContext =
-  //   'loginModalContext' in store ? store.loginModalContext : null;
-
-  const navigate = useNavigate();
-
-
-  // 로그인 성공 시 처리는 handleGoogleLogin 내부에서 직접 처리
+  const [showEstimateModal, setShowEstimateModal] = useState(false);
 
   const { login, openAdditionalInfoModal } = useAuthStore();
+  const { success, error: showError } = useToast();
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
+      setIsLoading(true);
       try {
-        // 로직 1: 구글 사용자 정보 가져오기
+        // 구글 유저 정보 가져오기
         const userInfoResponse = await fetch(
           'https://www.googleapis.com/oauth2/v3/userinfo',
           {
@@ -168,56 +203,49 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
           }
         );
         const userInfo = await userInfoResponse.json();
-    
-        // 2. providerId로 첫 번째 로그인 시도
-        const initialResponse = await googleLoginInitial({
-          providerId: userInfo.sub,
-        });
-    
+
+        // 초기 로그인 시도
+        const initialResponse = await googleLoginInitial({ providerId: userInfo.sub });
+
         if (initialResponse.statusCode === 200) {
-          // ⭐️ 3. usingService 확인 및 회사 등록 로직 추가
-          const usingServices = initialResponse.data.usingService || [];
-          const companyCode = 'heredot'; // 👈 실제 로직에서는 URL에서 추출해야 함
-    
-          // usingService 배열에 companyCode가 포함되어 있는지 확인
-          if (!usingServices.includes(companyCode)) {
-            console.log(`[${companyCode}] 서비스에 가입되지 않아 등록을 진행합니다.`);
-            const registerResponse = await companyRegister();
-    
-            if (registerResponse.statusCode === 200) {
-              console.log(`${companyCode} 회사 등록 성공.`);
-            } else {
-              console.error(`${companyCode} 회사 등록 실패:`, registerResponse.error?.message);
-            }
-          }
           if (initialResponse.data.isNew) {
-            // 3. 신규 사용자면 추가 정보와 함께 다시 요청
+            // 신규 사용자: 추가 정보 업데이트
             const updateResponse = await googleLoginUpdate({
               providerId: userInfo.sub,
               name: `${userInfo.family_name}${userInfo.given_name}`,
               email: userInfo.email,
               profileImage: userInfo.picture,
+              cellphone: ''  // 추가 정보 모달에서 입력 받을 예정
             });
-
+            
             if (updateResponse.statusCode === 200) {
               await login(updateResponse.data);
-              onClose(); // 먼저 소셜 로그인 모달을 닫고
-              openAdditionalInfoModal(); // 그 다음 추가 정보 모달을 엽니다
+              onClose();
+              openAdditionalInfoModal();
             } else {
-              setLoginError(updateResponse.error?.message || '회원가입 중 오류가 발생했습니다.');
+              throw new Error(updateResponse.error?.message || '회원가입 중 오류가 발생했습니다.');
             }
           } else {
-            // 4. 기존 사용자면 바로 로그인 처리
+            // 기존 사용자: 바로 로그인
             await login(initialResponse.data);
             onClose();
             success('로그인되었습니다!');
+            
+            // 3초 후 견적 모달 표시 (필요한 경우)
+            if (purpose === 'limitExceeded') {
+              setTimeout(() => {
+                setShowEstimateModal(true);
+              }, 3000);
+            }
           }
         } else {
-          setLoginError(initialResponse.error?.message || '로그인에 실패했습니다.');
+          throw new Error(initialResponse.error?.message || '로그인에 실패했습니다.');
         }
-      } catch (error) {
+
+      } catch (error: any) {
         console.error('Google 로그인 에러:', error);
-        setLoginError('로그인 처리 중 오류가 발생했습니다.');
+        setLoginError(error.message || '로그인 처리 중 오류가 발생했습니다.');
+        showError('로그인 처리 중 오류가 발생했습니다.');
       } finally {
         setIsLoading(false);
       }
@@ -229,42 +257,105 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
     },
   });
 
-  // 로그인 상태 변경 시 로딩 상태 초기화
   useEffect(() => {
     if (!$isOpen) {
       setIsLoading(false);
       setLoginError(null);
     }
   }, [$isOpen]);
+  
+  const contents = useMemo(() => {
+    switch (purpose) {
+      case 'contact':
+        return {
+          title: `여기닷에게 문의하기`,
+          subtitle: `추가로 궁금한 내용이 있다면\n‘여기닷’에게 견적요청을 남겨주세요\n전문 컨설턴트가 빠르게 도와드립니다.`,
+          primaryButtonText: '정보 입력 후 견적 요청하기',
+          secondaryButtonText: '구글 계정으로 로그인',
+          secondaryButtonSubText: '(로그인 후 무제한 다운로드)',
+        };
+      case 'download':
+        return {
+          title: `견적 받기 전에 잠깐!`,
+          subtitle: `견적을 다운로드하려면 발행자 정보 확인이 필요합니다\n정보 입력 또는 로그인 후 이용 가능합니다`,
+          primaryButtonText: '정보 입력 후 다운로드',
+          secondaryButtonText: '구글 계정으로 로그인',
+          secondaryButtonSubText: '(로그인 후 무제한 다운로드)',
+        };
+      case 'share':
+        return {
+          title: `공유 전에 잠깐!`,
+          subtitle: `견적을 공유하려면 발행자 정보 확인이 필요합니다\n정보 입력 또는 로그인 후 이용 가능합니다`,
+          primaryButtonText: '정보 입력 후 공유',
+          secondaryButtonText: '구글 계정으로 로그인',
+          secondaryButtonSubText: '(로그인 후 무제한 공유)',
+        };
+      case 'limitReached':
+        return {
+          title: `오늘의 질문 횟수가 모두 소진되었어요`,
+          subtitle: `오늘의 질문을 모두 쓰셨어요!\n아쉬우실까 봐 10회를 더 드렸습니다\n로그인하면 더 많은 횟수로 다양하게 즐겨보실 수 있어요`,
+          primaryButtonText: '10회 추가이용',
+          secondaryButtonText: '로그인하기',
+          secondaryButtonSubText: '',
+        };
+      case 'limitExceeded':
+        return {
+          title: `질문 횟수가 모두 소진되었어요`,
+          subtitle: `견적이 조금 부족하다고 느껴지셨나요?\n로그인 시 더 많은 질문 횟수로 이용할 수 있어요`,
+          // primaryButtonText: '정보 입력 후 견적 요청하기',
+          secondaryButtonText: '3초 ! SNS 로그인하기',
+          secondaryButtonSubText: '',
+        };
+      default:
+        return {
+          title: `간편 구글 로그인으로\n견적을 받아보세요`,
+          // subtitle: `추가로 궁금한 내용이 있다면\n‘여기닷’에게 견적요청을 남겨주세요\n전문 컨설턴트가 빠르게 도와드립니다.`,
+          // primaryButtonText: '정보 입력 후 견적 요청하기',
+          secondaryButtonText: '구글 계정으로 로그인',
+          secondaryButtonSubText: '(로그인 후 무제한 다운로드)',
+        };
+    }
+  }, [purpose]);
 
   if (!$isOpen) {
     return null;
   }
 
   return (
-    <ModalOverlay
-    $isOpen={$isOpen}
-      onClick={() => {
-        if (isLoading) return;
-        onClose();
-      }}
-    >
+    <>
+      <ModalOverlay
+        $isOpen={$isOpen}
+        onClick={() => {
+          if (isLoading) return;
+          onClose();
+        }}
+      >
       <ModalContent onClick={(e) => e.stopPropagation()}>
         <StyledCloseButton onClick={onClose} disabled={isLoading}>
           <CloseIcon />
         </StyledCloseButton>
         <RightPanel>
           <PageSubtitle>복잡한 견적, AI로 간단하게.</PageSubtitle>
-          <GradientTitleText>AI 견적서</GradientTitleText>
-          <MainSloganText>간편 구글 로그인으로 즐겨보세요</MainSloganText>
-
-          <GoogleLoginButton
-            onClick={() => handleGoogleLogin()}
-            disabled={isLoading}
-          >
-            <img src="/ai-estimate/google.png" alt="Google_logo" />
-            <span> Google 계정으로 로그인</span>
-          </GoogleLoginButton>
+          <GradientTitleText>AIGO</GradientTitleText>
+          <MainSloganText>{contents.title}</MainSloganText>
+          <SubSloganText>{contents.subtitle}</SubSloganText>
+          <ButtonGroup>
+            {contents.primaryButtonText && (
+              <PrimaryButton
+                onClick={onPrimaryButtonClick}
+                disabled={isLoading}
+              >
+                {contents.primaryButtonText}
+              </PrimaryButton>
+            )}
+            <SecondaryButton
+              onClick={() => handleGoogleLogin()}
+              disabled={isLoading}
+            >
+              <img src="/ai-estimate/google.png" alt="Google_logo" style={{ width: '32px', height: '32px' }}/>
+              <span> {contents.secondaryButtonText}</span>
+            </SecondaryButton>
+          </ButtonGroup>
 
           {loginError && (
             <p style={{ color: 'red', marginTop: '20px', fontSize: '14px' }}>
@@ -274,5 +365,14 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
         </RightPanel>
       </ModalContent>
     </ModalOverlay>
+    <EstimateConfirmModal
+      isOpen={showEstimateModal}
+      onClose={() => setShowEstimateModal(false)}
+      onConfirm={() => {
+        setShowEstimateModal(false);
+        onPrimaryButtonClick();
+      }}
+    />
+    </>
   );
 };

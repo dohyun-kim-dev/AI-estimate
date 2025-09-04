@@ -75,10 +75,10 @@ interface GenericListUIProps<T extends BaseRecord> {
   fetchData: (params: FetchParams) => Promise<FetchResult<T>>;
   excelFileName?: string;
   onAdd?: () => void;
-  // 새로 변경된 props
   addButtonLabel?: string;
   deleteBtnCallBack?: () => void;
   isShowExcelTemplate?: boolean;
+  excelTemplateBtnCallBack?: (() => void); 
   excelUploadBtnCallBack?: (() => void);
   // 고객사 검색 관련 props
   enableCompanySearch?: boolean;
@@ -156,6 +156,7 @@ const GenericListUIInner = <T extends BaseRecord>(
     renderTabs,
     addButtonLabel = "추가",
     isShowExcelTemplate,
+    excelTemplateBtnCallBack, // ⭐️ 추가된 prop
     deleteBtnCallBack,
     excelUploadBtnCallBack,
     enableCompanySearch,
@@ -465,7 +466,7 @@ const GenericListUIInner = <T extends BaseRecord>(
       </PrimaryButton>
     )}
     {isShowExcelTemplate && (
-      <PrimaryButton $themeMode={themeMode} onClick={() => console.log("엑셀 템플릿")}>
+      <PrimaryButton $themeMode={themeMode} onClick={excelTemplateBtnCallBack}>
         엑셀 템플릿
       </PrimaryButton>
     )}

@@ -96,7 +96,7 @@ const HeaderRow = styled.div`
   padding-right: 48px;
   font-size: 20px;
   font-weight: 600;
-  color: #fff;
+  color: #000;
 `;
 
 const RequiredMark = styled.span`

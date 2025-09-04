@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 60,
+            "activePatchIndex": 62,
             "patches": [
                 {
                     "date": 1756192938761,
@@ -248,6 +248,14 @@
                 {
                     "date": 1756714717692,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -281,9 +281,9 @@\n         <ChevronIcon size={20} />\n         <ActionButtonBottom>상담 요청 하기</ActionButtonBottom>\n       </ActionButton>\n \n-      <ActionButton onClick={() => handleAiSubmit(\"AI 예산 줄이기\")}>\n+      <ActionButton onClick={() => onSubmit(\"AI 예산 줄이기\")}>\n         <LeftContent>\n           <TextContent>\n             <Flex>\n               <IconWrapper>\n@@ -297,9 +297,9 @@\n         <ChevronIcon size={20} />\n         <ActionButtonBottom $isSecondary>AI 예산 줄이기</ActionButtonBottom>\n       </ActionButton>\n \n-      <ActionButton onClick={() => o(\"AI 맞춤 추천\")}>\n+      <ActionButton onClick={() => onSubmit(\"AI 맞춤 추천\")}>\n         <LeftContent>\n           <TextContent>\n             <Flex>\n               <IconWrapper>\n"
+                },
+                {
+                    "date": 1756873097697,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -318,9 +318,9 @@\n         <div style={{ fontSize: 14, textAlign: 'center'}}>정확한 상담을 위해 필수 정보를 입력해주세요</div>\n         <Form onSubmit={handleSubmit}>\n           <TextField id=\"name\" label=\"이름\" placeholder=\"이름을 입력해주세요\" required />\n           <TextField id=\"email\" label=\"이메일\" type=\"email\" placeholder=\"이메일을 입력해주세요\" required />\n-          <TextField id=\"phone\" label=\"전화번호\" placeholder=\"전화번호를 입력해주세요\" required maxLength={11} required />\n+          <TextField id=\"phone\" label=\"전화번호\" placeholder=\"전화번호를 입력해주세요\" type=\"tel\" required maxLength={11} required />\n           <Disclaimer>문의 시 개인정보 수집·이용에 동의한 것으로 간주됩니다.</Disclaimer>\n           <SubmitButton type=\"submit\">문의 접수</SubmitButton>\n         </Form>\n       </Modal>\n"
+                },
+                {
+                    "date": 1756873178189,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -318,9 +318,9 @@\n         <div style={{ fontSize: 14, textAlign: 'center'}}>정확한 상담을 위해 필수 정보를 입력해주세요</div>\n         <Form onSubmit={handleSubmit}>\n           <TextField id=\"name\" label=\"이름\" placeholder=\"이름을 입력해주세요\" required />\n           <TextField id=\"email\" label=\"이메일\" type=\"email\" placeholder=\"이메일을 입력해주세요\" required />\n-          <TextField id=\"phone\" label=\"전화번호\" placeholder=\"전화번호를 입력해주세요\" type=\"tel\" required maxLength={11} required />\n+          <TextField id=\"phone\" label=\"전화번호\" placeholder=\"전화번호를 입력해주세요\" pattype=\"tel\" required maxLength={11} required />\n           <Disclaimer>문의 시 개인정보 수집·이용에 동의한 것으로 간주됩니다.</Disclaimer>\n           <SubmitButton type=\"submit\">문의 접수</SubmitButton>\n         </Form>\n       </Modal>\n"
                 }
             ],
             "date": 1756192938761,

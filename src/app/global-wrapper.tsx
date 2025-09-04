@@ -34,6 +34,9 @@ function ModalContainer() {
       <SocialLoginModal
         $isOpen={isLoginModalOpen}
         onClose={closeLoginModal}
+        purpose="limitExceeded"
+        onPrimaryButtonClick={() => {}}
+        onGoogleLoginSuccess={() => {}}
       />
       <AdditionalInfoModal
         open={isAdditionalInfoModalOpen}

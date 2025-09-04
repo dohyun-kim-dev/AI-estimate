@@ -5,6 +5,7 @@ import { loginAdminService } from '@/lib/services/loginAdminService';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import CommonButton from '@/components/CommonButton';
 import { toast, ToastContainer } from 'react-toastify';
+import { useParams } from 'react-router-dom';
 
 export default function LoginPage() {
   const [userId, setUserId] = useState('');
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [idError, setIdError] = useState<string | null>(null);
   const [pwdError, setPwdError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { companyCode } = useParams();
 
   const navigate = useNavigate();
   const { login, isLoggedIn } = useAdminAuth();
@@ -64,7 +66,7 @@ export default function LoginPage() {
         onSuccess: (response) => {
           login(response.id);
           toast.success('로그인 성공!');
-          navigate('/cms');
+          navigate(`/aiclient/${companyCode}/cms`);
         },
       });
     } finally {
@@ -124,7 +126,7 @@ export default function LoginPage() {
               whiteSpace: 'nowrap',
             }}
           >
-            AI 견적서 통합관리자용
+            AI 견적 통합관리자용
           </div>
         </div>
 

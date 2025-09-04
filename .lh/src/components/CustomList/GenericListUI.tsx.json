@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 16,
+            "activePatchIndex": 19,
             "patches": [
                 {
                     "date": 1756112102683,
@@ -72,6 +72,18 @@
                 {
                     "date": 1756197210536,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -537,10 +537,10 @@\n \n \n \n const Container = styled.div<{ $themeMode: ThemeMode }>`\n-  // min-width: 1200px;\n-  // width: 100%;\n+  min-width: 1200px;\n+  width: 100%;\n   height: 100%;\n   box-sizing: border-box;\n   padding: 80px 30px;\n   background-color: ${({ $themeMode }) =>\n"
+                },
+                {
+                    "date": 1756797995288,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -78,8 +78,9 @@\n   // 새로 변경된 props\n   addButtonLabel?: string;\n   deleteBtnCallBack?: () => void;\n   isShowExcelTemplate?: boolean;\n+  excelTemplateBtnCallBack?: (() => void); // ⭐️ 추가된 부분: 템플릿 다운로드 콜백\n   excelUploadBtnCallBack?: (() => void);\n   // 고객사 검색 관련 props\n   enableCompanySearch?: boolean;\n   onCompanySelect?: (company: { id: string; name: string }) => void;\n@@ -155,8 +156,9 @@\n     onAdd,\n     renderTabs,\n     addButtonLabel = \"추가\",\n     isShowExcelTemplate,\n+    excelTemplateBtnCallBack, // ⭐️ 추가된 prop\n     deleteBtnCallBack,\n     excelUploadBtnCallBack,\n     enableCompanySearch,\n     onCompanySelect\n@@ -464,9 +466,9 @@\n         {addButtonLabel}\n       </PrimaryButton>\n     )}\n     {isShowExcelTemplate && (\n-      <PrimaryButton $themeMode={themeMode} onClick={() => console.log(\"엑셀 템플릿\")}>\n+      <PrimaryButton $themeMode={themeMode} onClick={excelTemplateBtnCallBack}>\n         엑셀 템플릿\n       </PrimaryButton>\n     )}\n     {excelUploadBtnCallBack && (\n@@ -837,5 +839,5 @@\n     cursor: not-allowed;\n     border-color: ${({ $themeMode }) => ($themeMode === \"light\" ? \"#EEEEEE\" : \"#555555\")};\n     color: ${({ $themeMode }) => ($themeMode === \"light\" ? \"#AAAAAA\" : \"#777777\")};\n   }\n-`;\n+`;\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1756798030687,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -74,9 +74,8 @@\n   columns: ColumnDefinition<T>[];\n   fetchData: (params: FetchParams) => Promise<FetchResult<T>>;\n   excelFileName?: string;\n   onAdd?: () => void;\n-  // 새로 변경된 props\n   addButtonLabel?: string;\n   deleteBtnCallBack?: () => void;\n   isShowExcelTemplate?: boolean;\n   excelTemplateBtnCallBack?: (() => void); // ⭐️ 추가된 부분: 템플릿 다운로드 콜백\n"
+                },
+                {
+                    "date": 1756798040948,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -77,9 +77,9 @@\n   onAdd?: () => void;\n   addButtonLabel?: string;\n   deleteBtnCallBack?: () => void;\n   isShowExcelTemplate?: boolean;\n-  excelTemplateBtnCallBack?: (() => void); // ⭐️ 추가된 부분: 템플릿 다운로드 콜백\n+  excelTemplateBtnCallBack?: (() => void); \n   excelUploadBtnCallBack?: (() => void);\n   // 고객사 검색 관련 props\n   enableCompanySearch?: boolean;\n   onCompanySelect?: (company: { id: string; name: string }) => void;\n"
                 }
             ],
             "date": 1756112102683,

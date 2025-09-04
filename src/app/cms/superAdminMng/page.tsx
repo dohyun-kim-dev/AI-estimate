@@ -13,6 +13,8 @@ import { THEME_COLORS } from '@/styles/theme_colors';
 import ActionButton from '@/components/ActionButton';
 import CmsPopup from '@/components/CmsPopup';
 import { TextField } from '@/components/TextField';
+import CommonTextField from '@/components/common/TextField';
+
 import SelectionField from '@/components/selectionField';
 import { AppColors } from '@/styles/colors';
 import { Validators } from '@/lib/utils/validators';
@@ -23,6 +25,7 @@ import { SwitchInput } from '@/components/SwitchInput';
 import { devLog } from '@/lib/utils/devLogger';
 import PasswordPopup from './PasswordPopup';
 import CmsResponsiveContainer from '@components/CustomList/ResponsiveList/CmsResponsiveContainer';
+import TextArea from '@/components/common/TextArea';
 
 const SwitchRow = styled.div`
   display: flex;
@@ -38,7 +41,8 @@ const SwitchLabel = styled.label`
   /* font-weight: 500; */
   margin-left: 10px;
   margin-right: 33px;
-  color: white;
+  color: #000;
+  width:auto;
 `;
 
 // API 응답 타입 정의
@@ -115,6 +119,7 @@ const FormContainer = styled.div`
   flex-grow: 1;
   gap: 22px;
   justify-content: space-evenly;
+  padding-top: 10px;
 `;
 
 const RegisterButton = styled(ActionButton)<{ $themeMode: 'light' | 'dark' }>`
@@ -467,6 +472,7 @@ const AdminMngPage: React.FC = () => {
   onClose={closePopup}
   isWide={false}
   showRequiredMark={true}
+  backgroundColor="white"
   bottomFloating={
 <PopupFooter>
   {/* 왼쪽 영역: 삭제 버튼 */}
@@ -492,13 +498,9 @@ const AdminMngPage: React.FC = () => {
   
 >
   <FormContainer>
-  <TextField
-  radius="0"
+<CommonTextField
   value={userId}
-  label="* 아이디"
-  autoComplete="off"
-  $labelPosition="horizontal"
-  labelColor="white"
+  label="아이디"
   onChange={(e) => setUserId(e.target.value)}
   placeholder="영문자와 숫자를 포함한 6~20자"
   errorMessage={idError ?? undefined}
@@ -507,7 +509,7 @@ const AdminMngPage: React.FC = () => {
 
   {/* 신규 등록 시: 아이디 아래에 비밀번호 입력 */}
   {!selectedUser && (
-    <TextField
+    <CommonTextField
       radius="0"
       value={password}
       showSuffixIcon={true}
@@ -523,7 +525,7 @@ const AdminMngPage: React.FC = () => {
   )}
   {/* // 비밀번호 확인 필드 */}
   {!selectedUser && (
-    <TextField
+    <CommonTextField
       radius="0"
       value={confirmPassword}
       showSuffixIcon={true}
@@ -539,7 +541,7 @@ const AdminMngPage: React.FC = () => {
   )}
 
 
-    <TextField
+    <CommonTextField
       radius="0"
       value={name}
       label="* 이름"
@@ -549,7 +551,7 @@ const AdminMngPage: React.FC = () => {
       placeholder="이름을 입력하세요"
       errorMessage={nameError ?? undefined}
     />
-    <TextField
+    <CommonTextField
       radius="0"
       value={email}
       label="* 이메일"
@@ -559,7 +561,7 @@ const AdminMngPage: React.FC = () => {
       placeholder="이메일 형식으로 입력하세요"
       errorMessage={emailError ?? undefined}
     />
-    <TextField
+    <CommonTextField
       radius="0"
       value={cellphone}
       label="* 연락처"
@@ -578,16 +580,17 @@ const AdminMngPage: React.FC = () => {
 
   {/* 수정 모드일 때: 이메일 수신 Switch 위에 비밀번호 변경 버튼 */}
   {selectedUser && (
+<div>
+{/* <SwitchLabel>비밀번호 변경</SwitchLabel> */}
     <SwitchRow>
-      <SwitchLabel>비밀번호 변경</SwitchLabel>
       <PwdChangeButton
-  style={{ width: 'auto', padding: '0 16px', fontSize: '14px' }}
+  style={{ width: 'auto', padding: '0px 16px', fontSize: '14px' }}
   onClick={() => setIsPwdChangeOpen(true)}
 >
   비밀번호 변경
 </PwdChangeButton>
 
-    </SwitchRow>
+    </SwitchRow></div>
   )}
 
 
@@ -607,7 +610,7 @@ const AdminMngPage: React.FC = () => {
       labelColor="white"
     /> */}
 
-    <TextField
+    <TextArea
       radius="0"
       multiline
       minLines={4}
@@ -619,6 +622,7 @@ const AdminMngPage: React.FC = () => {
       labelColor="white"
       onChange={(e) => setDescription(e.target.value)}
       placeholder="비고를 입력하세요"
+      height="200px"
     />
   </FormContainer>
 </CmsPopup>

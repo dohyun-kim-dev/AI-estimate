@@ -3,6 +3,9 @@ import styled from 'styled-components'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useThemeStore } from '@/store/themeStore'
 import Icon, { IconName } from '@/components/ai-esti/Icon'
+import { SocialLoginModal } from '@/components/ai-esti/SocialLoginModal';
+import { useAuthStore } from '@/store/authStore';
+import { CountModal } from '@/components/ai-esti/CountModal';
 
 interface FooterProps { compact?: boolean }
 
@@ -14,7 +17,7 @@ const FooterWrapper = styled.footer<{ $compact?: boolean }>`
   height: 80px;
   background-color: ${({ theme }) => theme.body};
   border-top: 1px solid ${({ theme }) => theme.border};
-  z-index: 100;
+  z-index: 1001;
 `
 
 const FooterContent = styled.div`
@@ -25,6 +28,8 @@ const FooterContent = styled.div`
   align-items: center;
   justify-content: space-around;
   padding: 0 20px;
+    z-index: 1001;
+
 `
 
 const NavItem = styled(Link)<{ $isActive?: boolean }>`
@@ -84,7 +89,8 @@ const Footer: React.FC<FooterProps> = ({ compact }) => {
   const navigate = useNavigate()
   const { isDarkMode } = useThemeStore()
   const { companyCode } = useParams() // URL에서 companyCode를 가져옵니다.
-
+  const { isAuthenticated } = useAuthStore()
+  const [isSocialLoginModalOpen, setIsSocialLoginModalOpen] = useState(false)
   const [parentWidth, setParentWidth] = useState<number | null>(null)
   const [isEmbed, setIsEmbed] = useState(false)
   
@@ -126,50 +132,82 @@ const Footer: React.FC<FooterProps> = ({ compact }) => {
     <FooterWrapper $compact={compact}>
       <FooterContent>
         {navItems.map((item, idx) => {
-          if (item.external && hideFull) return null
-          
+          if (item.external && hideFull) return null;
+  
+          const isSpecialItem = item.key === 'estimate' || item.key === 'setting';
+  
           if (item.key === 'consultation') {
-            const isActive = location.pathname === `/aiclient/${companyCode}/`
-            const iconSrc = getIconSrc(item.key, isDarkMode, isActive)
+            const isActive = location.pathname === `/aiclient/${companyCode}/`;
+            const iconSrc = getIconSrc(item.key, isDarkMode, isActive);
             return (
               <ButtonLike key={item.href} $isActive={isActive} onClick={handleConsultationClick}>
                 <IconWrapper $isActive={isActive}>
                   <Icon src={iconSrc} width={80} height={60} fallbackIcon={item.fallbackIcon} />
                 </IconWrapper>
               </ButtonLike>
-            )
+            );
           }
-          const isActive = item.href ? location.pathname === item.href : false
-          const iconSrc = getIconSrc(item.key, isDarkMode, item.external ? false : isActive)
-
+  
+          const isActive = item.href ? location.pathname === item.href : false;
+          const iconSrc = getIconSrc(item.key, isDarkMode, item.external ? false : isActive);
+  
           if (item.external) {
             return (
               <ButtonLike
                 key={idx}
                 $isActive={false}
                 onClick={(e) => {
-                  e.preventDefault()
-                  window.open(`/aiclient/${companyCode}/ai`, '_blank', 'noopener,noreferrer')
+                  e.preventDefault();
+                  window.open(`/aiclient/${companyCode}/ai`, '_blank', 'noopener,noreferrer');
                 }}
               >
                 <IconWrapper $isActive={false}>
                   <Icon src={iconSrc} width={80} height={60} fallbackIcon={item.fallbackIcon} />
                 </IconWrapper>
               </ButtonLike>
-            )
+            );
           }
-
+  
+          // '나의견적' 또는 '설정' 버튼 처리
+          if (isSpecialItem) {
+            const handleItemClick = (e: React.MouseEvent) => {
+              if (!isAuthenticated()) {
+                e.preventDefault();
+                setIsSocialLoginModalOpen(true);
+              }
+            };
+  
+            return (
+              <NavItem key={item.href} to={item.href} $isActive={isActive} onClick={handleItemClick}>
+                <IconWrapper $isActive={isActive}>
+                  <Icon src={iconSrc} width={80} height={60} fallbackIcon={item.fallbackIcon} />
+                </IconWrapper>
+              </NavItem>
+            );
+          }
+  
           return (
             <NavItem key={item.href} to={item.href} $isActive={isActive}>
               <IconWrapper $isActive={isActive}>
                 <Icon src={iconSrc} width={80} height={60} fallbackIcon={item.fallbackIcon} />
               </IconWrapper>
             </NavItem>
-          )
+          );
         })}
       </FooterContent>
+  
+      {/* 소셜 로그인 모달 컴포넌트 추가 */}
+      <SocialLoginModal
+        $isOpen={isSocialLoginModalOpen}
+        onClose={() => setIsSocialLoginModalOpen(false)}
+      />
+      {/* <CountModal
+        $isOpen={isSocialLoginModalOpen}
+        onClose={() => setIsSocialLoginModalOpen(false)}
+      /> */}
     </FooterWrapper>
   )
+  
 }
 
 export default Footer

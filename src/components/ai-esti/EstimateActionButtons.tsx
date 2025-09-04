@@ -319,7 +319,7 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
         <Form onSubmit={handleSubmit}>
           <TextField id="name" label="이름" placeholder="이름을 입력해주세요" required />
           <TextField id="email" label="이메일" type="email" placeholder="이메일을 입력해주세요" required />
-          <TextField id="phone" label="전화번호" placeholder="전화번호를 입력해주세요" required maxLength={11} required />
+          <TextField id="phone" label="전화번호" placeholder="전화번호를 입력해주세요" pattern="[0-9]{10,11}" type="tel" required maxLength={11} required />
           <Disclaimer>문의 시 개인정보 수집·이용에 동의한 것으로 간주됩니다.</Disclaimer>
           <SubmitButton type="submit">문의 접수</SubmitButton>
         </Form>

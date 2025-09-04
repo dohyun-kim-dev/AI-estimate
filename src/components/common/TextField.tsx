@@ -1,16 +1,22 @@
-"use client"
+'use client';
 
-import React from 'react'
-import styled from 'styled-components'
+import React, { useState } from 'react';
+import styled from 'styled-components';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  id: string
-  label: string
+  id: string;
+  label: string;
+  errorMessage?: string;
+  isPasswordField?: boolean;
+  showSuffixIcon?: boolean;
+  height?: string;  // 높이 prop 추가
 }
 
 const Field = styled.div`
   position: relative;
-`
+  width: 100%;
+`;
 
 const FloatingLabel = styled.label`
   position: absolute;
@@ -21,16 +27,23 @@ const FloatingLabel = styled.label`
   font-size: 12px;
   color: #666666;
   background: #ffffff;
-`
+  z-index: 1;
+`;
 
-const StyledInput = styled.input`
-  height: 56px;
+const InputWrapper = styled.div`
+  position: relative;
+  width: 100%;
+`;
+
+const StyledInput = styled.input<{ $hasSuffix?: boolean; $height?: string }>`
+  height: ${props => props.$height || '56px'};
   width: 100%;
   border-radius: 4px;
   border: 1px solid #e5e7eb;
-  background: #ffffff; /* 라이트/다크 모드와 무관하게 화이트 고정 */
+  background: #ffffff;
   color: #111827;
   padding: 0 14px;
+  padding-right: ${props => props.$hasSuffix ? '40px' : '14px'};
   font-size: 14px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
@@ -44,13 +57,77 @@ const StyledInput = styled.input`
     border-color: #3391FF;
     box-shadow: 0 0 0 2px rgba(51, 145, 255, 0.12);
   }
-`
 
-export default function TextField({ id, label, ...props }: TextFieldProps) {
+  &:disabled {
+    background: #f3f4f6;
+    cursor: not-allowed;
+  }
+`;
+
+const SuffixIconWrapper = styled.div<{ $isPasswordVisible?: boolean }>`
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: ${({ $isPasswordVisible }) =>
+    $isPasswordVisible ? '#3391FF' : '#9CA3AF'};
+  
+`;
+
+const ErrorText = styled.span`
+  color: #EF4444;
+  font-size: 12px;
+  margin-top: 4px;
+  margin-left: 4px;
+  display: block;
+`;
+
+export default function TextField({ 
+  id, 
+  label, 
+  errorMessage,
+  isPasswordField = false,
+  showSuffixIcon = false,
+  type: propType,
+  className,
+  height,
+  ...props 
+}: TextFieldProps) {
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+  const handleToggleVisibility = () => {
+    setIsPasswordVisible(prev => !prev);
+  };
+
+  const inputType = isPasswordField 
+    ? (isPasswordVisible ? 'text' : 'password')
+    : propType || 'text';
+
   return (
-    <Field>
+    <Field className={className}>
       <FloatingLabel htmlFor={id}>{label}</FloatingLabel>
-      <StyledInput id={id} {...props} />
+      <InputWrapper>
+        <StyledInput 
+          id={id} 
+          type={inputType}
+          $hasSuffix={showSuffixIcon && isPasswordField}
+          $height={height}
+          {...props} 
+        />
+        {showSuffixIcon && isPasswordField && (
+          <SuffixIconWrapper
+            onClick={handleToggleVisibility}
+            $isPasswordVisible={isPasswordVisible}
+          >
+            {isPasswordVisible ? <VisibilityOff /> : <Visibility />}
+          </SuffixIconWrapper>
+        )}
+      </InputWrapper>
+      {errorMessage && <ErrorText>{errorMessage}</ErrorText>}
     </Field>
-  )
+  );
 }

@@ -5,6 +5,7 @@ export const lightTheme = {
   surface1: '#F0F4F9', // 컴포넌트 배경
   surface2: '#F7F7F7', // 헤더 등 강조 영역 배경
   surface3: '#FFFFFF', // 헤더 등 강조 영역 배경
+  detailSurface1: '#FFFFFF',
   card: '#FFFFFF',
   cardButton: '#D8DDE5',  
   cardBorder: '#D8DDE5',
@@ -38,7 +39,10 @@ export const lightTheme = {
   bottomNavBg: '#FFFFFF',
   bottomNavBorder: '#E5E7EB',
   primaryButton: '#F0F4F9',
-  buttonBottom: "#486D8F"
+  buttonBottom: "#486D8F",
+  detailModalBg: '#F5F5F5',
+  detailButton: '#2E2E48',
+  detailSubtleText: '#6A6A6A'
 };
 
 export const darkTheme = {
@@ -47,6 +51,7 @@ export const darkTheme = {
   surface1: '#1F2937', // 컴포넌트 배경
   surface2: '#171B23', // 헤더 등 강조 영역 배경
   surface3: '#1E212D', // 헤더 등 강조 영역 배경
+  detailSurface1: '#1F2937',
   card: '#121212',
   cardButton: '#27313F',
   cardBorder: '#2F2F38',
@@ -80,7 +85,10 @@ export const darkTheme = {
   bottomNavBg: '#08080F',
   bottomNavBorder: '#2F2F38',
   primaryButton: '#283139',
-  buttonBottom: "#3391FF"
+  buttonBottom: "#3391FF",
+  detailModalBg: '#37414D',
+  detailButton: '#668EC0',
+  detailSubtleText: '#E3E3E3'
 };
 
 export type Theme = typeof lightTheme;

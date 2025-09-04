@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/components/ai-esti/EstimateAccordion.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1756799323044,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1756799323044,
+            "name": "Commit-0",
+            "content": "// src/app/ai-estimate/components/EstimateAccordion.tsx\nimport React, { useState } from 'react';\nimport styled from 'styled-components';\nimport { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';\nimport EstimateAccordionItem from './EstimateAccordionItem';\n\nconst AccordionWrapper = styled.div`\n  display: flex;\n  flex-direction: column;\n  // gap: 12px;\n`;\n\ninterface EstimateAccordionProps {\n  data: ProjectEstimate;\n  onItemClick: (item: any) => void;\n}\n\nconst EstimateAccordion: React.FC<EstimateAccordionProps> = ({ data, onItemClick }) => {\n  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);\n  const [selectedSubItem, setSelectedSubItem] = useState<string | null>(null);\n\n  const handleSubItemSelect = (categoryName: string, subItemId: string) => {\n    setSelectedCategory(categoryName);\n    setSelectedSubItem(subItemId);\n  };\n\n  return (\n    <AccordionWrapper>\n      {data.categories.map((category, index) => (\n        <div key={index}>\n          <EstimateAccordionItem\n            name={category.category_name}\n            depth={1}\n            isSelected={selectedCategory === category.category_name}\n            onSelect={() => {\n              if (selectedCategory === category.category_name) {\n                setSelectedCategory(null);\n                setSelectedSubItem(null);\n              } else {\n                setSelectedCategory(category.category_name);\n              }\n            }}\n            items={category.sub_categories.map(sub => ({\n              name: sub.sub_category_name,\n              price: sub.items.reduce((sum, item) => sum + parseInt(item.price.replace(/,/g, '')), 0).toLocaleString(),\n              description: '',\n              items: sub.items.map(item => ({\n                name: item.name,\n                price: item.price,\n                description: item.description\n              }))\n            }))}\n            selectedItemId={selectedSubItem}\n            onItemSelect={(itemId) => handleSubItemSelect(category.category_name, itemId)}\n          >\n            {category.sub_categories.map((subCategory, subIndex) => (\n              <EstimateAccordionItem\n                key={subIndex}\n                name={subCategory.sub_category_name}\n                depth={2}\n                isSelected={selectedSubItem === `${category.category_name}-${subIndex}`}\n                onSelect={() => handleSubItemSelect(category.category_name, `${category.category_name}-${subIndex}`)}\n                items={subCategory.items.map(item => ({\n                  name: item.name,\n                  price: item.price,\n                  description: item.description\n                }))}\n                onItemClick={onItemClick}\n              />\n            ))}\n          </EstimateAccordionItem>\n        </div>\n      ))}\n    </AccordionWrapper>\n  );\n};\n\nexport default EstimateAccordion;"
+        }
+    ]
+}

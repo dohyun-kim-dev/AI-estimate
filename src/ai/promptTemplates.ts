@@ -38,7 +38,7 @@ export const combinePrompts = (templateId: string, userInput: string): string =>
   // 토큰 수 추정
   const promptTokens = estimateTokens(combinedPrompt);
   // 응답 토큰은 입력의 약 1.5배로 가정
-  const completionTokens = Math.ceil(promptTokens * 1.5);
+  const completionTokens = 2054;
   
   // 로그 출력
   logPromptInfo({

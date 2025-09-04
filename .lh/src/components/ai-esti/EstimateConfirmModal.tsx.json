@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/components/ai-esti/EstimateConfirmModal.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1756966857171,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1756966857171,
+            "name": "Commit-0",
+            "content": "import styled from 'styled-components';\nimport { AppColors } from '@/styles/colors';\nimport { AppTextStyles } from '@/styles/textStyles';\n\nconst ModalOverlay = styled.div<{ $isOpen: boolean }>`\n  position: fixed;\n  top: 0;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  background-color: rgba(0, 0, 0, 0.5);\n  display: ${(props) => (props.$isOpen ? 'flex' : 'none')};\n  align-items: center;\n  justify-content: center;\n  z-index: 1000;\n`;\n\nconst ModalContent = styled.div`\n  background-color: white;\n  padding: 40px;\n  border-radius: 12px;\n  width: 450px;\n  text-align: center;\n  position: relative;\n`;\n\nconst Title = styled.h2`\n  ${AppTextStyles.headline2}\n  color: ${AppColors.onSurface};\n  margin-bottom: 20px;\n`;\n\nconst SubTitle = styled.p`\n  ${AppTextStyles.body2}\n  color: ${AppColors.onSurfaceVariant};\n  margin-bottom: 30px;\n`;\n\nconst ButtonGroup = styled.div`\n  display: flex;\n  gap: 12px;\n  justify-content: center;\n`;\n\nconst Button = styled.button`\n  padding: 12px 24px;\n  border-radius: 8px;\n  font-weight: 500;\n  cursor: pointer;\n  transition: all 0.2s;\n`;\n\nconst PrimaryButton = styled(Button)`\n  background-color: ${AppColors.primary};\n  color: white;\n  border: none;\n  \n  &:hover {\n    background-color: ${AppColors.primaryDark};\n  }\n`;\n\nconst SecondaryButton = styled(Button)`\n  background-color: white;\n  color: ${AppColors.primary};\n  border: 1px solid ${AppColors.primary};\n  \n  &:hover {\n    background-color: ${AppColors.primaryLight};\n  }\n`;\n\ninterface EstimateConfirmModalProps {\n  isOpen: boolean;\n  onClose: () => void;\n  onConfirm: () => void;\n}\n\nexport const EstimateConfirmModal: React.FC<EstimateConfirmModalProps> = ({\n  isOpen,\n  onClose,\n  onConfirm,\n}) => {\n  return (\n    <ModalOverlay $isOpen={isOpen} onClick={onClose}>\n      <ModalContent onClick={(e) => e.stopPropagation()}>\n        <Title>더 확실한 견적을 원하시나요?</Title>\n        <SubTitle>\n          AI 견적만으로는 아쉽다면,<br />\n          \"여기닷\"에서 받아보세요\n        </SubTitle>\n        <ButtonGroup>\n          <SecondaryButton onClick={onClose}>\n            다음에 할게요\n          </SecondaryButton>\n          <PrimaryButton onClick={onConfirm}>\n            견적 받아보기\n          </PrimaryButton>\n        </ButtonGroup>\n      </ModalContent>\n    </ModalOverlay>\n  );\n};\n"
+        }
+    ]
+}

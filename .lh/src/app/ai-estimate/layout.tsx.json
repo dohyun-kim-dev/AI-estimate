@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1755957639786,
@@ -20,6 +20,14 @@
                 {
                     "date": 1756195563061,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,9 +7,9 @@\n \n const LayoutWrapper = styled.div`\n   min-height: 100vh;\n   padding-bottom: calc(76px + env(safe-area-inset-bottom));\n-  background-color: ${({ theme }) => theme.body};\n+  // background-color: ${({ theme }) => theme.body};\n `;\n \n const TopNav = styled.nav`\n   position: fixed;\n"
+                },
+                {
+                    "date": 1756892829643,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,9 +7,9 @@\n \n const LayoutWrapper = styled.div`\n   min-height: 100vh;\n   padding-bottom: calc(76px + env(safe-area-inset-bottom));\n-  // background-color: ${({ theme }) => theme.body};\n+  background-color: ${({ theme }) => theme.body};\n `;\n \n const TopNav = styled.nav`\n   position: fixed;\n@@ -104,9 +104,9 @@\n         {isDarkMode ? '☀️' : '🌙'}\n       </ThemeToggleButton>\n       \n       <BottomInput \n-        placeholder=\"AI에게 견적 문의하기\" \n+        placeholder=\"AI에게 견적 문의하기22\" \n         onSubmit={(value) => console.log(value)}\n       />\n     </LayoutWrapper>\n   );\n"
+                },
+                {
+                    "date": 1756892835534,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -104,9 +104,9 @@\n         {isDarkMode ? '☀️' : '🌙'}\n       </ThemeToggleButton>\n       \n       <BottomInput \n-        placeholder=\"AI에게 견적 문의하기22\" \n+        placeholder=\"AI에게 견적 문의하기\" \n         onSubmit={(value) => console.log(value)}\n       />\n     </LayoutWrapper>\n   );\n"
                 }
             ],
             "date": 1755957639786,

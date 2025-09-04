@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import Icon from './Icon';
 import Modal from '@/components/common/Modal';
 import { useToast } from '@/components/common/ToastProvider';
 import { useThemeStore } from '@/store/themeStore';
+import { useAuthStore } from '@/store/authStore';
+import { getDownloadEstimateUrlWithUserInfo } from '@/lib/api/user/userApi';
+import { v4 as uuidv4 } from 'uuid';
 
 const CardWrapper = styled.div`
   background-color: ${({ theme }) => theme.card};
@@ -152,58 +155,107 @@ letter-spacing: 0.32px;
   }
 `;
 
-interface EstimateCardProps {
-  estimate: ProjectEstimate;
+interface MyEstimateCardProps {
+  estimate: {
+    project_name: string;
+    created_at: string;
+    file: string; // uuid 대신 file로 변경
+  };
+  downloadUrl: string;
 }
 
-const MyEstimateCard: React.FC<EstimateCardProps> = ({ estimate }) => {
-  const [openShare, setOpenShare] = useState(false)
-  const { success } = useToast()
-  const { isDarkMode } = useThemeStore()
+const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }) => {
+  const [openShare, setOpenShare] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const { success, error } = useToast();
+  const { isAuthenticated } = useAuthStore();
 
-  // estimated_period가 '30주'와 같은 문자열일 경우를 가정하고 숫자만 추출합니다.
-  const weekValue = parseInt(estimate.estimated_period);
+  const getCompanyCode = () => {
+    const pathParts = window.location.pathname.split('/');
+    const companyCodeIndex = pathParts.indexOf('aiclient') + 1;
+    return (companyCodeIndex > 0 && pathParts.length > companyCodeIndex)
+      ? pathParts[companyCodeIndex]
+      : 'heredot';
+  };
 
-  // 1개월의 평균 주 수 (30.41일 / 7일)를 사용하여 개월 수를 계산하고 올림 처리합니다.
-  const weeksPerMonth = 4.345;
-  const monthValue = Math.ceil(weekValue / weeksPerMonth);
+  const companyCode = getCompanyCode();
 
-  // 최종적으로 보여줄 기간 문자열을 생성합니다.
-  const displayPeriod = `(약 ${monthValue}개월)`;
 
-  const shareUrl = typeof window !== 'undefined' ? window.location.href + `?estimate=${encodeURIComponent(estimate.project_name)}` : ''
+const handleShareClick = () => {
+  setOpenShare(true);
+
+  const fileUuid = estimate.file.split('.')[0];
+  
+  if (isAuthenticated()) {
+    const authStorage = localStorage.getItem('auth-storage');
+    const authData = authStorage ? JSON.parse(authStorage) : null;
+    const user = authData?.state?.user;
+
+    if (user) {
+      // 회원인 경우: 사용자 id만 포함하여 URL 생성
+      const newShareUrl = `${window.location.origin}${getDownloadEstimateUrlWithUserInfo(
+        companyCode,
+        fileUuid,
+        {
+          id: user._id,
+          name: '',
+          email: '',
+          cellphone: ''
+        }
+      )}`;
+      setShareUrl(newShareUrl);
+    } else {
+      error('사용자 정보를 찾을 수 없습니다.');
+    }
+  } else {
+    // 비회원인 경우: 기존 로직 유지
+    let guestUuid = localStorage.getItem('guest-uuid');
+    if (!guestUuid) {
+      guestUuid = uuidv4();
+      localStorage.setItem('guest-uuid', guestUuid);
+    }
+    const newShareUrl = `${window.location.origin}/api/file/estimate/download/${companyCode}/${fileUuid}.pdf?id=${guestUuid}`;
+    setShareUrl(newShareUrl);
+  }
+};
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(shareUrl)
-      success('링크가 복사되었습니다.')
+      if (shareUrl) {
+        const additionalInfo = `${shareUrl}
+본 링크는 에이고(AIGO - AI 견적서)에서 
+발급된 링크입니다.
+
+회사명 : 주식회사 여기닷
+
+전화문의 : 031-111-1234
+
+링크주소 : https://heredotcorp.com/ai`;
+        await navigator.clipboard.writeText(additionalInfo);
+        success('링크가 복사되었습니다.');
+        setOpenShare(false);
+      }
     } catch {
-      // ignore
+      error('링크 복사에 실패했습니다.');
     }
-  }
+  };
+  
+  const handleDownload = () => {
+    window.open(downloadUrl, '_blank');
+  };
 
   return (
     <CardWrapper>
       <Header>
-      <SubText>{estimate.created_at || '2025-08-23'}</SubText>
-
+        <SubText>{estimate.created_at}</SubText>
         <Flex>
-        <Title>{estimate.project_name}</Title>
+          <Title>{estimate.project_name}</Title>
         </Flex>
-        {/* <Price>
-          KRW {estimate.total_price}
-          <span>(부가세 별도)</span>
-        </Price>
-        <Period>
-          <span style={{marginRight: '4px'}}>{estimate.estimated_period}</span>
-          <span className="p">{displayPeriod}</span>
-        </Period> */}
         <ActionButtons>
-          <ActionButton>견적 공유하기</ActionButton>
-          <ActionButton>견적 PDF 받기</ActionButton>
+          <ActionButton onClick={handleShareClick}>견적 공유하기</ActionButton>
+          <ActionButton onClick={handleDownload}>견적 PDF 받기</ActionButton>
         </ActionButtons>
       </Header>
-
       <Modal open={openShare} title="견적서 공유" onClose={() => setOpenShare(false)} width={520}>
         <div style={{ color: '#A1A1AA', fontSize: 14, marginBottom: 32 }}>공유받은 사용자는 견적 내용을 확인할 수 있습니다.</div>
         <ShareInput>
