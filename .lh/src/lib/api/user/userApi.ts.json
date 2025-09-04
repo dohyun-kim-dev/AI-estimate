@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 81,
+            "activePatchIndex": 86,
             "patches": [
                 {
                     "date": 1756365362987,
@@ -332,6 +332,26 @@
                 {
                     "date": 1756964581488,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -5,18 +5,12 @@\n import { ApiResponse } from './userApi.types';\n \n // API URL 생성 헬퍼 함수\n const getApiUrl = (path: string) => {\n-  const ENV_NAME = import.meta.env.VITE_ENV_NAME;\n+  // path가 이미 /로 시작하면 그대로 사용, 아니면 /를 추가\n   const normalizedPath = path.startsWith('/') ? path : `/${path}`;\n-  \n-  if (ENV_NAME === 'dev') {\n-    // 개발 환경: /api 프리픽스 사용\n-    return `/api${normalizedPath}`;\n-  } else {\n-    // 운영 환경: 직접 API 서버로 요청\n-    return `https://api.aigopartners.com${normalizedPath}`;\n-  }\n+  // 모든 환경에서 /api 프리픽스 사용 (프록시가 처리)\n+  return `/api${normalizedPath}`;\n };\n \n \n // ***************** 약관 관련\n"
+                },
+                {
+                    "date": 1756973826917,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -174,9 +174,9 @@\n }\n \n export function getDownloadEstimateUrlWithUserInfo(\n   companyCode: string, \n-  uuid: string, \n+  uuid?: string, \n   userInfo: { id: string; name: string; email: string; cellphone: string }\n ) {\n   const filePath = `${companyCode}/${uuid}`;\n   const params = new URLSearchParams();\n"
+                },
+                {
+                    "date": 1756973840293,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -175,14 +175,14 @@\n \n export function getDownloadEstimateUrlWithUserInfo(\n   companyCode: string, \n   uuid?: string, \n-  userInfo: { id: string; name: string; email: string; cellphone: string }\n+  userInfo?: { id: string; name: string; email: string; cellphone: string }\n ) {\n   const filePath = `${companyCode}/${uuid}`;\n   const params = new URLSearchParams();\n   \n-  params.append('id', userInfo.id);\n+  params.append('id', userInfo?.id || ''  );\n   if (userInfo.name) params.append('name', userInfo.name);\n   if (userInfo.email) params.append('email', userInfo.email);\n   if (userInfo.cellphone) params.append('cellphone', userInfo.cellphone);\n \n"
+                },
+                {
+                    "date": 1756973847894,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -180,12 +180,12 @@\n ) {\n   const filePath = `${companyCode}/${uuid}`;\n   const params = new URLSearchParams();\n   \n-  params.append('id', userInfo?.id || ''  );\n-  if (userInfo.name) params.append('name', userInfo.name);\n-  if (userInfo.email) params.append('email', userInfo.email);\n-  if (userInfo.cellphone) params.append('cellphone', userInfo.cellphone);\n+  params.append('id', userInfo?.id || '');\n+  if (userInfo?.name) params.append('name', userInfo.name);\n+  if (userInfo?.email) params.append('email', userInfo.email);\n+  if (userInfo? .cellphone) params.append('cellphone', userInfo.cellphone);\n \n   const queryString = params.toString();\n   return getApiUrl(`/file/estimate/download/${filePath}?${queryString}`);\n }\n"
+                },
+                {
+                    "date": 1756973928350,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -180,12 +180,15 @@\n ) {\n   const filePath = `${companyCode}/${uuid}`;\n   const params = new URLSearchParams();\n   \n-  params.append('id', userInfo?.id || '');\n+  if (userInfo?.id) {\n+    params.append('id', userInfo.id);\n+  }\n+\n   if (userInfo?.name) params.append('name', userInfo.name);\n   if (userInfo?.email) params.append('email', userInfo.email);\n-  if (userInfo? .cellphone) params.append('cellphone', userInfo.cellphone);\n+  if (userInfo?.cellphone) params.append('cellphone', userInfo.cellphone);\n \n   const queryString = params.toString();\n   return getApiUrl(`/file/estimate/download/${filePath}?${queryString}`);\n }\n"
+                },
+                {
+                    "date": 1756973948229,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -174,9 +174,9 @@\n }\n \n export function getDownloadEstimateUrlWithUserInfo(\n   companyCode: string, \n-  uuid?: string, \n+  uuid: string, \n   userInfo?: { id: string; name: string; email: string; cellphone: string }\n ) {\n   const filePath = `${companyCode}/${uuid}`;\n   const params = new URLSearchParams();\n"
                 }
             ],
             "date": 1756365362987,

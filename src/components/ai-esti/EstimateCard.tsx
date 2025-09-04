@@ -257,6 +257,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
   const handleGeneratePDF = async () => {
     try {
       if (estimate.uuid) {
+        const uuidWithPdf = `${estimate.uuid}.pdf`;
         if (isAuthenticated()) {
           const authStorage = localStorage.getItem('auth-storage');
           if (authStorage) {
@@ -266,16 +267,16 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
             if (userData) {
               const downloadUrl = getDownloadEstimateUrlWithUserInfo(
                 companyCode,
-                estimate.uuid,
-                {
-                  id: userData._id,
-                  name: userData.name,
-                  email: userData.email,
-                  cellphone: userData.cellphone || ''
-                }
+                uuidWithPdf,
+                // {
+                //   id: userData._id,
+                //   name: userData.name,
+                //   email: userData.email,
+                //   cellphone: userData.cellphone || ''
+                // }
               );
               window.open(downloadUrl, '_blank');
-              success('PDF가 새 탭에서 열립니다.');
+              success('PDF가 다운로드 되었습니다.');
               return;
             }
           }
@@ -323,16 +324,16 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
         localStorage.setItem('guest-uuid', guestUuid);
         console.log('새로운 비회원 UUID 생성:', guestUuid);
       }
-
+      const uuidWithPdf = `${estimate.uuid}.pdf`;
       const downloadUrl = getDownloadEstimateUrlWithUserInfo(
         companyCode,
-        estimate.uuid,
-        {
-          id: guestUuid,
-          name: userInfo.name,
-          email: userInfo.email,
-          cellphone: userInfo.cellphone
-        }
+        uuidWithPdf,
+        // {
+        //   id: guestUuid,
+        //   name: userInfo.name,
+        //   email: userInfo.email,
+        //   cellphone: userInfo.cellphone,
+        // }
       );
       
       window.open(downloadUrl, '_blank');
@@ -357,16 +358,22 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       const authData = authStorage ? JSON.parse(authStorage) : null;
       const user = authData?.state?.user;
 
+
       if (user) {
+        // UUID에 .pdf 확장자 추가
+        const uuidWithPdf = `${estimate.uuid}.pdf`;
+        
         const newShareUrl = `${window.location.origin}${getDownloadEstimateUrlWithUserInfo(
           companyCode,
-          estimate.uuid,
-          {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            cellphone: user.cellphone || ''
-          }
+          // 수정된 uuidWithPdf 변수 사용
+          uuidWithPdf, 
+          // userInfo는 주석 처리되어 있으므로 사용하지 않음
+          // {
+          //   id: user._id,
+          //   name: user.name,
+          //   email: user.email,
+          //   cellphone: user.cellphone || ''
+          // }
         )}`;
         setShareUrl(newShareUrl);
       }
@@ -409,15 +416,20 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
 
   const handleCopy = async () => {
     try {
-      const textToCopy = `${shareUrl}
-본 링크는 에이고(AIGO - AI 견적서)에서 
-발급된 링크입니다.
+      const textToCopy = `주식회사 여기닷에서 발급된 견적서를 다운로드해보세요 !
+ 
+${shareUrl}
 
-회사명 : 주식회사 여기닷
-
-전화문의 : 031-111-1234
-
-링크주소 : https://heredotcorp.com/ai`;
+🏢공급사명 : 주식회사 여기닷
+ 
+📞전화문의 : 031-111-1234
+ 
+※ 위 견적서는 공급사 공식 홈페이지에서도 조회할 수 있습니다
+ 
+🌐공급사 홈페이지
+https://heredotcorp.com;
+ 
+ `;
 
       await navigator.clipboard.writeText(textToCopy);
 

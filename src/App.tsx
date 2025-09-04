@@ -16,6 +16,8 @@ import { ToastProvider } from '@components/common/ToastProvider'
 import { PageLoaderProvider } from '@contexts/PageLoaderContext'
 import { useModalStore } from '@store/modalStore'
 import { SocialLoginModal } from '@components/ai-esti/SocialLoginModal'
+import { useAuthStore } from '@store/authStore'
+import AdditionalInfoModal from '@components/common/AdditionalInfoModal'
 
 const AppWrapper = styled.div`
   display: flex;
@@ -37,7 +39,8 @@ const ContentWrapper = styled.main`
 function App() {
   const { isDarkMode } = useThemeStore()
   const [mounted, setMounted] = useState(false)
-  const { isLoginModalOpen, closeLoginModal } = useModalStore();
+  const { isLoginModalOpen, closeLoginModal, loginModalPurpose } = useModalStore();
+  const { isAdditionalInfoModalOpen, closeAdditionalInfoModal } = useAuthStore();
 
   useEffect(() => {
     setMounted(true)
@@ -72,7 +75,10 @@ function App() {
                     />
                   </AppWrapper>
                   <SocialLoginModal $isOpen={isLoginModalOpen} onClose={closeLoginModal} />
-
+                  <AdditionalInfoModal
+        isOpen={isAdditionalInfoModalOpen}
+        onClose={closeAdditionalInfoModal}
+      />
                 </ToastProvider>
               </PageLoaderProvider>
           </DeviceProvider>

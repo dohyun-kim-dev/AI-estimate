@@ -176,15 +176,18 @@ export function getDownloadEstimateUrl(companyCode: string, uuid: string) {
 export function getDownloadEstimateUrlWithUserInfo(
   companyCode: string, 
   uuid: string, 
-  userInfo: { id: string; name: string; email: string; cellphone: string }
+  userInfo?: { id: string; name: string; email: string; cellphone: string }
 ) {
   const filePath = `${companyCode}/${uuid}`;
   const params = new URLSearchParams();
   
-  params.append('id', userInfo.id);
-  if (userInfo.name) params.append('name', userInfo.name);
-  if (userInfo.email) params.append('email', userInfo.email);
-  if (userInfo.cellphone) params.append('cellphone', userInfo.cellphone);
+  if (userInfo?.id) {
+    params.append('id', userInfo.id);
+  }
+
+  if (userInfo?.name) params.append('name', userInfo.name);
+  if (userInfo?.email) params.append('email', userInfo.email);
+  if (userInfo?.cellphone) params.append('cellphone', userInfo.cellphone);
 
   const queryString = params.toString();
   return getApiUrl(`/file/estimate/download/${filePath}?${queryString}`);

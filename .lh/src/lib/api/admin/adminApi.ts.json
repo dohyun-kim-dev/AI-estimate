@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 18,
+            "activePatchIndex": 19,
             "patches": [
                 {
                     "date": 1756187053867,
@@ -80,6 +80,10 @@
                 {
                     "date": 1756966132200,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -15,15 +15,15 @@\n // API URL 생성 헬퍼 함수\n const getBaseUrl = () => {\n   const ENV_NAME = import.meta.env.VITE_ENV_NAME;\n   \n-  if (ENV_NAME === 'dev') {\n-    // 개발 환경: /api 프리픽스 사용\n-    return '/api';\n-  } else {\n-    // 운영 환경: 직접 API 서버로 요청\n-    return 'https://api.aigopartners.com';\n-  }\n+  // if (ENV_NAME === 'dev') {\n+  //   // 개발 환경: /api 프리픽스 사용\n+  //   return '/api';\n+  // } else {\n+  //   // 운영 환경: 직접 API 서버로 요청\n+  //   return 'https://api.aigopartners.com';\n+  // }\n };\n \n const BASE_URL = getBaseUrl();\n \n"
+                },
+                {
+                    "date": 1756970427540,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,9 +14,9 @@\n \n // API URL 생성 헬퍼 함수\n const getBaseUrl = () => {\n   const ENV_NAME = import.meta.env.VITE_ENV_NAME;\n-  \n+  return '/api';\n   // if (ENV_NAME === 'dev') {\n   //   // 개발 환경: /api 프리픽스 사용\n   //   return '/api';\n   // } else {\n"
                 }
             ],
             "date": 1756187053867,

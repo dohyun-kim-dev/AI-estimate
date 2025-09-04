@@ -7,7 +7,7 @@ import { useEffect, useState, useMemo, ReactNode } from 'react';
 import { EstimateConfirmModal } from './EstimateConfirmModal';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/components/common/ToastProvider';
-import { googleLoginInitial, googleLoginUpdate } from '@/lib/api/user/userApi';
+import { googleLoginInitial, googleLoginUpdate, companyRegister } from '@/lib/api/user/userApi';
 import { useGoogleLogin } from '@react-oauth/google';
 
 const ModalOverlay = styled.div<{ $isOpen: boolean }>`
@@ -220,22 +220,86 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
             
             if (updateResponse.statusCode === 200) {
               await login(updateResponse.data);
+              
+              // 현재 company code 체크 및 등록
+              const pathParts = window.location.pathname.split('/');
+              const companyCodeIndex = pathParts.indexOf('aiclient') + 1;
+              const currentCompanyCode = (companyCodeIndex > 0 && pathParts.length > companyCodeIndex)
+                ? pathParts[companyCodeIndex]
+                : 'heredot';
+
+              try {
+                // 신규 사용자는 무조건 고객사 등록
+                await companyRegister();
+                console.log(`신규 사용자 고객사 등록 완료: ${currentCompanyCode}`);
+              } catch (error) {
+                console.error('고객사 등록 실패:', error);
+              }
+
               onClose();
-              openAdditionalInfoModal();
+              openAdditionalInfoModal();  // 신규 사용자는 무조건 추가 정보 모달
             } else {
               throw new Error(updateResponse.error?.message || '회원가입 중 오류가 발생했습니다.');
             }
           } else {
-            // 기존 사용자: 바로 로그인
-            await login(initialResponse.data);
-            onClose();
-            success('로그인되었습니다!');
-            
-            // 3초 후 견적 모달 표시 (필요한 경우)
-            if (purpose === 'limitExceeded') {
-              setTimeout(() => {
-                setShowEstimateModal(true);
-              }, 3000);
+            // 기존 사용자: 로그인 처리
+            const userData = initialResponse.data;
+            await login(userData);
+
+            // 1. cellphone 체크
+            const needsAdditionalInfo = !userData.cellphone || userData.cellphone === '' ||userData.cellphone === "";
+            console.log('cellphone check:', { cellphone: userData.cellphone, needsAdditionalInfo });
+
+            // 2. 현재 company code 체크
+            const pathParts = window.location.pathname.split('/');
+            const companyCodeIndex = pathParts.indexOf('aiclient') + 1;
+            const currentCompanyCode = (companyCodeIndex > 0 && pathParts.length > companyCodeIndex)
+              ? pathParts[companyCodeIndex]
+              : 'heredot';
+
+            const userServices = userData.usingService || [];
+            const needsCompanyRegistration = !userServices.includes(currentCompanyCode);
+            console.log('company check:', { currentCompanyCode, userServices, needsCompanyRegistration });
+
+            if (needsCompanyRegistration) {
+              try {
+                // 고객사 등록 API 호출
+                const registerResponse = await companyRegister();
+                console.log('고객사 등록 응답:', registerResponse);
+                if (registerResponse.statusCode === 200) {
+                  console.log(`고객사 등록 완료: ${currentCompanyCode}`);
+                } else {
+                  console.error('고객사 등록 실패:', registerResponse.error);
+                }
+              } catch (error) {
+                console.error('고객사 등록 API 호출 실패:', error);
+              }
+            }
+
+            if (needsAdditionalInfo) {
+              console.log('신규 사용자: 추가 정보 모달 열기 시도');
+              console.log('openAdditionalInfoModal 호출 전 상태:', useAuthStore.getState().isAdditionalInfoModalOpen);
+              onClose();
+              // 구글 사용자 정보를 함께 전달
+              openAdditionalInfoModal({
+                providerId: userInfo.sub,
+                profileImage: userInfo.picture,
+                email: userInfo.email,
+                name: `${userInfo.family_name}${userInfo.given_name}`
+              });
+              console.log('openAdditionalInfoModal 호출 후 상태:', useAuthStore.getState().isAdditionalInfoModalOpen);
+              console.log('신규 사용자: 추가 정보 모달 열기 완료');
+            } else {
+              // 추가 정보가 필요 없는 경우
+              onClose();
+              success('로그인되었습니다!');
+              
+              // 3초 후 견적 모달 표시 (필요한 경우)
+              if (purpose === 'limitExceeded') {
+                setTimeout(() => {
+                  setShowEstimateModal(true);
+                }, 3000);
+              }
             }
           }
         } else {

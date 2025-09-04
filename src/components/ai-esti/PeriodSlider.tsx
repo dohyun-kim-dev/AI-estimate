@@ -173,7 +173,7 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({ value, onChange, $isvisible
   const discountPercentage = ((value - min) / (max - min)) * 10;
   const discountAmount = basePrice - discountedPrice;
   // const tooltipPosition = `calc(${((value - min) / (max - min)) * 50}% + 75px)`;
-  const tooltipPosition = `275px`;
+  const tooltipPosition = `155px`;
   return (
     <SliderWrapper $isvisible={$isvisible}>
       <InnerContainer>

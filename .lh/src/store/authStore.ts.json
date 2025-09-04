@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 5,
+            "activePatchIndex": 6,
             "patches": [
                 {
                     "date": 1755951202965,
@@ -28,6 +28,10 @@
                 {
                     "date": 1756711582428,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,9 @@\n import { create } from 'zustand';\n import { persist } from 'zustand/middleware';\n import { GoogleLoginResponse } from '@/lib/api/user/userApi.types';\n import { logoutUser } from '@/lib/api/user/userApi';\n-import { useAuthStore } from '@/store/authStore'\n+import { useChatStore } from '@/store/chatStore';\n \n export interface UserData extends GoogleLoginResponse {\n   isLoggedIn: boolean;\n   updateAt?: string;\n"
+                },
+                {
+                    "date": 1756972636918,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,11 +12,17 @@\n \n interface AuthState {\n   user: UserData | null;\n   isAdditionalInfoModalOpen: boolean;\n+  additionalInfoUser: {\n+    providerId: string;\n+    profileImage: string;\n+    email: string;\n+    name: string;\n+  } | null;\n   login: (userData: GoogleLoginResponse) => void;\n   logout: () => void;\n-  openAdditionalInfoModal: () => void;\n+  openAdditionalInfoModal: (userInfo?: { providerId: string; profileImage: string; email: string; name: string }) => void;\n   closeAdditionalInfoModal: () => void;\n   isAuthenticated: () => boolean;\n }\n \n@@ -24,8 +30,9 @@\n   persist(\n     (set, get) => ({\n       user: null,\n       isAdditionalInfoModalOpen: false,\n+      additionalInfoUser: null,\n \n       login: (userData: GoogleLoginResponse) =>\n         set({\n           user: {\n@@ -56,16 +63,18 @@\n         const state = get();\n         return !!(state.user?.isLoggedIn);\n       },\n \n-      openAdditionalInfoModal: () =>\n+      openAdditionalInfoModal: (userInfo) =>\n         set({\n           isAdditionalInfoModalOpen: true,\n+          additionalInfoUser: userInfo || null,\n         }),\n \n       closeAdditionalInfoModal: () =>\n         set({\n           isAdditionalInfoModalOpen: false,\n+          additionalInfoUser: null,\n         }),\n     }),\n     {\n       name: 'auth-storage',\n"
                 }
             ],
             "date": 1755951202965,

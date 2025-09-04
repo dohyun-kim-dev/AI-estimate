@@ -105,7 +105,7 @@ export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoMod
   const [isVerified, setIsVerified] = useState(false)
   const [privacyAgreed, setPrivacyAgreed] = useState(false)
   const [termsAgreed, setTermsAgreed] = useState(false)
-  const { user, closeAdditionalInfoModal } = useAuthStore()
+  const { user, closeAdditionalInfoModal, additionalInfoUser } = useAuthStore()
     const navigate = useNavigate();
 
   const [isFormValid, setIsFormValid] = useState(false)
@@ -113,8 +113,14 @@ export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoMod
   // 모달이 열릴 때마다 상태 초기화
   useEffect(() => {
     if (open) {
-      setName('')
-      setEmail('')
+      // additionalInfoUser의 정보가 있으면 초기값으로 설정
+      if (additionalInfoUser) {
+        setName(additionalInfoUser.name || '');
+        setEmail(additionalInfoUser.email || '');
+      } else {
+        setName('');
+        setEmail('');
+      }
       setCellphone('')
       setVerificationCode('')
       setShowVerification(false)
@@ -123,7 +129,7 @@ export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoMod
       setTermsAgreed(false)
       setIsFormValid(false)
     }
-  }, [open])
+  }, [open, additionalInfoUser])
 
   useEffect(() => {
     const isValid = Validators.required(name) &&

@@ -2,13 +2,18 @@ import { create } from 'zustand';
 
 interface ModalState {
   isLoginModalOpen: boolean;
-  openLoginModal: () => void;
+  loginModalPurpose: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'default';
+  openLoginModal: (purpose?: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'default') => void;
   closeLoginModal: () => void;
 }
 
 export const useModalStore = create<ModalState>((set) => ({
   isLoginModalOpen: false,
-  openLoginModal: () => set({ isLoginModalOpen: true }),
+  loginModalPurpose: 'default',
+  openLoginModal: (purpose = 'default') => set({ 
+    isLoginModalOpen: true, 
+    loginModalPurpose: purpose 
+  }),
   closeLoginModal: () => set({ isLoginModalOpen: false }),
 }));
 

@@ -29,9 +29,11 @@ export interface GoogleLoginResponse {
   _id: string;
   providerId: string;
   createAt: string;
+  updateAt?: string;
   profileImage?: string;
   email?: string;
   name?: string;
+  cellphone?: string;
   usingService: string[];
   isNew: boolean;
 }

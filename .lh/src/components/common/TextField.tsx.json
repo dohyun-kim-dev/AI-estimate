@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 9,
+            "activePatchIndex": 10,
             "patches": [
                 {
                     "date": 1756935712100,
@@ -44,6 +44,10 @@
                 {
                     "date": 1756939122587,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -45,9 +45,10 @@\n   padding: 0 14px;\n   padding-right: ${props => props.$hasSuffix ? '40px' : '14px'};\n   font-size: 14px;\n   transition: border-color 0.2s ease, box-shadow 0.2s ease;\n-a\n+align-items: start;\n+\n   &::placeholder {\n     color: #666666;\n     opacity: 0.6;\n   }\n"
+                },
+                {
+                    "date": 1756970427638,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -45,9 +45,8 @@\n   padding: 0 14px;\n   padding-right: ${props => props.$hasSuffix ? '40px' : '14px'};\n   font-size: 14px;\n   transition: border-color 0.2s ease, box-shadow 0.2s ease;\n-align-items: start;\n \n   &::placeholder {\n     color: #666666;\n     opacity: 0.6;\n"
                 }
             ],
             "date": 1756935712100,

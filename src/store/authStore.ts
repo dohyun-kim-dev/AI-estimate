@@ -13,9 +13,15 @@ export interface UserData extends GoogleLoginResponse {
 interface AuthState {
   user: UserData | null;
   isAdditionalInfoModalOpen: boolean;
+  additionalInfoUser: {
+    providerId: string;
+    profileImage: string;
+    email: string;
+    name: string;
+  } | null;
   login: (userData: GoogleLoginResponse) => void;
   logout: () => void;
-  openAdditionalInfoModal: () => void;
+  openAdditionalInfoModal: (userInfo?: { providerId: string; profileImage: string; email: string; name: string }) => void;
   closeAdditionalInfoModal: () => void;
   isAuthenticated: () => boolean;
 }
@@ -25,6 +31,7 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       isAdditionalInfoModalOpen: false,
+      additionalInfoUser: null,
 
       login: (userData: GoogleLoginResponse) =>
         set({
@@ -57,14 +64,16 @@ export const useAuthStore = create<AuthState>()(
         return !!(state.user?.isLoggedIn);
       },
 
-      openAdditionalInfoModal: () =>
+      openAdditionalInfoModal: (userInfo) =>
         set({
           isAdditionalInfoModalOpen: true,
+          additionalInfoUser: userInfo || null,
         }),
 
       closeAdditionalInfoModal: () =>
         set({
           isAdditionalInfoModalOpen: false,
+          additionalInfoUser: null,
         }),
     }),
     {
