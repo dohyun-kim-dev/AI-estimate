@@ -211,7 +211,7 @@ interface EstimateCardProps {
   projectPeriod: number;
 }
 
-const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, projectPeriod }) => {
+const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, projectPeriod=0 }) => {
   const [openShare, setOpenShare] = useState(false);
   const [openDownload, setOpenDownload] = useState(false);
   const [openShareInput, setOpenShareInput] = useState(false);
@@ -256,38 +256,29 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
 
   const handleGeneratePDF = async () => {
     try {
-      if (estimate.uuid) {
-        const uuidWithPdf = `${estimate.uuid}.pdf`;
-        if (isAuthenticated()) {
-          const authStorage = localStorage.getItem('auth-storage');
-          if (authStorage) {
-            const authData = JSON.parse(authStorage);
-            const userData = authData.state?.user;
-            
-            if (userData) {
-              const downloadUrl = getDownloadEstimateUrlWithUserInfo(
-                companyCode,
-                uuidWithPdf,
-                // {
-                //   id: userData._id,
-                //   name: userData.name,
-                //   email: userData.email,
-                //   cellphone: userData.cellphone || ''
-                // }
-              );
-              window.open(downloadUrl, '_blank');
-              success('PDF가 다운로드 되었습니다.');
+      if (isAuthenticated()) {
+        const authStorage = localStorage.getItem('auth-storage');
+        if (authStorage) {
+          const authData = JSON.parse(authStorage);
+          const userData = authData.state?.user;
+          
+          if (userData) {
+            // 변경 사항: PDF를 직접 다운로드하는 대신 미리보기 페이지를 새 탭으로 엽니다.
+            if (estimate.uuid) {
+              const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${estimate.uuid}`;
+              window.open(previewUrl, '_blank');
+              success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
               return;
             }
           }
-        } else {
-          // 비회원일 경우 다운로드 목적으로 소셜 로그인 모달 열기
-          setSocialLoginPurpose('download');
-          setIsSocialLoginModalOpen(true);
-          return;
         }
+      } else {
+        // 비회원일 경우 다운로드(미리보기) 목적으로 소셜 로그인 모달 열기
+        setSocialLoginPurpose('download');
+        setIsSocialLoginModalOpen(true);
+        return;
       }
-
+      
       const result = await generatePDF(estimate, { forPreview: true });
       
       if (result && 'blobUrl' in result && result.blobUrl) {
@@ -318,28 +309,33 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
     e.preventDefault();
     
     try {
+      // 정보 입력 후 미리보기 페이지를 새 탭으로 엽니다.
+      const { name, email, cellphone } = userInfo;
+      if (!name || !email || !cellphone) {
+          error('필수 정보를 모두 입력해주세요.');
+          return;
+      }
+      
       let guestUuid = localStorage.getItem('guest-uuid');
       if (!guestUuid) {
         guestUuid = uuidv4();
         localStorage.setItem('guest-uuid', guestUuid);
         console.log('새로운 비회원 UUID 생성:', guestUuid);
       }
-      const uuidWithPdf = `${estimate.uuid}.pdf`;
-      const downloadUrl = getDownloadEstimateUrlWithUserInfo(
-        companyCode,
-        uuidWithPdf,
-        // {
-        //   id: guestUuid,
-        //   name: userInfo.name,
-        //   email: userInfo.email,
-        //   cellphone: userInfo.cellphone,
-        // }
-      );
       
-      window.open(downloadUrl, '_blank');
-      success('PDF가 새 탭에서 열립니다.');
+      if (estimate.uuid) {
+        setOpenDownload(false);
+        const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${estimate.uuid}`;
+        window.open(previewUrl, '_blank');
+        success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
+        setUserInfo({ name: '', email: '', cellphone: '' }); // 정보 초기화
+        return;
+      }
+
+      error('미리보기를 위한 견적서 ID가 없습니다.');
       setOpenDownload(false);
       setUserInfo({ name: '', email: '', cellphone: '' });
+
     } catch (err) {
       console.error('PDF 다운로드 중 오류:', err);
       error('PDF 다운로드에 실패했습니다.');
@@ -360,21 +356,8 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
 
 
       if (user) {
-        // UUID에 .pdf 확장자 추가
-        const uuidWithPdf = `${estimate.uuid}.pdf`;
-        
-        const newShareUrl = `${window.location.origin}${getDownloadEstimateUrlWithUserInfo(
-          companyCode,
-          // 수정된 uuidWithPdf 변수 사용
-          uuidWithPdf, 
-          // userInfo는 주석 처리되어 있으므로 사용하지 않음
-          // {
-          //   id: user._id,
-          //   name: user.name,
-          //   email: user.email,
-          //   cellphone: user.cellphone || ''
-          // }
-        )}`;
+        // 변경 사항: 직접 다운로드 링크 대신 미리보기 페이지 링크를 생성합니다.
+        const newShareUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${estimate.uuid}`;
         setShareUrl(newShareUrl);
       }
     } else {
@@ -387,27 +370,26 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
     e.preventDefault();
     
     try {
+      // 변경 사항: 필수 정보 입력 후 미리보기 페이지 링크를 생성합니다.
+      const { name, email, cellphone } = userInfo;
+      if (!name || !email || !cellphone) {
+          error('필수 정보를 모두 입력해주세요.');
+          return;
+      }
+
       let guestUuid = localStorage.getItem('guest-uuid');
       if (!guestUuid) {
         guestUuid = uuidv4();
         localStorage.setItem('guest-uuid', guestUuid);
       }
-
-      const newShareUrl = getDownloadEstimateUrlWithUserInfo(
-        companyCode,
-        estimate.uuid,
-        {
-          id: guestUuid,
-          name: userInfo.name,
-          email: userInfo.email,
-          cellphone: userInfo.cellphone
-        }
-      );
+      
+      const newShareUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${estimate.uuid}`;
       
       setShareUrl(newShareUrl);
       setOpenShareInput(false);
       setOpenShare(true);
       setUserInfo({ name: '', email: '', cellphone: '' });
+      success('공유 링크가 생성되었습니다!');
     } catch (err) {
       console.error('공유 URL 생성 중 오류:', err);
       error('공유 URL 생성에 실패했습니다.');
@@ -427,7 +409,7 @@ ${shareUrl}
 ※ 위 견적서는 공급사 공식 홈페이지에서도 조회할 수 있습니다
  
 🌐공급사 홈페이지
-https://heredotcorp.com;
+https://heredotcorp.com
  
  `;
 
@@ -475,7 +457,9 @@ https://heredotcorp.com;
           
           // 목적에 따라 다운로드 또는 공유 기능 실행
           if (socialLoginPurpose === 'download') {
-            handleGeneratePDF();
+            // 변경 사항: PDF 직접 다운로드 대신 미리보기 페이지를 새 탭으로 엽니다.
+            const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${estimate.uuid}`;
+            window.open(previewUrl, '_blank');
           } else if (socialLoginPurpose === 'share') {
             handleShareClick();
           }
@@ -489,8 +473,12 @@ https://heredotcorp.com;
       throw err;
     }
   };
-
-  const weekValue = parseInt(estimate.estimated_period) + projectPeriod  ;
+  
+  // ⭐️ 수정
+  const estimatedPeriod = parseInt(estimate.estimated_period) || 0;
+  const safeProjectPeriod = projectPeriod || 0;
+  const weekValue = estimatedPeriod + safeProjectPeriod;
+  
   const weeksPerMonth = 4.345;
   const monthValue = Math.ceil(weekValue / weeksPerMonth);
   const displayPeriod = `(약 ${monthValue}개월)`;
@@ -520,12 +508,14 @@ https://heredotcorp.com;
         </Flex>
         <Price>
         {/* KRW {new Intl.NumberFormat('ko-KR').format(estimate.total_price)} */}
-        KRW {discountedPrice.toLocaleString()}
+        {/* ⭐️ 수정: discountedPrice가 undefined, null, NaN일 때 안전하게 처리 */}
+        KRW {new Intl.NumberFormat('ko-KR').format(discountedPrice || 0)}
         <span>(부가세 별도)</span>
         </Price>
         {/* <span className="p">기획 및 디자인은 할인에서 제외됩니다</span> */}
         <Period>
-          <span style={{marginRight: '4px'}}>{parseInt(estimate.estimated_period) + projectPeriod}주</span>
+          {/* ⭐️ 수정: parseInt 결과가 NaN일 때 0으로 처리 */}
+          <span style={{marginRight: '4px'}}>{(parseInt(estimate.estimated_period) || 0) + (projectPeriod || 0)}주</span>
           <span className="p">{displayPeriod}</span>
         </Period>
       </Header>
@@ -545,7 +535,7 @@ https://heredotcorp.com;
           <TextField id="email" label="이메일" type="email" placeholder="이메일을 입력해주세요" required value={userInfo.email} onChange={(e) => setUserInfo({...userInfo, email: e.target.value})} />
           <TextField id="phone" label="전화번호" placeholder="전화번호를 입력해주세요" required maxLength={11} value={userInfo.cellphone} pattern="[0-9]{10,11}" type="tel" onChange={(e) => setUserInfo({...userInfo, cellphone: e.target.value})} />
           <Disclaimer>문의 시 개인정보 수집·이용에 동의한 것으로 간주됩니다.</Disclaimer>
-          <SubmitButton type="submit">PDF 다운로드</SubmitButton>
+          <SubmitButton type="submit">PDF 미리보기</SubmitButton>
         </Form>
       </Modal>
 

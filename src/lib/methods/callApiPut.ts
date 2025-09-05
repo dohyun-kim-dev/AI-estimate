@@ -29,10 +29,11 @@ export async function callApiPut({
       ...headers, // ⭐️ 전달받은 헤더를 병합
     };
 
-    const response = await fetch(url, {
+       const response = await fetch(url, {
       method: 'PUT',
       headers: mergedHeaders, // ⭐️ 병합된 헤더 사용
       body: JSON.stringify(body),
+         credentials: 'include', // 쿠키 전송 보장
     });
 
     const data = await response.json();

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1755958350223,
@@ -20,6 +20,14 @@
                 {
                     "date": 1755960707308,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -249,9 +249,9 @@\n   pointer-events: ${({ $isvisible }) => ($isvisible ? 'auto' : 'none')};\n `;\n \n const MenuItem = styled.button`\n-  width: 100%;\n+  width: 100%; \n   padding: 12px 16px;\n   text-align: left;\n   background: transparent;\n   border: none;\n"
+                },
+                {
+                    "date": 1757033508619,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -72,9 +72,9 @@\n                 <SettingsButton onClick={handleSettingsClick}>\n                   <SettingsIcon />\n                 </SettingsButton>\n                 <SettingsMenu $isvisible={showSettingsMenu}>\n-                  <MenuItem onClick={() => handleNavigate('/cms/company-settings')}>회사정보 설정</MenuItem>\n+                  <MenuItem onClick={() => handleNavigate('/superadmin/company-settings')}>회사정보 설정</MenuItem>\n                   <MenuItem onClick={() => handleNavigate('/cms/aigo-settings')}>AIGO 설정</MenuItem>\n                 </SettingsMenu>\n               </SettingsContainer>\n             </RightInfo>\n"
+                },
+                {
+                    "date": 1757033847270,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -73,9 +73,9 @@\n                   <SettingsIcon />\n                 </SettingsButton>\n                 <SettingsMenu $isvisible={showSettingsMenu}>\n                   <MenuItem onClick={() => handleNavigate('/superadmin/company-settings')}>회사정보 설정</MenuItem>\n-                  <MenuItem onClick={() => handleNavigate('/cms/aigo-settings')}>AIGO 설정</MenuItem>\n+                  <MenuItem onClick={() => handleNavigate('/superadmin/aigo-settings')}>AIGO 설정</MenuItem>\n                 </SettingsMenu>\n               </SettingsContainer>\n             </RightInfo>\n           </AppBar>\n"
                 }
             ],
             "date": 1755958350223,

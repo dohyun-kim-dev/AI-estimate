@@ -217,12 +217,30 @@ export default function AILayout() {
       shareUrl = window.location.href;
     }
     
+    // 추가할 문구
+    const textToCopy = `주식회사 여기닷에서 산출된 견적 대화내용을 확인해보세요 !
+ 
+${shareUrl}
+
+🏢공급사명 : 주식회사 여기닷
+ 
+📞전화문의 : 031-111-1234
+ 
+※ 위 견적서는 공급사 공식 홈페이지에서도 조회할 수 있습니다
+ 
+🌐공급사 홈페이지
+https://heredotcorp.com
+ 
+ `;
+    
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      // 수정: `shareUrl` 대신 `textToCopy`를 클립보드에 복사
+      await navigator.clipboard.writeText(textToCopy);
       success('링크가 복사되었습니다.');
       handleCloseShare();
     } catch {
       console.error('Failed to copy');
+      error('링크 복사에 실패했습니다.');
     }
   };
 

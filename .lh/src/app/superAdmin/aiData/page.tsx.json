@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/app/superAdmin/aiData/page.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1757033488969,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1757033605594,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n export default function AiDataRedirectPage() {\n   const navigate = useNavigate();\n \n   useEffect(() => {\n-    navigate(\"/superadmin/ai-data/survey\");\n+    navigate(\"/superAdmin/ai-data/survey\");\n   }, [navigate]);\n \n   return null; // 로딩 메시지나 스피너를 추가할 수도 있음\n }\n"
+                }
+            ],
+            "date": 1757033488969,
+            "name": "Commit-0",
+            "content": "import { useEffect } from \"react\";\nimport { useNavigate } from \"react-router-dom\";\n\nexport default function AiDataRedirectPage() {\n  const navigate = useNavigate();\n\n  useEffect(() => {\n    navigate(\"/superadmin/ai-data/survey\");\n  }, [navigate]);\n\n  return null; // 로딩 메시지나 스피너를 추가할 수도 있음\n}\n"
+        }
+    ]
+}

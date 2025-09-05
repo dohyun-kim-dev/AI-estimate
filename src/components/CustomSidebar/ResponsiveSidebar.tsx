@@ -73,8 +73,8 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({
                   <SettingsIcon />
                 </SettingsButton>
                 <SettingsMenu $isvisible={showSettingsMenu}>
-                  <MenuItem onClick={() => handleNavigate('/cms/company-settings')}>회사정보 설정</MenuItem>
-                  <MenuItem onClick={() => handleNavigate('/cms/aigo-settings')}>AIGO 설정</MenuItem>
+                  <MenuItem onClick={() => handleNavigate('/superadmin/company-settings')}>회사정보 설정</MenuItem>
+                  <MenuItem onClick={() => handleNavigate('/superadmin/aigo-settings')}>AIGO 설정</MenuItem>
                 </SettingsMenu>
               </SettingsContainer>
             </RightInfo>

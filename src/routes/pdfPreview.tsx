@@ -73,6 +73,9 @@ const PDFPreview: React.FC = () => {
   const companyCode = searchParams.get('company');
   const uuid = searchParams.get('uuid');
   
+  // 변경: 하드코딩된 API URL을 Vite 환경 변수로 대체
+  const apiUrl = import.meta.env.VITE_API_HOST || 'http://121.157.229.40:8535';
+
   useEffect(() => {
     if (!companyCode || !uuid) {
       setError('필수 파라미터가 누락되었습니다.');
@@ -82,13 +85,10 @@ const PDFPreview: React.FC = () => {
     
     const fetchPDF = async () => {
       try {
-        // 실제 서버 API URL 사용
-        const apiUrl = 'http://121.157.229.40:8535';
         const pdfUrl = `${apiUrl}/api/file/estimate/download/${companyCode}/${uuid}.pdf`;
         
         console.log('PDF URL:', pdfUrl);
         
-        // PDF을 blob으로 가져오기
         const response = await fetch(pdfUrl);
         
         if (!response.ok) {
@@ -110,11 +110,10 @@ const PDFPreview: React.FC = () => {
     };
     
     fetchPDF();
-  }, [companyCode, uuid]);
+  }, [companyCode, uuid, apiUrl]);
   
   const handleDownload = () => {
     if (companyCode && uuid) {
-      const apiUrl = 'http://121.157.229.40:8535';
       const downloadUrl = `${apiUrl}/api/file/estimate/download/${companyCode}/${uuid}.pdf`;
       const link = document.createElement('a');
       link.href = downloadUrl;
@@ -134,7 +133,6 @@ const PDFPreview: React.FC = () => {
     setError('PDF를 표시할 수 없습니다.');
   };
   
-  // 컴포넌트 언마운트 시 blob URL 정리
   useEffect(() => {
     return () => {
       if (pdfBlobUrl) {

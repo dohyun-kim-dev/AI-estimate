@@ -31,7 +31,7 @@ export async function callAdminApi<T = unknown>({
   const headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    'x-company-code': companyCode
+    'x-company-code': companyCode,
   };
 
   let raw: any;

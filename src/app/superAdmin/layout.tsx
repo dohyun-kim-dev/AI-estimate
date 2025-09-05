@@ -55,14 +55,14 @@ function ProtectedCmsLayout() {
   const navigate = useNavigate();
   const { companyCode } = useParams(); // URL 파라미터 가져오기
   const device = useDevice();
-  const isLoginPage = location.pathname.includes('/cms/login');
+  const isLoginPage = location.pathname.includes('/superadmin/login');
 
   useEffect(() => {
     if (ready && !isLoggedIn && !isLoginPage) {
-      navigate(`/aiclient/${companyCode}/cms/login`, { replace: true });
-    } else if (ready && isLoggedIn && location.pathname === `/aiclient/${companyCode}/cms`) {
+      navigate(`/superadmin/login`, { replace: true });
+    } else if (ready && isLoggedIn && location.pathname === `/superadmin`) {
       // 대시보드로 이동
-      navigate(`/aiclient/${companyCode}/cms`, { replace: true });
+      navigate(`/superadmin`, { replace: true });
     }
   }, [ready, isLoggedIn, isLoginPage, location.pathname, navigate, companyCode]);
 
@@ -73,7 +73,7 @@ function ProtectedCmsLayout() {
 
   const handleLogout = () => {
     logout();
-    navigate(`/aiclient/${companyCode}/cms/login`, { replace: true });
+    navigate(`/superadmin/login`, { replace: true });
     toast.success('로그아웃 되었습니다');
   };
 
@@ -97,21 +97,21 @@ const handleMenuToggle = (menuId: string) => {
 
 
   const menuItems: MenuItemConfig[] = [
-    { id: 'dashboard', icon: <DashboardIcon />, title: '대시보드', path: `/aiclient/${companyCode}/cms` },
-    { id: 'super-admin', icon: <WorkspacePremiumIcon />, title: '통합관리자 관리', path: `/aiclient/${companyCode}/cms/super-admin` },
-    { id: 'company', icon: <BusinessIcon />, title: '고객사 관리', path: `/aiclient/${companyCode}/cms/company-management` },
-    { id: 'admin', icon: <AdminPanelSettingsIcon />, title: '고객사 관리자 관리', path: `/aiclient/${companyCode}/cms/admin-management` },
-    { id: 'user', icon: <GroupIcon />, title: '고객 회원관리', path: `/aiclient/${companyCode}/cms/user-management` },
+    { id: 'dashboard', icon: <DashboardIcon />, title: '대시보드', path: `/superadmin` },
+    { id: 'super-admin', icon: <WorkspacePremiumIcon />, title: '통합관리자 관리', path: `/superadmin/super-admin` },
+    { id: 'company', icon: <BusinessIcon />, title: '고객사 관리', path: `/superadmin/company-management` },
+    { id: 'admin', icon: <AdminPanelSettingsIcon />, title: '고객사 관리자 관리', path: `/superadmin/admin-management` },
+    { id: 'user', icon: <GroupIcon />, title: '고객 회원관리', path: `/superadmin/user-management` },
     {
       id: 'ai-data',
       icon: <DatasetIcon />,
       title: 'AI 데이터 관리',
       isOpen: openMenus['ai-data'],
       subMenu: [
-        { id: 'ai-data-survey', icon: <AssessmentIcon />, title: '기초조사 관리', path: `/aiclient/${companyCode}/cms/ai-data/survey` },
-        { id: 'ai-data-prompt', icon: <TextFieldsIcon />, title: 'AI 프롬프트 관리', path: `/aiclient/${companyCode}/cms/ai-data/prompt` },
-        { id: 'ai-data-wrong', icon: <QuestionAnswerIcon />, title: 'AI 동문서답 관리', path: `/aiclient/${companyCode}/cms/ai-data/wrong-answer` },
-        { id: 'ai-data-conv', icon: <ChatIcon />, title: 'AI 대화이력 관리', path: `/aiclient/${companyCode}/cms/ai-data/conversation-history` },
+        { id: 'ai-data-survey', icon: <AssessmentIcon />, title: '기초조사 관리', path: `/superadmin/ai-data/survey` },
+        { id: 'ai-data-prompt', icon: <TextFieldsIcon />, title: 'AI 프롬프트 관리', path: `/superadmin/ai-data/prompt` },
+        { id: 'ai-data-wrong', icon: <QuestionAnswerIcon />, title: 'AI 동문서답 관리', path: `/superadmin/ai-data/wrong-answer` },
+        { id: 'ai-data-conv', icon: <ChatIcon />, title: 'AI 대화이력 관리', path: `/superadmin/ai-data/conversation-history` },
       ],
     },
     {
@@ -120,8 +120,8 @@ const handleMenuToggle = (menuId: string) => {
       title: 'AI 설정',
       isOpen: openMenus['ai-setting'],
       subMenu: [
-        { id: 'ai-setting-company', icon: <BusinessIcon />, title: '회사정보 관리', path: `/aiclient/${companyCode}/cms/ai-setting/company-info` },
-        { id: 'ai-setting-mng', icon: <TuneIcon />, title: 'AI 설정관리', path: `/aiclient/${companyCode}/cms/ai-setting/management` },
+        { id: 'ai-setting-company', icon: <BusinessIcon />, title: '회사정보 관리', path: `/superadmin/ai-setting/company-info` },
+        { id: 'ai-setting-mng', icon: <TuneIcon />, title: 'AI 설정관리', path: `/superadmin/ai-setting/management` },
       ],
     },
     {
@@ -130,12 +130,12 @@ const handleMenuToggle = (menuId: string) => {
       title: '고객 데이터 관리',
       isOpen: openMenus['user-data'],
       subMenu: [
-        { id: 'user-data-price', icon: <RequestQuoteIcon />, title: '단가표 관리', path: `/aiclient/${companyCode}/cms/user-data/price` },
-        { id: 'user-data-proposal', icon: <DownloadIcon />, title: '견적 다운로드 현황', path: `/aiclient/${companyCode}/cms/user-data/proposal` },
-        { id: 'user-data-inquiry', icon: <ContactSupportIcon />, title: '견적 문의 관리', path: `/aiclient/${companyCode}/cms/user-data/inquiry` },
+        { id: 'user-data-price', icon: <RequestQuoteIcon />, title: '단가표 관리', path: `/superadmin/user-data/price` },
+        { id: 'user-data-proposal', icon: <DownloadIcon />, title: '견적 다운로드 현황', path: `/superadmin/user-data/proposal` },
+        { id: 'user-data-inquiry', icon: <ContactSupportIcon />, title: '견적 문의 관리', path: `/superadmin/user-data/inquiry` },
       ],
     },
-    { id: 'terms', icon: <DescriptionIcon />, title: '이용 약관', path: `/aiclient/${companyCode}/cms/terms` },
+    { id: 'terms', icon: <DescriptionIcon />, title: '이용 약관', path: `/superadmin/terms` },
   ];
 
   if (!ready || (!isLoggedIn && !isLoginPage)) return null;

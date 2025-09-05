@@ -1,11 +1,11 @@
 import React from 'react';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 
 // Layouts
 import RootLayout from '@app/layout';
 import AILayout from '@app/ai/layout';
 import AIEstimateLayout from '@app/ai-estimate/layout';
-import CMSLayout from '@app/cms/layout';
+import CMSLayout from '@app/superAdmin/layout';
 
 // Pages
 import Home from '@app/page';
@@ -14,31 +14,27 @@ import AIMyEstimate from '@app/ai/my-estimate/page';
 import AISetting from '@app/ai/setting/page';
 import AIShare from '@app/ai/share/page';
 import AIEstimate from '@app/ai-estimate/page';
-import CMS from '@app/cms/page';
-import CMSAdminMng from '@app/cms/adminMng/page';
-import CMSAiData from '@app/cms/aiData/page';
-import CMSAigoSettings from '@app/cms/aigo-settings/page';
-import CMSAiSetting from '@app/cms/aiSetting/page';
-import CMSCompanySettings from '@app/cms/company-settings/page';
-import CMSCompanyMng from '@app/cms/companyMng/page';
-import CMSInquiry from '@app/cms/inquiry/page';
-import CMSLogin from '@app/cms/login/page';
-import CMSSuperAdminMng from '@app/cms/superAdminMng/page';
-import CMSTerms from '@app/cms/terms/page';
-import CMSUserData from '@app/cms/userData/page';
-import CMSUserMng from '@app/cms/userMng/page';
-import PromptPage from '../app/cms/aiData/prompt/page';
-import AiChatHistoryPage from '../app/cms/aiData/conversationHistory/page';
-import TreeGridPage from '../app/cms/aiData/wrongAnswer/page';
-import SurveyPage from '../app/cms/aiData/survey/page';
-import CompanyInfoSettingsPage from '@app/cms/company-settings/page';
-import AigoSettingsPage from '@app/cms/aigo-settings/page';
-import InquiryPage from '../app/cms/userData/inquiry/page';
-import PriceListPage from '../app/cms/userData/price/page';
-import ProposalDownloadPage from '../app/cms/userData/proposal/page';
+import CMS from '@app/superAdmin/page';
+import CMSAdminMng from '@app/superAdmin/adminMng/page';
+import CMSCompanyMng from '@app/superAdmin/companyMng/page';
+import CMSLogin from '@app/superAdmin/login/page';
+import CMSSuperAdminMng from '@app/superAdmin/superAdminMng/page';
+import CMSTerms from '@app/superAdmin/terms/page';
+import CMSUserData from '@app/superAdmin/userData/page';
+import CMSUserMng from '@app/superAdmin/userMng/page';
+import PromptPage from '../app/superAdmin/aiData/prompt/page';
+import AiChatHistoryPage from '../app/superAdmin/aiData/conversationHistory/page';
+import TreeGridPage from '../app/superAdmin/aiData/wrongAnswer/page';
+import SurveyPage from '../app/superAdmin/aiData/survey/page';
+import CompanyInfoSettingsPage from '@app/superAdmin/company-settings/page';
+import AigoSettingsPage from '@app/superAdmin/aigo-settings/page';
+import InquiryPage from '../app/superAdmin/userData/inquiry/page';
+import PriceListPage from '../app/superAdmin/userData/price/page';
+import ProposalDownloadPage from '../app/superAdmin/userData/proposal/page';
 import PDFPreview from './pdfPreview';
 
 export default function AppRoutes() {
+  const location = useLocation();
   return (
     <Routes>
       <Route path="/aiclient/:companyCode" element={<Outlet />}>
@@ -97,13 +93,62 @@ export default function AppRoutes() {
           <Route path="cms/terms" element={<CMSTerms />} />
         </Route>
 
+        
+
         <Route path="*" element={<Navigate to="." replace />} />
       </Route>
+
+      <Route element={<CMSLayout />}>
+          <Route path="superadmin" element={<CMS />} />
+          <Route path="superadmin/login" element={<CMSLogin />} />
+          <Route path="superadmin/super-admin" element={<CMSSuperAdminMng />} />
+          <Route path="superadmin/company-management" element={<CMSCompanyMng />} />
+          <Route path="superadmin/admin-management" element={<CMSAdminMng />} />
+          <Route path="superadmin/user-management" element={<CMSUserMng />} />
+          
+          <Route path="superadmin/ai-data">
+            <Route index element={<Navigate to="survey" replace />} />
+            <Route path="survey" element={<SurveyPage />} />
+            <Route path="prompt" element={<PromptPage />} />
+            <Route path="wrong-answer" element={<TreeGridPage />} />
+            <Route path="conversation-history" element={<AiChatHistoryPage />} />
+          </Route>
+
+          <Route path="superadmin/ai-setting">
+            <Route index element={<Navigate to="company-info" replace />} />
+            <Route path="company-info" element={<CompanyInfoSettingsPage />} />
+            <Route path="management" element={<AigoSettingsPage />} />
+          </Route>
+
+          <Route path="superadmin/user-data">
+            <Route index element={<Navigate to="price" replace />} />
+            <Route path="price" element={<PriceListPage />} />
+            <Route path="proposal" element={<ProposalDownloadPage />} />
+            <Route path="inquiry" element={<InquiryPage />} />
+          </Route>
+
+          <Route path="superadmin/company-settings" element={<CompanyInfoSettingsPage />} />
+          <Route path="superadmin/aigo-settings" element={<AigoSettingsPage />} />
+          <Route path="superadmin/terms" element={<CMSTerms />} />
+        </Route>
       
       {/* PDF 미리보기 페이지 - 별도 경로로 설정 */}
       <Route path="/pdf-preview" element={<PDFPreview />} />
       
-      <Route path="*" element={<Navigate to="/aiclient/default" replace />} />
+      {/* /superAdmin으로 시작하지 않는 모든 경로를 /aiclient/default로 리다이렉트 */}
+      <Route 
+        path="*" 
+        element={
+          <Navigate 
+            to={
+              location.pathname.startsWith('/superadmin') 
+                ? location.pathname 
+                : '/aiclient/default'
+            } 
+            replace 
+          />
+        } 
+      />
     </Routes>
   )
 }

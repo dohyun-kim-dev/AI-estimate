@@ -406,8 +406,8 @@ const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', se
             <MainContent>
               <EstimateCard 
                 estimate={estimateData} 
-                discountedPrice={discountedPrice}
-                projectPeriod={projectPeriod}
+                discountedPrice={discountedPrice || 0} // ⭐️ 수정: 기본값 0 추가
+                projectPeriod={projectPeriod || 0}   // ⭐️ 수정: 기본값 0 추가
               />
               <DetailsToggle onClick={() => setIsDetailsVisible(!isDetailsVisible)}>
                 상세견적 보기 {isDetailsVisible ?
@@ -416,14 +416,15 @@ const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', se
                 }
               </DetailsToggle>
               <PeriodSlider 
-                value={projectPeriod}
+                value={projectPeriod || 0}  // ⭐️ 수정: 기본값 0 추가
                 onChange={setProjectPeriod}
                 $isvisible={isDetailsVisible}
-                min={basePeriod}
-                max={basePeriod + 8}
-                discountedPrice={discountedPrice}
-                basePrice={basePrice}
+                min={basePeriod || 0}         // ⭐️ 수정: 기본값 0 추가
+                max={(basePeriod || 0) + 8}   // ⭐️ 수정: 기본값 0 추가
+                discountedPrice={discountedPrice || 0} // ⭐️ 수정: 기본값 0 추가
+                basePrice={basePrice || 0}    // ⭐️ 수정: 기본값 0 추가
               />            
+
               <AnimatedContainer $isvisible={isDetailsVisible}>
                 <EstimateAccordion
                   data={estimateData}

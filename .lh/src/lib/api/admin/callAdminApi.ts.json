@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1756963745125,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1757039048387,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -30,9 +30,10 @@\n   // 공통 헤더 설정\n   const headers = {\n     'Content-Type': 'application/json',\n     'Accept': 'application/json',\n-    'x-company-code': companyCode\n+    'x-company-code': companyCode,\n+    cre\n   };\n \n   let raw: any;\n \n"
                 }
             ],
             "date": 1756963745125,
