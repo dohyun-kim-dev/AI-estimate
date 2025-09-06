@@ -226,8 +226,10 @@ const TermsAgreement: React.FC<TermsAgreementProps> = ({
   
   useEffect(() => {
     // onAgreeChange 함수에 isAgeAgreed 상태도 함께 전달해야 할 수도 있습니다.
-    onAgreeChange(privacyAgreed, termsAgreed);
-  }, [privacyAgreed, termsAgreed, onAgreeChange]);
+    if (privacyAgreed !== initialPrivacyAgreed || termsAgreed !== initialTermsAgreed) {
+      onAgreeChange(privacyAgreed, termsAgreed);
+    }
+  }, [privacyAgreed, termsAgreed, initialPrivacyAgreed, initialTermsAgreed, onAgreeChange]);
   
   // 모든 상태를 한 번에 토글하는 함수
   const handleAllAgree = () => {

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 21,
+            "activePatchIndex": 23,
             "patches": [
                 {
                     "date": 1756175405989,
@@ -92,6 +92,14 @@
                 {
                     "date": 1756176226488,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -41,9 +41,9 @@\n   border-radius: 4px;\n   background-color: white;\n \n   &:checked {\n-    // background-color: #202055;\n+    background-color: #202055;\n     position: relative;\n \n     &:after {\n       content: '';\n"
+                },
+                {
+                    "date": 1757146832080,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -225,10 +225,12 @@\n   }, [privacyAgreed, termsAgreed, isAgeAgreed]);\n   \n   useEffect(() => {\n     // onAgreeChange 함수에 isAgeAgreed 상태도 함께 전달해야 할 수도 있습니다.\n-    onAgreeChange(privacyAgreed, termsAgreed);\n-  }, [privacyAgreed, termsAgreed, onAgreeChange]);\n+    if (privacyAgreed !== initialPrivacyAgreed || termsAgreed !== initialTermsAgreed) {\n+      onAgreeChange(privacyAgreed, termsAgreed);\n+    }\n+  }, [privacyAgreed, termsAgreed, initialPrivacyAgreed, initialTermsAgreed, onAgreeChange]);\n   \n   // 모든 상태를 한 번에 토글하는 함수\n   const handleAllAgree = () => {\n     const newValue = !allAgreed;\n"
+                },
+                {
+                    "date": 1757146913553,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -225,10 +225,12 @@\n   }, [privacyAgreed, termsAgreed, isAgeAgreed]);\n   \n   useEffect(() => {\n     // onAgreeChange 함수에 isAgeAgreed 상태도 함께 전달해야 할 수도 있습니다.\n-    onAgreeChange(privacyAgreed, termsAgreed);\n-  }, [privacyAgreed, termsAgreed, onAgreeChange]);\n+    if (privacyAgreed !== initialPrivacyAgreed || termsAgreed !== initialTermsAgreed) {\n+      onAgreeChange(privacyAgreed, termsAgreed);\n+    }\n+  }, [privacyAgreed, termsAgreed, initialPrivacyAgreed, initialTermsAgreed, onAgreeChange]);\n   \n   // 모든 상태를 한 번에 토글하는 함수\n   const handleAllAgree = () => {\n     const newValue = !allAgreed;\n"
                 }
             ],
             "date": 1756175405989,

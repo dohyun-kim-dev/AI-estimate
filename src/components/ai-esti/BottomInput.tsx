@@ -9,6 +9,13 @@ import { useAuthStore } from '@/store/authStore';
 import { SocialLoginModal } from './SocialLoginModal';
 import FileUploadSection from './FileUploadSection';
 import { FileUploadData } from '@/firebase.functions';
+
+// ProjectEstimate 인터페이스 정의
+interface ProjectEstimate {
+  // 견적 관련 필드들을 여기에 추가
+  id?: string;
+  // 다른 필요한 필드들...
+}
 import Modal from '@/components/common/Modal';
 import TextField from '@/components/common/TextField';
 import { CheckBox } from '@mui/icons-material';
@@ -179,7 +186,13 @@ const BottomInput: React.FC<BottomInputProps> = ({
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [loginModalPurpose, setLoginModalPurpose] = useState<'limitReached' | 'limitExceeded' | null>(null);
-  const [userInfo, setUserInfo] = useState({ name: '', email: '', cellphone: '' });
+  const [userInfo, setUserInfo] = useState({ 
+    name: '', 
+    email: '', 
+    cellphone: '',
+    privacyAgreed: false,
+    termsAgreed: false
+  });
   const [hasUsedExtraCount, setHasUsedExtraCount] = useState(false);
 
   const remainingCountRef = useRef(remainingCount);
@@ -346,9 +359,20 @@ const BottomInput: React.FC<BottomInputProps> = ({
   
   const handleInfoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 필수 입력값 및 약관 동의 확인
+    if (!userInfo.name || !userInfo.email || !userInfo.cellphone) {
+      alert('모든 필수 정보를 입력해주세요.');
+      return;
+    }
+    
+    if (!userInfo.privacyAgreed || !userInfo.termsAgreed) {
+      alert('필수 약관에 동의해주세요.');
+      return;
+    }
+
     if (onInfoSubmit) {
-      // ⭐️ 수정: 필요한 모든 인자를 부모로부터 받아와 전달
-      onInfoSubmit(userInfo, estimateDataForConsult, chatSessionId); 
+      onInfoSubmit(userInfo, estimateDataForConsult, chatSessionId);
     }
     console.log("정보 입력 후 견적 요청:", userInfo);
     setIsInfoModalOpen(false);
@@ -360,12 +384,12 @@ const BottomInput: React.FC<BottomInputProps> = ({
       console.log('Google login success:', tokenResponse);
       
       // 로그인 성공 시 견적서 모달 표시를 위해 3초 대기
-      setTimeout(() => {
-        setIsLoginModalOpen(false);
-        if (loginModalPurpose === 'limitExceeded') {
-          setIsInfoModalOpen(true);
-        }
-      }, 3000);
+      // setTimeout(() => {
+      //   setIsLoginModalOpen(false);
+      //   if (loginModalPurpose === 'limitExceeded') {
+      //     setIsInfoModalOpen(true);
+      //   }
+      // }, 3000);
       
     } catch (error) {
       console.error('Google login error:', error);
@@ -447,9 +471,23 @@ const BottomInput: React.FC<BottomInputProps> = ({
           <TextField id="name" label="이름" placeholder="이름을 입력해주세요" required value={userInfo.name} onChange={(e) => setUserInfo({...userInfo, name: e.target.value})} />
           <TextField id="email" label="이메일" type="email" placeholder="이메일을 입력해주세요" required value={userInfo.email} onChange={(e) => setUserInfo({...userInfo, email: e.target.value})} />
           <TextField id="phone" label="전화번호" placeholder="전화번호를 입력해주세요" required value={userInfo.cellphone} pattern="[0-9]{10,11}" type="tel" onChange={(e) => setUserInfo({...userInfo, cellphone: e.target.value})} />
-          <Disclaimer> <CheckBox></CheckBox>문의 시 개인정보 수집·이용에 동의한 것으로 간주됩니다.</Disclaimer>
-          <SubmitButton type="submit">완료하기</SubmitButton>
-          {/* <TermsAgreement /> */}
+          <TermsAgreement 
+            onAgreeChange={(privacy, terms) => {
+              setUserInfo(prev => ({
+                ...prev,
+                privacyAgreed: privacy,
+                termsAgreed: terms
+              }));
+            }}
+            initialPrivacyAgreed={userInfo.privacyAgreed}
+            initialTermsAgreed={userInfo.termsAgreed}
+          />
+          <SubmitButton 
+            type="submit" 
+            disabled={!userInfo.privacyAgreed || !userInfo.termsAgreed}
+          >
+            완료하기
+          </SubmitButton>
         </Form>
       </Modal>
     </>

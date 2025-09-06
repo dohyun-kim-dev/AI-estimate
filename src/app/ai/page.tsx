@@ -33,6 +33,12 @@ const Container = styled.div`
   padding-bottom: calc(0px + env(safe-area-inset-bottom));
   position: relative;
   // min-height: 100vh;
+
+  @media (max-width: 400px) {
+  padding: 0px;
+  padding-bottom: calc(0px + env(safe-area-inset-bottom));
+
+  }
 `;
 
 const ChatBox = styled.div`

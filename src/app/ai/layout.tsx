@@ -250,12 +250,16 @@ export default function AILayout() {
 
   // ✅ 구글 로그인 성공 후 실행될 함수.
   // 이 함수는 로그인 모달이 닫히고, 'shareChat' 모달을 열도록 합니다.
-  const handleGoogleLoginSuccess = useCallback(() => {
-    console.log("구글 로그인 성공!");
-    success('로그인되었습니다!');
+  const handleGoogleLoginSuccess = async (userData) => {
+    console.log("구글 로그인 성공!", userData);
+    success('로그인되었습니다!'); // 사용자에게 즉시 피드백을 주기 위해 delay 전에 호출
+    
+    // 1초(1000ms) 지연
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     closeLoginModal(); // 로그인 모달 닫기
     setOpenShare(true);
-  }, [success, closeLoginModal]);
+  }
 
   const handleCopy = async () => {
     let shareUrl;
