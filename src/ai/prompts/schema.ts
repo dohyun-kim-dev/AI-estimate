@@ -25,6 +25,7 @@ interface EstimateItem {
   name: string;                 // 항목 이름
   price: string;                // 가격 (예: "10,000,000")
   description: string;          // 설명
+  is_deleted: boolean;          // 삭제 여부 (기본값: false)
 }
 \`\`\`
 
@@ -81,6 +82,7 @@ interface EstimateItem {
               "name": "화면설계",
               "price": "10,000,000",
               "description": "IT프로젝트를 진행하기 위한 전반적인 설계를 정의합니다. (본수 기준 1장당 10만원)"
+              "is_deleted": false
             }
           ]
         }

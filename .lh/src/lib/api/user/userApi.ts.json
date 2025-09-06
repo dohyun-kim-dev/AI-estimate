@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 86,
+            "activePatchIndex": 96,
             "patches": [
                 {
                     "date": 1756365362987,
@@ -352,6 +352,46 @@
                 {
                     "date": 1756973948229,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -174,9 +174,9 @@\n }\n \n export function getDownloadEstimateUrlWithUserInfo(\n   companyCode: string, \n-  uuid?: string, \n+  uuid: string, \n   userInfo?: { id: string; name: string; email: string; cellphone: string }\n ) {\n   const filePath = `${companyCode}/${uuid}`;\n   const params = new URLSearchParams();\n"
+                },
+                {
+                    "date": 1757197202147,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -22,8 +22,31 @@\n     isCallPageLoader: true,\n   });\n }\n \n+// ***************** 휴대폰 인증 관련\n+export async function sendAuthCode(cellphone) {\n+  return callUserApi({\n+    title: '인증번호 전송',\n+    url: getApiUrl('/users/send-auth-code'),\n+    method: 'POST',\n+    body: { cellphone },\n+    isCallPageLoader: false, // 로딩 인디케이터는 필요에 따라 조절하세요\n+  });\n+}\n+\n+export async function validateAuthCode(cellphone, authCode) {\n+  return callUserApi({\n+    title: '인증번호 검증',\n+    url: getApiUrl('/users/validate-auth-code'),\n+    method: 'POST',\n+    body: { cellphone, authCode },\n+    isCallPageLoader: false,\n+  });\n+}\n+\n+\n+\n // ***************** 소셜 로그인 관련\n export async function googleLoginInitial(params: GoogleLoginInitialParams) {\n   return callUserApi<GoogleLoginResponse>({\n     title: '구글 로그인 초기화',\n@@ -153,9 +176,9 @@\n }\n \n export async function uploadEstimatePdf(sessionId: string, title: string, file: File, userId: string) {\n   const formData = new FormData();\n-  formData.append('file', file);\n+  // formData.append('file', file);\n   formData.append('title', title);\n   formData.append('chatSession', sessionId);\n   formData.append('id', userId);\n \n"
+                },
+                {
+                    "date": 1757197210004,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -174,9 +174,9 @@\n     isCallPageLoader: true,\n   });\n }\n \n-export async function uploadEstimatePdf(sessionId: string, title: string, file: File, userId: string) {\n+export async function uploadEstimatePdf(sessionId: string, title: string,  userId: string) {\n   const formData = new FormData();\n   // formData.append('file', file);\n   formData.append('title', title);\n   formData.append('chatSession', sessionId);\n"
+                },
+                {
+                    "date": 1757197220774,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -180,8 +180,9 @@\n   // formData.append('file', file);\n   formData.append('title', title);\n   formData.append('chatSession', sessionId);\n   formData.append('id', userId);\n+  \n \n   return callUserApi({\n     title: '견적서 PDF 업로드',\n     url: getApiUrl('/file/estimate/upload'),\n"
+                },
+                {
+                    "date": 1757197229834,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -174,15 +174,15 @@\n     isCallPageLoader: true,\n   });\n }\n \n-export async function uploadEstimatePdf(sessionId: string, title: string,  userId: string) {\n+export async function uploadEstimatePdf(sessionId: string, title: string,  userId: string, data: string) {\n   const formData = new FormData();\n   // formData.append('file', file);\n   formData.append('title', title);\n   formData.append('chatSession', sessionId);\n   formData.append('id', userId);\n-  \n+  formData.append('data', data);\n \n   return callUserApi({\n     title: '견적서 PDF 업로드',\n     url: getApiUrl('/file/estimate/upload'),\n"
+                },
+                {
+                    "date": 1757197243636,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -179,9 +179,9 @@\n   const formData = new FormData();\n   // formData.append('file', file);\n   formData.append('title', title);\n   formData.append('chatSession', sessionId);\n-  formData.append('id', userId);\n+  formData.append('user', userId);\n   formData.append('data', data);\n \n   return callUserApi({\n     title: '견적서 PDF 업로드',\n"
+                },
+                {
+                    "date": 1757197249256,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -180,10 +180,12 @@\n   // formData.append('file', file);\n   formData.append('title', title);\n   formData.append('chatSession', sessionId);\n   formData.append('user', userId);\n+  formData.append('user', userId);\n   formData.append('data', data);\n \n+\n   return callUserApi({\n     title: '견적서 PDF 업로드',\n     url: getApiUrl('/file/estimate/upload'),\n     method: 'POST',\n"
+                },
+                {
+                    "date": 1757197258189,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -180,9 +180,9 @@\n   // formData.append('file', file);\n   formData.append('title', title);\n   formData.append('chatSession', sessionId);\n   formData.append('user', userId);\n-  formData.append('user', userId);\n+  formData.append('user', id);\n   formData.append('data', data);\n \n \n   return callUserApi({\n"
+                },
+                {
+                    "date": 1757197263845,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -180,9 +180,9 @@\n   // formData.append('file', file);\n   formData.append('title', title);\n   formData.append('chatSession', sessionId);\n   formData.append('user', userId);\n-  formData.append('user', id);\n+  formData.append('id', id);\n   formData.append('data', data);\n \n \n   return callUserApi({\n"
+                },
+                {
+                    "date": 1757197271709,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -180,9 +180,9 @@\n   // formData.append('file', file);\n   formData.append('title', title);\n   formData.append('chatSession', sessionId);\n   formData.append('user', userId);\n-  formData.append('id', id);\n+  formData.append('id', estimateid);\n   formData.append('data', data);\n \n \n   return callUserApi({\n"
+                },
+                {
+                    "date": 1757197959697,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -174,15 +174,15 @@\n     isCallPageLoader: true,\n   });\n }\n \n-export async function uploadEstimatePdf(sessionId: string, title: string,  userId: string, data: string) {\n+export async function uploadEstimatePdf(sessionId: string, title: string,  userId: string, data: string, estimateId?: string) {\n   const formData = new FormData();\n   // formData.append('file', file);\n   formData.append('title', title);\n   formData.append('chatSession', sessionId);\n   formData.append('user', userId);\n-  formData.append('id', estimateid);\n+  formData.append('id', estimateId);\n   formData.append('data', data);\n \n \n   return callUserApi({\n"
                 }
             ],
             "date": 1756365362987,

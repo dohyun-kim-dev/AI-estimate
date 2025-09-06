@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import styled from 'styled-components';
-import { IoChevronDown, IoChevronForward, IoCloseCircleOutline, IoRefreshCircleOutline } from 'react-icons/io5';
+import { IoChevronDown, IoChevronForward } from 'react-icons/io5';
 import { formatPrice, parsePrice } from '@/utils/utils';
 
 const ItemWrapper = styled.div<{ depth: number; $isOpen?: boolean }>`
@@ -126,10 +126,8 @@ const ContentInner = styled.div`
 
 const ListItem = styled.div<{ $isSelected: boolean; $isDeleted: boolean; depth?: number }>`
   display: flex;
-  justify-content: space-between;
-  
   align-items: center;
-  padding: ${({ depth }) => depth === 3 ? '24px 18px 50px 45px' : '24px 18px 24px 35px'};
+  padding: ${({ depth }) => depth === 3 ? '24px 18px 24px 45px' : '24px 18px 24px 35px'};
   color: ${({ theme }) => theme.subtleText};
   font-size: 0.95em;
   cursor: pointer;
@@ -153,21 +151,25 @@ const ListItem = styled.div<{ $isSelected: boolean; $isDeleted: boolean; depth?:
   }
   
   .name {
-    margin-right: 0px;
-    // width:100px;
+    flex: 1;
+    margin-right: 16px;
+    display: flex;
+    align-items: center;
   }
 
   .price {
-  display: flex;
+    display: flex;
+    align-items: center;
     font-weight: 600;
     color: ${({ theme, $isDeleted }) => $isDeleted ? '#a1a1aa' : theme.subtleText};
   }
 
   .actions {
-    margin-left: auto;
     display: flex;
     align-items: center;
     gap: 8px;
+    margin-left: 16px;
+    z-index: 2;
   }
   
   &:hover {
@@ -175,43 +177,57 @@ const ListItem = styled.div<{ $isSelected: boolean; $isDeleted: boolean; depth?:
   }
 `;
 
-const DeleteButton = styled.div`
+const ActionButton = styled.button`
   width: 24px;
   height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
   cursor: pointer;
-  background-color: transparent;
-  color: ${({ theme }) => theme.text};
-  margin-left: 10px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  z-index: 3;
+  position: relative;
   
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
   &:hover {
-    color: #ff4d4f;
+    opacity: 0.8;
+  }
+
+  &:focus {
+    outline: none;
   }
 `;
 
-const CancelButton = styled(DeleteButton)`
-  margin-left: 10px;
-
-  &:hover {
-    color: #52c41a;
-  }
-`;
+interface EstimateItem {
+  name: string;
+  price: string;
+  description: string;
+  is_deleted: boolean;
+}
 
 interface EstimateAccordionItemProps {
   name: string;
   price?: string;
   description?: string;
-  items?: Array<{name: string; price: string; description: string}>;
+  items?: EstimateItem[];
   depth: 1 | 2 | 3;
-  onItemClick?: (item: any) => void;
+  onItemClick?: (item: EstimateItem) => void;
+  onItemDelete?: (itemId: string, item: EstimateItem) => void;   // ✅ 추가
+  onItemRestore?: (itemId: string, item: EstimateItem) => void;  // ✅ 추가
   children?: React.ReactNode;
   isSelected?: boolean;
   onSelect?: () => void;
   selectedItemId?: string | null;
   onItemSelect?: (itemId: string) => void;
+  chatRoomId?: string;
+  estimateId?: string;
 }
 
 const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
@@ -220,24 +236,34 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
   items = [],
   depth,
   onItemClick,
+  onItemDelete,
+  onItemRestore,
   children,
   isSelected = false,
   onSelect,
   selectedItemId,
-  onItemSelect
+  onItemSelect,
+  chatRoomId,
+  estimateId
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  // 삭제된 항목의 ID를 저장하는 상태
-  const [deletedItems, setDeletedItems] = useState(new Set<string>());
   const hasItems = items.length > 0 || !!children;
+
+  const getStorageKey = () => `estimate_${chatRoomId}_${estimateId}_${name}`;
+  
+  const getInitialDeletedState = () => {
+    if (!chatRoomId || !estimateId) return new Set<string>();
+    const storedData = localStorage.getItem(getStorageKey());
+    return storedData ? new Set(JSON.parse(storedData)) : new Set<string>();
+  };
+
+  const [deletedItems, setDeletedItems] = useState<Set<string>>(getInitialDeletedState());
 
   const totalAmount = useMemo(() => {
     if (!items.length) {
-      // items가 없는 경우
       return price || "0";
     }
 
-    // 삭제된 항목을 제외하고 총 가격 계산
     const currentItems = items.filter((_, index) => {
       const itemId = `${name}-${index}`;
       return !deletedItems.has(itemId);
@@ -256,7 +282,7 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
   const handleItemClick = (item: any, index: number) => {
     const itemId = `${name}-${index}`;
     if (deletedItems.has(itemId)) {
-      return; // 삭제된 항목은 클릭 이벤트 무시
+      return;
     }
 
     if (onItemSelect) {
@@ -267,20 +293,33 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
     }
   };
 
-  // 삭제 버튼 핸들러
-  const handleDelete = (e: React.MouseEvent, itemId: string) => {
-    e.stopPropagation(); // 부모의 onClick 이벤트 방지
-    setDeletedItems(prev => new Set(prev).add(itemId));
+  const updateLocalStorage = (newDeletedItems: Set<string>) => {
+    if (!chatRoomId || !estimateId) return;
+    localStorage.setItem(getStorageKey(), JSON.stringify(Array.from(newDeletedItems)));
   };
 
-  // 취소 버튼 핸들러
-  const handleCancelDelete = (e: React.MouseEvent, itemId: string) => {
-    e.stopPropagation(); // 부모의 onClick 이벤트 방지
-    setDeletedItems(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(itemId);
-      return newSet;
-    });
+  const handleDelete = (e: React.MouseEvent, itemId: string, item: EstimateItem) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const newDeletedItems = new Set(deletedItems).add(itemId);
+    setDeletedItems(newDeletedItems);
+    updateLocalStorage(newDeletedItems);
+    
+    if (onItemDelete) onItemDelete(itemId, { ...item, is_deleted: true });      
+  };
+
+  const handleCancelDelete = (e: React.MouseEvent, itemId: string, item: EstimateItem) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const newDeletedItems = new Set(deletedItems);
+    newDeletedItems.delete(itemId);
+    setDeletedItems(newDeletedItems);
+    updateLocalStorage(newDeletedItems);
+
+    if (onItemRestore) onItemRestore(itemId, { ...item, is_deleted: false });
+
   };
 
   return (
@@ -303,29 +342,31 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
             const itemId = `${name}-${index}`;
             const isDeleted = deletedItems.has(itemId);
             return (
-              <ListItem 
+              <ListItem
                 key={index} 
-                onClick={() => handleItemClick(item, index)}
                 $isSelected={selectedItemId === itemId}
                 $isDeleted={isDeleted}
                 depth={depth}
               >
-                <span className="name">{item.name}</span>
-                <span className="price">{item.price}
-                <div className="actions">
-                  {/* 삭제/취소 버튼 조건부 렌더링 */}
-                  {isDeleted ? (
-                    <CancelButton onClick={(e) => handleCancelDelete(e, itemId)} aria-label="Cancel deletion">
-                      <IoRefreshCircleOutline size={20} />
-                    </CancelButton>
-                  ) : (
-                    <DeleteButton onClick={(e) => handleDelete(e, itemId)} aria-label="Delete item">
-                      <IoCloseCircleOutline size={20} />
-                    </DeleteButton>
-                  )}
-                  {!isDeleted && <IoChevronForward size={16} />}
-                </div>
+                <span className="name" onClick={() => handleItemClick(item, index)}>
+                  {item.name}
                 </span>
+                <span className="price" onClick={() => handleItemClick(item, index)}>
+                  {item.price}
+                </span>
+                <div className="actions">
+                  {isDeleted ? (
+                    <ActionButton onClick={(e) => handleCancelDelete(e, itemId, item)} aria-label="Cancel deletion">
+                      <img src="/ai-estimate/delete_cancel_button.png" alt="Cancel deletion" />
+                    </ActionButton>
+                  ) : (
+                    <ActionButton onClick={(e) => handleDelete(e, itemId, item)} aria-label="Delete item">
+                      <img src="/ai-estimate/delete_button.png" alt="Delete item" />
+                    </ActionButton>
+                  )}
+                  {/* 삭제된 항목일 경우 상세 아이콘 숨기기 */}
+                  {!isDeleted && <IoChevronForward size={16} onClick={() => handleItemClick(item, index)} />}
+                </div>
               </ListItem>
             );
           }))}

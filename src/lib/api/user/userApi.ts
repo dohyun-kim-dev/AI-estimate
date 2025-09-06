@@ -175,12 +175,15 @@ export async function getChatMessages(sessionId: string) {
   });
 }
 
-export async function uploadEstimatePdf(sessionId: string, title: string, file: File, userId: string) {
+export async function uploadEstimatePdf(sessionId: string, title: string,  userId: string, data: string, estimateId?: string) {
   const formData = new FormData();
-  formData.append('file', file);
+  // formData.append('file', file);
   formData.append('title', title);
   formData.append('chatSession', sessionId);
-  formData.append('id', userId);
+  formData.append('user', userId);
+  if (estimateId) formData.append('id', estimateId);
+  formData.append('data', data);
+
 
   return callUserApi({
     title: '견적서 PDF 업로드',
