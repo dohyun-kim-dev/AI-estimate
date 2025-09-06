@@ -542,9 +542,9 @@ export default function AiChatPage() {
   const initialAiMessage = `AI 컨설턴트 강유하 입니다 만나 뵙게 되어 반갑습니다
 어떤 종류의 프로젝트를 만들고 싶으신가요?
 
-  <strong style="font-size: 20px;">프로젝트의 큰 그림을 알려주세요</strong>
-  <ul style="padding-left: 30px;"><li><strong>프로젝트의 핵심 목표는 무엇인가요?</strong></li><li><strong>주요 사용자층은 누구인가요?</strong> 
-</li><li><strong>꼭 필요한 핵심 기능은 무엇인가요?</strong></li></ul>
+  프로젝트의 큰 그림을 알려주세요
+  <ul style="padding-left: 30px;"><li>프로젝트의 핵심 목표는 무엇인가요?</li><li>주요 사용자층은 누구인가요?
+</li><li>꼭 필요한 핵심 기능은 무엇인가요?</li></ul>
 궁금하신 점이나 추가로 설명하고 싶으신 내용이 있다면 언제든지 편하게 이야기해주세요.`;
   const [hasShownInitialMessage, setHasShownInitialMessage] = useState(false);
 

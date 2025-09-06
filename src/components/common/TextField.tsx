@@ -10,7 +10,11 @@ interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   errorMessage?: string;
   isPasswordField?: boolean;
   showSuffixIcon?: boolean;
-  height?: string;  // 높이 prop 추가
+  height?: string;
+  autoComplete?: string;
+  normalizePhoneToDigits?: boolean; // 전화번호 입력 시 숫자만 부모에 전달할지 여부
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  value?: string | number;
 }
 
 const Field = styled.div`
@@ -75,7 +79,6 @@ const SuffixIconWrapper = styled.div<{ $isPasswordVisible?: boolean }>`
   cursor: pointer;
   color: ${({ $isPasswordVisible }) =>
     $isPasswordVisible ? '#3391FF' : '#9CA3AF'};
-  
 `;
 
 const ErrorText = styled.span`
@@ -95,6 +98,10 @@ export default function TextField({
   type: propType,
   className,
   height,
+  autoComplete,
+  onChange,
+  value,
+  normalizePhoneToDigits = false,
   ...props 
 }: TextFieldProps) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -107,20 +114,62 @@ export default function TextField({
     ? (isPasswordVisible ? 'text' : 'password')
     : propType || 'text';
 
+  const formatPhone = (val: string) => {
+    const only = (val || '').replace(/[^0-9]/g, '');
+    if (only.length < 4) return only;
+    if (only.length < 8) return `${only.slice(0,3)}-${only.slice(3)}`;
+    return `${only.slice(0,3)}-${only.slice(3,7)}-${only.slice(7,11)}`;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // 전화번호 유형일 때만 가공
+    if (inputType === 'tel' || inputType === 'phone') {
+      const raw = e.target.value.replace(/[^0-9]/g, '');
+      const formatted = formatPhone(raw);
+
+      if (normalizePhoneToDigits) {
+        // 부모에는 숫자만 전달
+        onChange?.({
+          ...e,
+          target: { ...e.target, value: raw }
+        } as React.ChangeEvent<HTMLInputElement>);
+      } else {
+        // 부모에는 하이픈 포함 값 전달
+        onChange?.({
+          ...e,
+          target: { ...e.target, value: formatted }
+        } as React.ChangeEvent<HTMLInputElement>);
+      }
+      return;
+    }
+
+    onChange?.(e);
+  };
+
+  // 화면 표시는: tel일 때 포맷 적용
+  const displayValue =
+    (inputType === 'tel' || inputType === 'phone')
+      ? (normalizePhoneToDigits ? formatPhone(String(value ?? '')) : value)
+      : value;
+
   return (
     <Field className={className}>
       <FloatingLabel htmlFor={id}>{label}</FloatingLabel>
       <InputWrapper>
-        <StyledInput 
-          id={id} 
+        <StyledInput
+          id={id}
           type={inputType}
           $hasSuffix={showSuffixIcon && isPasswordField}
           $height={height}
-          {...props} 
+          autoComplete={autoComplete}
+          onChange={handleChange}
+          value={displayValue}
+          maxLength={(inputType === 'tel' || inputType === 'phone') ? 13 : props.maxLength}
+          {...props}
         />
         {showSuffixIcon && isPasswordField && (
           <SuffixIconWrapper
-            onClick={handleToggleVisibility}
+            onClick={() => setIsPasswordVisible(v => !v)}
             $isPasswordVisible={isPasswordVisible}
           >
             {isPasswordVisible ? <VisibilityOff /> : <Visibility />}

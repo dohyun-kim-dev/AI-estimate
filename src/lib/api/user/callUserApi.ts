@@ -55,6 +55,25 @@ export async function callUserApi<T>({
     { 'x-company-code': companyCode } : 
     { ...commonHeaders };
 
+  // user_token이 빈 값일 경우 헤더에서 제거
+  if (headers['user_token'] === '') {
+    delete headers['user_token'];
+  }
+
+  const fetchOptions: RequestInit = {
+    method,
+    credentials: 'include',
+    mode: 'cors',
+    headers,
+  };
+
+  // body 타입에 따른 처리
+  if (!isFormData && body && typeof body === 'object') {
+    fetchOptions.body = JSON.stringify(body);
+  } else if (isFormData && body instanceof FormData) {
+    fetchOptions.body = body;
+  }
+
   // API 요청 정보 로깅
   console.log('[API Request]', {
     title,
@@ -103,7 +122,7 @@ export async function callUserApi<T>({
     response = await callApiPost({
       title,
       url,
-      body,
+      body: body as Record<string, unknown> | FormData,
       isCallPageLoader,
       headers,
       isFormData, // isFormData 플래그 전달

@@ -2,8 +2,8 @@ import { create } from 'zustand';
 
 interface ModalState {
   isLoginModalOpen: boolean;
-  loginModalPurpose: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'default';
-  openLoginModal: (purpose?: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'default') => void;
+  loginModalPurpose: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat' | 'default';
+  openLoginModal: (purpose?: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat' | 'default') => void;
   closeLoginModal: () => void;
 }
 

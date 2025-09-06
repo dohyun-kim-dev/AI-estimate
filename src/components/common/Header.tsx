@@ -93,8 +93,6 @@ const Header = ({ compact }: HeaderProps) => {
     if (!isAuthenticated()) {
       openLoginModal()
     }
-    // TODO: 로그인된 경우 프로필 메뉴 표시
-    navigate(`/aiclient/${companyCode}/settings`)
   } 
 
   return (

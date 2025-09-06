@@ -22,7 +22,7 @@ const ModalOverlay = styled.div<{ $isMobile: boolean }>`
   width: 100%;
   ${({ $isMobile }) => !$isMobile && `min-width: 1200px;`}
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: rgba(0, 0, 0, 0.8);
   z-index: 9999;
   display: flex;
   align-items: center;

@@ -8,36 +8,48 @@ const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  padding: 12px;
+  background-color: rgba(0, 0, 0, 0.8);
   display: ${(props) => (props.$isOpen ? 'flex' : 'none')};
   align-items: center;
   justify-content: center;
   z-index: 1000;
 `;
 
+
+const Highlight = styled.span`
+  color: #2D50FF;
+  // font-weight: bold;
+`;
+
 const ModalContent = styled.div`
   background-color: white;
-  padding: 40px;
+  padding: 40px 40px 20px 40px;
   border-radius: 12px;
   width: 450px;
   text-align: center;
   position: relative;
+  z-index: 100000;
 `;
 
 const Title = styled.h2`
   ${AppTextStyles.headline2}
+  font-size: 24px;
   color: ${AppColors.onSurface};
-  margin-bottom: 20px;
+  margin-bottom: 18px;
+  line-height: 1.5;
 `;
 
 const SubTitle = styled.p`
   ${AppTextStyles.body2}
+  font-size: 16px;
+  font-weight: 500;
   color: ${AppColors.onSurfaceVariant};
   margin-bottom: 30px;
+  line-height: 1.5;
 `;
 
 const ButtonGroup = styled.div`
-  display: flex;
   gap: 12px;
   justify-content: center;
 `;
@@ -51,23 +63,21 @@ const Button = styled.button`
 `;
 
 const PrimaryButton = styled(Button)`
-  background-color: ${AppColors.primary};
+  background-color: #2D50FF;
   color: white;
   border: none;
-  
-  &:hover {
-    background-color: ${AppColors.primaryDark};
-  }
+  margin-bottom: 10px;
 `;
 
 const SecondaryButton = styled(Button)`
   background-color: white;
-  color: ${AppColors.primary};
-  border: 1px solid ${AppColors.primary};
-  
-  &:hover {
-    background-color: ${AppColors.primaryLight};
-  }
+  color: #A9A9A9;
+  font-size: 12px;
+  border-radius: 0px;
+  border-bottom: 1px solid #A9A9A9;
+  // border: 1px solid ${AppColors.primary};
+  padding: 0px;
+
 `;
 
 interface EstimateConfirmModalProps {
@@ -82,20 +92,21 @@ export const EstimateConfirmModal: React.FC<EstimateConfirmModalProps> = ({
   onConfirm,
 }) => {
   return (
-    <ModalOverlay $isOpen={isOpen} onClick={onClose}>
+    <ModalOverlay $isOpen={isOpen} >
       <ModalContent onClick={(e) => e.stopPropagation()}>
-        <Title>더 확실한 견적을 원하시나요?</Title>
+        <Title>가장 정밀한​ <br />
+        <Highlight>무료 견적</Highlight> 혜택받기​</Title>
         <SubTitle>
-          AI 견적만으로는 아쉽다면,<br />
-          "여기닷"에서 받아보세요
+          여기닷에 AI견적 대화 기반​ <br/>정밀한 견적 요청 가능해요​
         </SubTitle>
         <ButtonGroup>
-          <SecondaryButton onClick={onClose}>
-            다음에 할게요
-          </SecondaryButton>
+
           <PrimaryButton onClick={onConfirm}>
-            견적 받아보기
+            혜택 받고 이어서 대화하기
           </PrimaryButton>
+          <SecondaryButton onClick={onClose}>
+            혜택 없이 이어서 대화하기
+          </SecondaryButton>
         </ButtonGroup>
       </ModalContent>
     </ModalOverlay>

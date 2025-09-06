@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
 import Icon from '@components/ai-esti/Icon';
 import { useNavigate, useLocation, Outlet, useParams } from 'react-router-dom';
@@ -8,6 +8,8 @@ import { useToast } from '@components/common/ToastProvider';
 import Modal from '@components/common/Modal';
 import { useAuthStore } from '@store/authStore';
 import { useModalStore } from '@store/modalStore';
+import { SocialLoginModal } from '../../components/ai-esti/SocialLoginModal';
+import { tr } from 'date-fns/locale';
 
 const LayoutWrapper = styled.div`
   // min-height: 100vh;
@@ -158,18 +160,45 @@ export default function AILayout() {
   const location = useLocation();
   const { companyCode } = useParams();
   const { isDarkMode, toggleTheme } = useThemeStore();
-  const { success } = useToast();
+  const { success, error } = useToast();
   const resetChat = useChatStore((s) => s.clear);
   const chatSessionId = useChatStore((s) => s.chatSessionId);
   const [openShare, setOpenShare] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { isAuthenticated } = useAuthStore();
-  const { openLoginModal } = useModalStore();
+  const { 
+    isLoginModalOpen, 
+    loginModalPurpose, 
+    closeLoginModal,
+    openLoginModal
+  } = useModalStore();
 
   useEffect(() => {
     const storedTheme = localStorage.getItem('theme');
     if (storedTheme) {
       useThemeStore.setState({ isDarkMode: storedTheme === 'dark' });
+    }
+  }, []);
+
+  useEffect(() => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const targetUrl = window.location.href;
+
+    if (userAgent.match(/kakaotalk/i)) {
+      if (window.confirm('카카오톡 인앱 브라우저에서는 외부 브라우저로 이동해야 합니다. 이동하시겠습니까?')) {
+        window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(targetUrl)}`;
+      }
+    } else if (userAgent.match(/iphone|ipad|ipod/i)) {
+      // if (window.confirm('iOS 기기에서는 Safari로 이동해야 합니다. 이동하시겠습니까?')) {
+      //   // alert('URL이 복사되었습니다. Safari에서 주소창을 길게 터치한 뒤, "붙여넣기 및 이동"을 선택하세요.');
+      //   const textarea = document.createElement('textarea');
+      //   textarea.value = targetUrl;
+      //   document.body.appendChild(textarea);
+      //   textarea.select();
+      //   document.execCommand('copy');
+      //   document.body.removeChild(textarea);
+      //   window.location.href = 'x-web-search://?';
+      // }
     }
   }, []);
 
@@ -201,13 +230,32 @@ export default function AILayout() {
     navigate(-1);
   };
 
+
+  // '공유' 버튼을 눌렀을 때 실행될 함수 (AILayout에서 호출됨)
   const handleOpenShare = () => {
-    setOpenShare(true);
+    isAuthenticated() ? setOpenShare(true) : openLoginModal('shareChat');
   };
 
   const handleCloseShare = () => {
     setOpenShare(false);
+  }
+
+  // '가입없이 이용하기' 버튼 클릭 시 실행될 함수
+  const handleNonMemberAction = () => {
+    // 여기에 비회원 상태에서 실행할 로직을 추가합니다.
+    console.log("가입없이 이용하기 버튼 클릭! 비회원 로직 실행...");
+    success('비회원 상태로 기능이 활성화되었습니다.');
+    closeLoginModal(); // 모달 닫기
   };
+
+  // ✅ 구글 로그인 성공 후 실행될 함수.
+  // 이 함수는 로그인 모달이 닫히고, 'shareChat' 모달을 열도록 합니다.
+  const handleGoogleLoginSuccess = useCallback(() => {
+    console.log("구글 로그인 성공!");
+    success('로그인되었습니다!');
+    closeLoginModal(); // 로그인 모달 닫기
+    setOpenShare(true);
+  }, [success, closeLoginModal]);
 
   const handleCopy = async () => {
     let shareUrl;
@@ -332,6 +380,14 @@ https://heredotcorp.com
       {/* <ThemeToggleButton onClick={toggleTheme}>
         {isDarkMode ? '☀️' : '🌙'}
       </ThemeToggleButton> */}
+
+ <SocialLoginModal
+        $isOpen={isLoginModalOpen}
+        onClose={closeLoginModal}
+        purpose={loginModalPurpose}
+        onPrimaryButtonClick={handleNonMemberAction} // 비회원 로직 함수 연결
+        onGoogleLoginSuccess={handleGoogleLoginSuccess} // ✅ 구글 로그인 성공 후 함수 연결
+      />
 
       <Modal open={openShare} title="페이지 공유" onClose={handleCloseShare} width={520}>
         <div style={{ color: '#A1A1AA', fontSize: 14, marginBottom: 32 }}>공유받은 사용자는 현재 페이지의 내용을 확인할 수 있습니다.</div>

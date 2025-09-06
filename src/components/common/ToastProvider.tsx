@@ -66,6 +66,8 @@ const Card = styled.div<{ $type: ToastType }>`
   max-width: min(360px, calc(100vw - 24px));
   padding: 16px 20px;
   position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); 
+
 `
 
 const Row = styled.div`
@@ -135,7 +137,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={ctx}>
       {children}
-      <Container>
+      <Container         style={{ zIndex: 100000 }}>
         {toasts.map((t) => {
           const Icon = TYPE_ICON[t.type]
           return (

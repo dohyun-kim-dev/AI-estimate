@@ -11,6 +11,8 @@ import FileUploadSection from './FileUploadSection';
 import { FileUploadData } from '@/firebase.functions';
 import Modal from '@/components/common/Modal';
 import TextField from '@/components/common/TextField';
+import { CheckBox } from '@mui/icons-material';
+import TermsAgreement from './TermsAgreement';
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -127,7 +129,7 @@ const Disclaimer = styled.p`
 const SubmitButton = styled.button`
   height: 44px;
   border-radius: 8px;
-  background: #2E2E48;
+  background: #2D50FF;
   color: #fff;
   font-size: 14px;
   font-weight: 600;
@@ -433,19 +435,21 @@ const BottomInput: React.FC<BottomInputProps> = ({
       
       <Modal 
         open={isInfoModalOpen} 
-        title="필수 정보 입력" 
+        title="발행자 정보 입력" 
         onClose={() => setIsInfoModalOpen(false)} 
         width={520}
       >
         <div style={{ fontSize: 14, textAlign: 'center', marginBottom: 32 }}>
-          더 자세한 견적 요청을 위해 정보를 입력해주세요.
+          {/* 더 자세한 견적 요청을 위해 정보를 입력해주세요. */}
+          
         </div>
         <Form onSubmit={handleInfoSubmit}>
           <TextField id="name" label="이름" placeholder="이름을 입력해주세요" required value={userInfo.name} onChange={(e) => setUserInfo({...userInfo, name: e.target.value})} />
           <TextField id="email" label="이메일" type="email" placeholder="이메일을 입력해주세요" required value={userInfo.email} onChange={(e) => setUserInfo({...userInfo, email: e.target.value})} />
-          <TextField id="phone" label="전화번호" placeholder="전화번호를 입력해주세요" required maxLength={11} value={userInfo.cellphone} pattern="[0-9]{10,11}" type="tel" onChange={(e) => setUserInfo({...userInfo, cellphone: e.target.value})} />
-          <Disclaimer>문의 시 개인정보 수집·이용에 동의한 것으로 간주됩니다.</Disclaimer>
-          <SubmitButton type="submit">정보 입력 후 견적 요청하기</SubmitButton>
+          <TextField id="phone" label="전화번호" placeholder="전화번호를 입력해주세요" required value={userInfo.cellphone} pattern="[0-9]{10,11}" type="tel" onChange={(e) => setUserInfo({...userInfo, cellphone: e.target.value})} />
+          <Disclaimer> <CheckBox></CheckBox>문의 시 개인정보 수집·이용에 동의한 것으로 간주됩니다.</Disclaimer>
+          <SubmitButton type="submit">완료하기</SubmitButton>
+          {/* <TermsAgreement /> */}
         </Form>
       </Modal>
     </>

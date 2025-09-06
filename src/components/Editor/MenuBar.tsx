@@ -19,6 +19,7 @@ import {
   MdSpaceBar,
 } from "react-icons/md";
 import { TextStyle } from "@tiptap/extension-text-style";
+import './MenuBar.css';
 
 const uploadImage = async (file: File) => {
   const formData = new FormData();
@@ -144,7 +145,8 @@ const MenuBar = ({ editor }: MenuBarProps) => {
 
   return (
     <div className="tiptap-menu-bar">
-      {/* 기본 서식 */}
+      
+      
       <button
         onClick={() => editor.chain().focus().toggleBold().run()}
         disabled={!editor.can().chain().focus().toggleBold().run()}
@@ -228,7 +230,10 @@ const MenuBar = ({ editor }: MenuBarProps) => {
       {/* 폰트 패밀리 */}
       <select
         value={FONT_FAMILIES.find((font) => editor.isActive("textStyle", { fontFamily: font.value }))?.value || ""}
-        onChange={(e) => editor.chain().focus().setFontFamily(e.target.value).run()}>
+        onChange={(e) => editor.chain().focus().setFontFamily(e.target.value).run()}
+        onMouseDown={e => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
+        onFocus={e => e.stopPropagation()}>
         {FONT_FAMILIES.map((font) => (
           <option key={font.name} value={font.value}>
             {font.name}
@@ -239,7 +244,10 @@ const MenuBar = ({ editor }: MenuBarProps) => {
       {/* 폰트 크기 */}
       <select
         value={editor.getAttributes("textStyle").fontSize || "12px"} // 기본값 설정 또는 현재 값 가져오기
-        onChange={(e) => editor.chain().focus().setMark("textStyle", { fontSize: e.target.value }).run()}>
+        onChange={(e) => editor.chain().focus().setMark("textStyle", { fontSize: e.target.value }).run()}
+        onMouseDown={e => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
+        onFocus={e => e.stopPropagation()}>
         <option value="">기본 크기</option>
         {FONT_SIZES.map((size) => (
           <option key={size} value={size}>

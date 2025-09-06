@@ -90,7 +90,7 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <Modal open={isOpen} onClose={onClose} title="약관 보기" width={600}>
+    <Modal open={isOpen} onClose={onClose} title="약관 보기" width={600} height={'85vh'}>
       <TabsContainer>
         {termsTabs.map((tab) => (
           <TabButton

@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+'use client';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import { AppTextStyles } from '@/styles/textStyles';
 import { AppColors } from '@/styles/colors';
@@ -11,6 +13,7 @@ interface TermsAgreementProps {
   onAgreeChange: (privacyAgreed: boolean, termsAgreed: boolean) => void;
   initialPrivacyAgreed?: boolean;
   initialTermsAgreed?: boolean;
+  onViewDetails?: (type: 'terms' | 'privacy') => void; // external control with type
 }
 
 const CheckboxContainer = styled.div`
@@ -23,7 +26,15 @@ const CheckboxGroup = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
+`;
+
+
+const CheckboxField = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
 `;
 
 const CheckboxLabelGroup = styled.div`
@@ -68,9 +79,11 @@ const Checkbox = styled.input`
 const CheckboxLabel = styled.label`
   ${AppTextStyles.body2}
   cursor: pointer;
+  font-size :14px;
+  
 `;
 
-const ViewButton = styled.button`
+const ViewButton = styled.button.attrs({ type: 'button' })<{ $isHidden?: boolean }>`
   background: none;
   border: none;
   color: ${AppColors.primary};
@@ -81,6 +94,9 @@ const ViewButton = styled.button`
   &:hover {
     color: ${AppColors.secondary};
   }
+
+     visibility: ${({ $isHidden }) => ($isHidden ? 'hidden' : 'visible')};
+
 `;
 
 const TermsContent = styled.div`
@@ -88,7 +104,7 @@ const TermsContent = styled.div`
   line-height: 1.6;
   color: #000 !important;
   font-size: 14px;
-  max-height: 60vh;
+  height: 60vh;
   overflow-y: auto;
   padding: 16px;
   background-color: #F7F7F7 !important;
@@ -107,6 +123,7 @@ const TabButton = styled.button<{ active: boolean }>`
   border: none;
   padding: 10px 15px;
   cursor: pointer;
+  font-size: 15px;
   font-weight: ${({ active }) => (active ? 'bold' : 'normal')};
   color: ${({ active }) => (active ? AppColors.primary : '#555')};
   border-bottom: 2px solid ${({ active }) => (active ? AppColors.primary : 'transparent')};
@@ -120,6 +137,7 @@ const TabButton = styled.button<{ active: boolean }>`
 interface TermsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialTab?: 'terms' | 'privacy' | 'company';
 }
 
 const termsTabs = [
@@ -128,21 +146,22 @@ const termsTabs = [
   { id: 3, key: 'company', label: '사업자 정보' },
 ];
 
-const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState('terms');
+const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, initialTab = 'terms' }) => {
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [allTermsData, setAllTermsData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
+      setActiveTab(initialTab);
       const fetchData = async () => {
         setIsLoading(true);
         try {
           const termsResponse = await termsGetList(); 
-          let termsList = termsResponse?.data || [];
+          let termsList = (termsResponse?.data as { _id: number; language: string; content: string }[]) || [];
           
           if (termsList) {
-            const sortedList = termsList.sort((a: any, b: any) => a._id - b._id);
+            const sortedList = termsList.sort((a, b) => a._id - b._id);
             setAllTermsData(sortedList);
           } else {
             setAllTermsData([]);
@@ -174,7 +193,7 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
           <TabButton
             key={tab.key}
             active={activeTab === tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => setActiveTab(tab.key as 'terms' | 'privacy' | 'company')}
           >
             {tab.label}
           </TabButton>
@@ -190,55 +209,43 @@ const TermsAgreement: React.FC<TermsAgreementProps> = ({
   onAgreeChange,
   initialPrivacyAgreed = false,
   initialTermsAgreed = false,
+  onViewDetails, // Destructure the new prop
 }) => {
-  const [allAgreed, setAllAgreed] = useState(false);
   const [privacyAgreed, setPrivacyAgreed] = useState(initialPrivacyAgreed);
   const [termsAgreed, setTermsAgreed] = useState(initialTermsAgreed);
+  const [isAgeAgreed, setIsAgeAgreed] = useState(false); // 만 14세 이상 동의 상태 추가
   
   // 👈 모달 상태를 다시 추가합니다.
   const [isModalOpen, setIsModalOpen] = useState(false); 
-
+  const [modalTab, setModalTab] = useState<'terms' | 'privacy' | 'company'>('terms');
+  
+  // allAgreed 상태를 파생 상태로 만듭니다.
+  const allAgreed = useMemo(() => {
+    return privacyAgreed && termsAgreed && isAgeAgreed;
+  }, [privacyAgreed, termsAgreed, isAgeAgreed]);
+  
   useEffect(() => {
-    setPrivacyAgreed(initialPrivacyAgreed);
-    setTermsAgreed(initialTermsAgreed);
-    setAllAgreed(initialPrivacyAgreed && initialTermsAgreed);
-  }, [initialPrivacyAgreed, initialTermsAgreed]);
-
-  useEffect(() => {
+    // onAgreeChange 함수에 isAgeAgreed 상태도 함께 전달해야 할 수도 있습니다.
     onAgreeChange(privacyAgreed, termsAgreed);
   }, [privacyAgreed, termsAgreed, onAgreeChange]);
-
+  
+  // 모든 상태를 한 번에 토글하는 함수
   const handleAllAgree = () => {
     const newValue = !allAgreed;
-    setAllAgreed(newValue);
     setPrivacyAgreed(newValue);
     setTermsAgreed(newValue);
+    setIsAgeAgreed(newValue);
   };
-
-  const handlePrivacyAgree = () => {
-    const newValue = !privacyAgreed;
-    setPrivacyAgreed(newValue);
-    if (newValue && termsAgreed) {
-      setAllAgreed(true);
-    } else {
-      setAllAgreed(false);
-    }
+  
+  // 개별 동의 상태를 토글하는 함수
+  const handleIndividualAgree = (setter: React.Dispatch<React.SetStateAction<boolean>>) => {
+    setter(prev => !prev);
   };
-
-  const handleTermsAgree = () => {
-    const newValue = !termsAgreed;
-    setTermsAgreed(newValue);
-    if (newValue && privacyAgreed) {
-      setAllAgreed(true);
-    } else {
-      setAllAgreed(false);
-    }
-  };
-
+  
   return (
     <>
       <CheckboxContainer>
-        <CheckboxGroup>
+        <CheckboxField>
           <CheckboxLabelGroup>
             <Checkbox
               type="checkbox"
@@ -248,51 +255,71 @@ const TermsAgreement: React.FC<TermsAgreementProps> = ({
             />
             <CheckboxLabel htmlFor="agree-all">전체 동의하기</CheckboxLabel>
           </CheckboxLabelGroup>
-        </CheckboxGroup>
-
+        </CheckboxField>
+  
         <CheckboxGroup>
           <CheckboxLabelGroup>
             <Checkbox
               type="checkbox"
               id="agree-terms"
               checked={termsAgreed}
-              onChange={handleTermsAgree}
+              onChange={() => handleIndividualAgree(setTermsAgreed)}
             />
             <CheckboxLabel htmlFor="agree-terms">
               [필수] 이용약관 동의
             </CheckboxLabel>
           </CheckboxLabelGroup>
-          {/* 👈 모달을 여는 onClick 핸들러를 다시 추가합니다. */}
-          <ViewButton onClick={() => setIsModalOpen(true)}>
+          <ViewButton onClick={() => {
+            setModalTab('terms');
+            setIsModalOpen(true);
+            if (onViewDetails) onViewDetails('terms');
+          }}>
             보기
           </ViewButton>
         </CheckboxGroup>
-
+  
         <CheckboxGroup>
           <CheckboxLabelGroup>
             <Checkbox
               type="checkbox"
               id="agree-privacy"
               checked={privacyAgreed}
-              onChange={handlePrivacyAgree}
+              onChange={() => handleIndividualAgree(setPrivacyAgreed)}
             />
             <CheckboxLabel htmlFor="agree-privacy">
               [필수] 개인정보 취급방침 동의
             </CheckboxLabel>
           </CheckboxLabelGroup>
-          {/* 👈 모달을 여는 onClick 핸들러를 다시 추가합니다. */}
-          <ViewButton onClick={() => setIsModalOpen(true)}>
+          <ViewButton onClick={() => {
+            setModalTab('privacy');
+            setIsModalOpen(true);
+            if (onViewDetails) onViewDetails('privacy');
+          }}>
             보기
           </ViewButton>
         </CheckboxGroup>
-
-       
+  
+         <CheckboxGroup>
+          <CheckboxLabelGroup>
+            <Checkbox
+              type="checkbox"
+              id="agree-age" 
+              checked={isAgeAgreed}
+              onChange={() => handleIndividualAgree(setIsAgeAgreed)} 
+            />
+            <CheckboxLabel htmlFor="agree-age">
+              [필수] 만 14세 이상입니다
+            </CheckboxLabel>
+          </CheckboxLabelGroup>
+          <ViewButton $isHidden={true}>
+            보기
+          </ViewButton>
+        </CheckboxGroup>
       </CheckboxContainer>
-
-      {/* 👈 TermsModal 렌더링 코드를 다시 추가합니다. */}
-      <TermsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+  
+      <TermsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} initialTab={modalTab} />
     </>
   );
 };
-
+  
 export default TermsAgreement;

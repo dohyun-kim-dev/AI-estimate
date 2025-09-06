@@ -17,6 +17,9 @@ const tabs = [
   { key: "terms", label: "이용약관", index: 1, language: "KOR" },
   { key: "privacy", label: "개인정보 취급방침", index: 2, language: "KOR" },
   { key: "company", label: "사업자 정보", index: 3, language: "KOR" },
+  { key: "terms-ENG", label: "이용약관(ENG)", index: 4, language: "ENG" },
+  { key: "privacy-ENG", label: "개인정보 취급방침(ENG)", index: 5, language: "ENG" },
+  { key: "company-ENG", label: "사업자 정보(ENG)", index: 6, language: "ENG" },
 ];
 
 

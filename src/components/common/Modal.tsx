@@ -10,6 +10,7 @@ interface ModalProps {
   onClose: () => void
   children: React.ReactNode
   width?: number
+  height?: string | number
   centerTitle?: boolean
 }
 
@@ -23,9 +24,12 @@ const Overlay = styled.div`
   z-index: 99999;
 `
 
-const Dialog = styled.div<{ $width?: number }>`
+const Dialog = styled.div<{ $width?: number, $height?: string | number }>`
   width: 100%;
   max-width: ${({ $width }) => ($width ? `${$width}px` : '560px')};
+  
+  height: ${({ $height }) => ($height ? (typeof $height === 'number' ? `${$height}px` : $height) : 'auto')};
+  max-height: 90vh;
   background: #ffffff;
   color: #111827;
   border-radius: 8px;
@@ -37,7 +41,7 @@ const Dialog = styled.div<{ $width?: number }>`
 
 const Header = styled.div`
   display: grid;
-  grid-template-columns: 1fr 32px;
+  grid-template-columns: 32px 1fr 32px;
   align-items: center;
   padding: 16px 20px 0 20px;
 `
@@ -63,12 +67,15 @@ const Body = styled.div`
   padding: 16px 20px 20px;
 `
 
-export default function Modal({ open, title, onClose, children, width, centerTitle = false }: ModalProps) {
+export default function Modal({ open, title, onClose, children, width, height, centerTitle = false }: ModalProps) {
   if (!open) return null
   return (
     <Overlay onClick={onClose}>
-      <Dialog $width={width} onClick={(e) => e.stopPropagation()}>
+      <Dialog $width={width} $height={height} onClick={(e) => e.stopPropagation()}>
         <Header>
+          <CloseButton aria-label="close" onClick={onClose}>
+            {/* <IoClose size={20} /> */}
+          </CloseButton>
           {title ? <Title $center={centerTitle}>{title}</Title> : <div />}
           <CloseButton aria-label="close" onClick={onClose}>
             <IoClose size={20} />

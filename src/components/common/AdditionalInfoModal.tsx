@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { toast } from 'react-toastify'
@@ -7,8 +6,9 @@ import Modal from '@components/common/Modal'
 import TextField from '@components/common/TextField'
 import styled from 'styled-components'
 import { Validators } from '@/lib/utils/validators'
-import { googleLoginUpdate } from '@/lib/api/user/userApi'
+import { googleLoginUpdate, companyRegister, sendAuthCode, validateAuthCode } from '@/lib/api/user/userApi'
 import TermsAgreement from '@/components/ai-esti/TermsAgreement'
+import { useToast } from '@/components/common/ToastProvider';
 
 const Form = styled.form`
   margin-top: 32px; 
@@ -97,7 +97,7 @@ interface AdditionalInfoModalProps {
 }
 
 export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoModalProps) {
-  const [name, setName] = useState('')
+    const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [cellphone, setCellphone] = useState('')
   const [verificationCode, setVerificationCode] = useState('')
@@ -105,10 +105,13 @@ export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoMod
   const [isVerified, setIsVerified] = useState(false)
   const [privacyAgreed, setPrivacyAgreed] = useState(false)
   const [termsAgreed, setTermsAgreed] = useState(false)
-  const { user, closeAdditionalInfoModal, additionalInfoUser } = useAuthStore()
+  const { user, closeAdditionalInfoModal, additionalInfoUser, persistUser } = useAuthStore()
     const navigate = useNavigate();
+  const { success, error: showError } = useToast(); // useToast 훅 사용
 
   const [isFormValid, setIsFormValid] = useState(false)
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
 
   // 모달이 열릴 때마다 상태 초기화
   useEffect(() => {
@@ -130,8 +133,7 @@ export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoMod
       setIsFormValid(false)
     }
   }, [open, additionalInfoUser])
-
-  useEffect(() => {
+useEffect(() => {
     const isValid = Validators.required(name) &&
       Validators.email(email) &&
       Validators.phone(cellphone) &&
@@ -141,34 +143,59 @@ export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoMod
     setIsFormValid(isValid);
   }, [name, email, cellphone, isVerified, privacyAgreed, termsAgreed]);
 
-  const handleRequestVerification = () => {
+  const handleRequestVerification = async () => {
     if (!Validators.phone(cellphone)) {
-      toast.error('올바른 휴대폰 번호를 입력해주세요')
-      return
+      showError('올바른 휴대폰 번호를 입력해주세요'); // toast.error 대신 showError 사용
+      return;
     }
-    // TODO: 실제 인증번호 요청 API 호출
-    toast.success('인증번호가 발송되었습니다')
-    setShowVerification(true)
-  }
 
-  const handleVerifyCode = () => {
+    setIsSendingCode(true);
+    try {
+      const response = await sendAuthCode(cellphone.replace(/[^0-9]/g, ''));
+      if (response.statusCode === 200) {
+        success('인증번호가 발송되었습니다'); // toast.success 대신 success 사용
+        setShowVerification(true);
+      } else {
+        showError(response.error?.message || '인증번호 발송에 실패했습니다'); // toast.error 대신 showError 사용
+      }
+    } catch (error) {
+      console.error('인증번호 요청 에러:', error);
+      showError('인증번호 발송 중 오류가 발생했습니다'); // toast.error 대신 showError 사용
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
     if (verificationCode.length !== 6) {
-      toast.error('6자리 인증번호를 입력해주세요')
-      return
+      showError('6자리 인증번호를 입력해주세요'); // toast.error 대신 showError 사용
+      return;
     }
-    // TODO: 실제 인증번호 확인 API 호출
-    setIsVerified(true)
-    toast.success('인증이 완료되었습니다')
-  }
 
-  const handleAgreeChange = (privacy: boolean, terms: boolean) => {
+    setIsVerifyingCode(true);
+    try {
+      const response = await validateAuthCode(cellphone.replace(/[^0-9]/g, ''), verificationCode);
+      if (response.statusCode === 200) {
+        setIsVerified(true);
+        success('인증이 완료되었습니다'); // toast.success 대신 success 사용
+      } else {
+        showError(response.error?.message || '인증번호가 일치하지 않습니다'); // toast.error 대신 showError 사용
+      }
+    } catch (error) {
+      console.error('인증번호 확인 에러:', error);
+      showError('인증번호 확인 중 오류가 발생했습니다'); // toast.error 대신 showError 사용
+    } finally {
+      setIsVerifyingCode(false);
+    }
+  };
+
+  const handleAgreeChange = (privacy, terms) => {
     setPrivacyAgreed(privacy);
     setTermsAgreed(terms);
   };
 
-  const handleViewTermsDetails = (type: 'terms' | 'privacy') => {
+  const handleViewTermsDetails = (type) => {
     // TODO: 약관 상세 보기 모달 표시
-    toast.info(`${type === 'terms' ? '이용약관' : '개인정보 처리방침'} 상세 내용 표시 예정`);
   };
 
   const getErrorMessage = () => {
@@ -180,11 +207,11 @@ export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoMod
     return '';
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!isFormValid) {
-      toast.error(getErrorMessage())
-      return
+      showError(getErrorMessage()); // toast.error 대신 showError 사용
+      return;
     }
 
     try {
@@ -192,25 +219,70 @@ export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoMod
         providerId: user?.providerId || '',
         name,
         email,
-        cellphone: cellphone.replace(/[^0-9]/g, ''), // 숫자만 추출하여 전송
+        cellphone: cellphone.replace(/[^0-9]/g, ''),
         profileImage: user?.profileImage || '',
-      })
+      });
 
       if (response.statusCode === 200) {
-        closeAdditionalInfoModal()
-        toast.success('회원가입이 완료되었습니다!')
+        const updatedUser = response.data;
+        try {
+          const pathParts = window.location.pathname.split('/');
+          const companyCodeIndex = pathParts.indexOf('aiclient') + 1;
+          const currentCompanyCode = (companyCodeIndex > 0 && pathParts.length > companyCodeIndex)
+            ? pathParts[companyCodeIndex]
+            : 'heredot';
+
+          const userServices = updatedUser.usingService || [];
+          const needsCompanyRegistration = !userServices.includes(currentCompanyCode);
+          if (needsCompanyRegistration) {
+            await companyRegister();
+            console.log(`고객사 등록 완료: ${currentCompanyCode}`);
+          } else {
+            console.log(`이미 고객사 등록됨: ${currentCompanyCode}`);
+          }
+        } catch (err) {
+          console.error('고객사 등록 중 오류:', err);
+        }
+
+        try {
+          if (persistUser) persistUser(updatedUser);
+        } catch (err) {
+          console.warn('퍼시스트 중 오류:', err);
+        }
+
+        closeAdditionalInfoModal();
+        setName('');
+        setEmail('');
+        setCellphone('');
+        setPrivacyAgreed(false);
+        setTermsAgreed(false);
+        success('회원가입이 완료되었습니다!'); // toast.success 대신 success 사용
       } else {
-        toast.error(response.error?.message || '회원가입 중 오류가 발생했습니다')
+        showError(response.error?.message || '회원가입 중 오류가 발생했습니다'); // toast.error 대신 showError 사용
       }
     } catch (error) {
-      console.error('회원가입 에러:', error)
-      toast.error('회원가입 중 오류가 발생했습니다')
+      console.error('회원가입 에러:', error);
+      showError('회원가입 중 오류가 발생했습니다'); // toast.error 대신 showError 사용
     }
-  }
+  };
+
+  useEffect(() => {
+    if (!open) {
+      setName('');
+      setEmail('');
+      setCellphone('');
+      setPrivacyAgreed(false);
+      setTermsAgreed(false);
+      setVerificationCode('');
+      setShowVerification(false);
+      setIsVerified(false);
+      setIsFormValid(false);
+    }
+  }, [open]);
 
   return (
     <Modal open={open} onClose={onClose} title="추가 정보 입력" width={520} centerTitle>
-      <div style={{ fontSize: 14, textAlign: 'center' }}>정확한 서비스 이용을 위해 추가 정보를 입력해주세요</div>
+      <div style={{ fontSize: 14, textAlign: 'center' }}>정확한 서비스 이용을 위해 <br></br>추가 정보를 입력해주세요</div>
       <Form onSubmit={handleSubmit}>
         <TextField
           id="name"
@@ -218,6 +290,7 @@ export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoMod
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="이름을 입력해주세요"
+          autoComplete="off" 
           required
         />
         <TextField
@@ -242,7 +315,7 @@ export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoMod
                     setCellphone(value)
                   }
                 }}
-                placeholder="휴대폰 번호를 입력해주세요"
+                placeholder="휴대번호 입력해주세요"
                 required
               />
             </InputContainer>
@@ -250,9 +323,9 @@ export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoMod
               <VerifyButton
                 type="button"
                 onClick={handleRequestVerification}
-                disabled={!Validators.phone(cellphone) || isVerified}
+                disabled={!Validators.phone(cellphone) || isVerified || isSendingCode}
               >
-                {isVerified ? '인증완료' : '인증번호 받기'}
+                {isSendingCode ? '전송 중...' : isVerified ? '인증완료' : '인증받기'}
               </VerifyButton>
             </ButtonContainer>
           </PhoneContainer>
@@ -276,9 +349,9 @@ export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoMod
                 <VerifyButton
                   type="button"
                   onClick={handleVerifyCode}
-                  disabled={verificationCode.length !== 6}
+                  disabled={verificationCode.length !== 6 || isVerifyingCode}
                 >
-                  인증하기
+                  {isVerifyingCode ? '확인 중...' : '인증하기'}
                 </VerifyButton>
               </ButtonContainer>
             </PhoneContainer>

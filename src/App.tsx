@@ -18,6 +18,7 @@ import { useModalStore } from '@store/modalStore'
 import { SocialLoginModal } from '@components/ai-esti/SocialLoginModal'
 import { useAuthStore } from '@store/authStore'
 import AdditionalInfoModal from '@components/common/AdditionalInfoModal'
+import { EstimateConfirmModal } from './components/ai-esti/EstimateConfirmModal'
 
 const AppWrapper = styled.div`
   display: flex;
@@ -41,10 +42,17 @@ function App() {
   const [mounted, setMounted] = useState(false)
   const { isLoginModalOpen, closeLoginModal, loginModalPurpose } = useModalStore();
   const { isAdditionalInfoModalOpen, closeAdditionalInfoModal } = useAuthStore();
+  const { isEstimateModalOpen, closeEstimateModal } = useAuthStore();
+
+  const handleEstimateConfirm = () => {
+    closeEstimateModal( );
+    // 원하는 동작 수행
+  };
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
 
   // SSR/Hydration 문제 방지를 위한 초기 테마 설정
   const theme = mounted ? (isDarkMode ? darkTheme : lightTheme) : lightTheme
@@ -74,10 +82,15 @@ function App() {
                       theme="colored"
                     />
                   </AppWrapper>
-                  <SocialLoginModal $isOpen={isLoginModalOpen} onClose={closeLoginModal} />
+                  <SocialLoginModal $isOpen={isLoginModalOpen} onClose={closeLoginModal} purpose={loginModalPurpose} />
                   <AdditionalInfoModal
-        isOpen={isAdditionalInfoModalOpen}
+        open={isAdditionalInfoModalOpen}
         onClose={closeAdditionalInfoModal}
+      />
+       <EstimateConfirmModal
+        isOpen={isEstimateModalOpen} // ✅ 스토어 상태와 연결
+        onClose={closeEstimateModal} // ✅ 스토어 상태 변경 함수와 연결
+        onConfirm={handleEstimateConfirm}
       />
                 </ToastProvider>
               </PageLoaderProvider>

@@ -23,7 +23,7 @@ export const Validators = {
   
     // 전화번호: 11자리 숫자만 (01012345678)
     phone: (value: string): boolean => {
-      return /^\d{11}$/.test(value);
+      return /^010\d{8}$/.test(value);
     },
   
     // 공백 검사

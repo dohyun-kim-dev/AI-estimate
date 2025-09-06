@@ -1,14 +1,20 @@
-// 파일: @components/common/SocialLoginModal.tsx (새 파일)
 import styled from 'styled-components';
 import { AppColors } from '@/styles/colors';
 import { AppTextStyles } from '@/styles/textStyles';
 import CloseIcon from '@mui/icons-material/Close';
 import { useEffect, useState, useMemo, ReactNode } from 'react';
+// 인앱 브라우저 감지 함수
+function isInAppBrowser() {
+  const ua = navigator.userAgent || navigator.vendor || window.opera;
+  // 카카오, 네이버, 페이스북, 인스타그램 등 주요 인앱 브라우저 패턴
+  return /KAKAOTALK|NAVER|FBAN|FBAV|Instagram|Daum|Line|KAKAO/i.test(ua);
+}
 import { EstimateConfirmModal } from './EstimateConfirmModal';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/components/common/ToastProvider';
 import { googleLoginInitial, googleLoginUpdate, companyRegister } from '@/lib/api/user/userApi';
 import { useGoogleLogin } from '@react-oauth/google';
+
 
 const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
@@ -16,7 +22,7 @@ const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.8);
   display: ${(props) => (props.$isOpen ? 'flex' : 'none')};
   align-items: center;
   justify-content: center;
@@ -26,11 +32,11 @@ const ModalOverlay = styled.div<{ $isOpen: boolean }>`
 const ModalContent = styled.div`
   background-color: white;
   color: ${AppColors.onSurface};
-  padding: 0;
+  padding: 60px 0 40px 0;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   width: 450px;
-  height: 500px;
+  // height: 500px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -41,7 +47,7 @@ const ModalContent = styled.div`
 const RightPanel = styled.div`
   flex: 1;
   background-color: white;
-  padding: 40px;
+  padding: 0px 20px ;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -71,6 +77,12 @@ const GradientTitleText = styled.h2`
   line-height: 1.2;
 `;
 
+const Highlight = styled.span`
+  color: #2D50FF;
+  // font-weight: bold;
+`;
+
+
 const MainSloganText = styled.h3`
   ${AppTextStyles.title1}
   font-size: 24px;
@@ -78,17 +90,17 @@ const MainSloganText = styled.h3`
   color: ${AppColors.onSurface};
   margin-bottom: 20px;
   white-space: pre-line;
-  line-height: 2;
+  line-height: 1.5;
 `;
 
 const SubSloganText = styled.h3`
   ${AppTextStyles.title1}
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 500;
   color: ${AppColors.onSurfaceVariant};
-  margin-bottom: 50px;
+  margin-bottom: 30px;
   white-space: pre-line;
-  line-height: 2;
+  line-height: 1.5;
 `;
 
 const ButtonGroup = styled.div`
@@ -101,34 +113,34 @@ const ButtonGroup = styled.div`
 `;
 
 const PrimaryButton = styled.button`
-  background-color: #2E2E48;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 24px;
-  font-size: 16px;
+  // background-color: #2E2E48;
+  // color: white;
+  // border: none;
+  // border-radius: 8px;
+  // padding: 12px 24px;
+  padding: 0;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s;
   width: 100%;
 
-  &:hover {
-    background-color: #4B4B6F;
-  }
+`;
 
-  &:disabled {
-    background-color: #e0e0e0;
-    cursor: not-allowed;
-  }
+
+const PrimaryText = styled.span`
+  font-size: 12px;
+  color: #A9A9A9;
+    border-bottom: 1px solid #A9A9A9;
+
 `;
 
 const SecondaryButton = styled.button`
-  background-color: white;
-  color: #3c4043;
+  background-color: #2D50FF;
+  color: #FFFFFF;
   border: 1px solid #dadce0;
   border-radius: 8px;
   padding: 12px 24px;
-  font-size: 16px;
   font-weight: 500;
   cursor: pointer;
   display: flex;
@@ -136,31 +148,24 @@ const SecondaryButton = styled.button`
   justify-content: center;
   gap: 12px;
   transition: background-color 0.2s;
+  font-weight: 600;
   width: 100%;
+  margin-bottom: 10px;
 
-  &:hover {
-    background-color: #f8f9fa;
-  }
-
-  &:disabled {
-    background-color: #f1f3f4;
-    color: #bdc1c6;
-    cursor: not-allowed;
-    border-color: #f1f3f4;
-  }
 `;
+
 
 const StyledCloseButton = styled.button`
   position: absolute;
-  top: 15px;
-  right: 15px;
+  top: 6px;
+  right: 0px;
   background: none;
   border: none;
   cursor: pointer;
   color: ${AppColors.onSurfaceVariant};
 
   .MuiSvgIcon-root {
-    font-size: 28px;
+    font-size: 20px;
   }
 
   &:hover {
@@ -171,8 +176,8 @@ const StyledCloseButton = styled.button`
 interface SocialLoginModalProps {
   $isOpen: boolean;
   onClose: () => void;
-  purpose: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded';
-  onGoogleLoginSuccess: (tokenResponse: any) => void;
+  purpose: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat';
+  onGoogleLoginSuccess: () => void;
   onPrimaryButtonClick: () => void;
 }
 
@@ -187,8 +192,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const [showEstimateModal, setShowEstimateModal] = useState(false);
-
-  const { login, openAdditionalInfoModal } = useAuthStore();
+  const { login, setUser, persistUser,openAdditionalInfoModal,openEstimateModal } = useAuthStore();
   const { success, error: showError } = useToast();
 
   const handleGoogleLogin = useGoogleLogin({
@@ -206,36 +210,30 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
 
         // 초기 로그인 시도
         const initialResponse = await googleLoginInitial({ providerId: userInfo.sub });
+          console.log('isNew', initialResponse.data.isNew, initialResponse.data.cellphone);
 
         if (initialResponse.statusCode === 200) {
-          if (initialResponse.data.isNew) {
+          console.log('isNew', initialResponse.data.isNew, initialResponse.data.cellphone);
+
+          
+          if (initialResponse.data.isNew || !initialResponse.data.cellphone || initialResponse.data.cellphone === '') {
             // 신규 사용자: 추가 정보 업데이트
+            console.log('신규 사용자: 추가 정보 업데이트 시도');
+            const userName = `${userInfo.family_name || ''}${userInfo.given_name || ''}`.trim();
             const updateResponse = await googleLoginUpdate({
               providerId: userInfo.sub,
-              name: `${userInfo.family_name}${userInfo.given_name}`,
+              name: userName,
               email: userInfo.email,
               profileImage: userInfo.picture,
               cellphone: ''  // 추가 정보 모달에서 입력 받을 예정
             });
             
             if (updateResponse.statusCode === 200) {
-              await login(updateResponse.data);
-              
-              // 현재 company code 체크 및 등록
-              const pathParts = window.location.pathname.split('/');
-              const companyCodeIndex = pathParts.indexOf('aiclient') + 1;
-              const currentCompanyCode = (companyCodeIndex > 0 && pathParts.length > companyCodeIndex)
-                ? pathParts[companyCodeIndex]
-                : 'heredot';
+              // 메모리상에만 사용자 정보 세팅 (아직 로컬 퍼시스트는 하지 않음)
+              // setUser(updateResponse.data);
 
-              try {
-                // 신규 사용자는 무조건 고객사 등록
-                await companyRegister();
-                console.log(`신규 사용자 고객사 등록 완료: ${currentCompanyCode}`);
-              } catch (error) {
-                console.error('고객사 등록 실패:', error);
-              }
-
+              // 신규 사용자는 추가 정보 모달에서 정보를 입력한 뒤에
+              // 고객사 등록 및 로컬 퍼시스트를 수행하도록 처리합니다.
               onClose();
               openAdditionalInfoModal();  // 신규 사용자는 무조건 추가 정보 모달
             } else {
@@ -244,11 +242,12 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
           } else {
             // 기존 사용자: 로그인 처리
             const userData = initialResponse.data;
-            await login(userData);
-
+            // 메모리상에 사용자 정보 세팅 (퍼시스트는 조건에 따라 수행)
+            // setUser(userData);
             // 1. cellphone 체크
-            const needsAdditionalInfo = !userData.cellphone || userData.cellphone === '' ||userData.cellphone === "";
-            console.log('cellphone check:', { cellphone: userData.cellphone, needsAdditionalInfo });
+            const trimmedCellphone = userData.cellphone ? userData.cellphone.trim() : null;
+            const needsAdditionalInfo = !trimmedCellphone || trimmedCellphone.length === 0 || userData.isNew === true;
+            console.log('cellphone check:', { cellphone: userData.cellphone, needsAdditionalInfo, isNew: userData.isNew,});
 
             // 2. 현재 company code 체크
             const pathParts = window.location.pathname.split('/');
@@ -276,6 +275,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
               }
             }
 
+            // 추가 정보가 필요한 경우(휴대폰 없음 등) -> 추가정보 모달 오픈
             if (needsAdditionalInfo) {
               console.log('신규 사용자: 추가 정보 모달 열기 시도');
               console.log('openAdditionalInfoModal 호출 전 상태:', useAuthStore.getState().isAdditionalInfoModalOpen);
@@ -291,15 +291,21 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
               console.log('신규 사용자: 추가 정보 모달 열기 완료');
             } else {
               // 추가 정보가 필요 없는 경우
-              onClose();
               success('로그인되었습니다!');
-              
+              // 조건 만족 시(신규아님 && 휴대폰 존재) 로컬 퍼시스트 수행
+              try {
+                persistUser(userData);
+              } catch (err) {
+                console.warn('로컬 퍼시스트 중 오류:', err);
+              }
+              onGoogleLoginSuccess();
+
               // 3초 후 견적 모달 표시 (필요한 경우)
               if (purpose === 'limitExceeded') {
-                setTimeout(() => {
-                  setShowEstimateModal(true);
-                }, 3000);
+                openEstimateModal();
+
               }
+              onClose();
             }
           }
         } else {
@@ -328,46 +334,73 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
     }
   }, [$isOpen]);
   
+  //  useEffect(() => {
+  //   const shouldShowModal = localStorage.getItem('showEstimateModal');
+  //   if (shouldShowModal === 'true') {
+  //     // 모달 상태를 true로 설정
+  //     setShowEstimateModal(true);
+      
+  //     // ✅ localStorage에서 값 삭제 (중요!)
+  //     localStorage.removeItem('showEstimateModal');
+  //   }
+  // }, []); // 컴
+
   const contents = useMemo(() => {
     switch (purpose) {
       case 'contact':
         return {
-          title: `여기닷에게 문의하기`,
-          subtitle: `추가로 궁금한 내용이 있다면\n‘여기닷’에게 견적요청을 남겨주세요\n전문 컨설턴트가 빠르게 도와드립니다.`,
-          primaryButtonText: '정보 입력 후 견적 요청하기',
-          secondaryButtonText: '구글 계정으로 로그인',
-          secondaryButtonSubText: '(로그인 후 무제한 다운로드)',
+           title: (<>로그인 후 모든 기능​<br />
+            <Highlight>무제한 이용​</Highlight> 혜택받기​</>),
+          subtitle: `해당 기능을 사용하기 위해서​\n발행자 정보가 필요합니다​`,
+          primaryButtonText: '가입없이 이용하기',
+          secondaryButtonText: '가입하고 혜택 받기',
+          secondaryButtonSubText: '',
         };
       case 'download':
         return {
-          title: `견적 받기 전에 잠깐!`,
-          subtitle: `견적을 다운로드하려면 발행자 정보 확인이 필요합니다\n정보 입력 또는 로그인 후 이용 가능합니다`,
-          primaryButtonText: '정보 입력 후 다운로드',
-          secondaryButtonText: '구글 계정으로 로그인',
-          secondaryButtonSubText: '(로그인 후 무제한 다운로드)',
+          title: (<>로그인 후 모든 기능​<br />
+            <Highlight>무제한 이용​</Highlight> 혜택받기​</>),
+          subtitle: `해당 기능을 사용하기 위해서​\n발행자 정보가 필요합니다​`,
+          primaryButtonText: '가입없이 이용하기',
+          secondaryButtonText: '가입하고 혜택 받기',
+          secondaryButtonSubText: '',
         };
       case 'share':
         return {
-          title: `공유 전에 잠깐!`,
-          subtitle: `견적을 공유하려면 발행자 정보 확인이 필요합니다\n정보 입력 또는 로그인 후 이용 가능합니다`,
-          primaryButtonText: '정보 입력 후 공유',
-          secondaryButtonText: '구글 계정으로 로그인',
-          secondaryButtonSubText: '(로그인 후 무제한 공유)',
+          title: (<>로그인 후 모든 기능​<br />
+            <Highlight>무제한 이용​</Highlight> 혜택받기​</>),
+          subtitle: `해당 기능을 사용하기 위해서​\n발행자 정보가 필요합니다​`,
+          primaryButtonText: '가입없이 이용하기',
+          secondaryButtonText: '가입하고 혜택 받기',
+          secondaryButtonSubText: '',
         };
       case 'limitReached':
         return {
-          title: `오늘의 질문 횟수가 모두 소진되었어요`,
-          subtitle: `오늘의 질문을 모두 쓰셨어요!\n아쉬우실까 봐 10회를 더 드렸습니다\n로그인하면 더 많은 횟수로 다양하게 즐겨보실 수 있어요`,
-          primaryButtonText: '10회 추가이용',
-          secondaryButtonText: '로그인하기',
+          title:(<>로그인 후 견적 질문​<br/>
+           <Highlight> 무제한 이용 ​</Highlight>혜택받기
+          </>),
+          subtitle: `AIGO 비회원 질문을​ \n모두 사용 하셨네요​`,
+          primaryButtonText: '10회 추가 후 더 사용하기',
+          secondaryButtonText: '가입하고 혜택 받기',
           secondaryButtonSubText: '',
         };
       case 'limitExceeded':
         return {
-          title: `질문 횟수가 모두 소진되었어요`,
-          subtitle: `견적이 조금 부족하다고 느껴지셨나요?\n로그인 시 더 많은 질문 횟수로 이용할 수 있어요`,
-          // primaryButtonText: '정보 입력 후 견적 요청하기',
-          secondaryButtonText: '3초 ! SNS 로그인하기',
+           title:(<>로그인 후 견적 질문​<br/>
+           <Highlight> 무제한 이용 ​</Highlight>혜택받기
+          </>),
+          subtitle: `AIGO 비회원 질문을​ \n모두 사용 하셨네요​`,
+          primaryButtonText: '가입없이 여기닷에게 무료 상담 받기',
+          secondaryButtonText: '가입하고 혜택 받기',
+          secondaryButtonSubText: '',
+        };
+        case 'shareChat': // ✅ 새로운 케이스 추가
+        return {
+          title: (<>로그인 후 모든 기능​<br />
+            <Highlight>무제한 이용​</Highlight> 혜택받기​</>),
+          subtitle: `해당 기능을 사용하기 위해서​\n발행자 정보가 필요합니다​`,
+          primaryButtonText: '가입없이 이용하기',
+          secondaryButtonText: '가입하고 혜택 받기',
           secondaryButtonSubText: '',
         };
       default:
@@ -399,26 +432,41 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
           <CloseIcon />
         </StyledCloseButton>
         <RightPanel>
-          <PageSubtitle>복잡한 견적, AI로 간단하게.</PageSubtitle>
-          <GradientTitleText>AIGO</GradientTitleText>
+          {/* <PageSubtitle>복잡한 견적, AI로 간단하게.</PageSubtitle>
+          <GradientTitleText>AIGO</GradientTitleText> */}
           <MainSloganText>{contents.title}</MainSloganText>
           <SubSloganText>{contents.subtitle}</SubSloganText>
           <ButtonGroup>
-            {contents.primaryButtonText && (
+           
+              <SecondaryButton
+                onClick={() => {
+                  if (isInAppBrowser()) {
+                    if (window.confirm('현재 앱 내 브라우저에서는 소셜 로그인이 원활하지 않을 수 있습니다.\n\n[확인]을 누르면 우저로 새창이 열립니다.')) {
+                      const url = window.location.href;
+                      const intentUrl = `intent://${url.replace('https://', '')}#Intent;scheme=https;package=com.android.chrome;end`;
+                      window.location.href = intentUrl;
+                    }
+                  } else if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
+                    if (window.confirm('현재 iOS 기기에서는 새 창에서 소셜 로그인이 진행됩니다. 로그인 후 다시 돌아와 주세요.')) {
+                      handleGoogleLogin();
+                    }
+                  } else {
+                    handleGoogleLogin();
+                  }
+                }}
+                disabled={isLoading}
+              >
+                {/* <img src="/ai-estimate/google.png" alt="Google_logo" style={{ width: '32px', height: '32px' }}/> */}
+                <span> {contents.secondaryButtonText}</span>
+              </SecondaryButton>
+               {contents.primaryButtonText && (
               <PrimaryButton
                 onClick={onPrimaryButtonClick}
                 disabled={isLoading}
               >
-                {contents.primaryButtonText}
+                <PrimaryText>{contents.primaryButtonText}</PrimaryText>
               </PrimaryButton>
             )}
-            <SecondaryButton
-              onClick={() => handleGoogleLogin()}
-              disabled={isLoading}
-            >
-              <img src="/ai-estimate/google.png" alt="Google_logo" style={{ width: '32px', height: '32px' }}/>
-              <span> {contents.secondaryButtonText}</span>
-            </SecondaryButton>
           </ButtonGroup>
 
           {loginError && (
@@ -429,14 +477,14 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
         </RightPanel>
       </ModalContent>
     </ModalOverlay>
-    <EstimateConfirmModal
+    {/* <EstimateConfirmModal
       isOpen={showEstimateModal}
       onClose={() => setShowEstimateModal(false)}
       onConfirm={() => {
         setShowEstimateModal(false);
         onPrimaryButtonClick();
       }}
-    />
+    /> */}
     </>
   );
 };

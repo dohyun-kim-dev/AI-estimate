@@ -21,7 +21,7 @@ const ModalOverlay = styled.div<{ $scrollX: number }>`
   width: 100%;
   min-width: 1200px;
   height: 100%;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.8);
   padding: 60px 0;
   display: flex;
   justify-content: center;

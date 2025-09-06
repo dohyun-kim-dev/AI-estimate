@@ -23,6 +23,29 @@ export async function termsGetList() {
   });
 }
 
+// ***************** 휴대폰 인증 관련
+export async function sendAuthCode(cellphone) {
+  return callUserApi({
+    title: '인증번호 전송',
+    url: getApiUrl('/users/send-auth-code'),
+    method: 'POST',
+    body: { cellphone },
+    isCallPageLoader: false, // 로딩 인디케이터는 필요에 따라 조절하세요
+  });
+}
+
+export async function validateAuthCode(cellphone, authCode) {
+  return callUserApi({
+    title: '인증번호 검증',
+    url: getApiUrl('/users/validate-auth-code'),
+    method: 'POST',
+    body: { cellphone, authCode },
+    isCallPageLoader: false,
+  });
+}
+
+
+
 // ***************** 소셜 로그인 관련
 export async function googleLoginInitial(params: GoogleLoginInitialParams) {
   return callUserApi<GoogleLoginResponse>({

@@ -19,11 +19,18 @@ interface AuthState {
     email: string;
     name: string;
   } | null;
+  // ✅ 견적 모달 상태 추가
+  isEstimateModalOpen: boolean;
   login: (userData: GoogleLoginResponse) => void;
   logout: () => void;
   openAdditionalInfoModal: (userInfo?: { providerId: string; profileImage: string; email: string; name: string }) => void;
   closeAdditionalInfoModal: () => void;
+  // ✅ 견적 모달 상태 함수 추가
+  openEstimateModal: () => void;
+  closeEstimateModal: () => void;
   isAuthenticated: () => boolean;
+  setUser: (userData: GoogleLoginResponse | null) => void;
+  persistUser: (userData: GoogleLoginResponse) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -32,8 +39,28 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAdditionalInfoModalOpen: false,
       additionalInfoUser: null,
+      // ✅ 초기 상태 설정
+      isEstimateModalOpen: false,
 
       login: (userData: GoogleLoginResponse) =>
+        set({
+          user: {
+            ...userData,
+            isLoggedIn: true,
+          },
+        }),
+
+      setUser: (userData: GoogleLoginResponse | null) =>
+        set({
+          user: userData
+            ? {
+                ...userData,
+                isLoggedIn: true,
+              }
+            : null,
+        }),
+
+      persistUser: (userData: GoogleLoginResponse) =>
         set({
           user: {
             ...userData,
@@ -75,6 +102,16 @@ export const useAuthStore = create<AuthState>()(
           isAdditionalInfoModalOpen: false,
           additionalInfoUser: null,
         }),
+
+      // ✅ 견적 모달을 여는 함수
+      openEstimateModal: () => {
+        set({ isEstimateModalOpen: true });
+      },
+
+      // ✅ 견적 모달을 닫는 함수
+      closeEstimateModal: () => {
+        set({ isEstimateModalOpen: false });
+      },
     }),
     {
       name: 'auth-storage',
