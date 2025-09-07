@@ -12,6 +12,8 @@ import { createChatSession, createGuestChatSession, sendChatMessage, sendMessage
 import { generateAndUploadPdf } from '@/hooks/pdfUtils';
 import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import { v4 as uuidv4 } from 'uuid';
+import { ensureEstimateUuid, buildFullEstimateData, extractIntroFromReply } from '@/hooks/estimate';
+import { uploadEstimatePdf } from '@/lib/api/user/userApi';
 
 // 견적서 데이터를 추출하는 유틸리티 함수
 const extractEstimateData = (content: string): ProjectEstimate | null => {
@@ -221,6 +223,8 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         if (createResponse && createResponse.statusCode === 200 && createResponse.data && createResponse.data.length > 0 && createResponse.data[0]._id) {
           currentSessionId = createResponse.data[0]._id;
           setChatSessionId(currentSessionId);
+
+          localStorage.setItem('chatSessionId', currentSessionId);
         } else {
           throw new Error(createResponse.error?.message || '채팅방 생성에 실패했습니다.');
         }
@@ -293,47 +297,40 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
       const estimateData = extractEstimateData(reply);
       if (estimateData) {
-        console.log('견적서 JSON을 감지했습니다. PDF 변환 및 업로드를 시작합니다.');
+        console.log('견적서 JSON을 감지했습니다. uuid 보장 및 서버 저장을 진행합니다.');
         try {
           const invoiceTitle = estimateData.project_name || '새로운 견적서';
-          const pdfUuid = uuidv4();
-          
-          if (!userId) {
-            throw new Error('사용자 ID를 가져올 수 없습니다.');
-          }
-
-          const uploadResponse = await generateAndUploadPdf(estimateData, currentSessionId, invoiceTitle, pdfUuid, userId, success, error);
-
-          if (uploadResponse && uploadResponse.statusCode === 200 && uploadResponse.data) {
-              const filePath = uploadResponse.data as string;
-              
-              const uuidMatch = filePath.match(/([a-f0-9-]+)\.pdf$/);
-              const extractedUuid = uuidMatch ? uuidMatch[1] : null;
-              
-              if (extractedUuid) {
-                  const updatedEstimateData = {
-                      ...estimateData,
-                      uuid: extractedUuid,
-                  };
-                  const updatedReply = `<script type="application/json" id="invoiceData">${JSON.stringify(updatedEstimateData)}</script>`;
-
-                  await sendChatMessage(currentSessionId, {
-                      role: 'AI',
-                      content: { type: 'text', value: updatedReply },
-                      uid: userId // AI 메시지에도 uid 추가
-                  });
-                  updateLastMessage(updatedReply);
-              } else {
-                  throw new Error('UUID를 추출할 수 없습니다.');
-              }
-
-          } else {
-              throw new Error(uploadResponse?.error?.message || 'PDF 업로드에 실패했습니다.');
-          }
+          if (!userId) throw new Error('사용자 ID를 가져올 수 없습니다.');
+         
+         // 1) uuid 보장 (클라 생성)
+         ensureEstimateUuid(estimateData);
+         // 2) 인트로 추출 후 인트로 + JSON 스크립트로 data 구성
+         const intro = extractIntroFromReply(reply);
+         const dataStr = buildFullEstimateData(estimateData, intro);
+         // 3) 서버 저장 (생성: id 미전달)
+         const uploadResponse = await uploadEstimatePdf(
+           currentSessionId,
+           invoiceTitle,
+           userId,
+           dataStr
+           // estimateId 생략 (생성)
+         );
+         if (uploadResponse?.statusCode !== 200) {
+           throw new Error(uploadResponse?.error?.message || '견적 저장 실패');
+         }
+         // 4) 채팅 타임라인에도 uuid가 들어간 최신 JSON만 남기기
+         const updatedReply =
+           `<script type="application/json" id="invoiceData">${JSON.stringify(estimateData)}</script>`;
+         await sendChatMessage(currentSessionId, {
+           role: 'AI',
+           content: { type: 'text', value: updatedReply },
+           uid: userId
+         });
+         updateLastMessage(updatedReply);    
 
         } catch (pdfError) {
-          console.error('PDF 생성 또는 업로드 중 오류 발생:', pdfError);
-          error(`견적서 업로드 실패: ${(pdfError as Error).message}`);
+          console.error('견적 저장 중 오류 발생:', pdfError);
+         error(`견적 저장 실패: ${(pdfError as Error).message}`);
           
           await sendChatMessage(currentSessionId, {
             role: 'AI',

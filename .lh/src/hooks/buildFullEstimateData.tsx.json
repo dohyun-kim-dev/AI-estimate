@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1757198342345,
@@ -12,6 +12,10 @@
                 {
                     "date": 1757198355417,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,5 +1,4 @@\n-// utils/buildFullEstimateData.ts\n import { v4 as uuidv4 } from 'uuid';\n \n export function normalizeEstimateForSave(est: any) {\n   if (!est) return est;\n"
+                },
+                {
+                    "date": 1757204975748,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -28,4 +28,5 @@\n <script type=\"application/json\" id=\"invoiceData\">\n ${json}\n </script>`;\n }\n+\n"
                 }
             ],
             "date": 1757198342345,

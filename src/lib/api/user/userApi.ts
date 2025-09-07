@@ -4,6 +4,14 @@ import { callUserApi } from './callUserApi';
 import { GoogleLoginInitialParams, GoogleLoginUpdateParams, GoogleLoginResponse } from './userApi.types';
 import { ApiResponse } from './userApi.types';
 
+function resolveCompanyCode() {
+  let companyCode = 'heredot';
+  const parts = window.location.pathname.split('/');
+  const idx = parts.indexOf('aiclient') + 1;
+  if (idx > 0 && parts.length > idx) companyCode = parts[idx];
+  return companyCode;
+}
+
 // API URL 생성 헬퍼 함수
 const getApiUrl = (path: string) => {
   // path가 이미 /로 시작하면 그대로 사용, 아니면 /를 추가
@@ -175,21 +183,29 @@ export async function getChatMessages(sessionId: string) {
   });
 }
 
-export async function uploadEstimatePdf(sessionId: string, title: string,  userId: string, data: string, estimateId?: string) {
-  const formData = new FormData();
-  // formData.append('file', file);
-  formData.append('title', title);
-  formData.append('chatSession', sessionId);
-  formData.append('user', userId);
-  if (estimateId) formData.append('id', estimateId);
-  formData.append('data', data);
+export async function uploadEstimatePdf(
+  sessionId: string,
+  title: string,
+  userId: string,
+  data: string,
+  estimateId?: string
+) {
+  const companyCode = resolveCompanyCode(); // ★ 바디에도 넣어줌
 
+  const payload: Record<string, string> = {
+    user: userId,
+    chatSession: sessionId,
+    title,
+    data,          // 인트로 + <script id="invoiceData">...</script>
+    companyCode,   // ★ 에러가 요구한 필드
+  };
+  if (estimateId) payload.id = estimateId; // 업데이트면만 추가
 
   return callUserApi({
-    title: '견적서 PDF 업로드',
-    url: getApiUrl('/file/estimate/upload'),
+    title: '견적 저장',
+    url: getApiUrl('/users/company/estimate/upload'),
     method: 'POST',
-    body: formData,
+    body: payload, // callUserApi가 JSON.stringify + Content-Type 자동 셋업
     isCallPageLoader: true,
   });
 }

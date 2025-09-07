@@ -3,11 +3,71 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 15,
             "patches": [
                 {
                     "date": 1756972900666,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1757208663239,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,10 +1,10 @@\n import { create } from 'zustand';\n \n interface ModalState {\n   isLoginModalOpen: boolean;\n-  loginModalPurpose: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'default';\n-  openLoginModal: (purpose?: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'default') => void;\n+  loginModalPurpose: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat' | 'default';\n+  openLoginModal: (purpose?: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat' | 'default') => void;\n   closeLoginModal: () => void;\n }\n \n export const useModalStore = create<ModalState>((set) => ({\n@@ -13,7 +13,8 @@\n   openLoginModal: (purpose = 'default') => set({ \n     isLoginModalOpen: true, \n     loginModalPurpose: purpose \n   }),\n+  setopen\n   closeLoginModal: () => set({ isLoginModalOpen: false }),\n }));\n \n"
+                },
+                {
+                    "date": 1757208671001,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,8 +13,8 @@\n   openLoginModal: (purpose = 'default') => set({ \n     isLoginModalOpen: true, \n     loginModalPurpose: purpose \n   }),\n-  setopen\n+  setOpensharemodal: () => set({ isShareModalOpen: true }),\n   closeLoginModal: () => set({ isLoginModalOpen: false }),\n }));\n \n"
+                },
+                {
+                    "date": 1757208692444,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,8 +13,9 @@\n   openLoginModal: (purpose = 'default') => set({ \n     isLoginModalOpen: true, \n     loginModalPurpose: purpose \n   }),\n-  setOpensharemodal: () => set({ isShareModalOpen: true }),\n+  openShareModal: () => set({ isShareModalOpen: true }),\n+  setOpenShareModal: () => set({ isShareModalOpen: true }),\n   closeLoginModal: () => set({ isLoginModalOpen: false }),\n }));\n \n"
+                },
+                {
+                    "date": 1757208704367,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,9 +13,9 @@\n   openLoginModal: (purpose = 'default') => set({ \n     isLoginModalOpen: true, \n     loginModalPurpose: purpose \n   }),\n-  openShareModal: () => set({ isShareModalOpen: true }),\n+  openShareModal: set({ isShareModalOpen: true }),\n   setOpenShareModal: () => set({ isShareModalOpen: true }),\n   closeLoginModal: () => set({ isLoginModalOpen: false }),\n }));\n \n"
+                },
+                {
+                    "date": 1757208709846,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,9 +13,9 @@\n   openLoginModal: (purpose = 'default') => set({ \n     isLoginModalOpen: true, \n     loginModalPurpose: purpose \n   }),\n-  openShareModal: set({ isShareModalOpen: true }),\n+  openShareModal: false,\n   setOpenShareModal: () => set({ isShareModalOpen: true }),\n   closeLoginModal: () => set({ isLoginModalOpen: false }),\n }));\n \n"
+                },
+                {
+                    "date": 1757208716775,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -9,13 +9,13 @@\n \n export const useModalStore = create<ModalState>((set) => ({\n   isLoginModalOpen: false,\n   loginModalPurpose: 'default',\n+  openShareModal: false,\n   openLoginModal: (purpose = 'default') => set({ \n     isLoginModalOpen: true, \n     loginModalPurpose: purpose \n   }),\n-  openShareModal: false,\n   setOpenShareModal: () => set({ isShareModalOpen: true }),\n   closeLoginModal: () => set({ isLoginModalOpen: false }),\n }));\n \n"
+                },
+                {
+                    "date": 1757208939975,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,8 +14,9 @@\n   openLoginModal: (purpose = 'default') => set({ \n     isLoginModalOpen: true, \n     loginModalPurpose: purpose \n   }),\n-  setOpenShareModal: () => set({ isShareModalOpen: true }),\n+  setOpenShareModal: () => set({ openShareModal: true }),\n+  \n   closeLoginModal: () => set({ isLoginModalOpen: false }),\n }));\n \n"
+                },
+                {
+                    "date": 1757208948977,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,8 +4,10 @@\n   isLoginModalOpen: boolean;\n   loginModalPurpose: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat' | 'default';\n   openLoginModal: (purpose?: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat' | 'default') => void;\n   closeLoginModal: () => void;\n+  openShareModal: () => void;\n+  closeShareModal: () => void;\n }\n \n export const useModalStore = create<ModalState>((set) => ({\n   isLoginModalOpen: false,\n@@ -15,8 +17,8 @@\n     isLoginModalOpen: true, \n     loginModalPurpose: purpose \n   }),\n   setOpenShareModal: () => set({ openShareModal: true }),\n-  \n+  closeShareModal: () => set({ openShareModal: false }),\n   closeLoginModal: () => set({ isLoginModalOpen: false }),\n }));\n \n"
+                },
+                {
+                    "date": 1757208966036,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,10 +10,10 @@\n }\n \n export const useModalStore = create<ModalState>((set) => ({\n   isLoginModalOpen: false,\n-  loginModalPurpose: 'default',\n-  openShareModal: false,\n+    loginModalPurpose: 'default',\n+    openShareModal: false,\n   openLoginModal: (purpose = 'default') => set({ \n     isLoginModalOpen: true, \n     loginModalPurpose: purpose \n   }),\n"
+                },
+                {
+                    "date": 1757208974226,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,14 +11,12 @@\n \n export const useModalStore = create<ModalState>((set) => ({\n   isLoginModalOpen: false,\n     loginModalPurpose: 'default',\n-    openShareModal: false,\n+    \n   openLoginModal: (purpose = 'default') => set({ \n     isLoginModalOpen: true, \n     loginModalPurpose: purpose \n   }),\n-  setOpenShareModal: () => set({ openShareModal: true }),\n-  closeShareModal: () => set({ openShareModal: false }),\n   closeLoginModal: () => set({ isLoginModalOpen: false }),\n }));\n \n"
+                },
+                {
+                    "date": 1757208981750,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,9 +11,10 @@\n \n export const useModalStore = create<ModalState>((set) => ({\n   isLoginModalOpen: false,\n     loginModalPurpose: 'default',\n-    \n+  openShareModal: () => set({ openShareModal: true }),\n+  closeShareModal: () => set({ openShareModal: false }),\n   openLoginModal: (purpose = 'default') => set({ \n     isLoginModalOpen: true, \n     loginModalPurpose: purpose \n   }),\n"
+                },
+                {
+                    "date": 1757209285979,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,9 +10,9 @@\n }\n \n export const useModalStore = create<ModalState>((set) => ({\n   isLoginModalOpen: false,\n-    loginModalPurpose: 'default',\n+  loginModalPurpose: 'default',\n   openShareModal: () => set({ openShareModal: true }),\n   closeShareModal: () => set({ openShareModal: false }),\n   openLoginModal: (purpose = 'default') => set({ \n     isLoginModalOpen: true, \n"
+                },
+                {
+                    "date": 1757209301322,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,8 +11,9 @@\n \n export const useModalStore = create<ModalState>((set) => ({\n   isLoginModalOpen: false,\n   loginModalPurpose: 'default',\n+  openShareModal: false,\n   openShareModal: () => set({ openShareModal: true }),\n   closeShareModal: () => set({ openShareModal: false }),\n   openLoginModal: (purpose = 'default') => set({ \n     isLoginModalOpen: true, \n"
+                },
+                {
+                    "date": 1757209306716,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,9 +11,9 @@\n \n export const useModalStore = create<ModalState>((set) => ({\n   isLoginModalOpen: false,\n   loginModalPurpose: 'default',\n-  openShareModal: false,\n+  ShareModal: false,\n   openShareModal: () => set({ openShareModal: true }),\n   closeShareModal: () => set({ openShareModal: false }),\n   openLoginModal: (purpose = 'default') => set({ \n     isLoginModalOpen: true, \n"
+                },
+                {
+                    "date": 1757209314162,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -12,9 +12,9 @@\n export const useModalStore = create<ModalState>((set) => ({\n   isLoginModalOpen: false,\n   loginModalPurpose: 'default',\n   ShareModal: false,\n-  openShareModal: () => set({ openShareModal: true }),\n+  openShareModal: () => set({ shareModal: true }),\n   closeShareModal: () => set({ openShareModal: false }),\n   openLoginModal: (purpose = 'default') => set({ \n     isLoginModalOpen: true, \n     loginModalPurpose: purpose \n"
                 }
             ],
             "date": 1756972900666,

@@ -29,3 +29,4 @@ export function buildFullEstimateData(estimate: any, aiIntro?: string) {
 ${json}
 </script>`;
 }
+

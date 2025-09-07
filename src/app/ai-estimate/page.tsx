@@ -131,7 +131,7 @@ const AiEstimatePage: React.FC<AiEstimatePageProps> = () => {
                 <PeriodSlider value={projectPeriod} onChange={setProjectPeriod} />
 
                 <AnimatedContainer $isvisible={isDetailsVisible}>
-                  <EstimateAccordion data={projectEstimate} onItemClick={handleItemClick} />
+                  <EstimateAccordion data={projectEstimate} onItemClick={handleItemClick} estimateId={projectEstimate.uuid || ''}/>
                 </AnimatedContainer>
 
                

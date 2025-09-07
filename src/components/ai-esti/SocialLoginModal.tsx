@@ -14,7 +14,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/components/common/ToastProvider';
 import { googleLoginInitial, googleLoginUpdate, companyRegister } from '@/lib/api/user/userApi';
 import { useGoogleLogin } from '@react-oauth/google';
-
+import { useModalStore } from '@store/modalStore';
 
 const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
@@ -177,7 +177,7 @@ interface SocialLoginModalProps {
   $isOpen: boolean;
   onClose: () => void;
   purpose: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat';
-  onGoogleLoginSuccess: () => void;
+  onGoogleLoginSuccess?: (userData?: any) => void;  
   onPrimaryButtonClick: () => void;
 }
 
@@ -185,12 +185,12 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
   $isOpen,
   onClose,
   purpose,
-  onGoogleLoginSuccess,
+  onGoogleLoginSuccess = () => {}, 
   onPrimaryButtonClick
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-
+  const [openShareModal, closeShareModal] = useModalStore((s) => [s.openShareModal, s.closeShareModal]);
   const [showEstimateModal, setShowEstimateModal] = useState(false);
   const { login, setUser, persistUser,openAdditionalInfoModal,openEstimateModal } = useAuthStore();
   const { success, error: showError } = useToast();
@@ -298,7 +298,10 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
               } catch (err) {
                 console.warn('로컬 퍼시스트 중 오류:', err);
               }
-              onGoogleLoginSuccess();
+                console.log('onGoogleLoginSuccess =', onGoogleLoginSuccess);
+                if (purpose === 'shareChat') {
+                  openShareModal();
+                } 
 
               // 3초 후 견적 모달 표시 (필요한 경우)
               if (purpose === 'limitExceeded') {

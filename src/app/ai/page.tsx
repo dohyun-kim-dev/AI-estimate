@@ -24,6 +24,8 @@ import FileUploadSection from '@/components/ai-esti/FileUploadSection';
 import { devLog } from '../../utils/devLogger';
 import { useChatActions } from '@/hooks/useChatActions';
 import { requestEstimateConsult } from '@/lib/api/user/userApi';
+import { getEstimateIdFromContent } from '@/hooks/estimate';
+import { v4 as uuidv4 } from 'uuid';
 
 
 const Container = styled.div`
@@ -229,6 +231,14 @@ const StyledDiv = styled.div`
 
 type ModelName = 'gemini-2.5-flash' | 'gemini-2.5-flash-lite' | 'gemini-2.0-flash';
 
+
+function ensureClientUuid(estimate: any) {
+  if (!estimate.uuid) {
+    estimate.uuid = uuidv4(); // 클라에서 미리 박음
+  }
+  return estimate;
+}
+
 const extractEstimateData = (content: string): ProjectEstimate | null => {
   try {
     const match = content.match(/<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/);
@@ -271,11 +281,43 @@ const parseMessageContent = (content: string) => {
   };
 };
 
-const AiMessageContent: React.FC<{ content: string }> = ({ content }) => {
+const AiMessageContent: React.FC<{ content: string; chatSessionId?: string; estimateDataForConsult?: ProjectEstimate }> = ({ content, chatSessionId, estimateDataForConsult }) => {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
-  const estimateData = extractEstimateData(content);
-const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', selectedPromptId: 'default' });
+  const estimateData = estimateDataForConsult || extractEstimateData(content);
+  const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', selectedPromptId: 'default' });
+  const estimateId = estimateDataForConsult?.uuid || getEstimateIdFromContent(content) || '';
+  const effectiveChatSessionId = chatSessionId || localStorage.getItem('chatSessionId') || '';
+
+
+  
+
+  const getUserId = () => {
+    // 1) 회원 여부 확인 (auth-storage 최우선)
+    const authStorage = localStorage.getItem('auth-storage');
+    if (authStorage) {
+      try {
+        const authData = JSON.parse(authStorage);
+        const userId = authData.state?.user?._id || authData.state?.user?.id;
+        if (userId) return userId;
+      } catch {
+        /* ignore */
+      }
+    }
+  
+    // 2) 비회원일 경우 guest-uuid 확인
+    let guest = localStorage.getItem('guest-uuid');
+    if (!guest) {
+      guest = uuidv4();
+      localStorage.setItem('guest-uuid', guest);
+    }
+    return guest;
+  };
+
+
+const userId = getUserId() || '';
+
+
   const { total_amount: basePrice, total_period: basePeriod } = useMemo(() => {
     // ⭐️ 수정: estimateData 또는 categories가 유효한지 확인하는 로직 추가
     if (!estimateData || !Array.isArray(estimateData.categories)) {
@@ -391,6 +433,8 @@ const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', se
   const textContent = parts[0].replace(/\\n/g, '<br/>').trim();  // \n을 <br/>로 변환
   const hasEstimate = estimateData && estimateData.categories;
 
+
+  
   return (
     <div>
       {/* 일반 텍스트 메시지 표시 */}
@@ -435,6 +479,10 @@ const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', se
                 <EstimateAccordion
                   data={estimateData}
                   onItemClick={handleItemClick}
+                  chatSessionId={effectiveChatSessionId}
+                  estimateId={estimateId}
+                  userId={userId}
+                  title={estimateData?.project_name || '견적서'}
                 />
               </AnimatedContainer>
             </MainContent>
@@ -486,12 +534,21 @@ export default function AiChatPage() {
   const [estimateDataForConsult, setEstimateDataForConsult] = useState<ProjectEstimate | null>(null);
   const [chatSessionId, setChatSessionId] = useState(''); // ⭐️ 추가: chatSessionId 상태
 
+
+
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (lastMessage && lastMessage.role === 'ai') {
-      const extractedData = extractEstimateData(lastMessage.content);
+      let extractedData = extractEstimateData(lastMessage.content);
       if (extractedData) {
-        setEstimateDataForConsult(extractedData);
+        extractedData = ensureClientUuid(extractedData); // 👈 uuid 보장
+          setEstimateDataForConsult(extractedData);
+    
+        // 필요하다면 로컬스토리지에도 저장
+        localStorage.setItem(
+          `estimate_${extractedData.uuid}`,
+          JSON.stringify(extractedData)
+        );
       }
     }
   }, [messages]);
@@ -674,7 +731,7 @@ export default function AiChatPage() {
             return (
               <StyledAiMessage
                 key={idx}
-                content={<AiMessageContent content={m.content} />}
+                content={<AiMessageContent content={m.content} chatSessionId={chatSessionId} estimateDataForConsult={estimateDataForConsult} />}
                 profileImage="/ai-estimate/pretty.png"
                 name="강유하"
                 isFullWidth={isEstimateMessage(m.content)}

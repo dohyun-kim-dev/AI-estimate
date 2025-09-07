@@ -439,7 +439,7 @@ const SharePage: React.FC = () => {
               return (
                 <StyledAiMessage
                   key={index}
-                  content={message.content}
+                  content={message.content + chatSessionId}
                   profileImage="/ai-estimate/pretty.png"
                   name="강유하"
                   isFullWidth={message.content.includes('<script type="application/json" id="invoiceData">')}

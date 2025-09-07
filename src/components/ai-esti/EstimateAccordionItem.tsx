@@ -210,6 +210,7 @@ interface EstimateItem {
   price: string;
   description: string;
   is_deleted: boolean;
+  item_id: string;
 }
 
 interface EstimateAccordionItemProps {
@@ -312,7 +313,7 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
   const handleCancelDelete = (e: React.MouseEvent, itemId: string, item: EstimateItem) => {
     e.stopPropagation();
     e.preventDefault();
-    
+
     const newDeletedItems = new Set(deletedItems);
     newDeletedItems.delete(itemId);
     setDeletedItems(newDeletedItems);

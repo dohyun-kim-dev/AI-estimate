@@ -5,11 +5,16 @@ interface ModalState {
   loginModalPurpose: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat' | 'default';
   openLoginModal: (purpose?: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat' | 'default') => void;
   closeLoginModal: () => void;
+  openShareModal: () => void;
+  closeShareModal: () => void;
 }
 
 export const useModalStore = create<ModalState>((set) => ({
   isLoginModalOpen: false,
   loginModalPurpose: 'default',
+  ShareModal: false,
+  openShareModal: () => set({ shareModal: true }),
+  closeShareModal: () => set({ shareModal: false }),
   openLoginModal: (purpose = 'default') => set({ 
     isLoginModalOpen: true, 
     loginModalPurpose: purpose 

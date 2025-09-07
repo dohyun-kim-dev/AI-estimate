@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 7,
+            "activePatchIndex": 8,
             "patches": [
                 {
                     "date": 1756714194216,
@@ -36,6 +36,10 @@
                 {
                     "date": 1756714803594,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -94,9 +94,9 @@\n \n const AiEstimatePage: React.FC<AiEstimatePageProps> = () => {\n   const [isDetailsVisible, setIsDetailsVisible] = useState(false);\n   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);\n-\n+  const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', selectedPromptId: 'default' });\n   const { \n     projectEstimate, \n     projectPeriod, \n     setProjectEstimate, \n@@ -139,9 +139,9 @@\n               <SideContent>\n                 <EstimateActionButtons \n                   onConsult={() => console.log('문의하기')}\n                   onSubmit={() => handleSubmit('AI 예산 줄이기')}\n-                  onSubmit={() => handleSubmit('AI 맞춤 추천')}\n+                  onSubmit={handleSubmit}\n                 />\n               </SideContent>\n             </TopSection>\n           </>\n"
+                },
+                {
+                    "date": 1757206331669,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -130,9 +130,9 @@\n                 </DetailsToggle>\n                 <PeriodSlider value={projectPeriod} onChange={setProjectPeriod} />\n \n                 <AnimatedContainer $isvisible={isDetailsVisible}>\n-                  <EstimateAccordion data={projectEstimate} onItemClick={handleItemClick} />\n+                  <EstimateAccordion data={projectEstimate} onItemClick={handleItemClick} estimateId={projectEstimate.uuid || ''}/>\n                 </AnimatedContainer>\n \n                \n               </MainContent>\n"
                 }
             ],
             "date": 1756714194216,

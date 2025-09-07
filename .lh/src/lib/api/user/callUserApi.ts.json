@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 28,
+            "activePatchIndex": 30,
             "patches": [
                 {
                     "date": 1756368834760,
@@ -120,6 +120,14 @@
                 {
                     "date": 1756964431540,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -48,27 +48,13 @@\n     'Accept': 'application/json',\n     'x-company-code': companyCode\n   };\n \n-  // 운영 환경일 때 추가 헤더\n-  const ENV_NAME = import.meta.env.VITE_ENV_NAME;\n-  const additionalHeaders = ENV_NAME === 'dev' ? {} : {\n-    'Origin': 'https://aigopartners.com',\n-    'Referer': 'https://aigopartners.com/',\n-    'Access-Control-Allow-Origin': '*',\n-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',\n-    'Access-Control-Allow-Headers': 'Content-Type, Accept, x-company-code',\n-    'Access-Control-Allow-Credentials': 'true'\n-  };\n-\n   // FormData 여부에 따른 헤더 설정\n   const isFormData = body instanceof FormData;\n   const headers = isFormData ? \n-    { \n-      'x-company-code': companyCode,\n-      ...(ENV_NAME === 'dev' ? {} : additionalHeaders)\n-    } : \n-    { ...commonHeaders, ...additionalHeaders };\n+    { 'x-company-code': companyCode } : \n+    { ...commonHeaders };\n \n   // API 요청 정보 로깅\n   console.log('[API Request]', {\n     title,\n"
+                },
+                {
+                    "date": 1757201971547,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -24,8 +24,16 @@\n }): Promise<ApiResponse<T>> {\n   const user = useAuthStore.getState().user;\n   const usingServices = user?.data?.usingService;\n \n+  function resolveCompanyCode() {\n+    let companyCode = 'heredot';\n+    const parts = window.location.pathname.split('/');\n+    const idx = parts.indexOf('aiclient') + 1;\n+    if (idx > 0 && parts.length > idx) companyCode = parts[idx];\n+    return companyCode;\n+  }\n+  \n   // Company Code 설정\n   let companyCode = 'heredot';  // 기본값\n   \n   // URL에서 company code 추출 시도\n@@ -54,8 +62,27 @@\n   const headers = isFormData ? \n     { 'x-company-code': companyCode } : \n     { ...commonHeaders };\n \n+  // user_token이 빈 값일 경우 헤더에서 제거\n+  if (headers['user_token'] === '') {\n+    delete headers['user_token'];\n+  }\n+\n+  const fetchOptions: RequestInit = {\n+    method,\n+    credentials: 'include',\n+    mode: 'cors',\n+    headers,\n+  };\n+\n+  // body 타입에 따른 처리\n+  if (!isFormData && body && typeof body === 'object') {\n+    fetchOptions.body = JSON.stringify(body);\n+  } else if (isFormData && body instanceof FormData) {\n+    fetchOptions.body = body;\n+  }\n+\n   // API 요청 정보 로깅\n   console.log('[API Request]', {\n     title,\n     method,\n@@ -102,9 +129,9 @@\n     const isFormData = body instanceof FormData;\n     response = await callApiPost({\n       title,\n       url,\n-      body,\n+      body: body as Record<string, unknown> | FormData,\n       isCallPageLoader,\n       headers,\n       isFormData, // isFormData 플래그 전달\n     });\n"
+                },
+                {
+                    "date": 1757201988288,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -24,15 +24,8 @@\n }): Promise<ApiResponse<T>> {\n   const user = useAuthStore.getState().user;\n   const usingServices = user?.data?.usingService;\n \n-  function resolveCompanyCode() {\n-    let companyCode = 'heredot';\n-    const parts = window.location.pathname.split('/');\n-    const idx = parts.indexOf('aiclient') + 1;\n-    if (idx > 0 && parts.length > idx) companyCode = parts[idx];\n-    return companyCode;\n-  }\n   \n   // Company Code 설정\n   let companyCode = 'heredot';  // 기본값\n   \n"
                 }
             ],
             "date": 1756368834760,
