@@ -387,13 +387,13 @@ https://heredotcorp.com
         {isDarkMode ? '☀️' : '🌙'}
       </ThemeToggleButton> */}
 
- <SocialLoginModal
+ {/* <SocialLoginModal
         $isOpen={isLoginModalOpen}
         onClose={closeLoginModal}
         purpose={loginModalPurpose}
         onPrimaryButtonClick={handleNonMemberAction} // 비회원 로직 함수 연결
         onGoogleLoginSuccess={handleGoogleLoginSuccess} // ✅ 구글 로그인 성공 후 함수 연결
-      />
+      /> */}
 
       <Modal open={shareModal} title="페이지 공유" onClose={handleCloseShare} width={520}>
         <div style={{ color: '#A1A1AA', fontSize: 14, marginBottom: 32 }}>공유받은 사용자는 현재 페이지의 내용을 확인할 수 있습니다.</div>

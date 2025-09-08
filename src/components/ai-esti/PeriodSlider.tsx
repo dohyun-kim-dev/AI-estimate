@@ -196,10 +196,15 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({ value, onChange, $isvisible
             </DiscountDisplay>
           )}
           <Slider 
+          min={min}
+          max={max}
+            type="range"
             $value={value}
             $min={min}
             $max={max}
+            onChange={e => onChange(Number(e.target.value))}
           />
+  
           <Labels>
             <span>{min}주</span>
             <span>{max}주</span>

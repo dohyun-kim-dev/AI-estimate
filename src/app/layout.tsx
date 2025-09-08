@@ -79,13 +79,13 @@ export default function RootLayout() {
             <Outlet />
           </Main>
           <FooterWrapper isCompact={compact} />
-          <SocialLoginModal 
+          {/* <SocialLoginModal 
             $isOpen={isLoginModalOpen} 
             onClose={closeLoginModal}
             purpose="limitExceeded"
             onPrimaryButtonClick={() => {}}
             onGoogleLoginSuccess={() => {}}
-          />
+          /> */}
         </ToastProvider>
       </PageLoaderProvider>
     </ThemeProvider>

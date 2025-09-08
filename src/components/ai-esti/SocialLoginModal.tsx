@@ -5,11 +5,12 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useEffect, useState, useMemo, ReactNode } from 'react';
 // 인앱 브라우저 감지 함수
 function isInAppBrowser() {
-  const ua = navigator.userAgent || navigator.vendor || window.opera;
+  const ua = navigator.userAgent || navigator.vendor;
   // 카카오, 네이버, 페이스북, 인스타그램 등 주요 인앱 브라우저 패턴
   return /KAKAOTALK|NAVER|FBAN|FBAV|Instagram|Daum|Line|KAKAO/i.test(ua);
 }
 import { EstimateConfirmModal } from './EstimateConfirmModal';
+import IssuerInfoModal, { IssuerInfo } from './IssuerInfoModal';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/components/common/ToastProvider';
 import { googleLoginInitial, googleLoginUpdate, companyRegister } from '@/lib/api/user/userApi';
@@ -176,22 +177,24 @@ const StyledCloseButton = styled.button`
 interface SocialLoginModalProps {
   $isOpen: boolean;
   onClose: () => void;
-  purpose: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat';
+  purpose: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat' | 'default';
   onGoogleLoginSuccess?: (userData?: any) => void;  
-  onPrimaryButtonClick: () => void;
+  onPrimaryButtonClick?: () => void;
 }
 
-export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
-  $isOpen,
-  onClose,
-  purpose,
-  onGoogleLoginSuccess = () => {}, 
-  onPrimaryButtonClick
-}) => {
+export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
+  const {
+    $isOpen,
+    onClose,
+    purpose,
+    onGoogleLoginSuccess = () => {},
+    onPrimaryButtonClick,
+  } = props;
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [openShareModal, closeShareModal] = useModalStore((s) => [s.openShareModal, s.closeShareModal]);
   const [showEstimateModal, setShowEstimateModal] = useState(false);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const { login, setUser, persistUser,openAdditionalInfoModal,openEstimateModal } = useAuthStore();
   const { success, error: showError } = useToast();
 
@@ -417,7 +420,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
     }
   }, [purpose]);
 
-  if (!$isOpen) {
+  if (!$isOpen && !isInfoModalOpen) {
     return null;
   }
 
@@ -430,17 +433,14 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
           onClose();
         }}
       >
-      <ModalContent onClick={(e) => e.stopPropagation()}>
-        <StyledCloseButton onClick={onClose} disabled={isLoading}>
-          <CloseIcon />
-        </StyledCloseButton>
-        <RightPanel>
-          {/* <PageSubtitle>복잡한 견적, AI로 간단하게.</PageSubtitle>
-          <GradientTitleText>AIGO</GradientTitleText> */}
-          <MainSloganText>{contents.title}</MainSloganText>
-          <SubSloganText>{contents.subtitle}</SubSloganText>
-          <ButtonGroup>
-           
+        <ModalContent onClick={(e) => e.stopPropagation()}>
+          <StyledCloseButton onClick={onClose} disabled={isLoading}>
+            <CloseIcon />
+          </StyledCloseButton>
+          <RightPanel>
+            <MainSloganText>{contents.title}</MainSloganText>
+            <SubSloganText>{contents.subtitle}</SubSloganText>
+            <ButtonGroup>
               <SecondaryButton
                 onClick={() => {
                   if (isInAppBrowser()) {
@@ -459,35 +459,39 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = ({
                 }}
                 disabled={isLoading}
               >
-                {/* <img src="/ai-estimate/google.png" alt="Google_logo" style={{ width: '32px', height: '32px' }}/> */}
                 <span> {contents.secondaryButtonText}</span>
               </SecondaryButton>
-               {contents.primaryButtonText && (
-              <PrimaryButton
-                onClick={onPrimaryButtonClick}
-                disabled={isLoading}
-              >
-                <PrimaryText>{contents.primaryButtonText}</PrimaryText>
-              </PrimaryButton>
+              {contents.primaryButtonText && (
+                <PrimaryButton
+                  onClick={() => {
+                    if (purpose === 'limitReached') {
+                      onPrimaryButtonClick && onPrimaryButtonClick();
+                    } else {
+                      setIsInfoModalOpen(true);
+                    }
+                  }}
+                  disabled={isLoading}
+                >
+                  <PrimaryText>{contents.primaryButtonText}</PrimaryText>
+                </PrimaryButton>
+              )}
+            </ButtonGroup>
+            {loginError && (
+              <p style={{ color: 'red', marginTop: '20px', fontSize: '14px' }}>
+                {loginError}
+              </p>
             )}
-          </ButtonGroup>
-
-          {loginError && (
-            <p style={{ color: 'red', marginTop: '20px', fontSize: '14px' }}>
-              {loginError}
-            </p>
-          )}
-        </RightPanel>
-      </ModalContent>
-    </ModalOverlay>
-    {/* <EstimateConfirmModal
-      isOpen={showEstimateModal}
-      onClose={() => setShowEstimateModal(false)}
-      onConfirm={() => {
-        setShowEstimateModal(false);
-        onPrimaryButtonClick();
-      }}
-    /> */}
+          </RightPanel>
+        </ModalContent>
+      </ModalOverlay>
+      <IssuerInfoModal
+        open={isInfoModalOpen}
+        onClose={() => setIsInfoModalOpen(false)}
+        onSubmit={(info: IssuerInfo) => {
+          console.log('IssuerInfoModal onSubmit:', info);
+          setIsInfoModalOpen(false);
+        }}
+      />
     </>
   );
 };
