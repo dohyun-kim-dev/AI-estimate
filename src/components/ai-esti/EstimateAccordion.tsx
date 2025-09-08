@@ -4,7 +4,7 @@ import { ProjectEstimate } from "@/app/ai-estimate/types/projectEstimate";
 import EstimateAccordionItem from "./EstimateAccordionItem";
 import { patchChatMessages, uploadEstimatePdf } from "@/lib/api/user/userApi";
 import { buildFullEstimateData } from "@/hooks/estimate";
-import { ChatMessage } from "@/store/chatStore";
+import { ChatMessage, useChatStore } from "@/store/chatStore";
 
 const AccordionWrapper = styled.div`
   display: flex;
@@ -19,6 +19,8 @@ interface EstimateAccordionProps {
   estimateId?: string;             // ✅ 서버 업데이트용 id (수정 시 필수)
   userId?: string;                 // 회원/게스트 uuid
   title?: string;                 // 없으면 project_name 사용
+  onItemDelete?: (itemId: string, updatedItem: any) => void; 
+  onItemRestore?: (itemId: string, updatedItem: any) => void; 
 }
 
 // 간단 딥클론 (structuredClone 미지원 대비)
@@ -81,6 +83,8 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
   estimateId,
   userId,
   title,
+  onItemDelete,
+  onItemRestore
 }) => {
   // 화면에 쓰는 소스 오브 트루스
   const [estimate, setEstimate] = useState<ProjectEstimate>(data);
@@ -127,6 +131,13 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
               type: "text",
               value: updatedReply,
             });
+
+            // 로컬 스토어에도 반영하여 UI가 즉시 갱신되도록 함
+            try {
+              useChatStore.getState().updateMessageById(messageId, { content: updatedReply });
+            } catch (e) {
+              console.warn("local updateMessageById failed", e);
+            }
           }
         } catch (e) {
           console.error("[save] 견적 업데이트 실패:", e);

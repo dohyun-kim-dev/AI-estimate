@@ -18,6 +18,7 @@ interface ChatState {
   addMessage: (m: ChatMessage) => void;
   // 변경됨: 객체를 인자로 받도록 수정
   updateLastMessage: (payload: Partial<Omit<ChatMessage, 'role'>>) => void; 
+  updateMessageById: (messageId: string, payload: Partial<Omit<ChatMessage, 'role'>>) => void;
   setChatSessionId: (id: string | null) => void;
   clear: () => void;
 }
@@ -49,6 +50,11 @@ export const useChatStore = create<ChatState>()(
             };
           }
           return s;
+        }),
+        // 특정 messageId로 메시지를 찾아 업데이트합니다.
+        updateMessageById: (messageId: string, payload: Partial<Omit<ChatMessage, 'role'>>) => set((s) => {
+          const messages = s.messages.map((m) => (m.messageId === messageId ? { ...m, ...payload, isLoading: false } : m));
+          return { messages };
         }),
         setChatSessionId: (id) => set({ chatSessionId: id }),
         clear: () => set({ messages: [], chatSessionId: null }),

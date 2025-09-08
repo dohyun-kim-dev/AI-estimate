@@ -221,8 +221,8 @@ interface EstimateAccordionItemProps {
   items?: EstimateItem[];
   depth: 1 | 2 | 3;
   onItemClick?: (item: EstimateItem) => void;
-  onItemDelete?: (itemId: string, item: EstimateItem) => void;   // ✅ 추가
-  onItemRestore?: (itemId: string, item: EstimateItem) => void;  // ✅ 추가
+  onItemDelete?: (itemId: string, item: EstimateItem) => void;
+  onItemRestore?: (itemId: string, item: EstimateItem) => void;
   children?: React.ReactNode;
   isSelected?: boolean;
   onSelect?: () => void;
@@ -257,28 +257,15 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
     return url.includes('share');
   }, [location]);
 
-  const getStorageKey = () => `estimate_${chatRoomId}_${estimateId}_${name}`;
-  
-  const getInitialDeletedState = () => {
-    if (!chatRoomId || !estimateId) return new Set<string>();
-    const storedData = localStorage.getItem(getStorageKey());
-    return storedData ? new Set(JSON.parse(storedData)) : new Set<string>();
-  };
-
-  const [deletedItems, setDeletedItems] = useState<Set<string>>(getInitialDeletedState());
-
   const totalAmount = useMemo(() => {
     if (!items.length) {
       return price || "0";
     }
 
-    const currentItems = items.filter((_, index) => {
-      const itemId = `${name}-${index}`;
-      return !deletedItems.has(itemId);
-    });
+    const currentItems = items.filter((item) => !item.is_deleted);
     
     return formatPrice(currentItems.reduce((sum, item) => sum + parsePrice(item.price), 0));
-  }, [items, price, deletedItems, name]);
+  }, [items, price]);
 
   const handleHeaderClick = () => {
     setIsOpen(!isOpen);
@@ -288,8 +275,8 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
   };
 
   const handleItemClick = (item: any, index: number) => {
-    const itemId = `${name}-${index}`;
-    if (deletedItems.has(itemId)) {
+    const itemId = item.item_id || `${name}-${index}`;
+    if (item.is_deleted) {
       return;
     }
 
@@ -301,33 +288,16 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
     }
   };
 
-  const updateLocalStorage = (newDeletedItems: Set<string>) => {
-    if (!chatRoomId || !estimateId) return;
-    localStorage.setItem(getStorageKey(), JSON.stringify(Array.from(newDeletedItems)));
-  };
-
-  const handleDelete = (e: React.MouseEvent, itemId: string, item: EstimateItem) => {
+  const handleDelete = (e: React.MouseEvent, item: EstimateItem) => {
     e.stopPropagation();
     e.preventDefault();
-
-    const newDeletedItems = new Set(deletedItems).add(itemId);
-    setDeletedItems(newDeletedItems);
-    updateLocalStorage(newDeletedItems);
-    
-    if (onItemDelete) onItemDelete(itemId, { ...item, is_deleted: true });      
+    if (onItemDelete) onItemDelete(item.item_id || '', { ...item, is_deleted: true });      
   };
 
-  const handleCancelDelete = (e: React.MouseEvent, itemId: string, item: EstimateItem) => {
+  const handleCancelDelete = (e: React.MouseEvent, item: EstimateItem) => {
     e.stopPropagation();
     e.preventDefault();
-
-    const newDeletedItems = new Set(deletedItems);
-    newDeletedItems.delete(itemId);
-    setDeletedItems(newDeletedItems);
-    updateLocalStorage(newDeletedItems);
-
-    if (onItemRestore) onItemRestore(itemId, { ...item, is_deleted: false });
-
+    if (onItemRestore) onItemRestore(item.item_id || '', { ...item, is_deleted: false });
   };
 
   return (
@@ -347,13 +317,11 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
       <Content $isOpen={isOpen} depth={depth}>
         <ContentInner>
           {children || (hasItems && items.map((item, index) => {
-            const itemId = `${name}-${index}`;
-            const isDeleted = deletedItems.has(itemId);
             return (
               <ListItem
-                key={index} 
-                $isSelected={selectedItemId === itemId}
-                $isDeleted={isDeleted}
+                key={item.item_id || index} 
+                $isSelected={selectedItemId === (item.item_id || `${name}-${index}`)}
+                $isDeleted={!!item.is_deleted}
                 depth={depth}
               >
                 <span className="name" onClick={() => handleItemClick(item, index)}>
@@ -365,19 +333,19 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
                 <div className="actions">
                 {
                     !isSharePage && (
-                      isDeleted ? (
-                        <ActionButton onClick={(e) => handleCancelDelete(e, itemId, item)} aria-label="Cancel deletion">
+                      item.is_deleted ? (
+                        <ActionButton onClick={(e) => handleCancelDelete(e, item)} aria-label="Cancel deletion">
                           <img src="/ai-estimate/delete_cancel_button.png" alt="Cancel deletion" />
                         </ActionButton>
                       ) : (
-                        <ActionButton onClick={(e) => handleDelete(e, itemId, item)} aria-label="Delete item">
+                        <ActionButton onClick={(e) => handleDelete(e, item)} aria-label="Delete item">
                           <img src="/ai-estimate/delete_button.png" alt="Delete item" />
                         </ActionButton>
                       )
                     )
                   }
                   {/* 삭제된 항목일 경우 상세 아이콘 숨기기 */}
-                  {!isDeleted && <IoChevronForward size={16} onClick={() => handleItemClick(item, index)} />}
+                  {!item.is_deleted && <IoChevronForward size={16} onClick={() => handleItemClick(item, index)} />}
                 </div>
               </ListItem>
             );

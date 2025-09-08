@@ -12,7 +12,7 @@ import PeriodSlider from '@/components/ai-esti/PeriodSlider';
 import EstimateAccordion from '@/components/ai-esti/EstimateAccordion';
 import DetailModal from '@/components/ai-esti/DetailModal';
 import EstimateActionButtons from '@/components/ai-esti/EstimateActionButtons';
-import { useChatActions ,handleSubmit} from '@/hooks/useChatActions';
+import { useChatActions} from '@/hooks/useChatActions';
 
 const PageWrapper = styled.div`
   background-color: ${({ theme }) => theme.body};
@@ -140,7 +140,6 @@ const AiEstimatePage: React.FC<AiEstimatePageProps> = () => {
                 <EstimateActionButtons 
                   onConsult={() => console.log('문의하기')}
                   onSubmit={() => handleSubmit('AI 예산 줄이기')}
-                  onSubmit={handleSubmit}
                 />
               </SideContent>
             </TopSection>

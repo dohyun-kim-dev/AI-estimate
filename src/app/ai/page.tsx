@@ -7,8 +7,6 @@ import { useToast } from '@/components/common/ToastProvider';
 import { useChatStore } from '@/store/chatStore';
 import BottomInput from '@/components/ai-esti/BottomInput';
 import AiResponseMessage from '@/components/ai-esti/AiResponseMessage';
-import PromptSelector from '@/components/ai-esti/PromptSelector';
-import { promptTemplates, combinePrompts } from '@/ai/promptTemplates';
 import EstimateCard from '@/components/ai-esti/EstimateCard';
 import EstimateAccordion from '@/components/ai-esti/EstimateAccordion';
 import DetailModal from '@/components/ai-esti/DetailModal';
@@ -289,6 +287,8 @@ export const AiMessageContent: React.FC<{ content: string; chatSessionId?: strin
   const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', selectedPromptId: 'default' });
   const estimateId = estimateData?.uuid;
   const effectiveChatSessionId = chatSessionId || localStorage.getItem('chatSessionId') || '';
+  const updateLastMessage = useChatStore((s) => s.updateLastMessage); // ⭐️ 추가: updateLastMessage 가져오기
+  const messages = useChatStore((s) => s.messages); // ⭐️ 추가: messages 배열 가져오기
 
 
   
@@ -320,7 +320,6 @@ const userId = getUserId() || '';
 
 
   const { total_amount: basePrice, total_period: basePeriod } = useMemo(() => {
-  // ⭐️ 수정: estimateData 또는 categories가 유효한지 확인하는 로직 추가
   if (!estimateData || !Array.isArray(estimateData.categories)) {
     return { total_amount: 0, total_period: 0 };
   }
@@ -337,10 +336,8 @@ const userId = getUserId() || '';
       
       const subTotal = subCategory.items.reduce((itemSum, item) => {
         // ⭐️ 수정: is_deleted가 true인 항목은 합산에서 제외
-        if (item.is_deleted) {
-          return itemSum;
-        }
-        
+        if (item.is_deleted) return itemSum;
+
         const itemPrice = typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : item.price;
         return itemSum + (isNaN(itemPrice) ? 0 : itemPrice);
       }, 0);
@@ -360,6 +357,8 @@ const userId = getUserId() || '';
         }
         
         const subPeriod = subCategory.items.reduce((itemSum, item) => {
+          // 삭제된 항목은 기간 합산에서 제외
+          if (item.is_deleted) return itemSum;
           const frontPeriod = typeof item.front_end_period === 'string' ? parseFloat(item.front_end_period) : (item.front_end_period || 0);
           const backPeriod = typeof item.back_end_period === 'string' ? parseFloat(item.back_end_period) : (item.back_end_period || 0);
           return itemSum + (isNaN(frontPeriod) ? 0 : frontPeriod) + (isNaN(backPeriod) ? 0 : backPeriod);
@@ -388,6 +387,8 @@ const userId = getUserId() || '';
     .find(subCategory => subCategory.sub_category_name === '기반 공통');
 
   const nonDiscountableSum = baseCommonCategory?.items.reduce((sum, item) => {
+    // 삭제된 항목은 비할인 대상 합산에서도 제외
+    if (item.is_deleted) return sum;
     const price = typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : item.price;
     return sum + (price || 0);
   }, 0) || 0;

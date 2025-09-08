@@ -65,7 +65,7 @@ const DiscountDisplay = styled.p`
   margin-bottom: 15px;
 `;
 
-const Slider = styled.input<{ $value: number; $min: string; $max: string; }>`
+const Slider = styled.input<{ $value: number; $min: number; $max: number; }>`
   width: 100%;
   cursor: pointer;
   -webkit-appearance: none;
@@ -196,11 +196,6 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({ value, onChange, $isvisible
             </DiscountDisplay>
           )}
           <Slider 
-            type="range" 
-            min={min} 
-            max={max} 
-            value={value} 
-            onChange={(e) => onChange(parseInt(e.target.value, 10))}
             $value={value}
             $min={min}
             $max={max}
