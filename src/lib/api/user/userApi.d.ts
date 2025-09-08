@@ -7,3 +7,9 @@ import { ApiResponse } from './userApi.types';
 export declare function termsGetList(): Promise<ApiResponse<unknown>>;
 export declare function googleLoginInitial(params: GoogleLoginInitialParams): Promise<ApiResponse<GoogleLoginResponse>>;
 export declare function googleLoginUpdate(params: GoogleLoginUpdateParams): Promise<ApiResponse<GoogleLoginResponse>>;
+
+export interface ChatMessagePayload {
+  content: object;
+  role: 'USER' | 'AI';
+  uid?: string;  // uid 필드 추가
+}

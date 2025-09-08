@@ -11,11 +11,28 @@ import FileUploadSection from './FileUploadSection';
 import { FileUploadData } from '@/firebase.functions';
 import IssuerInfoModal, { IssuerInfo } from "@/components/ai-esti/IssuerInfoModal";
 
-// ProjectEstimate 인터페이스 정의
-interface ProjectEstimate {
-  id?: string;
-  // 다른 필요한 필드들...
+
+export interface ProjectEstimate {
+    project_name: string;
+    total_price: string;
+    vat_included_price: string;
+    estimated_period: string;
+    categories: Category[];
 }
+export interface Category {
+    category_name: string;
+    sub_categories: SubCategory[];
+}
+export interface SubCategory {
+    sub_category_name: string;
+    items: EstimateItem[];
+}
+export interface EstimateItem {
+    name: string;
+    price: string;
+    description: string;
+}
+
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {

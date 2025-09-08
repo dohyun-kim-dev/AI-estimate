@@ -6,48 +6,55 @@ export type ChatMessage = {
   role: 'user' | 'ai';
   content: string;
   isLoading?: boolean;
+  messageId?: string;
+  estimateId?: string;
 };
 
 interface ChatState {
   messages: ChatMessage[];
-  chatSessionId: string | null; // ⭐️ chatSessionId 상태 추가
+  chatSessionId: string | null;
   addMessage: (m: ChatMessage) => void;
-  updateLastMessage: (newContent: string) => void;
-  setChatSessionId: (id: string | null) => void; // ⭐️ 세션 ID 설정 함수 추가
+  // 변경됨: 객체를 인자로 받도록 수정
+  updateLastMessage: (payload: Partial<Omit<ChatMessage, 'role'>>) => void; 
+  setChatSessionId: (id: string | null) => void;
   clear: () => void;
 }
 
 export const useChatStore = create<ChatState>()(
-  persist(
-    (set, get) => ({
-      messages: [],
-      chatSessionId: null, // ⭐️ 초기값 설정
-      addMessage: (m) => set((s) => ({ messages: [...s.messages, m] })),
-      updateLastMessage: (newContent) => set((s) => {
-        const messages = s.messages;
-        const lastMessage = messages[messages.length - 1];
+  devtools(
+    persist(
+      (set, get) => ({
+        messages: [],
+        chatSessionId: null,
+        addMessage: (m) => set((s) => ({ messages: [...s.messages, m] })),
+        // 변경됨: 객체를 받아 마지막 메시지를 업데이트하도록 수정
+        updateLastMessage: (payload) => set((s) => {
+          const messages = s.messages;
+          const lastMessage = messages[messages.length - 1];
+          console.log('Updating last message with payload:', payload);
 
-        if (lastMessage) {
-          const updatedMessage = {
-            ...lastMessage,
-            content: newContent,
-            isLoading: false
-          };
-          return {
-            messages: [
-              ...messages.slice(0, messages.length - 1),
-              updatedMessage,
-            ],
-          };
-        }
-        return s;
+          if (lastMessage) {
+            const updatedMessage = {
+              ...lastMessage,
+              ...payload,
+              isLoading: false,
+            };
+            return {
+              messages: [
+                ...messages.slice(0, messages.length - 1),
+                updatedMessage,
+              ],
+            };
+          }
+          return s;
+        }),
+        setChatSessionId: (id) => set({ chatSessionId: id }),
+        clear: () => set({ messages: [], chatSessionId: null }),
       }),
-      setChatSessionId: (id) => set({ chatSessionId: id }), // ⭐️ 함수 구현
-      clear: () => set({ messages: [], chatSessionId: null }), // ⭐️ clear 함수에 세션 ID 초기화 추가
-    }),
-    {
-      name: 'ai-chat-storage',
-      storage: createJSONStorage(() => sessionStorage),
-    }
+      {
+        name: 'ai-chat-storage',
+        storage: createJSONStorage(() => sessionStorage),
+      }
+    )
   )
 );

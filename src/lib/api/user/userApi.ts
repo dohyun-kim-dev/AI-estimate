@@ -113,11 +113,18 @@ export interface ChatSessionData {
 }
 
 // 메시지 페이로드 타입
-export interface ChatMessagePayload {
-  content: object;
+export interface ChatMessageResponseData {
+  data:{
+  session: string;
   role: 'USER' | 'AI';
-  uid?: string;  // uid 필드 추가
+  content: {
+    content: string;
+  };
+  _id: string; // 채팅 메시지 ID
+  createAt: string;
 }
+}
+
 
 // 메시지 데이터 타입 (공유용 API 응답 형식)
 export interface ChatMessage {
@@ -151,7 +158,7 @@ export async function createGuestChatSession(title: string, uuid: string) {
   });
 }
 
-export async function sendChatMessage(sessionId: string, messagePayload: ChatMessagePayload, uid: string) {
+export async function sendChatMessage(sessionId: string, messagePayload: ChatMessagePayload) {
   return callUserApi<null>({
     title: '채팅 메시지 전송',
     url: getApiUrl(`/company/chat/sessions/${sessionId}/messages`),
@@ -164,6 +171,12 @@ export async function sendChatMessage(sessionId: string, messagePayload: ChatMes
     isCallPageLoader: false,
   });
 }
+export interface ChatMessagePayload {
+  content: object;
+  role: 'USER' | 'AI';
+  uid?: string;  // uid 필드 추가
+}
+
 
 export async function getChatSession(sessionId: string) {
   return callUserApi<ChatSessionData>({
