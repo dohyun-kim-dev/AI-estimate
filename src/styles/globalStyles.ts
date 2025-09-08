@@ -8,7 +8,7 @@ export const GlobalStyle = createGlobalStyle`
   }
 
   html {
-    overflow-y: scroll; /* 항상 스크롤바 공간 확보 */
+    overflow-y: auto; /* 필요할 때만 스크롤바 표시 */
   }
 
   body {
@@ -50,8 +50,6 @@ export const GlobalStyle = createGlobalStyle`
     outline: none;
     box-shadow: none;
   }
-  
-    }
 
   /* 스크롤바 스타일링 */
   ::-webkit-scrollbar {

@@ -45,8 +45,6 @@ export type AdminLoginParams = {
 
 
   export type TermGetListParams = {
-    index?: number;
-    termsType: string;
     content: string;
     language: string;
   };

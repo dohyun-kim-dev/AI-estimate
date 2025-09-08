@@ -20,7 +20,6 @@ import CMSCompanyMng from '@app/superAdmin/companyMng/page';
 import CMSLogin from '@app/superAdmin/login/page';
 import CMSSuperAdminMng from '@app/superAdmin/superAdminMng/page';
 import CMSTerms from '@app/superAdmin/terms/page';
-import CMSUserData from '@app/superAdmin/userData/page';
 import CMSUserMng from '@app/superAdmin/userMng/page';
 import PromptPage from '../app/superAdmin/aiData/prompt/page';
 import AiChatHistoryPage from '../app/superAdmin/aiData/conversationHistory/page';

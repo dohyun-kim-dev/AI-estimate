@@ -139,7 +139,6 @@ const AiEstimatePage: React.FC<AiEstimatePageProps> = () => {
               <SideContent>
                 <EstimateActionButtons 
                   onConsult={() => console.log('문의하기')}
-                  onSubmit={() => handleSubmit('AI 예산 줄이기')}
                   onSubmit={handleSubmit}
                 />
               </SideContent>

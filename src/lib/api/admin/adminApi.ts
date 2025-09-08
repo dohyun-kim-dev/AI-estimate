@@ -39,6 +39,44 @@ export async function adminLogin(
   });
 }
 
+// 헤더 정보도 함께 반환하는 로그인 함수
+export async function adminLoginWithHeaders(
+  params: AdminLoginParams) {
+  const url = `${BASE_URL}/cms/login`;
+  const body = { adminId: params.userId, password: params.password };
+  
+  // 환경에 따른 URL 설정
+  let fullUrl = url;
+  if (import.meta.env.VITE_ENV_NAME !== 'dev' && !url.startsWith('http')) {
+    fullUrl = `${import.meta.env.VITE_API_HOST}${url}`;
+  }
+
+  try {
+    const response = await fetch(fullUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'x-company-code': 'heredot',
+      },
+      body: JSON.stringify(body),
+      credentials: 'include',
+      mode: 'cors',
+    });
+
+    const data = await response.json();
+    
+    return {
+      data: data,
+      headers: response.headers,
+      status: response.status,
+    };
+  } catch (error) {
+    console.error('로그인 API 에러:', error);
+    throw error;
+  }
+}
+
 // ***************** 관리자
 
 export async function   adminGetList(params: AdminGetListParams) {
@@ -59,6 +97,7 @@ export async function   adminGetList(params: AdminGetListParams) {
     url: `${BASE_URL}/cms/admins?${queryParams.toString()}`,
     method: 'GET',
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }
 
@@ -95,6 +134,7 @@ export async function adminCreate(
     method: 'POST',
     body: requestBody,
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 } 
 
@@ -133,6 +173,7 @@ export async function adminUpdate(params: AdminUpdateParams) {
     method: 'PATCH', // PUT 메서드로 변경
     body: requestBody,
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }
 
@@ -146,6 +187,7 @@ export async function adminPasswordUpdate(
       password: params.password,
     },
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }
 
@@ -157,26 +199,19 @@ export async function termGetList() {
     url: `${BASE_URL}/cms/terms`,
     method: 'GET', // GET 방식으로 변경
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }
 
 // 약관 수정 (PUT) 또는 생성 (POST)
-export async function termUpdate(params: TermGetListParams) {
-  const isCreate = params.index === undefined || params.index === null; // index가 없으면 생성으로 판단
-  const url = isCreate
-    ? `${BASE_URL}/cms/terms`
-    : `${BASE_URL}/cms/terms?id=${params.index}`;
-  const method = isCreate ? 'POST' : 'PUT';
-
+export async function termUpdate( index: number, params: TermGetListParams) {
   return callAdminApi({
-    title: '약관 수정/생성',
-    url: url,
-    method: method,
-    body: {
-      content: params.content,
-      language: params.language, // language는 요청 바디에 포함
-    },
+    title: "약관 생성",
+    url: `${BASE_URL}/api/cms/terms?index=${index}`,
+    method: "PUT",
+    body: params,
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }
 
@@ -189,6 +224,7 @@ export async function promptGetList(
     url: `${BASE_URL}/cms/ai/prompt/get-list`,
     body: { keyword: params.keyword },
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }
 export async function promptHistoryGetList(
@@ -198,6 +234,7 @@ export async function promptHistoryGetList(
     url: `${BASE_URL}/cms/ai/prompt/history/get-list`,
     body: { index: params.index },
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }
 
@@ -211,6 +248,7 @@ export async function promptUpdate(
       content: params.content,
     },
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }
 
@@ -221,5 +259,6 @@ export async function unitPriceGetList(
     title: '단가 리스트 조회',
     url: `${BASE_URL}/cms/ai/unit-price/get-list`,
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }

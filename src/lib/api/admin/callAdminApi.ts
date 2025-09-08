@@ -5,6 +5,8 @@ import { callApiPatch } from '@/lib/methods/callApiPatch';
 import { callApiDelete } from '@/lib/methods/callApiDelete';
 import { callNullCheck } from '@/lib/utils/nullChecker';
 import { triggerAdminLogout } from '@/contexts/AdminAuthContext';
+import { devLog } from '@/lib/utils/devLogger';
+import { de } from 'date-fns/locale';
 
 export async function callAdminApi<T = unknown>({
   title,
@@ -26,6 +28,10 @@ export async function callAdminApi<T = unknown>({
   if (companyCodeIndex > 0 && pathParts.length > companyCodeIndex) {
     companyCode = pathParts[companyCodeIndex];
   }
+
+  devLog('url:', url);  
+
+  
 
   // 공통 헤더 설정
   const headers = {
