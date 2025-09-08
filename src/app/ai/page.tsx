@@ -241,7 +241,7 @@ function ensureClientUuid(estimate: any) {
 
 const extractEstimateData = (content: string): ProjectEstimate | null => {
   try {
-    if(content !== typeof string) return null;
+    if(typeof content !== 'string') {return console.log('string이 아닌 content', typeof content,content);}
     const match = content.match(/<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/);
     if (!match) return null;
 
@@ -509,7 +509,7 @@ const userId = getUserId() || '';
 };
 
 export default function AiChatPage() {
-  const { modelName, setModelName, generate, sendChat, resetChat, testModel } = useAI('gemini-2.5-flash-lite');
+  const { modelName, setModelName, generate, sendChat, resetChat, testModel } = useAI('gemini-2.5-flash');
   const { success, error } = useToast();
   const messages = useChatStore((s) => s.messages);
   const addMessage = useChatStore((s) => s.addMessage);
