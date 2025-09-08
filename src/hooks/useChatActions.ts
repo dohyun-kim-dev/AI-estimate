@@ -17,22 +17,22 @@ import { uploadEstimatePdf } from '@/lib/api/user/userApi';
 
 // 견적서 데이터를 추출하는 유틸리티 함수
 const extractEstimateData = (content: string): ProjectEstimate | null => {
+  // ✅ 문자열이 아니면 바로 종료
+  if (typeof content !== 'string') return null;
+
   try {
-    const match = content.match(/<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/);
+    const match = content.match(
+      /<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/
+    );
     if (!match) return null;
 
-    const jsonStr = match[1];
-    const data = JSON.parse(jsonStr);
-
+    const data = JSON.parse(match[1]);
     if (!data || typeof data !== 'object' || !Array.isArray(data.categories)) {
-      console.error('Invalid estimate data structure:', data);
       return null;
     }
-
     return data as ProjectEstimate;
-
-  } catch (error) {
-    console.error('Failed to parse estimate data:', error);
+  } catch (err) {
+    console.error('Failed to parse estimate data:', err);
     return null;
   }
 };
@@ -255,7 +255,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
             uploadedFileNames.map(async (fileName, index) => {
               const file = selectedFiles[index];
               const base64 = await fileToBase64(file);
-              const fileUrl = `/api/file/download/${fileName}`;
+              const fileUrl = `/api/file/${fileName}`;
               console.log(`파일 처리 완료: ${file.name} -> ${fileUrl} (base64 길이: ${base64.length})`);
               return {
                 name: file.name,

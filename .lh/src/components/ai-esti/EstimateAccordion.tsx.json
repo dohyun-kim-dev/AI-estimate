@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 9,
+            "activePatchIndex": 10,
             "patches": [
                 {
                     "date": 1756799323044,
@@ -44,6 +44,10 @@
                 {
                     "date": 1757206007025,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -88,9 +88,9 @@\n             chatSessionId,\n             title || est.project_name || \"견적서\",\n             userId,\n             dataStr,\n-            estimateId // ✅ 수정이라면 반드시 포함\n+            estimate.uuid // ✅ 수정이라면 반드시 포함\n           );\n         } catch (e) {\n           console.error(\"[save] 견적 업데이트 실패:\", e);\n         }\n"
+                },
+                {
+                    "date": 1757210753428,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -88,9 +88,9 @@\n             chatSessionId,\n             title || est.project_name || \"견적서\",\n             userId,\n             dataStr,\n-            estimate.uuid // ✅ 수정이라면 반드시 포함\n+            estimateId // ✅ 수정이라면 반드시 포함\n           );\n         } catch (e) {\n           console.error(\"[save] 견적 업데이트 실패:\", e);\n         }\n"
                 }
             ],
             "date": 1756799323044,

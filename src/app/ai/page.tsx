@@ -241,6 +241,7 @@ function ensureClientUuid(estimate: any) {
 
 const extractEstimateData = (content: string): ProjectEstimate | null => {
   try {
+    if(content !== typeof string) return null;
     const match = content.match(/<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/);
     if (!match) return null;
 
@@ -281,12 +282,12 @@ const parseMessageContent = (content: string) => {
   };
 };
 
-const AiMessageContent: React.FC<{ content: string; chatSessionId?: string; estimateDataForConsult?: ProjectEstimate }> = ({ content, chatSessionId, estimateDataForConsult }) => {
+export const AiMessageContent: React.FC<{ content: string; chatSessionId?: string; estimateDataForConsult?: ProjectEstimate }> = ({ content, chatSessionId, estimateDataForConsult }) => {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
   const estimateData = estimateDataForConsult || extractEstimateData(content);
   const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', selectedPromptId: 'default' });
-  const estimateId = estimateDataForConsult?.uuid || getEstimateIdFromContent(content) || '';
+  const estimateId = estimateData?.uuid || getEstimateIdFromContent(content) || '';
   const effectiveChatSessionId = chatSessionId || localStorage.getItem('chatSessionId') || '';
 
 
@@ -429,8 +430,10 @@ const userId = getUserId() || '';
   };
 
   // 메시지 내용을 견적서와 일반 텍스트로 분리
-  const parts = content.split('<script');
-  const textContent = parts[0].replace(/\\n/g, '<br/>').trim();  // \n을 <br/>로 변환
+  if (typeof content !== 'string') {
+    return null;
+  }
+  const parts = content.split('<script');  const textContent = parts[0].replace(/\\n/g, '<br/>').trim();  // \n을 <br/>로 변환
   const hasEstimate = estimateData && estimateData.categories;
 
 
@@ -667,6 +670,8 @@ export default function AiChatPage() {
   }, [messages.length]);
 
   const isEstimateMessage = (content: string) => {
+    console.log('content', content);
+    if(typeof content !== 'string') return false;
     return content.includes('<script type="application/json" id="invoiceData">');
   };
 
@@ -728,10 +733,11 @@ export default function AiChatPage() {
               </UserMessage>
             );
           } else {
+            
             return (
               <StyledAiMessage
                 key={idx}
-                content={<AiMessageContent content={m.content} chatSessionId={chatSessionId} estimateDataForConsult={estimateDataForConsult} />}
+                content={<AiMessageContent content={m.content} chatSessionId={chatSessionId}/>}
                 profileImage="/ai-estimate/pretty.png"
                 name="강유하"
                 isFullWidth={isEstimateMessage(m.content)}
@@ -751,8 +757,8 @@ export default function AiChatPage() {
         uploadProgress={uploadProgress}
         onDeleteFile={removeFile}
         onInfoSubmit={handleInfoSubmit}
-        estimateDataForConsult={estimateDataForConsult} // ⭐️ 수정: props로 전달
-        chatSessionId={chatSessionId} // ⭐️ 수정: props로 전달
+        estimateDataForConsult={estimateDataForConsult}
+        chatSessionId={chatSessionId} 
       />
     </Container>
   );

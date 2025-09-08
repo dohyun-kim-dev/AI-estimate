@@ -10,11 +10,11 @@ import { useThemeStore } from '@/store/themeStore';
 import { generatePDF } from '@/hooks/pdfUtils';
 import { useAuthStore } from '@/store/authStore';
 import { v4 as uuidv4 } from 'uuid';
-import TextField from '@/components/common/TextField';
 import { SocialLoginModal } from './SocialLoginModal';
 import { useNavigate } from 'react-router-dom';
 import { googleLoginInitial, googleLoginUpdate, uploadEstimatePdf } from '@/lib/api/user/userApi';
 import { buildFullEstimateData } from '@/hooks/estimate';
+import IssuerInfoModal, { IssuerInfo } from '@/components/ai-esti/IssuerInfoModal';
 
 const CardWrapper = styled.div`
   background-color: ${({ theme }) => theme.surface1};
@@ -84,39 +84,6 @@ const Period = styled.p`
   }
 `;
 
-const ActionButtons = styled.div`
-  display: flex;
-  gap: 10px;
-  padding: 20px 12px;
-  border-top: 1px solid ${({ theme }) => theme.border};
-  margin: 4px;
-`;
-
-const Line = styled.div`
-  border-left: 1px solid ${({ theme }) => theme.border};
-`;
-
-const ActionButton = styled.button<{ primary?: boolean }>`
-  flex: 1;
-  padding: 12px;
-  border-radius: 8px;
-  border: none;
-  background-color: ${({ theme, primary }) => (primary ? theme.accent : 'transparent')};
-  color: ${({ theme, primary }) => (primary ? theme.body : theme.accent)};
-  font-family: Roboto;
-  font-size: 14px;
-  font-style: normal;
-  font-weight: 600;
-  line-height: 160%; 
-  letter-spacing: 0.28px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    opacity: 0.8;
-  }
-`;
-
 const ShareInput = styled.div`
   display: flex;
   gap: 8px;
@@ -146,63 +113,6 @@ const ShareInput = styled.div`
   }
 `;
 
-const Form = styled.form`
-  margin-top: 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const FormField = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const Label = styled.label`
-  font-size: 14px;
-  font-weight: 500;
-  color: ${({ theme }) => theme.text};
-`;
-
-const Input = styled.input`
-  height: 44px;
-  border-radius: 8px;
-  border: 1px solid ${({ theme }) => theme.border};
-  background: ${({ theme }) => theme.body};
-  color: ${({ theme }) => theme.text};
-  padding: 0 12px;
-  font-size: 14px;
-
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.accent};
-  }
-`;
-
-const SubmitButton = styled.button`
-  height: 44px;
-  border-radius: 8px;
-  background: #2E2E48;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  width: 100%;
-  border: none;
-  cursor: pointer;
-  margin-top: 16px;
-
-  &:hover {
-    opacity: 0.9;
-  }
-`;
-
-const Disclaimer = styled.p`
-  margin-top: 4px;
-  font-size: 12px;
-  color: #666666;
-`;
-
 interface EstimateCardProps {
   estimate: ProjectEstimate;
   discountedPrice: number;
@@ -211,12 +121,13 @@ interface EstimateCardProps {
 
 const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, projectPeriod = 0 }) => {
   const [openShare, setOpenShare] = useState(false);
-  const [openDownload, setOpenDownload] = useState(false);
-  const [openShareInput, setOpenShareInput] = useState(false);
-  const [userInfo, setUserInfo] = useState({ name: '', email: '', cellphone: '' });
   const [shareUrl, setShareUrl] = useState('');
   const [isSocialLoginModalOpen, setIsSocialLoginModalOpen] = useState(false);
   const [socialLoginPurpose, setSocialLoginPurpose] = useState<'share' | 'download' | null>(null);
+
+  // ✅ 새로 추가: 발행자 정보 입력 모달
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [pendingPurpose, setPendingPurpose] = useState<'share' | 'download' | null>(null);
 
   const { success, error } = useToast();
   const { isDarkMode } = useThemeStore();
@@ -230,10 +141,13 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       ? pathParts[companyCodeIndex]
       : 'heredot';
   };
-
   const companyCode = getCompanyCode();
 
-  // 회원일 경우 로컬스토리지에서 정보 불러오기
+  // 로그인 사용자 프리필용
+  const [prefill, setPrefill] = useState<{name: string; email: string; cellphone: string}>({
+    name: '', email: '', cellphone: ''
+  });
+
   useEffect(() => {
     if (isAuthenticated()) {
       const authStorage = localStorage.getItem('auth-storage');
@@ -241,7 +155,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
         const authData = JSON.parse(authStorage);
         const user = authData.state?.user;
         if (user) {
-          setUserInfo({
+          setPrefill({
             name: user.name || '',
             email: user.email || '',
             cellphone: user.cellphone || '',
@@ -251,7 +165,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
     }
   }, [isAuthenticated]);
 
-  /** uuid 없을 때 1회 서버 저장해서 uuid 보장 (옵션 A: 클라에서 이미 uuid를 박아둔 상태여야 함) */
+  /** uuid 없으면 1회 서버 저장해서 uuid 보장 */
   async function ensureUuidOnce(estimateObj: any, title: string) {
     if (estimateObj?.uuid) return estimateObj.uuid;
 
@@ -273,13 +187,13 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
     const res = await uploadEstimatePdf(chatSessionId, title || '견적서', userId, dataStr);
     if (res?.statusCode !== 200) throw new Error(res?.error?.message || '견적 저장 실패');
 
-    if (!estimateObj.uuid) throw new Error('uuid 보장 실패'); // 옵션 A면 여기 도달 시 반드시 존재
+    if (!estimateObj.uuid) throw new Error('uuid 보장 실패');
     return estimateObj.uuid as string;
   }
 
+  // 다운로드: 로그인 사용자는 바로, 아니면 로그인모달 → 정보입력모달
   const handleGeneratePDF = async () => {
     try {
-      // 로그인 사용자: uuid 보장 후 미리보기 페이지 이동
       if (isAuthenticated()) {
         if (estimate) {
           const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
@@ -289,13 +203,12 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
           return;
         }
       } else {
-        // 비회원은 로그인 유도
         setSocialLoginPurpose('download');
         setIsSocialLoginModalOpen(true);
         return;
       }
 
-      // 로그인 안 했거나, 별도 미리보기 Blob 생성 루트 (선택적)
+      // (옵션) 비로그인 즉시 미리보기 Blob 경로
       const result = await generatePDF(estimate, { forPreview: true });
       if (result && 'blobUrl' in result && result.blobUrl) {
         window.open(result.blobUrl, '_blank');
@@ -308,57 +221,17 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
     }
   };
 
-  const handlePrimaryButtonClick = () => {
-    setIsSocialLoginModalOpen(false);
-    if (socialLoginPurpose === 'share') {
-      setOpenShareInput(true); // 공유 전 정보 입력 모달
-    } else if (socialLoginPurpose === 'download') {
-      setOpenDownload(true); // 다운로드 전 정보 입력 모달
-    }
-  };
-
-  const handleDownloadSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const { name, email, cellphone } = userInfo;
-      if (!name || !email || !cellphone) {
-        error('필수 정보를 모두 입력해주세요.');
-        return;
-      }
-
-      // 게스트 UUID 보장
-      let guestUuid = localStorage.getItem('guest-uuid');
-      if (!guestUuid) {
-        guestUuid = uuidv4();
-        localStorage.setItem('guest-uuid', guestUuid);
-      }
-
-      // 업로드 보장 → 미리보기 이동
-      const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
-
-      setOpenDownload(false);
-      const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
-      window.open(previewUrl, '_blank');
-      success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
-      setUserInfo({ name: '', email: '', cellphone: '' });
-    } catch (err) {
-      console.error('PDF 다운로드 준비 중 오류:', err);
-      error('PDF 다운로드에 실패했습니다.');
-    }
-  };
-
   const handleShareClick = async () => {
     try {
       if (!estimate) {
         error('공유 가능한 견적서가 아닙니다.');
         return;
       }
-      // 로그인 사용자면 업로드 보장 후 링크 생성
       if (isAuthenticated()) {
         const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
-        setOpenShare(true);
         const newShareUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
         setShareUrl(newShareUrl);
+        setOpenShare(true);
       } else {
         setSocialLoginPurpose('share');
         setIsSocialLoginModalOpen(true);
@@ -369,15 +242,18 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
     }
   };
 
-  const handleShareSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const { name, email, cellphone } = userInfo;
-      if (!name || !email || !cellphone) {
-        error('필수 정보를 모두 입력해주세요.');
-        return;
-      }
+  // 소셜 로그인 모달에서 기본 버튼 클릭 → 발행자 정보 입력 모달 오픈
+  const handlePrimaryButtonClick = () => {
+    setIsSocialLoginModalOpen(false);
+    if (socialLoginPurpose === 'share' || socialLoginPurpose === 'download') {
+      setPendingPurpose(socialLoginPurpose);
+      setIsInfoModalOpen(true);
+    }
+  };
 
+  // 발행자 정보 제출 후 분기 처리
+  const handleIssuerInfoSubmit = async (info: IssuerInfo) => {
+    try {
       // 게스트 UUID 보장
       let guestUuid = localStorage.getItem('guest-uuid');
       if (!guestUuid) {
@@ -385,18 +261,24 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
         localStorage.setItem('guest-uuid', guestUuid);
       }
 
-      // 옵션 A면 이미 estimate.uuid가 있어야 함 (없으면 ensureUuidOnce로 확보)
       const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
-      const newShareUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
 
-      setShareUrl(newShareUrl);
-      setOpenShareInput(false);
-      setOpenShare(true);
-      setUserInfo({ name: '', email: '', cellphone: '' });
-      success('공유 링크가 생성되었습니다!');
+      if (pendingPurpose === 'download') {
+        const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+        window.open(previewUrl, '_blank');
+        success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
+      } else if (pendingPurpose === 'share') {
+        const newShareUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+        setShareUrl(newShareUrl);
+        setOpenShare(true);
+        success('공유 링크가 생성되었습니다!');
+      }
     } catch (err) {
-      console.error('공유 URL 생성 중 오류:', err);
-      error('공유 URL 생성에 실패했습니다.');
+      console.error('발행자 정보 처리 중 오류:', err);
+      error('요청 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsInfoModalOpen(false);
+      setPendingPurpose(null);
     }
   };
 
@@ -456,6 +338,7 @@ https://heredotcorp.com
           setIsSocialLoginModalOpen(false);
           success('로그인되었습니다!');
 
+          // 로그인 후 목적대로 바로 진행
           if (socialLoginPurpose === 'download') {
             const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
             const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
@@ -474,7 +357,7 @@ https://heredotcorp.com
     }
   };
 
-  // 기간 표시 계산 안전 처리
+  // 기간 안전 표시
   const estimatedPeriod = parseInt(estimate.estimated_period) || 0;
   const safeProjectPeriod = projectPeriod || 0;
   const weekValue = estimatedPeriod + safeProjectPeriod;
@@ -516,6 +399,7 @@ https://heredotcorp.com
         </Period>
       </Header>
 
+      {/* 공유 링크 표시 모달 (그대로 유지) */}
       <Modal open={openShare} title="견적서 공유" onClose={() => setOpenShare(false)} width={520}>
         <div style={{ color: '#A1A1AA', fontSize: 14, marginBottom: 32 }}>
           공유받은 사용자는 견적 내용을 확인할 수 있습니다.
@@ -526,82 +410,15 @@ https://heredotcorp.com
         </ShareInput>
       </Modal>
 
-      <Modal open={openDownload} title="필수 정보 입력" onClose={() => setOpenDownload(false)} width={520}>
-        <div style={{ fontSize: 14, textAlign: 'center', marginBottom: 32 }}>
-          소중한 당신의 프로젝트, 견적서를 통해 지금 바로 확인해 보세요.
-        </div>
-        <Form onSubmit={handleDownloadSubmit}>
-          <TextField
-            id="name"
-            label="이름"
-            placeholder="이름을 입력해주세요"
-            required
-            value={userInfo.name}
-            onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })}
-          />
-          <TextField
-            id="email"
-            label="이메일"
-            type="email"
-            placeholder="이메일을 입력해주세요"
-            required
-            value={userInfo.email}
-            onChange={(e) => setUserInfo({ ...userInfo, email: e.target.value })}
-          />
-          <TextField
-            id="phone"
-            label="전화번호"
-            placeholder="전화번호를 입력해주세요"
-            required
-            maxLength={11}
-            value={userInfo.cellphone}
-            pattern="[0-9]{10,11}"
-            type="tel"
-            onChange={(e) => setUserInfo({ ...userInfo, cellphone: e.target.value })}
-          />
-          <Disclaimer>문의 시 개인정보 수집·이용에 동의한 것으로 간주됩니다.</Disclaimer>
-          <SubmitButton type="submit">PDF 미리보기</SubmitButton>
-        </Form>
-      </Modal>
+      {/* ✅ 발행자 정보 입력 모달 (다운로드/공유 공용) */}
+      <IssuerInfoModal
+        open={isInfoModalOpen}
+        onClose={() => { setIsInfoModalOpen(false); setPendingPurpose(null); }}
+        onSubmit={handleIssuerInfoSubmit}
+        initial={prefill}   // 로그인 정보가 있으면 프리필
+      />
 
-      <Modal open={openShareInput} title="필수 정보 입력" onClose={() => setOpenShareInput(false)} width={520}>
-        <div style={{ fontSize: 14, textAlign: 'center', marginBottom: 32 }}>
-          견적서 공유를 위해 필수 정보를 입력해주세요.
-        </div>
-        <Form onSubmit={handleShareSubmit}>
-          <TextField
-            id="name"
-            label="이름"
-            placeholder="이름을 입력해주세요"
-            required
-            value={userInfo.name}
-            onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })}
-          />
-          <TextField
-            id="email"
-            label="이메일"
-            type="email"
-            placeholder="이메일을 입력해주세요"
-            required
-            value={userInfo.email}
-            onChange={(e) => setUserInfo({ ...userInfo, email: e.target.value })}
-          />
-          <TextField
-            id="phone"
-            label="전화번호"
-            placeholder="전화번호를 입력해주세요"
-            required
-            maxLength={11}
-            value={userInfo.cellphone}
-            pattern="[0-9]{10,11}"
-            type="tel"
-            onChange={(e) => setUserInfo({ ...userInfo, cellphone: e.target.value })}
-          />
-          <Disclaimer>문의 시 개인정보 수집·이용에 동의한 것으로 간주됩니다.</Disclaimer>
-          <SubmitButton type="submit">공유 링크 생성</SubmitButton>
-        </Form>
-      </Modal>
-
+      {/* 소셜 로그인 모달 (비회원 유도 → 기본버튼 클릭 시 IssuerInfoModal 오픈) */}
       <SocialLoginModal
         $isOpen={isSocialLoginModalOpen}
         onClose={() => setIsSocialLoginModalOpen(false)}

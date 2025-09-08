@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 8,
+            "activePatchIndex": 9,
             "patches": [
                 {
                     "date": 1756714194216,
@@ -40,6 +40,10 @@
                 {
                     "date": 1757206331669,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -130,9 +130,9 @@\n                 </DetailsToggle>\n                 <PeriodSlider value={projectPeriod} onChange={setProjectPeriod} />\n \n                 <AnimatedContainer $isvisible={isDetailsVisible}>\n-                  <EstimateAccordion data={projectEstimate} onItemClick={handleItemClick} />\n+                  <EstimateAccordion data={projectEstimate} onItemClick={handleItemClick} estimateId={projectEstimate.uuid || ''}/>\n                 </AnimatedContainer>\n \n                \n               </MainContent>\n"
+                },
+                {
+                    "date": 1757283751682,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -130,9 +130,9 @@\n                 </DetailsToggle>\n                 <PeriodSlider value={projectPeriod} onChange={setProjectPeriod} />\n \n                 <AnimatedContainer $isvisible={isDetailsVisible}>\n-                  <EstimateAccordion data={projectEstimate} onItemClick={handleItemClick} estimateId={projectEstimate.uuid || ''}/>\n+                  <EstimateAccordion data={projectEstimate} onItemClick={handleItemClick} />\n                 </AnimatedContainer>\n \n                \n               </MainContent>\n"
                 }
             ],
             "date": 1756714194216,

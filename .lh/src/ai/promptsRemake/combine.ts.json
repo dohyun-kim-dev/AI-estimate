@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/ai/promptsRemake/combine.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1757218804900,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1757256030720,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,24 +1,24 @@\n-// promptsRemake/combine.ts\n-import { runtimeVars } from './runtimeVars';\n-import { systemPrompt } from './system';\n-import { guidelinePrompt } from './guideline';\n-import { schemaPrompt } from './schema';\n-import { discountPrompt } from './discount';\n+// // promptsRemake/combine.ts\n+// import { runtimeVars } from './runtimeVars';\n+// import { systemPrompt } from './system';\n+// import { guidelinePrompt } from './guideline';\n+// import { schemaPrompt } from './schema';\n+// import { discountPrompt } from './discount';\n \n-import { commonFeatures } from './priceData.common';\n-import { userFeatures } from './priceData.user';\n-import { adminFeatures } from './priceData.admin';\n+// import { commonFeatures } from './priceData.common';\n+// import { userFeatures } from './priceData.user';\n+// import { adminFeatures } from './priceData.admin';\n \n-// ⚠️ 모델에게 주는 \"단일 텍스트 프롬프트\" 조립\n-export const combineSystemPrompts = () => {\n-  return [\n-    runtimeVars,\n-    systemPrompt,\n-    guidelinePrompt,\n-    schemaPrompt,\n-    discountPrompt,\n-    commonFeatures,\n-    userFeatures,\n-    adminFeatures,\n-  ].join('\\n\\n');\n-};\n+// // ⚠️ 모델에게 주는 \"단일 텍스트 프롬프트\" 조립\n+// export const combineSystemPrompts = () => {\n+//   return [\n+//     runtimeVars,\n+//     systemPrompt,\n+//     guidelinePrompt,\n+//     schemaPrompt,\n+//     discountPrompt,\n+//     commonFeatures,\n+//     userFeatures,\n+//     adminFeatures,\n+//   ].join('\\n\\n');\n+// };\n"
+                }
+            ],
+            "date": 1757218804900,
+            "name": "Commit-0",
+            "content": "// promptsRemake/combine.ts\nimport { runtimeVars } from './runtimeVars';\nimport { systemPrompt } from './system';\nimport { guidelinePrompt } from './guideline';\nimport { schemaPrompt } from './schema';\nimport { discountPrompt } from './discount';\n\nimport { commonFeatures } from './priceData.common';\nimport { userFeatures } from './priceData.user';\nimport { adminFeatures } from './priceData.admin';\n\n// ⚠️ 모델에게 주는 \"단일 텍스트 프롬프트\" 조립\nexport const combineSystemPrompts = () => {\n  return [\n    runtimeVars,\n    systemPrompt,\n    guidelinePrompt,\n    schemaPrompt,\n    discountPrompt,\n    commonFeatures,\n    userFeatures,\n    adminFeatures,\n  ].join('\\n\\n');\n};\n"
+        }
+    ]
+}

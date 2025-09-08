@@ -9,17 +9,13 @@ import { useAuthStore } from '@/store/authStore';
 import { SocialLoginModal } from './SocialLoginModal';
 import FileUploadSection from './FileUploadSection';
 import { FileUploadData } from '@/firebase.functions';
+import IssuerInfoModal, { IssuerInfo } from "@/components/ai-esti/IssuerInfoModal";
 
 // ProjectEstimate 인터페이스 정의
 interface ProjectEstimate {
-  // 견적 관련 필드들을 여기에 추가
   id?: string;
   // 다른 필요한 필드들...
 }
-import Modal from '@/components/common/Modal';
-import TextField from '@/components/common/TextField';
-import { CheckBox } from '@mui/icons-material';
-import TermsAgreement from './TermsAgreement';
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -120,35 +116,6 @@ const FilePreviewArea = styled.div`
   padding: 0 16px;
 `;
 
-const Form = styled.form`
-  margin-top: 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const Disclaimer = styled.p`
-  margin-top: 4px;
-  font-size: 12px;
-  color: #666666;
-`;
-
-const SubmitButton = styled.button`
-  height: 44px;
-  border-radius: 8px;
-  background: #2D50FF;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  width: 100%;
-  border: none;
-  cursor: pointer;
-  margin-top: 16px;
-  &:hover {
-    opacity: 0.9;
-  }
-`;
-
 interface BottomInputProps {
   placeholder?: string;
   onSubmit?: (value: string) => void;
@@ -159,9 +126,11 @@ interface BottomInputProps {
   uploadedFiles: FileUploadData[];
   uploadProgress: number;
   onDeleteFile: (fileUri: string) => void;
-  // ⭐️ 수정: onInfoSubmit이 인자를 2개 받도록 타입 변경
-  onInfoSubmit: (userInfo: { name: string; email: string; cellphone: string }, estimateData: ProjectEstimate | null, chatSessionId: string) => void;
-  // ⭐️ 추가: 견적 데이터와 채팅 세션 ID를 props로 받음
+  onInfoSubmit: (
+    userInfo: { name: string; email: string; cellphone: string },
+    estimateData: ProjectEstimate | null,
+    chatSessionId: string
+  ) => void;
   estimateDataForConsult: ProjectEstimate | null;
   chatSessionId: string;
 }
@@ -177,8 +146,8 @@ const BottomInput: React.FC<BottomInputProps> = ({
   uploadProgress,
   onDeleteFile,
   onInfoSubmit,
-  estimateDataForConsult, // ⭐️ 추가
-  chatSessionId, // ⭐️ 추가
+  estimateDataForConsult,
+  chatSessionId,
 }) => {
   const [value, setValue] = useState('');
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
@@ -186,13 +155,6 @@ const BottomInput: React.FC<BottomInputProps> = ({
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [loginModalPurpose, setLoginModalPurpose] = useState<'limitReached' | 'limitExceeded' | null>(null);
-  const [userInfo, setUserInfo] = useState({ 
-    name: '', 
-    email: '', 
-    cellphone: '',
-    privacyAgreed: false,
-    termsAgreed: false
-  });
   const [hasUsedExtraCount, setHasUsedExtraCount] = useState(false);
 
   const remainingCountRef = useRef(remainingCount);
@@ -357,40 +319,15 @@ const BottomInput: React.FC<BottomInputProps> = ({
     }
   };
   
-  const handleInfoSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // 필수 입력값 및 약관 동의 확인
-    if (!userInfo.name || !userInfo.email || !userInfo.cellphone) {
-      alert('모든 필수 정보를 입력해주세요.');
-      return;
-    }
-    
-    if (!userInfo.privacyAgreed || !userInfo.termsAgreed) {
-      alert('필수 약관에 동의해주세요.');
-      return;
-    }
-
-    if (onInfoSubmit) {
-      onInfoSubmit(userInfo, estimateDataForConsult, chatSessionId);
-    }
-    console.log("정보 입력 후 견적 요청:", userInfo);
+  const handleIssuerInfoSubmit = (info: IssuerInfo) => {
+    onInfoSubmit(info, estimateDataForConsult, chatSessionId);
+    console.log("정보 입력 후 견적 요청:", info);
     setIsInfoModalOpen(false);
   };
 
   const handleGoogleLoginSuccess = async (tokenResponse: any) => {
     try {
-      // 구글 로그인 성공 후 처리
       console.log('Google login success:', tokenResponse);
-      
-      // 로그인 성공 시 견적서 모달 표시를 위해 3초 대기
-      // setTimeout(() => {
-      //   setIsLoginModalOpen(false);
-      //   if (loginModalPurpose === 'limitExceeded') {
-      //     setIsInfoModalOpen(true);
-      //   }
-      // }, 3000);
-      
     } catch (error) {
       console.error('Google login error:', error);
     }
@@ -411,7 +348,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
         </FilePreviewArea>
 
         <InputContainer>
-        <input
+          <input
             ref={fileInputRef}
             type="file"
             multiple
@@ -457,39 +394,11 @@ const BottomInput: React.FC<BottomInputProps> = ({
         onGoogleLoginSuccess={handleGoogleLoginSuccess}
       />
       
-      <Modal 
-        open={isInfoModalOpen} 
-        title="발행자 정보 입력" 
-        onClose={() => setIsInfoModalOpen(false)} 
-        width={520}
-      >
-        <div style={{ fontSize: 14, textAlign: 'center', marginBottom: 32 }}>
-          {/* 더 자세한 견적 요청을 위해 정보를 입력해주세요. */}
-          
-        </div>
-        <Form onSubmit={handleInfoSubmit}>
-          <TextField id="name" label="이름" placeholder="이름을 입력해주세요" required value={userInfo.name} onChange={(e) => setUserInfo({...userInfo, name: e.target.value})} />
-          <TextField id="email" label="이메일" type="email" placeholder="이메일을 입력해주세요" required value={userInfo.email} onChange={(e) => setUserInfo({...userInfo, email: e.target.value})} />
-          <TextField id="phone" label="전화번호" placeholder="전화번호를 입력해주세요" required value={userInfo.cellphone} pattern="[0-9]{10,11}" type="tel" onChange={(e) => setUserInfo({...userInfo, cellphone: e.target.value})} />
-          <TermsAgreement 
-            onAgreeChange={(privacy, terms) => {
-              setUserInfo(prev => ({
-                ...prev,
-                privacyAgreed: privacy,
-                termsAgreed: terms
-              }));
-            }}
-            initialPrivacyAgreed={userInfo.privacyAgreed}
-            initialTermsAgreed={userInfo.termsAgreed}
-          />
-          <SubmitButton 
-            type="submit" 
-            disabled={!userInfo.privacyAgreed || !userInfo.termsAgreed}
-          >
-            완료하기
-          </SubmitButton>
-        </Form>
-      </Modal>
+      <IssuerInfoModal
+        open={isInfoModalOpen}
+        onClose={() => setIsInfoModalOpen(false)}
+        onSubmit={handleIssuerInfoSubmit}
+      />
     </>
   );
 };

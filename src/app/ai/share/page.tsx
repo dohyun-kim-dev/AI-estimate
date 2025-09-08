@@ -8,6 +8,7 @@ import { useThemeStore } from '@/store/themeStore';
 import Icon from '@/components/ai-esti/Icon';
 import ShareAiResponseMessage from '@/components/ai-esti/ShareAiResponseMessage';
 import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
+import { AiMessageContent } from '@/app/ai/page';
 
 // 메시지 타입 정의
 interface ChatMessage {
@@ -75,7 +76,7 @@ const NavTitle = styled.h1`
 const Container = styled.div`
   max-width: 960px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 1px;
   // padding-top: 76px;
   padding-bottom: 20px;
   min-height: 100vh;
@@ -96,7 +97,6 @@ const UserMessage = styled.div`
   color: ${({ theme }) => theme.text};
   padding: 10px 12px;
   border-radius: 12px;
-  max-width: 80%;
   white-space: pre-wrap;
   font-size: 18px;
   line-height: 2.0;
@@ -107,7 +107,11 @@ const UserMessageContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: 80%;
+  max-width: 100%;
+
+  align-items: flex-end;      
+  max-width: 80%;            
+  width: fit-content;
 `;
 
 const UserImagePreview = styled.img`
@@ -135,7 +139,7 @@ const ReadOnlyNotice = styled.div`
   padding: 20px;
   background: ${({ theme }) => theme.surface1};
   border-radius: 8px;
-  margin: 20px 0;
+  margin: 12px;
   color: ${({ theme }) => theme.subtleText};
   font-size: 18px;
   border: 1px solid ${({ theme }) => theme.border};
@@ -261,7 +265,7 @@ const SharePage: React.FC = () => {
   useEffect(() => {
     // 페이지 로드 시 기존 메시지 클리어
     clearMessages();
-    
+    console.log('messages', messages);
     const loadSharedMessages = async () => {
       if (!sessionId) {
         setErrorMessage('세션 ID가 없습니다.');
@@ -334,14 +338,14 @@ const SharePage: React.FC = () => {
     return (
       <LayoutWrapper>
         <TopNav>
-          <div className="left-icons">
+          {/* <div className="left-icons">
             <Icon 
               src={isDarkMode ? '/ai-estimate/arrow_back.png' : '/ai-estimate/arrow_back.png'} 
               width={24} 
               height={24} 
               onClick={handleBack}
             />
-          </div>
+          </div> */}
           <NavTitle>공유된 채팅</NavTitle>
           <div className="right-icons"></div>
         </TopNav>
@@ -359,14 +363,14 @@ const SharePage: React.FC = () => {
     return (
       <LayoutWrapper>
         <TopNav>
-          <div className="left-icons">
+          {/* <div className="left-icons">
             <Icon 
               src={isDarkMode ? '/ai-estimate/arrow_back.png' : '/ai-estimate/arrow_back.png'} 
               width={24} 
               height={24} 
               onClick={handleBack}
             />
-          </div>
+          </div> */}
           <NavTitle>공유된 채팅</NavTitle>
           <div className="right-icons"></div>
         </TopNav>
@@ -439,9 +443,11 @@ const SharePage: React.FC = () => {
               return (
                 <StyledAiMessage
                   key={index}
-                  content={message.content + chatSessionId}
+                  content={<AiMessageContent content={message.content}/>}
                   profileImage="/ai-estimate/pretty.png"
                   name="강유하"
+                  chatSessionId={sessionId}
+                  // estimateDataForConsult={estimateDataForConsult}
                   isFullWidth={message.content.includes('<script type="application/json" id="invoiceData">')}
                 />
               );

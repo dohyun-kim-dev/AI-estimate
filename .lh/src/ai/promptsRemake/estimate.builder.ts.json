@@ -1,0 +1,26 @@
+{
+    "sourceFile": "src/ai/promptsRemake/estimate.builder.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1757219056298,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1757219152381,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,9 +1,7 @@\n // promptsRemake/estimate.builder.ts\n import { parseMarkdownTable, markDuplicates, type FeatureItem } from './priceData.parser';\n-import { commonFeatures } from './priceData.common';\n-import { userFeatures } from './priceData.user';\n-import { adminFeatures } from './priceData.admin';\n+import { commonFeatures, userFeatures, adminFeatures } from '../priceData';\n \n export function buildNormalizedFeatures(): FeatureItem[] {\n   const rows = [\n     ...parseMarkdownTable(commonFeatures),\n"
+                },
+                {
+                    "date": 1757256034779,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,12 +1,12 @@\n-// promptsRemake/estimate.builder.ts\n-import { parseMarkdownTable, markDuplicates, type FeatureItem } from './priceData.parser';\n-import { commonFeatures, userFeatures, adminFeatures } from '../priceData';\n+// // promptsRemake/estimate.builder.ts\n+// import { parseMarkdownTable, markDuplicates, type FeatureItem } from './priceData.parser';\n+// import { commonFeatures, userFeatures, adminFeatures } from '../priceData';\n \n-export function buildNormalizedFeatures(): FeatureItem[] {\n-  const rows = [\n-    ...parseMarkdownTable(commonFeatures),\n-    ...parseMarkdownTable(userFeatures),\n-    ...parseMarkdownTable(adminFeatures),\n-  ];\n-  return markDuplicates(rows);\n-}\n+// export function buildNormalizedFeatures(): FeatureItem[] {\n+//   const rows = [\n+//     ...parseMarkdownTable(commonFeatures),\n+//     ...parseMarkdownTable(userFeatures),\n+//     ...parseMarkdownTable(adminFeatures),\n+//   ];\n+//   return markDuplicates(rows);\n+// }\n"
+                }
+            ],
+            "date": 1757219056298,
+            "name": "Commit-0",
+            "content": "// promptsRemake/estimate.builder.ts\nimport { parseMarkdownTable, markDuplicates, type FeatureItem } from './priceData.parser';\nimport { commonFeatures } from './priceData.common';\nimport { userFeatures } from './priceData.user';\nimport { adminFeatures } from './priceData.admin';\n\nexport function buildNormalizedFeatures(): FeatureItem[] {\n  const rows = [\n    ...parseMarkdownTable(commonFeatures),\n    ...parseMarkdownTable(userFeatures),\n    ...parseMarkdownTable(adminFeatures),\n  ];\n  return markDuplicates(rows);\n}\n"
+        }
+    ]
+}

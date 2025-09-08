@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import { IoChevronForward } from 'react-icons/io5';
 import Icon from './Icon';
-import Modal from '@/components/common/Modal';
 import { useToast } from '@/components/common/ToastProvider'
-import TextField from '@/components/common/TextField'
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
 import { requestEstimateConsult } from '@/lib/api/user/userApi';
+import { useLocation } from 'react-router-dom';
+import IssuerInfoModal, { IssuerInfo } from '@/components/ai-esti/IssuerInfoModal';
 
 const ButtonsContainer = styled.div`
   display: flex;
@@ -60,10 +60,11 @@ const IconWrapper = styled.div`
   height: 24px;
   flex-shrink: 0;
 `;
+
 const Flex = styled.div`
- display:flex;
- align-items:center;
- gap:10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 `;
 
 const TextContent = styled.div`
@@ -117,8 +118,8 @@ const ActionButtonBottom = styled.div<{ $isSecondary?: boolean }>`
   display: none;
   
   @media (min-width: 1024px) {
-  width:100%;
-  margin-top:30px;
+    width: 100%;
+    margin-top: 30px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -140,65 +141,32 @@ const ActionButtonBottom = styled.div<{ $isSecondary?: boolean }>`
   }
 `;
 
-const Form = styled.form`
-  margin-top: 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-
-  @media (min-width: 1024px) {
-    width: 85%;
-    margin-left: auto;
-    margin-right: auto;
-  }
-`;
-
-const Disclaimer = styled.p`
-  margin-top: 4px;
-  font-size: 12px;
-  color: #666666;
-`;
-
-const SubmitButton = styled.button`
-  height: 44px;
-  border-radius: 8px;
-  background: #2E2E48;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  width: 80%;
-  align-self: center;
-`;
-
 interface EstimateActionButtonsProps {
   onConsult?: () => void;
-  onSubmit?: () => void;
+  onSubmit?: (action?: string) => void;
 }
 
 const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
   onConsult,
   onSubmit,
 }) => {
-  const [openConsult, setOpenConsult] = useState(false);
-  const [name, setName] = useState('');
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [name, setName] = useState('');   // 로그인 사용자 프리필 용
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+
   const { success, error } = useToast();
   const { isAuthenticated } = useAuthStore();
   const { messages, chatSessionId } = useChatStore();
+  const location = useLocation();
 
-  const handleConsultClick = async () => {
-    onConsult?.();
-    if (isAuthenticated()) {
-      // 회원인 경우 바로 API 호출
-      await handleSubmit();
-    } else {
-      // 비회원인 경우 모달 표시
-      setOpenConsult(true);
-    }
-  };
+  // 공유 페이지 여부
+  const isSharePage = useMemo(() => {
+    const url = `${location.pathname}${location.search}${location.hash}`.toLowerCase();
+    return url.includes('share');
+  }, [location]);
 
-  // 회원일 경우 로컬스토리지에서 정보 불러오기
+  // 로그인 시 로컬스토리지에서 사용자 정보 프리필
   useEffect(() => {
     if (isAuthenticated()) {
       const authStorage = localStorage.getItem('auth-storage');
@@ -214,39 +182,59 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
     }
   }, [isAuthenticated]);
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    
+  // 상담 버튼 클릭
+  const handleConsultClick = async () => {
+    onConsult?.();
+    if (isAuthenticated()) {
+      // 회원은 바로 API 호출
+      await handleSubmit();
+    } else {
+      // 비회원은 정보 입력 모달 표시
+      setIsInfoModalOpen(true);
+    }
+  };
+
+  // 상담 요청 공통 처리: 로그인/비로그인 모두 지원
+  const handleSubmit = async (info?: IssuerInfo) => {
     // 최종 견적서 데이터 추출
     const lastMessage = messages[messages.length - 1];
-    const match = lastMessage?.content?.match(/<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/);
+    const match = lastMessage?.content?.match(
+      /<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/
+    );
     const estimateData = match ? JSON.parse(match[1]) : null;
 
     if (!estimateData) {
       error('견적서 정보를 찾을 수 없습니다.');
-      setOpenConsult(false);
+      setIsInfoModalOpen(false);
       return;
     }
-    
-    // 필수 정보 확인
-    const userId = isAuthenticated() ? localStorage.getItem('auth-storage') ? JSON.parse(localStorage.getItem('auth-storage')).state?.user?._id : null : localStorage.getItem('guest-uuid');
-    const userEmail = isAuthenticated() ? email : e?.target.email?.value;
-    const userName = isAuthenticated() ? name : e?.target.name?.value;
-    const userPhone = isAuthenticated() ? phone : e?.target.phone?.value;
+
+    // 필수 정보 구성
+    const authed = isAuthenticated();
+    const userId = authed
+      ? (localStorage.getItem('auth-storage')
+          ? JSON.parse(localStorage.getItem('auth-storage') as string).state?.user?._id
+          : null)
+      : localStorage.getItem('guest-uuid');
+
+    const userName  = authed ? name  : info?.name;
+    const userEmail = authed ? email : info?.email;
+    const userPhone = authed ? phone : info?.cellphone;
 
     if (!userId || !userName || !userEmail || !userPhone || !chatSessionId) {
       error('필수 정보가 누락되었습니다. 다시 시도해 주세요.');
-      setOpenConsult(false);
+      setIsInfoModalOpen(false);
       return;
     }
 
     const title = estimateData.project_name || '새로운 견적서';
+    // 서버에서 pdf 생성 규칙이 uuid.pdf라면 다음과 같이 사용
     const estimateFile = `${estimateData.uuid}.pdf`;
     const user = {
       id: userId,
       name: userName,
       cellphone: userPhone,
-      email: userEmail
+      email: userEmail,
     };
 
     try {
@@ -260,12 +248,14 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
       console.error('상담 요청 API 호출 오류:', e);
       error('상담 요청 중 오류가 발생했습니다.');
     } finally {
-      setOpenConsult(false);
+      setIsInfoModalOpen(false);
     }
   };
 
   return (
     <ButtonsContainer>
+{!isSharePage && (
+  <>
       <ActionButton onClick={handleConsultClick} $isPrimary>
         <LeftContent>
           <TextContent>
@@ -275,55 +265,61 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
               </IconWrapper>
               <Title>여기닷에게 상담하기</Title>
             </Flex>
-            <Description>해당 견적이 마음에 든다면, <br/>공급사와 최종 견적 상담을 진행해 보세요</Description>
+            <Description>
+              해당 견적이 마음에 든다면, <br/>공급사와 최종 견적 상담을 진행해 보세요
+            </Description>
           </TextContent>
         </LeftContent>
         <ChevronIcon size={20} />
         <ActionButtonBottom>상담 요청 하기</ActionButtonBottom>
       </ActionButton>
+     
+          <ActionButton onClick={() => onSubmit?.("AI 예산 줄이기")}>
+            <LeftContent>
+              <TextContent>
+                <Flex>
+                  <IconWrapper>
+                    <Icon src="/ai-estimate/trending_down.png" width={24} height={24} />
+                  </IconWrapper>
+                  <Title>AI 예산 줄이기</Title>
+                </Flex>
+                <Description>
+                  기능을 간소화 하여 견적가를 <br/>스마트하게 절감
+                </Description>
+              </TextContent>
+            </LeftContent>
+            <ChevronIcon size={20} />
+            <ActionButtonBottom $isSecondary>AI 예산 줄이기</ActionButtonBottom>
+          </ActionButton>
 
-      <ActionButton onClick={() => onSubmit("AI 예산 줄이기")}>
-        <LeftContent>
-          <TextContent>
-            <Flex>
-              <IconWrapper>
-                <Icon src="/ai-estimate/trending_down.png" width={24} height={24} />
-              </IconWrapper>
-              <Title>AI 예산 줄이기</Title>
-            </Flex>
-            <Description>기능을 간소화 하여 견적가를 <br/>스마트하게 절감</Description>
-          </TextContent>
-        </LeftContent>
-        <ChevronIcon size={20} />
-        <ActionButtonBottom $isSecondary>AI 예산 줄이기</ActionButtonBottom>
-      </ActionButton>
+          <ActionButton onClick={() => onSubmit?.("AI 맞춤 추천")}>
+            <LeftContent>
+              <TextContent>
+                <Flex>
+                  <IconWrapper>
+                    <Icon src="/ai-estimate/awesome.png" width={24} height={24} />
+                  </IconWrapper>
+                  <Title>AI 맞춤 추천</Title>
+                </Flex>
+                <Description>
+                  AI가 분석한 필수 기능을 <br/>빠르게 확인
+                </Description>
+              </TextContent>
+            </LeftContent>
+            <ChevronIcon size={20} />
+            <ActionButtonBottom $isSecondary>AI 맞춤추천</ActionButtonBottom>
+          </ActionButton>
+        </> 
+      )}
 
-      <ActionButton onClick={() => onSubmit("AI 맞춤 추천")}>
-        <LeftContent>
-          <TextContent>
-            <Flex>
-              <IconWrapper>
-                <Icon src="/ai-estimate/awesome.png" width={24} height={24} />
-              </IconWrapper>
-              <Title>AI 맞춤 추천</Title>
-            </Flex>
-            <Description>AI가 분석한 필수 기능을 <br/>빠르게 확인</Description>
-          </TextContent>
-        </LeftContent>
-        <ChevronIcon size={20} />
-        <ActionButtonBottom $isSecondary>AI 맞춤추천</ActionButtonBottom>
-      </ActionButton>
-
-      <Modal open={openConsult} title="필수 정보 입력" centerTitle onClose={() => setOpenConsult(false)} width={520}>
-        <div style={{ fontSize: 14, textAlign: 'center'}}>정확한 상담을 위해 필수 정보를 입력해주세요</div>
-        <Form onSubmit={handleSubmit}>
-          <TextField id="name" label="이름" placeholder="이름을 입력해주세요" required />
-          <TextField id="email" label="이메일" type="email" placeholder="이메일을 입력해주세요" required />
-          <TextField id="phone" label="전화번호" placeholder="전화번호를 입력해주세요" pattern="[0-9]{10,11}" type="tel" required maxLength={11} required />
-          <Disclaimer>문의 시 개인정보 수집·이용에 동의한 것으로 간주됩니다.</Disclaimer>
-          <SubmitButton type="submit">문의 접수</SubmitButton>
-        </Form>
-      </Modal>
+      {/* ✅ 비회원일 때 띄우는 발행자 정보 입력 모달 */}
+      <IssuerInfoModal
+        open={isInfoModalOpen}
+        onClose={() => setIsInfoModalOpen(false)}
+        onSubmit={(info) => handleSubmit(info)}
+        // 필요시 로그인 정보로 초기값 프리필
+        initial={{ name, email, cellphone: phone }}
+      />
     </ButtonsContainer>
   );
 };

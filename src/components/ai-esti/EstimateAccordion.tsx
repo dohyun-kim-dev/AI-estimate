@@ -89,7 +89,7 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
             title || est.project_name || "견적서",
             userId,
             dataStr,
-            estimate.uuid // ✅ 수정이라면 반드시 포함
+            estimateId // ✅ 수정이라면 반드시 포함
           );
         } catch (e) {
           console.error("[save] 견적 업데이트 실패:", e);

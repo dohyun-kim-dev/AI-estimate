@@ -210,7 +210,7 @@ interface EstimateItem {
   price: string;
   description: string;
   is_deleted: boolean;
-  item_id: string;
+  item_id?: string;  // 옵셔널로 변경
 }
 
 interface EstimateAccordionItemProps {

@@ -1,12 +1,14 @@
 // src/hooks/estimate.ts
 import { v4 as uuidv4 } from 'uuid';
 
+/** 견적 객체에 uuid가 없으면 생성해서 채워줌 */
 export function ensureEstimateUuid<T extends Record<string, any>>(est: T): T {
   if (!est) return est;
   if (!est.uuid) est.uuid = uuidv4();
   return est;
 }
 
+/** 견적 객체 정규화: uuid 보장, is_deleted 기본값, item_id 기본값 부여 */
 export function normalizeEstimate<T extends Record<string, any>>(est: T): T {
   ensureEstimateUuid(est);
   est?.categories?.forEach((c: any, ci: number) =>
@@ -22,7 +24,9 @@ export function normalizeEstimate<T extends Record<string, any>>(est: T): T {
 
 /** reply 전체에서 <script> 블록 제거한 "인트로"만 추출 */
 export function extractIntroFromReply(reply: string) {
-  return reply.replace(/<script type="application\/json" id="invoiceData">[\s\S]*?<\/script>/g, '').trim();
+  return reply
+    .replace(/<script type="application\/json" id="invoiceData">[\s\S]*?<\/script>/g, '')
+    .trim();
 }
 
 /** 인트로 + 스크립트(JSON) 문자열 조립 */
@@ -41,14 +45,43 @@ ${json}
 </script>`;
 }
 
+/** 메시지 content에서 invoiceData JSON을 파싱해서 객체로 반환 */
+export function extractEstimateData<T = any>(content: string): T | null {
+  try {
+    const m = content.match(
+      /<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/
+    );
+    if (!m) return null;
+    const data = JSON.parse(m[1]);
+    if (!data || typeof data !== 'object') return null;
+    return data as T;
+  } catch {
+    return null;
+  }
+}
 
-export const getEstimateIdFromContent = (content: string): string | null => {
-    try {
-      const m = content.match(/<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/);
-      if (!m) return null;
-      const json = JSON.parse(m[1]);
-      return json?.uuid || null;
-    } catch {
-      return null;
-    }
-  };
+/** 메시지 content에서 견적을 파싱하고 uuid 보장(없으면 생성) 후 돌려줌 */
+export function getOrEnsureEstimateFromContent<T = any>(content: string) {
+  const est = extractEstimateData<T>(content);
+  if (!est) return { estimate: null as T | null };
+  // 깊은 복사 후 정규화(= uuid/flags/id 보장)
+  const ensured = normalizeEstimate(JSON.parse(JSON.stringify(est)));
+  return { estimate: ensured as T };
+}
+
+/** 문자열 content에서 uuid만 바로 추출하고 싶을 때 */
+export function getEstimateIdFromContent(content: string): string | null {
+  try {
+    const m = content.match(
+      /<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/
+    );
+    if (!m) return null;
+    const json = JSON.parse(m[1]);
+    return json?.uuid || null;
+  } catch {
+    return null;
+  }
+}
+
+/** (선택) 이름이 더 직관적인 alias가 필요하면 export */
+export const ensureClientUuid = ensureEstimateUuid;

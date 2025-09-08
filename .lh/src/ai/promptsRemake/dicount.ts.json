@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/ai/promptsRemake/dicount.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1757218922402,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1757256056858,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,31 +1,31 @@\n-// promptsRemake/discount.ts\n-export const discountPrompt = `\n---- [프로모션] 개발 기간 8주 연장 및 20% 할인 (discount_extend_8w_20p) ---\n-1) 안내문:\n-  - 'ko': \"[프로모션] 개발 기간 연장 및 할인이 적용된 견적입니다.\"\n-  - 'en': \"[Promotion] This is an estimate with an extended development period and a discount applied.\"\n+// // promptsRemake/discount.ts\n+// export const discountPrompt = `\n+// --- [프로모션] 개발 기간 8주 연장 및 20% 할인 (discount_extend_8w_20p) ---\n+// 1) 안내문:\n+//   - 'ko': \"[프로모션] 개발 기간 연장 및 할인이 적용된 견적입니다.\"\n+//   - 'en': \"[Promotion] This is an estimate with an extended development period and a discount applied.\"\n \n-2) 기간:\n-  - new_total_duration = original_invoice.total.duration + 40  # 8주 = 40영업일 기준\n+// 2) 기간:\n+//   - new_total_duration = original_invoice.total.duration + 40  # 8주 = 40영업일 기준\n \n-3) 총액 재계산:\n-  - 할인 제외 키워드: [\"페이지\",\"화면\",\"화면설계\",\"웹 기획\",\"앱 기획\",\"디자인\",\"UI/UX\",\"UI 디자인\",\"UX 설계\",\"퍼블리싱\",\"스타일링\",\"로고\"]\n-  - non_discountable_sum = 제외 항목 합\n-  - discount_base = original_total - non_discountable_sum\n-  - discount_value = max(discount_base * 0.2, 0)\n-  - new_total_amount = original_total - discount_value\n+// 3) 총액 재계산:\n+//   - 할인 제외 키워드: [\"페이지\",\"화면\",\"화면설계\",\"웹 기획\",\"앱 기획\",\"디자인\",\"UI/UX\",\"UI 디자인\",\"UX 설계\",\"퍼블리싱\",\"스타일링\",\"로고\"]\n+//   - non_discountable_sum = 제외 항목 합\n+//   - discount_base = original_total - non_discountable_sum\n+//   - discount_value = max(discount_base * 0.2, 0)\n+//   - new_total_amount = original_total - discount_value\n \n-4) 출력:\n-  - updated_invoice로 출력(total.duration, total.amount 갱신)\n-  - 환율 표시가 필요하면 프론트에서 처리하거나 exchange_rate를 주입\n+// 4) 출력:\n+//   - updated_invoice로 출력(total.duration, total.amount 갱신)\n+//   - 환율 표시가 필요하면 프론트에서 처리하거나 exchange_rate를 주입\n   \n \n---- [예산절감] 필수 유지 + 2가지 안 (discount_remove_features_budget) ---\n-- A안: 'AI/고급/실시간' 기능을 기본형으로 대체/제외\n-- B안: (필수 제외) 최고가 3~4개 기능 최적화\n-- 각 안에 대해 절감액/절감율 명시, 수정된 견적 JSON 포함\n+// --- [예산절감] 필수 유지 + 2가지 안 (discount_remove_features_budget) ---\n+// - A안: 'AI/고급/실시간' 기능을 기본형으로 대체/제외\n+// - B안: (필수 제외) 최고가 3~4개 기능 최적화\n+// - 각 안에 대해 절감액/절감율 명시, 수정된 견적 JSON 포함\n \n---- [AI 제안] 전략적 기능 제안 (discount_ai_suggestion) ---\n-- 현재 견적/대화를 바탕으로 2~4개 제안\n-- 견적 JSON 수정 없이 제안에 집중\n-`;\n+// --- [AI 제안] 전략적 기능 제안 (discount_ai_suggestion) ---\n+// - 현재 견적/대화를 바탕으로 2~4개 제안\n+// - 견적 JSON 수정 없이 제안에 집중\n+// `;\n"
+                }
+            ],
+            "date": 1757218922402,
+            "name": "Commit-0",
+            "content": "// promptsRemake/discount.ts\nexport const discountPrompt = `\n--- [프로모션] 개발 기간 8주 연장 및 20% 할인 (discount_extend_8w_20p) ---\n1) 안내문:\n  - 'ko': \"[프로모션] 개발 기간 연장 및 할인이 적용된 견적입니다.\"\n  - 'en': \"[Promotion] This is an estimate with an extended development period and a discount applied.\"\n\n2) 기간:\n  - new_total_duration = original_invoice.total.duration + 40  # 8주 = 40영업일 기준\n\n3) 총액 재계산:\n  - 할인 제외 키워드: [\"페이지\",\"화면\",\"화면설계\",\"웹 기획\",\"앱 기획\",\"디자인\",\"UI/UX\",\"UI 디자인\",\"UX 설계\",\"퍼블리싱\",\"스타일링\",\"로고\"]\n  - non_discountable_sum = 제외 항목 합\n  - discount_base = original_total - non_discountable_sum\n  - discount_value = max(discount_base * 0.2, 0)\n  - new_total_amount = original_total - discount_value\n\n4) 출력:\n  - updated_invoice로 출력(total.duration, total.amount 갱신)\n  - 환율 표시가 필요하면 프론트에서 처리하거나 exchange_rate를 주입\n  \n\n--- [예산절감] 필수 유지 + 2가지 안 (discount_remove_features_budget) ---\n- A안: 'AI/고급/실시간' 기능을 기본형으로 대체/제외\n- B안: (필수 제외) 최고가 3~4개 기능 최적화\n- 각 안에 대해 절감액/절감율 명시, 수정된 견적 JSON 포함\n\n--- [AI 제안] 전략적 기능 제안 (discount_ai_suggestion) ---\n- 현재 견적/대화를 바탕으로 2~4개 제안\n- 견적 JSON 수정 없이 제안에 집중\n`;\n"
+        }
+    ]
+}
