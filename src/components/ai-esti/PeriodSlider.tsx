@@ -163,10 +163,10 @@ interface PeriodSliderProps {
   value: number;
   onChange: (value: number) => void;
   $isvisible: boolean;
-  min: number;
-  max: number;
-  discountedPrice: number;
-  basePrice: number;
+  min?: number;
+  max?: number;
+  discountedPrice?: number;
+  basePrice?: number;
 }
 
 const PeriodSlider: React.FC<PeriodSliderProps> = ({ value, onChange, $isvisible, min, max, discountedPrice, basePrice }) => {

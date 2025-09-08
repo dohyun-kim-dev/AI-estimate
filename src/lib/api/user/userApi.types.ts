@@ -22,7 +22,7 @@ export interface GoogleLoginUpdateParams {
   name: string;
   email: string;
   profileImage: string;
-  cellphone: string;
+  cellphone?: string;
 }
 
 export interface GoogleLoginResponse {

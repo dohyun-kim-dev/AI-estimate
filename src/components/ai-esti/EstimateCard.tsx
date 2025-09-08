@@ -115,11 +115,11 @@ const ShareInput = styled.div`
 
 interface EstimateCardProps {
   estimate: ProjectEstimate;
-  discountedPrice: number;
-  projectPeriod: number;
+  discountedPrice?: number;
+  projectPeriod?: number;
 }
 
-const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, projectPeriod = 0 }) => {
+const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, projectPeriod = 0}) => {
   const [openShare, setOpenShare] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [isSocialLoginModalOpen, setIsSocialLoginModalOpen] = useState(false);

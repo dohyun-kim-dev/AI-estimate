@@ -1,12 +1,10 @@
-// src/app/ai-estimate/components/EstimateAccordion.tsx
-"use client";
-
 import React, { useCallback, useMemo, useState } from "react";
 import styled from "styled-components";
 import { ProjectEstimate } from "@/app/ai-estimate/types/projectEstimate";
 import EstimateAccordionItem from "./EstimateAccordionItem";
-import { uploadEstimatePdf } from "@/lib/api/user/userApi";
+import { patchChatMessages, uploadEstimatePdf } from "@/lib/api/user/userApi";
 import { buildFullEstimateData } from "@/hooks/estimate";
+import { ChatMessage } from "@/store/chatStore";
 
 const AccordionWrapper = styled.div`
   display: flex;
@@ -17,9 +15,9 @@ const AccordionWrapper = styled.div`
 interface EstimateAccordionProps {
   data: ProjectEstimate;          // 초기 전체 견적 데이터
   onItemClick: (item: any) => void;
-  chatSessionId: string;          // 채팅 세션 id
-  estimateId: string;             // ✅ 서버 업데이트용 id (수정 시 필수)
-  userId: string;                 // 회원/게스트 uuid
+  chatSessionId?: string;          // 채팅 세션 id
+  estimateId?: string;             // ✅ 서버 업데이트용 id (수정 시 필수)
+  userId?: string;                 // 회원/게스트 uuid
   title?: string;                 // 없으면 project_name 사용
 }
 
@@ -51,6 +49,31 @@ function toNumberLike(n: string | number): number {
   return 0;
 }
 
+function findMessageIdForEstimate(estimateId?: string | null) {
+  if (!estimateId) return null;
+  try {
+    const raw = sessionStorage.getItem("ai-chat-storage");
+    if (!raw) return null;
+    
+    // JSON.parse의 결과를 ChatState 타입으로 지정합니다.
+    const storageState: { state } = JSON.parse(raw);
+    const messages = storageState.state.messages;
+    
+    console.log("Parsed messages array:", messages);
+    
+    if (!Array.isArray(messages)) return null;
+    
+    // 배열을 순회하며 estimateId가 일치하는 메시지 객체를 찾습니다.
+    const hit = messages.find((it: ChatMessage) => String(it?.estimateId) === String(estimateId));
+    
+    // 찾은 메시지 객체에서 messageId를 반환합니다.
+    return hit?.messageId ?? null;
+  } catch (e) {
+    console.warn("findMessageIdForEstimate: 파싱 오류 발생", e);
+    return null;
+  }
+}
+
 const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
   data,
   onItemClick,
@@ -72,31 +95,47 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
   // 서버 저장 (디바운스) — 바깥에서 최신 est를 직접 넘겨 받음
   const saveToServer = useMemo(
     () =>
-      debounce(async (est: ProjectEstimate) => {
+      debounce(async (est) => {
         try {
           // 💡 id 없으면 업데이트 못 하므로 여기서 바로 가드
           if (!estimateId) {
-            console.warn('[save] estimateId 없음 — 업데이트 생략');
+            console.warn("[save] estimateId 없음 — 업데이트 생략");
             return;
           }
-          if (!chatSessionId || !userId) {
-            console.warn("[save] 필수값 누락:", { chatSessionId, estimateId, userId });
+
+          // 항상 최신 messageId를 세션스토리지에서 조회 (동시에 여러 탭에서 변경될 수 있어서)
+          const messageId = findMessageIdForEstimate(estimateId);
+
+          if (!chatSessionId || !userId || !messageId) {
+            console.warn("[save] 필수값 누락:", { chatSessionId, estimateId, userId, messageId });
             return;
           }
+
           const dataStr = buildFullEstimateData(est);
-          await uploadEstimatePdf(
+          const uploadResponse = await uploadEstimatePdf(
             chatSessionId,
             title || est.project_name || "견적서",
             userId,
             dataStr,
             estimateId // ✅ 수정이라면 반드시 포함
           );
+
+          if (uploadResponse?.statusCode === 200) {
+            // 견적서 업로드 성공 시, 채팅 메시지도 함께 수정
+            const updatedReply = `<script type="application/json" id="invoiceData">${JSON.stringify(est)}</script>`;
+            await patchChatMessages(messageId, {
+              type: "text",
+              value: updatedReply,
+            });
+          }
         } catch (e) {
           console.error("[save] 견적 업데이트 실패:", e);
         }
       }, 700),
     [chatSessionId, estimateId, title, userId]
   );
+
+
 
   // 아이템 is_deleted 토글 (item_id 있으면 우선)
   const toggleDeletedFlag = useCallback(

@@ -8,7 +8,7 @@ import PeriodSlider from './PeriodSlider';
 import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
 import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import type { EstimateItem } from '@/app/ai-estimate/types';
-import { useChatActions ,handleSubmit} from '@/hooks/useChatActions';
+import { useChatActions} from '@/hooks/useChatActions';
 
 // 메인 페이지와 동일한 스타일 컴포넌트들
 const EstimateContainer = styled.div`
@@ -151,6 +151,7 @@ const EstimateRenderer: React.FC<{ content: string }> = ({ content }) => {
               <EstimateAccordion
                 data={estimateData}
                 onItemClick={handleItemClick}
+
               />
             </AnimatedContainer>
           </MainContent>

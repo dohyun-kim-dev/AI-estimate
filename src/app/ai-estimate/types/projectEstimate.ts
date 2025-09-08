@@ -24,6 +24,8 @@ export interface EstimateItem {
   description: string;
   front_end_period?: number | string;
   back_end_period?: number | string;
+  item_id?: string; // 서버에서 관리하는 항목 ID (있을 수도 있고 없을 수도 있음)
+  is_deleted?: boolean; // 항목 삭제 여부
 }
 
 export interface ExtractedEstimateData extends ProjectEstimate {

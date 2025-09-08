@@ -321,7 +321,8 @@ try {
         currentSessionId,
         invoiceTitle,
         userId,
-        dataStr
+        dataStr,
+        estimateId
       );
       if (uploadResponse?.statusCode !== 200) {
         throw new Error(uploadResponse?.error?.message || '견적 저장 실패');

@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import styled from 'styled-components';
 import { IoChevronDown, IoChevronForward } from 'react-icons/io5';
 import { formatPrice, parsePrice } from '@/utils/utils';
+import { useLocation } from 'react-router-dom';
 
 const ItemWrapper = styled.div<{ depth: number; $isOpen?: boolean }>`
   position: relative;
@@ -249,6 +250,12 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const hasItems = items.length > 0 || !!children;
+  const location = useLocation();
+
+  const isSharePage = useMemo(() => {
+    const url = `${location.pathname}${location.search}${location.hash}`.toLowerCase();
+    return url.includes('share');
+  }, [location]);
 
   const getStorageKey = () => `estimate_${chatRoomId}_${estimateId}_${name}`;
   
@@ -356,15 +363,19 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
                   {item.price}
                 </span>
                 <div className="actions">
-                  {isDeleted ? (
-                    <ActionButton onClick={(e) => handleCancelDelete(e, itemId, item)} aria-label="Cancel deletion">
-                      <img src="/ai-estimate/delete_cancel_button.png" alt="Cancel deletion" />
-                    </ActionButton>
-                  ) : (
-                    <ActionButton onClick={(e) => handleDelete(e, itemId, item)} aria-label="Delete item">
-                      <img src="/ai-estimate/delete_button.png" alt="Delete item" />
-                    </ActionButton>
-                  )}
+                {
+                    !isSharePage && (
+                      isDeleted ? (
+                        <ActionButton onClick={(e) => handleCancelDelete(e, itemId, item)} aria-label="Cancel deletion">
+                          <img src="/ai-estimate/delete_cancel_button.png" alt="Cancel deletion" />
+                        </ActionButton>
+                      ) : (
+                        <ActionButton onClick={(e) => handleDelete(e, itemId, item)} aria-label="Delete item">
+                          <img src="/ai-estimate/delete_button.png" alt="Delete item" />
+                        </ActionButton>
+                      )
+                    )
+                  }
                   {/* 삭제된 항목일 경우 상세 아이콘 숨기기 */}
                   {!isDeleted && <IoChevronForward size={16} onClick={() => handleItemClick(item, index)} />}
                 </div>

@@ -10,6 +10,8 @@ export type ChatMessage = {
   estimateId?: string;
 };
 
+
+
 interface ChatState {
   messages: ChatMessage[];
   chatSessionId: string | null;

@@ -287,7 +287,7 @@ export const AiMessageContent: React.FC<{ content: string; chatSessionId?: strin
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
   const estimateData = estimateDataForConsult || extractEstimateData(content);
   const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', selectedPromptId: 'default' });
-  const estimateId = estimateData?.uuid || getEstimateIdFromContent(content) || '';
+  const estimateId = estimateData?.uuid;
   const effectiveChatSessionId = chatSessionId || localStorage.getItem('chatSessionId') || '';
 
 
@@ -320,29 +320,34 @@ const userId = getUserId() || '';
 
 
   const { total_amount: basePrice, total_period: basePeriod } = useMemo(() => {
-    // ⭐️ 수정: estimateData 또는 categories가 유효한지 확인하는 로직 추가
-    if (!estimateData || !Array.isArray(estimateData.categories)) {
-      return { total_amount: 0, total_period: 0 };
-    }
+  // ⭐️ 수정: estimateData 또는 categories가 유효한지 확인하는 로직 추가
+  if (!estimateData || !Array.isArray(estimateData.categories)) {
+    return { total_amount: 0, total_period: 0 };
+  }
 
-    const total_amount = estimateData.categories.reduce((sum, category) => {
-      if (!category.sub_categories || !Array.isArray(category.sub_categories)) {
-        return sum;
+  const total_amount = estimateData.categories.reduce((sum, category) => {
+    if (!category.sub_categories || !Array.isArray(category.sub_categories)) {
+      return sum;
+    }
+    
+    const categoryTotal = category.sub_categories.reduce((subSum, subCategory) => {
+      if (!subCategory.items || !Array.isArray(subCategory.items)) {
+        return subSum;
       }
       
-      const categoryTotal = category.sub_categories.reduce((subSum, subCategory) => {
-        if (!subCategory.items || !Array.isArray(subCategory.items)) {
-          return subSum;
+      const subTotal = subCategory.items.reduce((itemSum, item) => {
+        // ⭐️ 수정: is_deleted가 true인 항목은 합산에서 제외
+        if (item.is_deleted) {
+          return itemSum;
         }
         
-        const subTotal = subCategory.items.reduce((itemSum, item) => {
-          const itemPrice = typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : item.price;
-          return itemSum + (isNaN(itemPrice) ? 0 : itemPrice);
-        }, 0);
-        return subSum + subTotal;
+        const itemPrice = typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : item.price;
+        return itemSum + (isNaN(itemPrice) ? 0 : itemPrice);
       }, 0);
-      return sum + categoryTotal;
+      return subSum + subTotal;
     }, 0);
+    return sum + categoryTotal;
+  }, 0);
     
     const total_period = estimateData.categories.reduce((sum, category) => {
       if (!category.sub_categories || !Array.isArray(category.sub_categories)) {
@@ -535,26 +540,25 @@ export default function AiChatPage() {
   } = useChatActions({ modelName, selectedPromptId });
   
   const [estimateDataForConsult, setEstimateDataForConsult] = useState<ProjectEstimate | null>(null);
-  const [chatSessionId, setChatSessionId] = useState(''); // ⭐️ 추가: chatSessionId 상태
-
-
+  const [chatSessionId, setChatSessionId] = useState('');
 
   useEffect(() => {
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.role === 'ai') {
-      let extractedData = extractEstimateData(lastMessage.content);
-      if (extractedData) {
-        extractedData = ensureClientUuid(extractedData); // 👈 uuid 보장
-          setEstimateDataForConsult(extractedData);
+    // 메시지 목록을 역순으로 순회하여 가장 최근의 견적서를 찾습니다.
+    const lastEstimateMessage = messages.slice().reverse().find(m => m.estimateId);
     
-        // 필요하다면 로컬스토리지에도 저장
-        localStorage.setItem(
-          `estimate_${extractedData.uuid}`,
-          JSON.stringify(extractedData)
-        );
+    if (lastEstimateMessage) {
+      // 견적서 메시지를 찾으면 content에서 데이터를 추출합니다.
+      let extractedData = extractEstimateData(lastEstimateMessage.content);
+      if (extractedData) {
+        // 클라이언트에서 uuid를 보장합니다.
+        extractedData = ensureClientUuid(extractedData);
+        setEstimateDataForConsult(extractedData);
       }
+    } else {
+      // 견적서 메시지가 없으면 상태를 초기화합니다.
+      setEstimateDataForConsult(null);
     }
-  }, [messages]);
+  }, [messages]); // messages 배열이 변경될 때마다 실행됩니다.
 
   useEffect(() => {
       // ⭐️ 추가: 로컬 스토리지에서 채팅 세션 ID 가져오기

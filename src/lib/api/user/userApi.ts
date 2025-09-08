@@ -196,6 +196,19 @@ export async function getChatMessages(sessionId: string) {
   });
 }
 
+export async function patchChatMessages(messageId:string, content:any) {
+  return callUserApi({
+    title: '채팅 메시지 수정',
+    url: getApiUrl(`/company/chat/messages/${messageId}`),
+    method: 'PATCH',
+    body: {
+      content: content,
+    },
+    isCallPageLoader: false,
+  });
+}
+
+
 export async function uploadEstimatePdf(
   sessionId: string,
   title: string,
