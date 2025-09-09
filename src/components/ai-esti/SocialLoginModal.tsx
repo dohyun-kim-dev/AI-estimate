@@ -180,6 +180,8 @@ interface SocialLoginModalProps {
   purpose: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat' | 'default';
   onGoogleLoginSuccess?: (userData?: any) => void;  
   onPrimaryButtonClick?: () => void;
+  onShare?: () => void;
+  onDownload?: () => void;
 }
 
 export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
@@ -192,7 +194,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
   } = props;
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [openShareChatModal, closeShareChatModal] = useModalStore((s) => [s.openShareChatModal, s.closeShareChatModal]);
+  const [openShareChatModal, openShareModal] = useModalStore((s) => [s.openShareChatModal, s.openShareModal]);
   const [showEstimateModal, setShowEstimateModal] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   // IssuerInfoModal의 purpose를 별도로 저장
@@ -305,6 +307,12 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
               }
                 console.log('onGoogleLoginSuccess =', onGoogleLoginSuccess);
                 console.log('purpose =', purpose);
+                if(purpose==='share'){
+                  props.onShare && props.onShare();
+                } 
+                if(purpose === 'download'){
+                  props.onDownload && props.onDownload();
+                }
                 if (purpose === 'shareChat') {
                   openShareChatModal();
                 }
@@ -496,8 +504,10 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
             console.log('[IssuerInfoModal submit] purpose: contact', info);
           } else if (infoModalPurpose === 'download') {
             console.log('[IssuerInfoModal submit] purpose: download', info);
+            props.onDownload && props.onDownload();
           } else if (infoModalPurpose === 'share') {
             console.log('[IssuerInfoModal submit] purpose: share', info);
+            props.onShare && props.onShare();
           } else if (infoModalPurpose === 'limitReached') {
             console.log('[IssuerInfoModal submit] purpose: limitReached', info);
           } else if (infoModalPurpose === 'limitExceeded') {

@@ -1,3 +1,5 @@
+import Modal from '@components/common/Modal';
+  
 import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider } from 'styled-components'
 import { useThemeStore } from '@store/themeStore'
@@ -43,6 +45,16 @@ function App() {
   const { isLoginModalOpen, closeLoginModal, loginModalPurpose } = useModalStore();
   const { isAdditionalInfoModalOpen, closeAdditionalInfoModal } = useAuthStore();
   const { isEstimateModalOpen, closeEstimateModal } = useAuthStore();
+  const { shareModal, shareUrl, closeShareModal } = useModalStore();
+  // 공유 링크 복사 핸들러
+  const handleCopyShareUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+    } catch {
+      // 무음 처리
+    }
+    closeShareModal();
+  };
 
   const handleEstimateConfirm = () => {
     closeEstimateModal( );
@@ -83,6 +95,26 @@ function App() {
                     />
                   </AppWrapper>
                   <SocialLoginModal $isOpen={isLoginModalOpen} onClose={closeLoginModal} purpose={loginModalPurpose} />
+                  {/* 전역 공유 모달 */}
+                  <Modal open={shareModal} title="견적서 공유" onClose={closeShareModal} width={520}>
+                    <div style={{ color: '#A1A1AA', fontSize: 14, marginBottom: 32 }}>
+                      공유받은 사용자는 견적 내용을 확인할 수 있습니다.
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                      <input
+                        readOnly
+                        value={shareUrl}
+                        placeholder="https://aigocorp.com/id..."
+                        style={{ flex: 1, height: 44, borderRadius: 8, border: '1px solid #e5e7eb', background: '#f9fafb', color: '#111827', padding: '0 12px' }}
+                      />
+                      <button
+                        style={{ height: 44, padding: '0 14px', borderRadius: 8, background: '#2E2E48', color: 'white', fontSize: 14, fontWeight: 400, lineHeight: '160%', letterSpacing: 0.32 }}
+                        onClick={handleCopyShareUrl}
+                      >
+                        링크복사
+                      </button>
+                    </div>
+                  </Modal>
                   <AdditionalInfoModal
         open={isAdditionalInfoModalOpen}
         onClose={closeAdditionalInfoModal}

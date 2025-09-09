@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { googleLoginInitial, googleLoginUpdate, uploadEstimatePdf } from '@/lib/api/user/userApi';
 import { buildFullEstimateData } from '@/hooks/estimate';
 import IssuerInfoModal, { IssuerInfo } from '@/components/ai-esti/IssuerInfoModal';
+import { useModalStore } from '@/store/modalStore';
 
 const CardWrapper = styled.div`
   background-color: ${({ theme }) => theme.surface1};
@@ -120,8 +121,8 @@ interface EstimateCardProps {
 }
 
 const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, projectPeriod = 0}) => {
-  const [openShare, setOpenShare] = useState(false);
-  const [shareUrl, setShareUrl] = useState('');
+  // 전역 공유 모달 상태 사용
+  const { openShareModal } = useModalStore();
   const [isSocialLoginModalOpen, setIsSocialLoginModalOpen] = useState(false);
   const [socialLoginPurpose, setSocialLoginPurpose] = useState<'share' | 'download' | null>(null);
 
@@ -191,65 +192,45 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
     return estimateObj.uuid as string;
   }
 
+
+
+  // 미리보기 새탭 오픈 (다운로드/공유 공용)
+  const openPreviewTab = async () => {
+    try {
+      const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
+      const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+      window.open(previewUrl, '_blank');
+      success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
+    } catch (err) {
+      console.error('PDF 미리보기 오픈 중 오류:', err);
+      error('PDF 미리보기 오픈에 실패했습니다.');
+    }
+  };
+
   // 다운로드: 로그인 사용자는 바로, 아니면 로그인모달 → 정보입력모달
   const handleGeneratePDF = async () => {
-    try {
-      if (isAuthenticated()) {
-        if (estimate) {
-          // 서버에서 견적서 json string을 받아오는 예시 (실제 API에 맞게 수정)
-          // const response = await fetch(...);
-          // const jsonString = response.data.data;
-          // const estimateObj = JSON.parse(jsonString);
-          // 아래는 기존 로직(estimate 객체가 이미 있음)
-          const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
-          const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
-          window.open(previewUrl, '_blank');
-          success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
-          return;
-        }
-      } else {
-        setSocialLoginPurpose('download');
-        setIsSocialLoginModalOpen(true);
-        return;
-      }
-
-      // (옵션) 비로그인 즉시 미리보기 Blob 경로
-      // 서버에서 string(json)으로 받은 견적서 예시 (실제 API에 맞게 수정)
-      // const response = await fetch(...);
-      // const jsonString = response.data.data;
-      // const estimateObj = JSON.parse(jsonString);
-      // const result = await generatePDF(estimateObj, { forPreview: true });
-      // 아래는 기존 로직(estimate 객체가 이미 있음)
-      const result = await generatePDF(estimate, { forPreview: true });
-      if (result && 'blobUrl' in result && result.blobUrl) {
-        window.open(result.blobUrl, '_blank');
-        setTimeout(() => URL.revokeObjectURL(result.blobUrl), 60000);
-        success('PDF가 새 탭에서 열립니다.');
-      }
-    } catch (err) {
-      console.error('PDF 생성/열기 중 오류:', err);
-      error('PDF 생성에 실패했습니다.');
+    if (isAuthenticated()) {
+      await openPreviewTab();
+      return;
+    } else {
+      setSocialLoginPurpose('download');
+      setIsSocialLoginModalOpen(true);
+      return;
     }
   };
 
   const handleShareClick = async () => {
-    try {
-      if (!estimate) {
-        error('공유 가능한 견적서가 아닙니다.');
-        return;
-      }
-      if (isAuthenticated()) {
-        const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
-        const newShareUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
-        setShareUrl(newShareUrl);
-        setOpenShare(true);
-      } else {
-        setSocialLoginPurpose('share');
-        setIsSocialLoginModalOpen(true);
-      }
-    } catch (e) {
-      console.error(e);
-      error('공유 준비 중 오류가 발생했습니다.');
+    if (!estimate) {
+      error('공유 가능한 견적서가 아닙니다.');
+      return;
+    }
+    if (isAuthenticated()) {
+      await openPreviewTab();
+      const url = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${estimate.uuid}`;
+      openShareModal(url);
+    } else {
+      setSocialLoginPurpose('share');
+      setIsSocialLoginModalOpen(true);
     }
   };
 
@@ -410,16 +391,7 @@ https://heredotcorp.com
         </Period>
       </Header>
 
-      {/* 공유 링크 표시 모달 (그대로 유지) */}
-      <Modal open={openShare} title="견적서 공유" onClose={() => setOpenShare(false)} width={520}>
-        <div style={{ color: '#A1A1AA', fontSize: 14, marginBottom: 32 }}>
-          공유받은 사용자는 견적 내용을 확인할 수 있습니다.
-        </div>
-        <ShareInput>
-          <input readOnly value={shareUrl} placeholder="https://aigocorp.com/id..." />
-          <button onClick={handleCopy}>링크복사</button>
-        </ShareInput>
-      </Modal>
+  {/* 공유 링크 표시 모달: 전역 모달로 대체 (컴포넌트는 App 등에서 전역으로 렌더) */}
 
       {/* ✅ 발행자 정보 입력 모달 (다운로드/공유 공용) */}
       <IssuerInfoModal
@@ -436,6 +408,11 @@ https://heredotcorp.com
         purpose={socialLoginPurpose || 'share'}
         onPrimaryButtonClick={handlePrimaryButtonClick}
         onGoogleLoginSuccess={handleSocialLoginSuccess}
+        onDownload={openPreviewTab}
+        onShare={() => {
+          const url = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${estimate.uuid}`;
+          openShareModal(url);
+        }}
       />
     </CardWrapper>
   );
