@@ -234,7 +234,6 @@ return (
           const downloadUrl = `${window.location.origin}${getDownloadEstimateUrlWithUserInfo(
             companyCode,
             estimate.file,
-            { id: userId || '' }
           )}`;
   
           // 👇 MyEstimateCard에 고유한 key를 추가했습니다.
@@ -242,6 +241,7 @@ return (
             <MyEstimateCard
               key={`${estimate._id}-${index}`} 
               estimate={{
+                _id: estimate._id,
                 project_name: estimate.title,
                 created_at: estimate.createAt.split(' ')[0],
                 file: estimate.file,

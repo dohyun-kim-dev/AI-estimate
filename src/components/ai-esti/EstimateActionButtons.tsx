@@ -238,7 +238,7 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
     };
 
     try {
-      const response = await requestEstimateConsult(title, estimateFile, chatSessionId, user);
+      const response = await requestEstimateConsult(estimateData.uuid, title, chatSessionId, user);
       if (response.statusCode === 200) {
         success('여기닷에게 상담 요청이 접수되었습니다. 영업일 기준 1일 이내 연락드리겠습니다.');
       } else {

@@ -512,6 +512,37 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
             console.log('[IssuerInfoModal submit] purpose: limitReached', info);
           } else if (infoModalPurpose === 'limitExceeded') {
             console.log('[IssuerInfoModal submit] purpose: limitExceeded', info);
+            // ai-chat-storage에서 가장 최근 estimateId 추출
+            try {
+              const chatStorage = sessionStorage.getItem('ai-chat-storage');
+              if (chatStorage) {
+                const parsed = JSON.parse(chatStorage);
+                const messages = parsed?.state?.messages || [];
+                // 뒤에서부터 estimateId 있는 메시지 찾기
+                let lastEstimateId = null;
+                for (let i = messages.length - 1; i >= 0; i--) {
+                  if (messages[i]?.estimateId) {
+                    lastEstimateId = messages[i].estimateId;
+                    break;
+                  }
+                }
+                if (lastEstimateId) {
+                  // requestEstimateConsult 호출
+                  const user = {
+                    id: '', // 비회원이므로 id는 빈값
+                    name: info.name,
+                    cellphone: info.cellphone,
+                    email: info.email,
+                  };
+                  // title은 비워두고, chatSession도 비워둠(추가 필요시 수정)
+                  import('@/lib/api/user/userApi').then(({ requestEstimateConsult }) => {
+                    requestEstimateConsult(lastEstimateId, '', '', user);
+                  });
+                }
+              }
+            } catch (e) {
+              console.error('limitExceeded 상담 요청 처리 오류:', e);
+            }
           } else if (infoModalPurpose === 'shareChat') {
             console.log('[IssuerInfoModal submit] purpose: shareChat', infoModalPurpose, info);
             openShareChatModal();

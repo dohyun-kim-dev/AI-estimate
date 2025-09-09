@@ -1,15 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import Icon from './Icon';
-import Modal from '@/components/common/Modal';
+import { useModalStore } from '@/store/modalStore';
 import { useToast } from '@/components/common/ToastProvider';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 import { getDownloadEstimateUrlWithUserInfo } from '@/lib/api/user/userApi';
+import { buildFullEstimateData } from '@/hooks/estimate';
 import { v4 as uuidv4 } from 'uuid';
+import Modal from '../common/Modal';
+import { es } from 'date-fns/locale';
 
 const CardWrapper = styled.div`
   background-color: ${({ theme }) => theme.card};
@@ -157,6 +160,7 @@ letter-spacing: 0.32px;
 
 interface MyEstimateCardProps {
   estimate: {
+    _id:string;
     project_name: string;
     created_at: string;
     file: string; // uuid 대신 file로 변경
@@ -164,11 +168,13 @@ interface MyEstimateCardProps {
   downloadUrl: string;
 }
 
+
 const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }) => {
-  const [openShare, setOpenShare] = useState(false);
-  const [shareUrl, setShareUrl] = useState('');
+  const { openShareModal } = useModalStore();
   const { success, error } = useToast();
   const { isAuthenticated } = useAuthStore();
+  const [shareUrl, setShareUrl] = useState('');
+  const [openShare, setOpenShare] = useState(false);
 
   const getCompanyCode = () => {
     const pathParts = window.location.pathname.split('/');
@@ -177,72 +183,101 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
       ? pathParts[companyCodeIndex]
       : 'heredot';
   };
-
   const companyCode = getCompanyCode();
 
+  async function ensureUuidOnce(estimateObj: any, title: string) {
+    if (estimateObj?.uuid) return estimateObj.uuid;
 
-const handleShareClick = () => {
-  setOpenShare(true);
-
-  const fileUuid = estimate.file.split('.')[0];
-  
-  if (isAuthenticated()) {
+    // 유저 정보 추출
+    let userId = '';
+    let name = '';
+    let email = '';
+    let cellphone = '';
     const authStorage = localStorage.getItem('auth-storage');
-    const authData = authStorage ? JSON.parse(authStorage) : null;
-    const user = authData?.state?.user;
+    if (authStorage) {
+      const authData = JSON.parse(authStorage);
+      userId = authData?.state?.user?.id || authData?.state?.user?._id || '';
+      name = authData?.state?.user?.name || '';
+      email = authData?.state?.user?.email || '';
+      cellphone = authData?.state?.user?.cellphone || '';
+    }
+    if (!userId) {
+      userId = localStorage.getItem('guest-uuid') || '';
+    }
+    if (!userId) throw new Error('사용자 ID가 없습니다.');
 
-    if (user) {
-      // 회원인 경우: 사용자 id만 포함하여 URL 생성
-      const newShareUrl = `${window.location.origin}${getDownloadEstimateUrlWithUserInfo(
-        companyCode,
-        fileUuid,
-        {
-          id: user._id,
-          name: '',
-          email: '',
-          cellphone: ''
-        }
-      )}`;
-      setShareUrl(newShareUrl);
-    } else {
-      error('사용자 정보를 찾을 수 없습니다.');
+
+    // getDownloadEstimateUrlWithUserInfo는 URL만 반환하므로, 실제로 호출을 발생시켜야 함
+    const url = getDownloadEstimateUrlWithUserInfo(
+      companyCode,
+      estimateObj._id,
+      { id: userId, name, email, cellphone }
+    );
+    try {
+      await fetch(url, { method: 'GET' });
+    } catch (e) {
+      // 실패해도 무시 (카운트/내역 목적)
     }
-  } else {
-    // 비회원인 경우: 기존 로직 유지
-    let guestUuid = localStorage.getItem('guest-uuid');
-    if (!guestUuid) {
-      guestUuid = uuidv4();
-      localStorage.setItem('guest-uuid', guestUuid);
-    }
-    const newShareUrl = `${window.location.origin}/api/file/estimate/download/${companyCode}/${fileUuid}.pdf?id=${guestUuid}`;
-    setShareUrl(newShareUrl);
+
+    if (!estimateObj._id) throw new Error('uuid 보장 실패');
+    return estimateObj._id as string;
   }
-};
+
+
+  const ensureUuidAndGetUrl = async () => {
+    const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
+    return `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+  };
+
+
+ const openPreviewTab = async () => {
+    try {
+      const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
+      const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+      window.open(previewUrl, '_blank');
+      success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
+    } catch (err) {
+      console.error('PDF 미리보기 오픈 중 오류:', err);
+      error('PDF 미리보기 오픈에 실패했습니다.');
+    }
+  };
+
+  const handleShareClick = async () => {
+    // 공유는 새탭을 열지 않고 링크만 생성
+    const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
+    const newShareUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+    setShareUrl(newShareUrl);
+    setOpenShare(true);
+  };
+
+  const handleDownload = async () => {
+    await openPreviewTab();
+  };
+
 
   const handleCopy = async () => {
     try {
-      if (shareUrl) {
-        const additionalInfo = `${shareUrl}
-본 링크는 에이고(AIGO - AI 견적서)에서 
-발급된 링크입니다.
+      const textToCopy = `주식회사 여기닷에서 발급된 견적서를 다운로드해보세요 !
+ 
+${shareUrl}
 
-회사명 : 주식회사 여기닷
-
-전화문의 : 031-111-1234
-
-링크주소 : https://heredotcorp.com/ai`;
-        await navigator.clipboard.writeText(additionalInfo);
-        success('링크가 복사되었습니다.');
-        setOpenShare(false);
-      }
+🏢공급사명 : 주식회사 여기닷
+ 
+📞전화문의 : 031-111-1234
+ 
+※ 위 견적서는 공급사 공식 홈페이지에서도 조회할 수 있습니다
+ 
+🌐공급사 홈페이지
+https://heredotcorp.com
+`;
+      await navigator.clipboard.writeText(textToCopy);
+      success('링크가 복사되었습니다.');
+      setOpenShare(false);
     } catch {
       error('링크 복사에 실패했습니다.');
     }
   };
-  
-  const handleDownload = () => {
-    window.open(downloadUrl, '_blank');
-  };
+
 
   return (
     <CardWrapper>
@@ -256,13 +291,18 @@ const handleShareClick = () => {
           <ActionButton onClick={handleDownload}>견적 PDF 받기</ActionButton>
         </ActionButtons>
       </Header>
-      <Modal open={openShare} title="견적서 공유" onClose={() => setOpenShare(false)} width={520}>
-        <div style={{ color: '#A1A1AA', fontSize: 14, marginBottom: 32 }}>공유받은 사용자는 견적 내용을 확인할 수 있습니다.</div>
-        <ShareInput>
-          <input readOnly value={shareUrl} placeholder="https://aigocorp.com/id..." />
-          <button onClick={handleCopy}>링크복사</button>
-        </ShareInput>
-      </Modal>
+  {/* 공유 모달은 전역 상태로 관리 (App에서 렌더) */}
+
+
+  <Modal open={openShare} title="견적서 공유" onClose={() => setOpenShare(false)} width={520}>
+          <div style={{ color: '#A1A1AA', fontSize: 14, marginBottom: 32 }}>
+            공유받은 사용자는 견적 내용을 확인할 수 있습니다.
+          </div>
+          <ShareInput>
+            <input readOnly value={shareUrl} placeholder="https://aigocorp.com/id..." />
+            <button onClick={handleCopy}>링크복사</button>
+          </ShareInput>
+        </Modal>
     </CardWrapper>
   );
 };

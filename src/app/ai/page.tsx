@@ -594,8 +594,8 @@ export default function AiChatPage() {
     
     try {
       const response = await requestEstimateConsult(
-        project_name,
         uuid,
+        project_name,
         chatSessionId,
         userForApi
       );

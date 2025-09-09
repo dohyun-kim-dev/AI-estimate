@@ -263,24 +263,26 @@ export function getDownloadEstimateUrl(companyCode: string, uuid: string) {
   return getApiUrl(`/file/estimate/download/${filePath}`);
 }
 
-export function getDownloadEstimateUrlWithUserInfo(
-  companyCode: string, 
-  uuid: string, 
+export async function getDownloadEstimateUrlWithUserInfo(
+  companyCode: string,
+  uuid: string,
   userInfo?: { id: string; name: string; email: string; cellphone: string }
 ) {
-  const filePath = `${companyCode}/${uuid}`;
+  const filePath = `${uuid}`;
   const params = new URLSearchParams();
-  
-  if (userInfo?.id) {
-    params.append('id', userInfo.id);
-  }
-
+  if (userInfo?.id) params.append('id', userInfo.id);
   if (userInfo?.name) params.append('name', userInfo.name);
   if (userInfo?.email) params.append('email', userInfo.email);
   if (userInfo?.cellphone) params.append('cellphone', userInfo.cellphone);
-
   const queryString = params.toString();
-  return getApiUrl(`/file/estimate/download/${filePath}?${queryString}`);
+  const url = getApiUrl(`/users/company/estimate/${filePath}?${queryString}`);
+  // callUserApi를 사용해 GET 요청 (회사코드 헤더 자동 포함)
+  return callUserApi({
+    title: '견적서 다운로드 카운트',
+    url,
+    method: 'GET',
+    isCallPageLoader: false,
+  });
 }
 
 export async function uploadFiles(files: File[]) {
@@ -333,8 +335,8 @@ export async function sendMessageWithFiles(sessionId: string, message: string, f
 }
 
 export async function requestEstimateConsult(
+  estimateId: string,
   title: string,
-  estimateFile: string,
   chatSession: string,
   user: { id: string; name: string; cellphone: string; email: string }
 ) {
@@ -343,8 +345,8 @@ export async function requestEstimateConsult(
     url: getApiUrl('/company/estimate-request'),
     method: 'POST',
     body: {
+      estimateId,
       title,
-      estimateFile,
       chatSession,
       user,
     },

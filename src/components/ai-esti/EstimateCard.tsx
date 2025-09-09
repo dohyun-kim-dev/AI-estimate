@@ -15,7 +15,6 @@ import { useNavigate } from 'react-router-dom';
 import { googleLoginInitial, googleLoginUpdate, uploadEstimatePdf } from '@/lib/api/user/userApi';
 import { buildFullEstimateData } from '@/hooks/estimate';
 import IssuerInfoModal, { IssuerInfo } from '@/components/ai-esti/IssuerInfoModal';
-import { useModalStore } from '@/store/modalStore';
 
 const CardWrapper = styled.div`
   background-color: ${({ theme }) => theme.surface1};
@@ -121,8 +120,8 @@ interface EstimateCardProps {
 }
 
 const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, projectPeriod = 0}) => {
-  // 전역 공유 모달 상태 사용
-  const { openShareModal } = useModalStore();
+  const [openShare, setOpenShare] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
   const [isSocialLoginModalOpen, setIsSocialLoginModalOpen] = useState(false);
   const [socialLoginPurpose, setSocialLoginPurpose] = useState<'share' | 'download' | null>(null);
 
@@ -194,6 +193,12 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
 
 
 
+  const ensureUuidAndGetUrl = async () => {
+    const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
+    return `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+  };
+
+
   // 미리보기 새탭 오픈 (다운로드/공유 공용)
   const openPreviewTab = async () => {
     try {
@@ -225,9 +230,9 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       return;
     }
     if (isAuthenticated()) {
-      await openPreviewTab();
-      const url = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${estimate.uuid}`;
-      openShareModal(url);
+      const newShareUrl = await ensureUuidAndGetUrl();
+        setShareUrl(newShareUrl);
+        setOpenShare(true);
     } else {
       setSocialLoginPurpose('share');
       setIsSocialLoginModalOpen(true);
@@ -391,7 +396,16 @@ https://heredotcorp.com
         </Period>
       </Header>
 
-  {/* 공유 링크 표시 모달: 전역 모달로 대체 (컴포넌트는 App 등에서 전역으로 렌더) */}
+      {/* 공유 링크 표시 모달 (그대로 유지) */}
+      <Modal open={openShare} title="견적서 공유" onClose={() => setOpenShare(false)} width={520}>
+        <div style={{ color: '#A1A1AA', fontSize: 14, marginBottom: 32 }}>
+          공유받은 사용자는 견적 내용을 확인할 수 있습니다.
+        </div>
+        <ShareInput>
+          <input readOnly value={shareUrl} placeholder="https://aigocorp.com/id..." />
+          <button onClick={handleCopy}>링크복사</button>
+        </ShareInput>
+      </Modal>
 
       {/* ✅ 발행자 정보 입력 모달 (다운로드/공유 공용) */}
       <IssuerInfoModal
@@ -409,10 +423,7 @@ https://heredotcorp.com
         onPrimaryButtonClick={handlePrimaryButtonClick}
         onGoogleLoginSuccess={handleSocialLoginSuccess}
         onDownload={openPreviewTab}
-        onShare={() => {
-          const url = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${estimate.uuid}`;
-          openShareModal(url);
-        }}
+        onShare={openPreviewTab}
       />
     </CardWrapper>
   );
