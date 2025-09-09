@@ -2,10 +2,8 @@
 
 import { DeviceProvider } from "@/contexts/DeviceContext";
 import { PageLoaderProvider } from "@/contexts/PageLoaderContext";
-import { SettingsProvider } from "@/contexts/SettingsContext";
 import { GlobalStyle } from "@/styles/globalStyles";
 import { useEffect } from "react";
-import ActivationProvider from "@/components/ActivationProvider";
 import { ToastContainer } from 'react-toastify';
 import { SocialLoginModal } from '@/components/ai-esti/SocialLoginModal';
 import { useModalStore } from '@/store/modalStore';

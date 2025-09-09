@@ -92,7 +92,7 @@ const EstimateRenderer: React.FC<{ content: string }> = ({ content }) => {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
   const [projectPeriod, setProjectPeriod] = useState(20);
-  const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', selectedPromptId: 'default' });
+  const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash', selectedPromptId: 'default' });
 
   const extractEstimateData = (content: string): ProjectEstimate | null => {
     try {

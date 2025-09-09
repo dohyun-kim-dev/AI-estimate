@@ -31,23 +31,28 @@ export const useChatStore = create<ChatState>()(
         chatSessionId: null,
         addMessage: (m) => set((s) => ({ messages: [...s.messages, m] })),
         // 변경됨: 객체를 받아 마지막 메시지를 업데이트하도록 수정
+        // Update the last AI message (searching from the end) with the provided payload.
+        // Do NOT force isLoading to false here; preserve or use payload.isLoading if provided.
         updateLastMessage: (payload) => set((s) => {
-          const messages = s.messages;
-          const lastMessage = messages[messages.length - 1];
-          console.log('Updating last message with payload:', payload);
+          const messages = [...s.messages];
+          // find last index of an 'ai' message; if none, fall back to last message
+          let idx = -1;
+          for (let i = messages.length - 1; i >= 0; i--) {
+            if (messages[i].role === 'ai') { idx = i; break; }
+          }
+          if (idx === -1 && messages.length > 0) idx = messages.length - 1;
 
-          if (lastMessage) {
+          if (idx >= 0) {
+            const lastMessage = messages[idx];
             const updatedMessage = {
               ...lastMessage,
               ...payload,
-              isLoading: false,
-            };
-            return {
-              messages: [
-                ...messages.slice(0, messages.length - 1),
-                updatedMessage,
-              ],
-            };
+              // if payload explicitly sets isLoading, use it; otherwise keep existing value
+              isLoading: typeof payload.isLoading === 'boolean' ? payload.isLoading : lastMessage.isLoading,
+            } as typeof lastMessage;
+
+            messages[idx] = updatedMessage;
+            return { messages };
           }
           return s;
         }),

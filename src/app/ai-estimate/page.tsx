@@ -95,7 +95,7 @@ interface AiEstimatePageProps {
 const AiEstimatePage: React.FC<AiEstimatePageProps> = () => {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
-  const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', selectedPromptId: 'default' });
+  const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash', selectedPromptId: 'default' });
   const { 
     projectEstimate, 
     projectPeriod, 

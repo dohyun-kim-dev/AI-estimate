@@ -284,7 +284,7 @@ export const AiMessageContent: React.FC<{ content: string; chatSessionId?: strin
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
   const estimateData = estimateDataForConsult || extractEstimateData(content);
-  const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash-lite', selectedPromptId: 'default' });
+  const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash', selectedPromptId: 'default' });
   const estimateId = estimateData?.uuid;
   const effectiveChatSessionId = chatSessionId || localStorage.getItem('chatSessionId') || '';
   const updateLastMessage = useChatStore((s) => s.updateLastMessage); // ⭐️ 추가: updateLastMessage 가져오기
@@ -515,7 +515,7 @@ const userId = getUserId() || '';
 };
 
 export default function AiChatPage() {
-  const { modelName, setModelName, generate, sendChat, resetChat, testModel } = useAI('gemini-2.5-flash-lite');
+  const { modelName, setModelName, generate, sendChat, resetChat, testModel } = useAI('gemini-2.5-flash');
   const { success, error } = useToast();
   const messages = useChatStore((s) => s.messages);
   const addMessage = useChatStore((s) => s.addMessage);
@@ -672,7 +672,7 @@ export default function AiChatPage() {
     if (endOfMessagesRef.current) {
       endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages.length]);
+  }, [messages.map(m => m.content).join('\n')]);
 
   const isEstimateMessage = (content: string) => {
     // console.log('content', content);
@@ -738,17 +738,29 @@ export default function AiChatPage() {
               </UserMessage>
             );
           } else {
-            
+            if (m.isLoading) {
+              return (
+                <StyledAiMessage
+                  key={idx}
+                  content={<span style={{ color: '#aaa' }}>로딩 중...</span>}
+                  profileImage="/ai-estimate/pretty.png"
+                  name="강유하"
+                  isFullWidth={false}
+                />
+              );
+            }
             return (
               <StyledAiMessage
                 key={idx}
-                content={<AiMessageContent content={m.content} chatSessionId={chatSessionId}/>}
+                content={<AiMessageContent content={m.content} chatSessionId={chatSessionId}/>} 
                 profileImage="/ai-estimate/pretty.png"
                 name="강유하"
                 isFullWidth={isEstimateMessage(m.content)}
               />
             );
           }
+          // 필요하다면 system 등 다른 role도 분기 가능
+          return null;
         })}
         <div ref={endOfMessagesRef} />
       </ChatBox>

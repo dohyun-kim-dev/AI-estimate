@@ -107,6 +107,21 @@ function logUsageAndCost(where: string, modelName: string, anyResponse: unknown)
   )
 }
 
+
+/**
+ * sendChat 옵션 타입
+ * @property streaming - true면 스트리밍(실시간), false면 전체 응답만 반환 (기본값: true)
+ * @property onStream - 스트리밍일 때 chunk 단위로 호출되는 콜백
+ * @property onEstimateJson - 견적서 JSON 감지 시 콜백
+ * @property onLoading - 로딩 상태 콜백
+ */
+export interface SendChatOptions {
+  streaming?: boolean; // true: 실시간, false: 전체 응답만 (기본 true)
+  onStream?: (chunk: string) => void;
+  onEstimateJson?: (json: any) => void;
+  onLoading?: (loading: boolean) => void;
+}
+
 export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
   const [modelName, setModelName] = useState<SimpleModel>(initialModel)
   const [systemInstruction, setSystemInstruction] = useState<string | undefined>(undefined)
@@ -132,35 +147,38 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     return text
   }, [ensureModel, modelName])
 
+  /**
+   * AI 채팅 메시지 전송 (스트리밍/비스트리밍 모두 지원)
+   * @param message - 프롬프트 텍스트
+   * @param files - 첨부 파일 배열
+   * @param options - SendChatOptions (streaming: true면 실시간, false면 전체 응답만)
+   * @returns string (전체 응답)
+   *
+   * 사용 예시:
+   *   sendChat('안녕', [], { streaming: true, onStream: (chunk) => ... })
+   *   sendChat('안녕', [], { streaming: false })
+   */
   const sendChat = useCallback(async (
     message: string,
-    files: FileUploadData[] = [] // ⭐ 선택적 파일 인자 추가
+    files: FileUploadData[] = [],
+    options?: SendChatOptions
   ): Promise<string> => {
     const model = ensureModel();
     if (!chatRef.current) chatRef.current = model.startChat();
 
-    // Part 객체 배열을 생성합니다.
+    // Part 객체 배열 생성
     const parts: any[] = [];
-
-    // 텍스트 메시지를 Part에 추가합니다.
-    if (message) {
-      parts.push({ text: message });
-    }
-
-    // 파일이 있을 경우, 각 파일을 Part에 추가합니다.
+    if (message) parts.push({ text: message });
     if (files.length > 0) {
       for (const file of files) {
         try {
-          // fileUri에서 파일을 가져와서 base64로 변환
           const response = await fetch(file.fileUri);
           if (!response.ok) {
             console.warn(`Failed to fetch file from ${file.fileUri}:`, response.statusText);
             continue;
           }
-          
           const arrayBuffer = await response.arrayBuffer();
           const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-          
           parts.push({
             inlineData: {
               data: base64Data,
@@ -173,20 +191,77 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
         }
       }
     }
+    if (parts.length === 0) return '';
 
-    // 텍스트 메시지나 파일이 없으면 오류를 반환합니다.
-    if (parts.length === 0) {
-      return '';
-    }
+    // 로딩 시작
+    options?.onLoading?.(true);
+
+    // streaming 옵션 기본값 true로 처리
+    const streaming = options?.streaming !== undefined ? options.streaming : true;
 
     try {
-      // ⭐ sendMessage 함수에 Part 배열을 전달합니다.
-      const res = await chatRef.current.sendMessage(parts); 
-      logUsageAndCost('sendChat', String(modelName), res);
-      return res.response.text();
+      if (streaming) {
+        // 스트리밍 모드: chunk 단위로 콜백 전달
+        let result = '';
+        if (typeof chatRef.current.sendMessageStream === 'function') {
+          const streamResult = await chatRef.current.sendMessageStream(parts);
+          for await (const candidate of streamResult.stream) {
+            let chunk: string = '';
+            if (typeof candidate?.text === 'function') {
+              chunk = candidate.text();
+            } else if (typeof candidate?.text === 'string') {
+              chunk = candidate.text;
+            }
+            if (chunk) {
+              // 콘솔에 실시간 chunk 로그
+              console.log('[useAI] streaming chunk:', chunk);
+              result += chunk;
+              options?.onStream?.(chunk);
+              if (chunk.trim().startsWith('{') && chunk.trim().endsWith('}')) {
+                try {
+                  const json = JSON.parse(chunk);
+                  options?.onEstimateJson?.(json);
+                } catch {}
+              }
+            }
+          }
+        } else {
+          // fallback: 일반 sendMessage 사용
+          const res = await chatRef.current.sendMessage(parts);
+          const text = res.response.text();
+          // 콘솔에 fallback도 로그
+          console.log('[useAI] streaming fallback text:', text);
+          result = text;
+          options?.onStream?.(text);
+          if (text.trim().startsWith('{') && text.trim().endsWith('}')) {
+            try {
+              const json = JSON.parse(text);
+              options?.onEstimateJson?.(json);
+            } catch {}
+          }
+        }
+        logUsageAndCost('sendChat(streaming)', String(modelName), {}); // 실제 usage 전달 필요
+        return result;
+      } else {
+        // 비-스트리밍(일반) 모드
+        const res = await chatRef.current.sendMessage(parts);
+        logUsageAndCost('sendChat', String(modelName), res);
+        const text = res.response.text();
+        // 콘솔에 비스트리밍도 로그
+        console.log('[useAI] non-streaming text:', text);
+        if (text.trim().startsWith('{') && text.trim().endsWith('}')) {
+          try {
+            const json = JSON.parse(text);
+            options?.onEstimateJson?.(json);
+          } catch {}
+        }
+        return text;
+      }
     } catch (error) {
       console.error('Failed to send multi-modal message:', error);
       throw error;
+    } finally {
+      options?.onLoading?.(false);
     }
   }, [ensureModel, modelName]);
 
@@ -212,5 +287,11 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     }
   }, [ensureModel, modelName])
 
+  /**
+   * sendChat 사용법:
+   * sendChat('메시지', [], { streaming: true, onStream: (chunk) => ... })
+   * sendChat('메시지', [], { streaming: false })
+   * 기본값은 streaming: true (실시간)
+   */
   return { modelName, setModelName, generate, sendChat, resetChat, testModel, setSystemInstruction: setSystem }
 }
