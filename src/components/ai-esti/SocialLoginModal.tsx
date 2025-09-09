@@ -192,10 +192,12 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
   } = props;
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [openShareModal, closeShareModal] = useModalStore((s) => [s.openShareModal, s.closeShareModal]);
+  const [openShareChatModal, closeShareChatModal] = useModalStore((s) => [s.openShareChatModal, s.closeShareChatModal]);
   const [showEstimateModal, setShowEstimateModal] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
-  const { login, setUser, persistUser,openAdditionalInfoModal,openEstimateModal } = useAuthStore();
+  // IssuerInfoModal의 purpose를 별도로 저장
+  const [infoModalPurpose, setInfoModalPurpose] = useState<SocialLoginModalProps['purpose']>('default');
+  const { login, setUser, persistUser, openAdditionalInfoModal, openEstimateModal } = useAuthStore();
   const { success, error: showError } = useToast();
 
   const handleGoogleLogin = useGoogleLogin({
@@ -302,14 +304,12 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                 console.warn('로컬 퍼시스트 중 오류:', err);
               }
                 console.log('onGoogleLoginSuccess =', onGoogleLoginSuccess);
+                console.log('purpose =', purpose);
                 if (purpose === 'shareChat') {
-                  openShareModal();
-                } 
-
-              // 3초 후 견적 모달 표시 (필요한 경우)
+                  openShareChatModal();
+                }
               if (purpose === 'limitExceeded') {
                 openEstimateModal();
-
               }
               onClose();
             }
@@ -467,6 +467,9 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                     if (purpose === 'limitReached') {
                       onPrimaryButtonClick && onPrimaryButtonClick();
                     } else {
+                      // IssuerInfoModal을 열 때 현재 purpose를 infoModalPurpose로 저장
+                      setInfoModalPurpose(purpose);
+                      onClose();
                       setIsInfoModalOpen(true);
                     }
                   }}
@@ -488,7 +491,25 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
         open={isInfoModalOpen}
         onClose={() => setIsInfoModalOpen(false)}
         onSubmit={(info: IssuerInfo) => {
-          console.log('IssuerInfoModal onSubmit:', info);
+          // infoModalPurpose를 기준으로 분기 처리
+          if (infoModalPurpose === 'contact') {
+            console.log('[IssuerInfoModal submit] purpose: contact', info);
+          } else if (infoModalPurpose === 'download') {
+            console.log('[IssuerInfoModal submit] purpose: download', info);
+          } else if (infoModalPurpose === 'share') {
+            console.log('[IssuerInfoModal submit] purpose: share', info);
+          } else if (infoModalPurpose === 'limitReached') {
+            console.log('[IssuerInfoModal submit] purpose: limitReached', info);
+          } else if (infoModalPurpose === 'limitExceeded') {
+            console.log('[IssuerInfoModal submit] purpose: limitExceeded', info);
+          } else if (infoModalPurpose === 'shareChat') {
+            console.log('[IssuerInfoModal submit] purpose: shareChat', infoModalPurpose, info);
+            openShareChatModal();
+          } else if (infoModalPurpose === 'default') {
+            console.log('[IssuerInfoModal submit] purpose: default', info);
+          } else {
+            console.log('[IssuerInfoModal submit] purpose: unknown', infoModalPurpose, info);
+          }
           setIsInfoModalOpen(false);
         }}
       />

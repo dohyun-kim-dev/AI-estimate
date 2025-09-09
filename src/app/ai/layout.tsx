@@ -170,9 +170,9 @@ export default function AILayout() {
     loginModalPurpose, 
     closeLoginModal,
     openLoginModal,
-    shareModal,
-    closeShareModal,
-    openShareModal,
+    shareChatModal,
+    closeShareChatModal,
+    openShareChatModal,
   } = useModalStore();
 
   useEffect(() => {
@@ -235,11 +235,11 @@ export default function AILayout() {
 
   // '공유' 버튼을 눌렀을 때 실행될 함수 (AILayout에서 호출됨)
   const handleOpenShare = () => {
-    isAuthenticated() ? openShareModal() : openLoginModal('shareChat');
+    isAuthenticated() ? openShareChatModal() : openLoginModal('shareChat');
   };
 
   const handleCloseShare = () => {
-    closeShareModal();
+    closeShareChatModal();
   }
 
   // '가입없이 이용하기' 버튼 클릭 시 실행될 함수
@@ -260,7 +260,7 @@ export default function AILayout() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     closeLoginModal(); // 로그인 모달 닫기
-    openShareModal();
+    openShareChatModal();
   }
 
   const handleCopy = async () => {
@@ -395,7 +395,7 @@ https://heredotcorp.com
         onGoogleLoginSuccess={handleGoogleLoginSuccess} // ✅ 구글 로그인 성공 후 함수 연결
       /> */}
 
-      <Modal open={shareModal} title="페이지 공유" onClose={handleCloseShare} width={520}>
+      <Modal open={shareChatModal} title="페이지 공유" onClose={handleCloseShare} width={520}>
         <div style={{ color: '#A1A1AA', fontSize: 14, marginBottom: 32 }}>공유받은 사용자는 현재 페이지의 내용을 확인할 수 있습니다.</div>
         <ShareInput>
           <input readOnly value={shareUrl} placeholder="https://aigocorp.com/id..." />

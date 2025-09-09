@@ -1,4 +1,3 @@
-// src/lib/api/userApi.ts
 
 import { callUserApi } from './callUserApi';
 import { GoogleLoginInitialParams, GoogleLoginUpdateParams, GoogleLoginResponse } from './userApi.types';
@@ -208,6 +207,29 @@ export async function patchChatMessages(messageId:string, content:any) {
   });
 }
 
+// ***************** 견적 관련
+export async function fetchEstimateById(id: string) {
+  return callUserApi<{
+    statusCode: number;
+    message: string;
+    data: {
+      _id: string;
+      chatSession: string;
+      companyCode: string;
+      createAt: string;
+      data: string; // ★ 여기 안에 invoiceData 포함된 HTML 문자열
+      title: string;
+      user: string;
+    };
+    metadata: any;
+    error: any;
+  }>({
+    title: '견적 단건 조회',
+    url: getApiUrl(`/users/company/estimate/${id}`),
+    method: 'GET',
+    isCallPageLoader: true,
+  });
+}
 
 export async function uploadEstimatePdf(
   sessionId: string,

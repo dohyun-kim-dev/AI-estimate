@@ -675,7 +675,7 @@ export default function AiChatPage() {
   }, [messages.length]);
 
   const isEstimateMessage = (content: string) => {
-    console.log('content', content);
+    // console.log('content', content);
     if(typeof content !== 'string') return false;
     return content.includes('<script type="application/json" id="invoiceData">');
   };

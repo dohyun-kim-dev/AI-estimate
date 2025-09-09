@@ -196,6 +196,11 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
     try {
       if (isAuthenticated()) {
         if (estimate) {
+          // 서버에서 견적서 json string을 받아오는 예시 (실제 API에 맞게 수정)
+          // const response = await fetch(...);
+          // const jsonString = response.data.data;
+          // const estimateObj = JSON.parse(jsonString);
+          // 아래는 기존 로직(estimate 객체가 이미 있음)
           const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
           const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
           window.open(previewUrl, '_blank');
@@ -209,6 +214,12 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       }
 
       // (옵션) 비로그인 즉시 미리보기 Blob 경로
+      // 서버에서 string(json)으로 받은 견적서 예시 (실제 API에 맞게 수정)
+      // const response = await fetch(...);
+      // const jsonString = response.data.data;
+      // const estimateObj = JSON.parse(jsonString);
+      // const result = await generatePDF(estimateObj, { forPreview: true });
+      // 아래는 기존 로직(estimate 객체가 이미 있음)
       const result = await generatePDF(estimate, { forPreview: true });
       if (result && 'blobUrl' in result && result.blobUrl) {
         window.open(result.blobUrl, '_blank');

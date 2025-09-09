@@ -45,6 +45,20 @@ ${json}
 </script>`;
 }
 
+// HTML 안의 <script id="invoiceData">...</script> 에서 JSON 뽑기
+export function extractInvoiceJSON(html: string) {
+  const match = html.match(
+    /<script[^>]*id=["']invoiceData["'][^>]*>([\s\S]*?)<\/script>/i
+  );
+  if (!match || !match[1]) return null;
+  try {
+    return JSON.parse(match[1]);
+  } catch {
+    return null;
+  }
+}
+
+
 /** 메시지 content에서 invoiceData JSON을 파싱해서 객체로 반환 */
 export function extractEstimateData<T = any>(content: string): T | null {
   try {

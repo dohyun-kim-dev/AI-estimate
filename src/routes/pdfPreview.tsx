@@ -1,6 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
+import { fetchEstimateById } from '../lib/api/user/userApi';
+import { previewPdfFromServerData } from '../hooks/pdfUtils';
 
 const PreviewContainer = styled.div`
   width: 100vw;
@@ -64,53 +67,66 @@ const ErrorMessage = styled.div`
   color: #d32f2f;
 `;
 
+
+interface EstimateMeta {
+  _id: string;
+  chatSession: string;
+  companyCode: string;
+  createAt: string;
+  data: string;
+  title: string;
+  user: string;
+}
+
 const PDFPreview: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
-  
+  const [estimateMeta, setEstimateMeta] = useState<EstimateMeta | null>(null);
   const companyCode = searchParams.get('company');
   const uuid = searchParams.get('uuid');
   
   // 변경: 하드코딩된 API URL을 Vite 환경 변수로 대체
   const apiUrl = import.meta.env.VITE_API_HOST || 'http://121.157.229.40:8535';
 
+  
   useEffect(() => {
-    if (!companyCode || !uuid) {
-      setError('필수 파라미터가 누락되었습니다.');
-      setLoading(false);
-      return;
-    }
-    
-    const fetchPDF = async () => {
-      try {
-        const pdfUrl = `${apiUrl}/api/file/estimate/download/${companyCode}/${uuid}.pdf`;
-        
-        console.log('PDF URL:', pdfUrl);
-        
-        const response = await fetch(pdfUrl);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        
-        console.log('PDF blob URL 생성됨:', blobUrl);
-        setPdfBlobUrl(blobUrl);
-        setLoading(false);
-        
-      } catch (err) {
-        console.error('PDF 가져오기 실패:', err);
-        setError('PDF를 불러올 수 없습니다. 서버에서 파일을 찾을 수 없거나 네트워크 오류가 발생했습니다.');
-        setLoading(false);
+  if (!uuid) {
+    setError('필수 파라미터가 누락되었습니다.');
+    setLoading(false);
+    return;
+  }
+
+  const run = async () => {
+    try {
+      // 1) JSON으로 가져오기
+      const res = await fetchEstimateById(uuid);
+      if (res?.statusCode !== 200 || !res?.data) {
+        throw new Error('견적 데이터를 가져오지 못했습니다.');
       }
-    };
-    
-    fetchPDF();
-  }, [companyCode, uuid, apiUrl]);
+
+      // 서버가 내려준 원본(표시용)
+      setEstimateMeta(res.data.data); // 필요 시 화면에 title, user 등 노출
+
+      // 2) 미리보기 PDF 생성 (응답의 data(HTML) 기반)
+      const { blobUrl,pdfBlob } = await previewPdfFromServerData(res.data.data);
+      console.log('PDF blobUrl:', blobUrl);
+      console.log('PDF pdfBlob:', pdfBlob);
+      setPdfBlobUrl(blobUrl);
+
+      setLoading(false);
+    } catch (err) {
+      console.error('견적 조회/미리보기 실패:', err);
+      setError('PDF 미리보기를 생성할 수 없습니다.');
+      setLoading(false);
+    }
+  };
+
+  run();
+}, [uuid]);
+
+
   
   const handleDownload = () => {
     if (companyCode && uuid) {

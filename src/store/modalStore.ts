@@ -3,22 +3,22 @@ import { create } from 'zustand';
 interface ModalState {
   isLoginModalOpen: boolean;
   loginModalPurpose: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat' | 'default';
-  shareModal: boolean;
+  shareChatModal: boolean;
   openLoginModal: (purpose?: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat' | 'default') => void;
   closeLoginModal: () => void;
-  openShareModal: () => void;
-  closeShareModal: () => void;
+  openShareChatModal: () => void;
+  closeShareChatModal: () => void;
 }
 
 export const useModalStore = create<ModalState>((set) => ({
   isLoginModalOpen: false,
   loginModalPurpose: 'default',
-  shareModal: false,
-  openShareModal: () => set({ shareModal: true }),
-  closeShareModal: () => set({ shareModal: false }),
-  openLoginModal: (purpose = 'default') => set({ 
-    isLoginModalOpen: true, 
-    loginModalPurpose: purpose 
+  shareChatModal: false,
+  openShareChatModal: () => set({ shareChatModal: true }),
+  closeShareChatModal: () => set({ shareChatModal: false }),
+  openLoginModal: (purpose = 'default') => set({
+    isLoginModalOpen: true,
+    loginModalPurpose: purpose
   }),
   closeLoginModal: () => set({ isLoginModalOpen: false }),
 }));

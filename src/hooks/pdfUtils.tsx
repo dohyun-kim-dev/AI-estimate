@@ -3,6 +3,7 @@ import { uploadEstimatePdf } from '@/lib/api/user/userApi';
 
 // 공통: AI 전문 생성 유틸 — 아래 3) 참고
 import { buildFullEstimateData } from '@/hooks/buildFullEstimateData';
+import { extractInvoiceJSON } from './estimate';
 
 type PDFResult =
   | { blobUrl: string; pdfBlob: Blob } // 미리보기용
@@ -115,6 +116,75 @@ export async function generatePDF(
     return null;
   }
 }
+
+//위에거 안쓰고 이것으로 로직변경 서버에서 견적서 text 받아와서 pdf 보여줌
+export async function previewPdfFromServerData(html: string) {
+  console.log("html",html)
+  const estimateJson = extractInvoiceJSON(html);
+  if (!estimateJson) throw new Error('invoiceData가 없습니다.');
+
+  const tempDiv = document.createElement('div');
+  tempDiv.style.position = 'absolute';
+  tempDiv.style.left = '-9999px';
+  document.body.appendChild(tempDiv);
+
+  const root = document.createElement('div');
+  root.style.width = '780px';
+  root.style.backgroundColor = 'white';
+  tempDiv.appendChild(root);
+
+  const { createRoot } = await import('react-dom/client');
+  const reactRoot = createRoot(root);
+  const { PrintableInvoice } = await import('@/components/ai-esti/PrintableInvoice');
+
+  // PrintableInvoice가 estimate 형태를 받는다고 가정
+  reactRoot.render(<PrintableInvoice estimate={estimateJson} />);
+
+  await new Promise((r) => setTimeout(r, 100));
+
+  const html2canvas = (await import('html2canvas')).default;
+  const { jsPDF } = await import('jspdf');
+
+  const canvas = await html2canvas(root, {
+    scale: 1.5,
+    useCORS: true,
+    logging: false,
+    imageTimeout: 0,
+    backgroundColor: null,
+  });
+
+  const imgWidth = 210;
+  const pageHeight = 297;
+  const marginBottom = 0;
+  const effectivePageHeight = pageHeight - marginBottom;
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+  const pdf = new jsPDF('p', 'mm');
+  let heightLeft = imgHeight;
+  let position = 0;
+  let pageNumber = 1;
+
+  const imageData = canvas.toDataURL('image/jpeg', 0.7);
+  pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);
+  heightLeft -= effectivePageHeight;
+
+  while (heightLeft >= 0) {
+    position = -(effectivePageHeight * pageNumber);
+    pdf.addPage();
+    pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);
+    heightLeft -= effectivePageHeight;
+    pageNumber++;
+  }
+
+  const pdfBlob = pdf.output('blob');
+  const blobUrl = URL.createObjectURL(pdfBlob);
+
+  reactRoot.unmount();
+  document.body.removeChild(tempDiv);
+
+  return { blobUrl, pdfBlob };
+}
+
 
 // 하위호환: 업로드(서버 저장) 용도로 호출
 export async function generateAndUploadPdf(
