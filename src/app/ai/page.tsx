@@ -566,7 +566,7 @@ const userId = getUserId() || '';
             <SideContent>
               <EstimateActionButtons
                 onConsult={() => console.log('문의하기')}
-                onSubmit={() => handleSubmit(content)}
+                onSubmit={(action) => handleSubmit(action)}
               />
             </SideContent>
           </TopSection>

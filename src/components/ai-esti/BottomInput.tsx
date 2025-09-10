@@ -417,13 +417,16 @@ const BottomInput: React.FC<BottomInputProps> = ({
             onKeyDown={handleKeyPress}
             disabled={isUploading || isProcessing}
           />
-          <IconButton type="button" onClick={handleSubmit}>
-            <Icon 
-              src={isLightTheme ? "/ai-estimate/enter.png" : "/ai-estimate/enter_dark.png"} 
-              width={36} 
-              height={36} 
-            />
-          </IconButton>
+          {/* isProcessing이 아닐 때만 서밋(엔터) 아이콘 노출 */}
+          {!isProcessing && (
+            <IconButton type="button" onClick={handleSubmit}>
+              <Icon 
+                src={isLightTheme ? "/ai-estimate/enter.png" : "/ai-estimate/enter_dark.png"} 
+                width={36} 
+                height={36} 
+              />
+            </IconButton>
+          )}
           {/* 스트리밍 중일 때만 정지 버튼 노출 */}
           {isProcessing && (
             <IconButton type="button" onClick={handleStopStreaming}>

@@ -143,7 +143,7 @@ const ActionButtonBottom = styled.div<{ $isSecondary?: boolean }>`
 
 interface EstimateActionButtonsProps {
   onConsult?: () => void;
-  onSubmit?: (action?: string) => void;
+  onSubmit?: (action: "AI 예산 줄이기" | "AI 맞춤 추천") => void;
 }
 
 const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
