@@ -130,7 +130,7 @@ const PDFPreview: React.FC = () => {
   
   const handleDownload = () => {
     if (companyCode && uuid) {
-      const downloadUrl = `${apiUrl}/api/file/estimate/download/${companyCode}/${uuid}.pdf`;
+      const downloadUrl = `${apiUrl}/file/estimate/download/${companyCode}/${uuid}.pdf`;
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = `견적서_${uuid}.pdf`;

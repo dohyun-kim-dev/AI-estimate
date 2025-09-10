@@ -240,7 +240,7 @@ const SharePage: React.FC = () => {
     if (fileMatch) {
       const fileName = fileMatch[1];
       const textContent = content.replace(/\[첨부파일: .+?\]/, '').trim();
-      const imageUrl = `/api/file/${fileName}`;
+      const imageUrl = `/file/${fileName}`;
       
       // 이미지 파일인지 확인
       const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);

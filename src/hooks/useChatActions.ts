@@ -246,7 +246,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
             uploadedFileNames.map(async (fileName, index) => {
               const file = selectedFiles[index];
               const base64 = await fileToBase64(file);
-              const fileUrl = `/api/file/${fileName}`;
+              const fileUrl = `/file/${fileName}`;
               return {
                 name: file.name,
                 fileUri: fileUrl,

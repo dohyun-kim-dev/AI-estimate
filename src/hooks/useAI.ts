@@ -182,25 +182,42 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     // Part 배열 생성
     const parts: any[] = []
     if (message) parts.push({ text: message })
-    if (files.length > 0) {
+        if (files.length > 0) {
       for (const file of files) {
         try {
-          const response = await fetch(file.fileUri)
-          if (!response.ok) {
-            console.warn(`Failed to fetch file from ${file.fileUri}:`, response.statusText)
-            continue
+          // 1) base64가 있으면 그대로 사용
+          if ((file as any).base64) {
+            parts.push({
+              inlineData: {
+                data: (file as any).base64,
+                mimeType: file.mimeType,
+              },
+            });
+            continue;
           }
-          const arrayBuffer = await response.arrayBuffer()
-          const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
-          parts.push({
-            inlineData: {
-              data: base64Data,
-              mimeType: file.mimeType,
-            },
-          })
-        } catch (error) {
-          console.error(`Error processing file ${file.fileUri}:`, error)
-          continue
+
+          // 2) 없으면 fetch해서 chunk 단위로 base64 생성 (대용량 안전)
+          if (file.fileUri) {
+            const res = await fetch(file.fileUri);
+            if (!res.ok) { console.warn('fetch fail', file.fileUri); continue; }
+            const buf = await res.arrayBuffer();
+
+            const base64Data = (() => {
+              let binary = '';
+              const bytes = new Uint8Array(buf);
+              const chunkSize = 0x8000; // 32KB
+              for (let i = 0; i < bytes.length; i += chunkSize) {
+                const chunk = bytes.subarray(i, i + chunkSize);
+                binary += String.fromCharCode.apply(null, chunk as any);
+              }
+              return btoa(binary);
+            })();
+
+            parts.push({ inlineData: { data: base64Data, mimeType: file.mimeType } });
+          }
+        } catch (err) {
+          console.error(`Error processing file ${file.fileUri}:`, err);
+          continue;
         }
       }
     }
