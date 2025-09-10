@@ -28,7 +28,7 @@ const TopNav = styled.nav`
   align-items: center;
   padding: 12px 16px;
   background-color: ${({ theme }) => theme.body};
-  border-bottom: 1px solid ${({ theme }) => theme.border};
+  // border-bottom: 1px solid ${({ theme }) => theme.border};
   z-index: 100;
 
   .left-icons, .right-icons {
