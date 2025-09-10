@@ -509,13 +509,8 @@ const userId = getUserId() || '';
     return null;
   }
   const parts = content.split('<script');  
-const textContent = content
-  .replace(/<script\s+type="application\/json"\s+id="invoiceData">[\s\S]*?<\/script>/gi, '')
-  .replace(/\n/g, '<br/>')
-  .replace(/\\n/g, '<br/>')
-  .trim();  const hasEstimate = estimateData && estimateData.categories;
-
-
+  const textContent = parts[0].replace(/\\n/g, '<br/>').trim();  // \n을 <br/>로 변환
+  const hasEstimate = estimateData && estimateData.categories;
   
   return (
     <div>
@@ -745,7 +740,8 @@ export default function AiChatPage() {
     if (endOfMessagesRef.current) {
       endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages.map(m => m.content).join('\n')]);
+  // }, [messages.map(m => m.content).join('\n')]);
+  }, [messages.length]);
 
   const isEstimateMessage = (content: string) => {
     // console.log('content', content);
