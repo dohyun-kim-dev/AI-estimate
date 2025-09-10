@@ -54,6 +54,7 @@ interface ShareAiResponseMessageProps {
   name?: string;
   className?: string;
   isLoading?: boolean;
+  chatSessionId?: string; // Adding chatSessionId prop type
 }
 
 const ShareAiResponseMessage: React.FC<ShareAiResponseMessageProps> = ({

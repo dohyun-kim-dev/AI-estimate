@@ -227,6 +227,9 @@ interface EstimateItem {
   item_id?: string;  // 옵셔널로 변경
 }
 
+// 할인 제외 항목명
+const NON_DISCOUNT_ITEMS = ['화면설계', '화면디자인', '화면퍼블리싱'];
+
 interface EstimateAccordionItemProps {
   name: string;
   price?: string;
@@ -243,6 +246,7 @@ interface EstimateAccordionItemProps {
   onItemSelect?: (itemId: string) => void;
   chatRoomId?: string;
   estimateId?: string;
+  discountRate?: number; // 0~1, 0.1이면 10% 할인
 }
 
 const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
@@ -259,7 +263,8 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
   selectedItemId,
   onItemSelect,
   chatRoomId,
-  estimateId
+  estimateId,
+  discountRate
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const hasItems = items.length > 0 || !!children;
@@ -270,15 +275,25 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
     return url.includes('share');
   }, [location]);
 
+
+  // 각 아이템별 할인 적용 (화면설계/화면디자인/화면퍼블리싱 제외)
+  // discountRate가 undefined일 경우 0으로 처리
+  const safeDiscountRate = typeof discountRate === 'number' ? discountRate : 0;
+  const getDiscountedPrice = (item: EstimateItem) => {
+    if (NON_DISCOUNT_ITEMS.includes(item.name)) return parsePrice(item.price);
+    if (safeDiscountRate > 0) {
+      return Math.round(parsePrice(item.price) * (1 - safeDiscountRate));
+    }
+    return parsePrice(item.price);
+  };
+
   const totalAmount = useMemo(() => {
     if (!items.length) {
       return price || "0";
     }
-
     const currentItems = items.filter((item) => !item.is_deleted);
-    
-    return formatPrice(currentItems.reduce((sum, item) => sum + parsePrice(item.price), 0));
-  }, [items, price]);
+    return formatPrice(currentItems.reduce((sum, item) => sum + getDiscountedPrice(item), 0));
+  }, [items, price, safeDiscountRate]);
 
   const handleHeaderClick = () => {
     setIsOpen(!isOpen);
@@ -330,6 +345,8 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
       <Content $isOpen={isOpen} depth={depth}>
         <ContentInner>
           {children || (hasItems && items.map((item, index) => {
+            const discounted = getDiscountedPrice(item);
+            const isDiscounted = !NON_DISCOUNT_ITEMS.includes(item.name) && safeDiscountRate > 0;
             return (
               <ListItem
                 key={item.item_id || index} 
@@ -341,7 +358,12 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
                   {item.name}
                 </span>
                 <span className="price" onClick={() => handleItemClick(item, index)}>
-                  {item.price}
+                  {formatPrice(discounted)}
+                  {isDiscounted && (
+                    <span style={{ color: '#FF5A5A', fontSize: '0.85em', marginLeft: 4 }}>
+                      ↓
+                    </span>
+                  )}
                 </span>
                 <div className="actions">
                 {

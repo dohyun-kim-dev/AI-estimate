@@ -201,7 +201,7 @@ const ProgressBar = styled.div<{ $progress: number }>`
 const StyledAiMessage = styled(AiResponseMessage)<{ isFullWidth?: boolean }>`
   padding: 0;
   max-width: 100%;
-  align-self: flex-start;
+  // align-self: flex-start;
 `;
 
 const Controls = styled.div`
@@ -318,7 +318,10 @@ type ModelName = 'gemini-2.5-flash' | 'gemini-2.5-flash-lite' | 'gemini-2.0-flas
 
 
 function ensureClientUuid(estimate: any) {
+  console.log("ensureClientUuid함수 실행전", estimate);
   if (!estimate.uuid) {
+      console.log("ensureClientUuid함수 실행후", estimate);
+
     estimate.uuid = uuidv4(); // 클라에서 미리 박음
   }
   return estimate;
@@ -329,10 +332,11 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
     if(typeof content !== 'string') { console.log('string이 아닌 content', typeof content,content);}
     const match = content.match(/<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/);
     if (!match) return null;
-
+    console.log("정규 표현식 매칭 결과:", match);
     const jsonStr = match[1];
+    console.log("추출된 JSON 문자열:", jsonStr);
     const data = JSON.parse(jsonStr);
-
+    console.log("파싱된 데이터:", data);
     if (!data || typeof data !== 'object' || !Array.isArray(data.categories)) {
       console.error('Invalid estimate data structure:', data);
       return null;
@@ -372,11 +376,10 @@ export const AiMessageContent: React.FC<{ content: string; chatSessionId?: strin
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
   const estimateData = estimateDataForConsult || extractEstimateData(content);
   const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash', selectedPromptId: 'default' });
-  const estimateId = estimate_Id || estimateData?.uuid;
+  const estimateId = estimateDataForConsult?.uuid;
   const effectiveChatSessionId = chatSessionId || localStorage.getItem('chatSessionId') || '';
   const updateLastMessage = useChatStore((s) => s.updateLastMessage); // ⭐️ 추가: updateLastMessage 가져오기
   const messages = useChatStore((s) => s.messages); // ⭐️ 추가: messages 배열 가져오기
-
 
   
 
@@ -462,39 +465,43 @@ const userId = getUserId() || '';
   const [discountedPrice, setDiscountedPrice] = useState(basePrice);
 
   useEffect(() => {
-    if (basePeriod > 0) {
-      setProjectPeriod(basePeriod);
+    // 💡 `estimateData`가 null이거나 undefined일 경우 바로 종료
+    if (!estimateData) {
+      return;
     }
-    setDiscountedPrice(basePrice);
-  }, [basePeriod, basePrice]);
 
-  useEffect(() => {
-    const baseCommonCategory = estimateData?.categories
-    .flatMap(category => category.sub_categories)
-    .find(subCategory => subCategory.sub_category_name === '기반 공통');
+    // `flatMap`을 사용하여 모든 `items`를 단일 배열로 만들고 필터링합니다.
+    const nonDiscountableItems = estimateData.categories
+      .flatMap(category => category.sub_categories)
+      .flatMap(subCategory => subCategory.items)
+      .filter(item => 
+        item.name === '화면설계' || 
+        item.name === '화면디자인' || 
+        item.name === '화면퍼블리싱'
+      );
 
-  const nonDiscountableSum = baseCommonCategory?.items.reduce((sum, item) => {
-    // 삭제된 항목은 비할인 대상 합산에서도 제외
-    if (item.is_deleted) return sum;
-    const price = typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : item.price;
-    return sum + (price || 0);
-  }, 0) || 0;
+    const nonDiscountableSum = nonDiscountableItems.reduce((sum, item) => {
+      // 삭제된 항목은 비할인 대상 합산에서도 제외
+      if (item.is_deleted) return sum;
+      const price = typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : item.price;
+      return sum + (price || 0);
+    }, 0) || 0;
 
-  const discountableBase = basePrice - nonDiscountableSum;
+    const discountableBase = basePrice - nonDiscountableSum;
 
-  let discountPercentage = 0;
-  const maxPeriod = basePeriod + 8;
-  const periodDiff = projectPeriod - basePeriod;
-  const maxPeriodDiff = maxPeriod - basePeriod;
+    let discountPercentage = 0;
+    const maxPeriod = basePeriod + 8;
+    const periodDiff = projectPeriod - basePeriod;
+    const maxPeriodDiff = maxPeriod - basePeriod;
 
-  if (periodDiff > 0 && maxPeriodDiff > 0) {
-    // 슬라이더 위치에 비례하여 0%부터 최대 20%까지 할인율 적용
-    discountPercentage = (periodDiff / maxPeriodDiff) * 0.1;
-  }
+    if (periodDiff > 0 && maxPeriodDiff > 0) {
+      // 슬라이더 위치에 비례하여 0%부터 최대 10%까지 할인율 적용
+      discountPercentage = (periodDiff / maxPeriodDiff) * 0.1;
+    }
 
-  const newDiscountedPrice = discountableBase * (1 - discountPercentage) + nonDiscountableSum;
-  setDiscountedPrice(newDiscountedPrice);
-  }, [projectPeriod, basePeriod, basePrice]);
+    const newDiscountedPrice = discountableBase * (1 - discountPercentage) + nonDiscountableSum;
+    setDiscountedPrice(newDiscountedPrice);
+  }, [projectPeriod, basePeriod, basePrice, estimateData]); // 💡 `estimateData`를 디펜던시 배열에 추가
 
   const handleItemClick = (item: { name: string; price: string; description: string }) => {
     // EstimateItem 타입으로 변환
@@ -551,8 +558,9 @@ const userId = getUserId() || '';
             <MainContent>
               <EstimateCard 
                 estimate={estimateData} 
-                discountedPrice={discountedPrice || 0} // ⭐️ 수정: 기본값 0 추가
-                projectPeriod={projectPeriod || 0}   // ⭐️ 수정: 기본값 0 추가
+                discountedPrice={discountedPrice || 0}
+                projectPeriod={projectPeriod || 0}
+                parentId={estimateData?.uuid}
               />
               <DetailsToggle onClick={() => setIsDetailsVisible(!isDetailsVisible)}>
                 상세견적 보기 {isDetailsVisible ?
@@ -560,26 +568,55 @@ const userId = getUserId() || '';
                   <DetailsToggleIcon><IoChevronDown size={24} /></DetailsToggleIcon>
                 }
               </DetailsToggle>
-              <PeriodSlider 
-                value={Math.max(0, (projectPeriod || 0) - (basePeriod || 0))}  // 0~8
+              <PeriodSlider  
+                value={Math.max(0, (projectPeriod || 0) - (basePeriod || 0))}
                 onChange={setProjectPeriod}
                 $isvisible={isDetailsVisible}
-                min={0}         // ⭐️ 수정: 기본값 0 추가
-                max={8}   // ⭐️ 수정: 기본값 0 추가
-                discountedPrice={discountedPrice || 0} // ⭐️ 수정: 기본값 0 추가
-                basePrice={basePrice || 0}    // ⭐️ 수정: 기본값 0 추가
+                min={0}
+                max={8}
+                discountedPrice={discountedPrice || 0}
+                basePrice={basePrice || 0}
               />            
 
-              <AnimatedContainer $isvisible={isDetailsVisible}>
-                <EstimateAccordion
-                  data={estimateData}
-                  onItemClick={handleItemClick}
-                  chatSessionId={effectiveChatSessionId}
-                  estimateId={estimateId}
-                  userId={userId}
-                  title={estimateData?.project_name || '견적서'}
-                />
-              </AnimatedContainer>
+              {/* 할인율 계산: discountableBase, discountPercentage */}
+              {(() => {
+                // 할인 제외 항목
+                const NON_DISCOUNT_ITEMS = ['화면설계', '화면디자인', '화면퍼블리싱'];
+                let nonDiscountableSum = 0;
+                let discountableBase = basePrice;
+                if (estimateData && Array.isArray(estimateData.categories)) {
+                  const allItems = estimateData.categories
+                    .flatMap(category => category.sub_categories)
+                    .flatMap(subCategory => subCategory.items);
+                  nonDiscountableSum = allItems
+                    .filter(item => NON_DISCOUNT_ITEMS.includes(item.name) && !item.is_deleted)
+                    .reduce((sum, item) => {
+                      const price = typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : item.price;
+                      return sum + (price || 0);
+                    }, 0);
+                  discountableBase = basePrice - nonDiscountableSum;
+                }
+                let discountPercentage = 0;
+                const maxPeriod = basePeriod + 8;
+                const periodDiff = projectPeriod - basePeriod;
+                const maxPeriodDiff = maxPeriod - basePeriod;
+                if (periodDiff > 0 && maxPeriodDiff > 0) {
+                  discountPercentage = (periodDiff / maxPeriodDiff) * 0.1;
+                }
+                return (
+                  <AnimatedContainer $isvisible={isDetailsVisible}>
+                    <EstimateAccordion
+                      data={estimateData}
+                      onItemClick={handleItemClick}
+                      chatSessionId={effectiveChatSessionId}
+                      estimateId={estimateId}
+                      userId={userId}
+                      title={estimateData?.project_name || '견적서'}
+                      discountRate={discountPercentage}
+                    />
+                  </AnimatedContainer>
+                );
+              })()}
             </MainContent>
             <SideContent>
               <EstimateActionButtons
@@ -645,11 +682,19 @@ export default function AiChatPage() {
     
     if (lastEstimateMessage) {
       // 견적서 메시지를 찾으면 content에서 데이터를 추출합니다.
+      console.log("최근 견적서 메세지 lastEstimateMessage",lastEstimateMessage)
       let extractedData = extractEstimateData(lastEstimateMessage.content);
+const estimateDataWithUUID = extractedData
+  ? { ...extractedData, uuid: lastEstimateMessage.estimateId ?? extractedData.uuid ?? '' }
+  : null;      console.log("견적서 메시지",lastEstimateMessage)
+      console.log("견적서 데이터 추출",extractedData)
+
       if (extractedData) {
         // 클라이언트에서 uuid를 보장합니다.
-        extractedData = ensureClientUuid(extractedData);
-        setEstimateDataForConsult(extractedData);
+        console.log("견적서 데이터 추출",estimateDataWithUUID)
+        extractedData = ensureClientUuid(estimateDataWithUUID);
+        console.log("견적서 데이터 추출 후 uuid 보장",estimateDataWithUUID)
+        setEstimateDataForConsult(estimateDataWithUUID);
       }
     } else {
       // 견적서 메시지가 없으면 상태를 초기화합니다.

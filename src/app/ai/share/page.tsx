@@ -11,6 +11,7 @@ import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import { AiMessageContent } from '@/app/ai/page';
 
 // 메시지 타입 정의
+import type { FileUploadData } from '@/firebase.functions';
 interface ChatMessage {
   _id: string;
   session: string;
@@ -22,6 +23,7 @@ interface ChatMessage {
     file?: string;
   };
   createAt: string;
+  files?: FileUploadData[];
 }
 
 // AI 레이아웃과 동일한 스타일
@@ -413,19 +415,39 @@ const SharePage: React.FC = () => {
           {messages.map((message, index) => {
             if (message.role === 'user') {
               const parsedContent = parseMessageContent(message.content);
-              
               return (
                 <UserMessageContainer key={index}>
+                  {/* 텍스트 메시지 */}
                   {parsedContent.text && (
                     <UserMessage>{parsedContent.text}</UserMessage>
                   )}
+                  {/* files 배열 기반 이미지/파일 미리보기 */}
+                  {message.files && message.files.length > 0 && message.files.map((file, idx) =>
+                    file.mimeType && file.mimeType.startsWith('image/') ? (
+                      <UserImagePreview
+                        key={idx}
+                        src={file.fileUri}
+                        alt={file.name}
+                        onError={(e) => {
+                          console.error('이미지 로드 실패:', file.fileUri);
+                          setTimeout(() => {
+                            e.currentTarget.src = file.fileUri + '?retry=' + Date.now();
+                          }, 1000);
+                        }}
+                      />
+                    ) : (
+                      <UserMessage key={idx}>
+                        📎 <a href={file.fileUri} download={file.name} target="_blank" rel="noopener noreferrer">{file.name}</a>
+                      </UserMessage>
+                    )
+                  )}
+                  {/* 기존 텍스트 파싱 방식의 이미지/파일(백워드 호환) */}
                   {parsedContent.isImage && parsedContent.imageUrl && (
-                    <UserImagePreview 
-                      src={parsedContent.imageUrl} 
+                    <UserImagePreview
+                      src={parsedContent.imageUrl}
                       alt={parsedContent.fileName || '첨부된 이미지'}
                       onError={(e) => {
                         console.error('이미지 로드 실패:', parsedContent.imageUrl);
-                        // ⭐️ 재시도 로직: 1초 후 다시 시도
                         setTimeout(() => {
                           e.currentTarget.src = parsedContent.imageUrl + '?retry=' + Date.now();
                         }, 1000);
@@ -443,7 +465,7 @@ const SharePage: React.FC = () => {
               return (
                 <StyledAiMessage
                   key={index}
-                  content={<AiMessageContent content={message.content}/>}
+                  content={<AiMessageContent content={message.content}/>} 
                   profileImage="/ai-estimate/pretty.png"
                   name="강유하"
                   chatSessionId={sessionId}

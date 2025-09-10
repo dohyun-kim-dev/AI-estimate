@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { getDownloadEstimateUrlWithUserInfo, googleLoginInitial, googleLoginUpdate, uploadEstimatePdf } from '@/lib/api/user/userApi';
 import { buildFullEstimateData } from '@/hooks/estimate';
 import IssuerInfoModal, { IssuerInfo } from '@/components/ai-esti/IssuerInfoModal';
+import { es } from 'date-fns/locale';
 
 const CardWrapper = styled.div`
   background-color: ${({ theme }) => theme.surface1};
@@ -117,9 +118,10 @@ interface EstimateCardProps {
   estimate: ProjectEstimate;
   discountedPrice?: number;
   projectPeriod?: number;
+  parentId?: string;
 }
 
-const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, projectPeriod = 0}) => {
+const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, projectPeriod = 0, parentId }) => {
   const [openShare, setOpenShare] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [isSocialLoginModalOpen, setIsSocialLoginModalOpen] = useState(false);
@@ -166,9 +168,13 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
   }, [isAuthenticated]);
 
   
-    async function ensureUuidOnce(estimateObj: any, title: string) {
+
+    async function ensureUuidOnce(estimateObj: { uuid?: string; _id?: string }, title: string): Promise<string> {
+      // uuid 우선 반환, 없으면 _id 반환
       if (estimateObj?.uuid) return estimateObj.uuid;
-  
+      if (estimateObj?._id) return estimateObj._id;
+
+      console.log("함수 실행전", estimateObj, estimate);
       // 유저 정보 추출
       let userId = '';
       let name = '';
@@ -186,26 +192,25 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
         userId = localStorage.getItem('guest-uuid') || '';
       }
       if (!userId) throw new Error('사용자 ID가 없습니다.');
-  
-  
+
       // getDownloadEstimateUrlWithUserInfo는 URL만 반환하므로, 실제로 호출을 발생시켜야 함
-      const url = getDownloadEstimateUrlWithUserInfo(
+      const url = await getDownloadEstimateUrlWithUserInfo(
         companyCode,
-        estimateObj._id,
+        estimateObj.uuid || estimateObj._id || '',
         { id: userId, name, email, cellphone }
       );
       try {
         await fetch(url, { method: 'GET' });
         console.log("다운로드 카운트 성공")
-
       } catch (e) {
-      console.log("다운로드 카운트 실패 ")
+        console.log("다운로드 카운트 실패 ")
       }
-  
-      if (!estimateObj._id) throw new Error('uuid 보장 실패');
-      console.log("estimateObj._id:", estimateObj._id);
-      return estimateObj._id as string;
-    }
+
+    if (!estimateObj._id) throw new Error('uuid 보장 실패');
+
+    return estimate._id as string;
+  }
+
   
 
 
@@ -224,6 +229,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
     } catch (err) {
       console.error('PDF 미리보기 오픈 중 오류:', err);
+            console.log("estimate:", estimate);
       error('PDF 미리보기 오픈에 실패했습니다.');
     }
   };
@@ -297,9 +303,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
 
   const handleCopy = async () => {
     try {
-      const textToCopy = `주식회사 여기닷에서 발급된 견적서를 다운로드해보세요 !
- 
-${shareUrl}
+      const textToCopy = `${shareUrl}
 
 🏢공급사명 : 주식회사 여기닷
  

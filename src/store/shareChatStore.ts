@@ -1,9 +1,15 @@
 import { create } from 'zustand';
+import type { FileUploadData } from '@/firebase.functions';
 
 export interface ShareChatMessage {
   role: 'user' | 'ai';
   content: string;
+  isLoading?: boolean;
+  messageId?: string;
+  estimateId?: string;
+  files?: FileUploadData[];
 }
+
 
 interface ShareChatStore {
   messages: ShareChatMessage[];

@@ -195,10 +195,10 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       userMessageContent = `${input}\n\n${fileInfo}`;
     }
 
-    // 사용자 메시지 임시 추가
-    addMessage({ role: 'user', content: userMessageContent });
-    // ai 메시지는 isLoading: true로 추가 (실시간 업데이트용)
-    addMessage({ role: 'ai', content: '', isLoading: true });
+  // 사용자 메시지 임시 추가 (업로드 파일 정보도 함께 저장)
+  addMessage({ role: 'user', content: userMessageContent, files: uploadedFiles });
+  // ai 메시지는 isLoading: true로 추가 (실시간 업데이트용)
+  addMessage({ role: 'ai', content: '', isLoading: true });
 
     let currentSessionId = chatSessionId;
     let userId = null;

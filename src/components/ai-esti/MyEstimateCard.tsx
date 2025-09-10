@@ -223,8 +223,10 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
     }
 
     if (!estimateObj._id) throw new Error('uuid 보장 실패');
-    console.log("estimateObj._id:", estimateObj._id);
-    return estimateObj._id as string;
+    if (estimate._id) {
+      console.log("estimate._id:", estimate._id);
+    }
+    return estimate._id as string;
   }
 
 
@@ -243,12 +245,14 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
       success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
     } catch (err) {
       console.error('PDF 미리보기 오픈 중 오류:', err);
+      console.log("estimate:", estimate);
       error('PDF 미리보기 오픈에 실패했습니다.');
     }
   };
 
   const handleShareClick = async () => {
     // 공유는 새탭을 열지 않고 링크만 생성
+    console.log("공유 클릭 estimate:", estimate);
     const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
     const newShareUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
     setShareUrl(newShareUrl);
@@ -262,9 +266,7 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
 
   const handleCopy = async () => {
     try {
-      const textToCopy = `주식회사 여기닷에서 발급된 견적서를 다운로드해보세요 !
- 
-${shareUrl}
+      const textToCopy = `${shareUrl}
 
 🏢공급사명 : 주식회사 여기닷
  

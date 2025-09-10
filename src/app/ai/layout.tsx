@@ -272,9 +272,7 @@ export default function AILayout() {
     }
     
     // 추가할 문구
-    const textToCopy = `주식회사 여기닷에서 산출된 견적 대화내용을 확인해보세요 !
- 
-${shareUrl}
+    const textToCopy = `${shareUrl}
 
 🏢공급사명 : 주식회사 여기닷
  
