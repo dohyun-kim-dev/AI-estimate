@@ -12,8 +12,8 @@ const MessageWrapper = styled.div`
 
 
 const ProfileImage = styled.img<{ 'data-is-loading'?: boolean }>`
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   object-fit: cover;
   position: relative;
@@ -90,10 +90,14 @@ const spin = keyframes`
   return (
     <MessageWrapper className={className}>
       <ContentWrapper>
+        {profileImage == null ? null :
         <Header>
-        <ProfileImage src={profileImage} alt={name} data-is-loading={isLoading} />
+          {profileImage && (
+            <ProfileImage src={profileImage} alt={name} data-is-loading={isLoading} />
+          )}
           <h2>{name}</h2>
         </Header>
+       }
         <MessageContent>
           {typeof content === 'string' ? <p>{content}</p> : content}
         </MessageContent>

@@ -100,6 +100,7 @@ const Slider = styled.input<{ $value: number; $min: number; $max: number; }>`
     background: #60A5FA;
     cursor: pointer;
     margin-top: -6px;
+    
   }
 
   &::-moz-range-thumb {
@@ -169,11 +170,11 @@ interface PeriodSliderProps {
   basePrice?: number;
 }
 
-const PeriodSlider: React.FC<PeriodSliderProps> = ({ value, onChange, $isvisible, min, max, discountedPrice, basePrice }) => {
+const PeriodSlider: React.FC<PeriodSliderProps> = ({ value, onChange, $isvisible, min=0, max, discountedPrice, basePrice }) => {
   const discountPercentage = ((value - min) / (max - min)) * 10;
   const discountAmount = basePrice - discountedPrice;
   // const tooltipPosition = `calc(${((value - min) / (max - min)) * 50}% + 75px)`;
-  const tooltipPosition = `155px`;
+  const tooltipPosition = `238px`;
   return (
     <SliderWrapper $isvisible={$isvisible}>
       <InnerContainer>

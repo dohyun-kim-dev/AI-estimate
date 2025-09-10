@@ -280,10 +280,16 @@ const isDarkMode = isColorDark(backgroundColor);
     postViewport();
   });
 
-  btn.onclick = ()=> { 
-    root.classList.toggle('open'); 
+  btn.onclick = ()=> {
+    // 모바일 디바이스(아이폰 포함) 감지
+    var isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+      window.open(targetUrl, '_blank');
+      return;
+    }
+    root.classList.toggle('open');
     btn.classList.toggle('open'); // 버튼에도 'open' 클래스 토글
-    postViewport(); 
+    postViewport();
   };
   window.addEventListener('message',(e)=>{ 
     if(e?.data?.type==='aiw:close') {

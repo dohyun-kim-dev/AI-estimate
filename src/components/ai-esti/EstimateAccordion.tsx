@@ -96,54 +96,50 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
     setSelectedSubItem(subItemId);
   };
 
-  // 서버 저장 (디바운스) — 바깥에서 최신 est를 직접 넘겨 받음
-  const saveToServer = useMemo(
-    () =>
-      debounce(async (est) => {
-        try {
-          // 💡 id 없으면 업데이트 못 하므로 여기서 바로 가드
-          if (!estimateId) {
-            console.warn("[save] estimateId 없음 — 업데이트 생략");
-            return;
-          }
-
-          // 항상 최신 messageId를 세션스토리지에서 조회 (동시에 여러 탭에서 변경될 수 있어서)
-          const messageId = findMessageIdForEstimate(estimateId);
-
-          if (!chatSessionId || !userId || !messageId) {
-            console.warn("[save] 필수값 누락:", { chatSessionId, estimateId, userId, messageId });
-            return;
-          }
-
-          const dataStr = buildFullEstimateData(est);
-          const uploadResponse = await uploadEstimatePdf(
-            chatSessionId,
-            title || est.project_name || "견적서",
-            userId,
-            dataStr,
-            estimateId // ✅ 수정이라면 반드시 포함
-          );
-
-          if (uploadResponse?.statusCode === 200) {
-            // 견적서 업로드 성공 시, 채팅 메시지도 함께 수정
-            const updatedReply = `<script type="application/json" id="invoiceData">${JSON.stringify(est)}</script>`;
-            await patchChatMessages(messageId, {
-              type: "text",
-              value: updatedReply,
-            });
-
-            // 로컬 스토어에도 반영하여 UI가 즉시 갱신되도록 함
-            try {
-              useChatStore.getState().updateMessageById(messageId, { content: updatedReply });
-            } catch (e) {
-              console.warn("local updateMessageById failed", e);
-            }
-          }
-        } catch (e) {
-          console.error("[save] 견적 업데이트 실패:", e);
+  // 서버 저장 (디바운스) — 항상 최신 props를 참조하도록 useCallback+debounce로 개선
+  const saveToServer = useCallback(
+    debounce(async (est) => {
+      // 최신 props를 매 호출마다 직접 참조
+      const latestEstimateId = estimateId;
+      const latestChatSessionId = chatSessionId;
+      const latestUserId = userId;
+      const latestTitle = title;
+      try {
+        console.log("estimateId , chatSessionId, userId", latestEstimateId, latestChatSessionId, latestUserId);
+        if (!latestEstimateId) {
+          console.warn("[save] estimateId 없음 — 업데이트 생략");
+          return;
         }
-      }, 700),
-    [chatSessionId, estimateId, title, userId]
+        const messageId = findMessageIdForEstimate(latestEstimateId);
+        if (!latestChatSessionId || !latestUserId || !messageId) {
+          console.warn("[save] 필수값 누락:", { latestChatSessionId, latestEstimateId, latestUserId, messageId });
+          return;
+        }
+        const dataStr = buildFullEstimateData(est);
+        const uploadResponse = await uploadEstimatePdf(
+          latestChatSessionId,
+          latestTitle || est.project_name || "견적서",
+          latestUserId,
+          dataStr,
+          latestEstimateId
+        );
+        if (uploadResponse?.statusCode === 200) {
+          const updatedReply = `<script type="application/json" id="invoiceData">${JSON.stringify(est)}</script>`;
+          await patchChatMessages(messageId, {
+            type: "text",
+            value: updatedReply,
+          });
+          try {
+            useChatStore.getState().updateMessageById(messageId, { content: updatedReply });
+          } catch (e) {
+            console.warn("local updateMessageById failed", e);
+          }
+        }
+      } catch (e) {
+        console.error("[save] 견적 업데이트 실패:", e);
+      }
+    }, 700),
+    [estimateId, chatSessionId, userId, title]
   );
 
 

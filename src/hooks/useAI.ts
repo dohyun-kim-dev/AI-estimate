@@ -1,10 +1,8 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef, useState, useEffect } from 'react'
 import { getAI, getGenerativeModel, GenerativeModel, ChatSession } from 'firebase/ai'
 import { app } from '@/firebaseConfig'
 import { devLog } from '@/utils/devLogger'
-import { Part, FileData } from '@google/generative-ai';
-import { FileUploadData } from '@/firebase.functions';
-
+import { FileUploadData } from '@/firebase.functions'
 
 export type SimpleModel =
   | 'gemini-2.5-flash'
@@ -47,7 +45,6 @@ function formatCurrencyUSD(v: number) {
   return `$${v.toFixed(4)}`
 }
 function formatCurrencyKRW(v: number) {
-  // 원 단위 반올림
   return `₩${Math.round(v).toLocaleString('ko-KR')}`
 }
 
@@ -65,7 +62,6 @@ function logUsageAndCost(where: string, modelName: string, anyResponse: unknown)
     devLog(`[useAI] ${where} usage: (no usage metadata)`, r)
     return
   }
-  // 문서 기준 필드 대응
   const promptT = pickNumber(
     usage.promptTokenCount,
     usage.inputTokenCount,
@@ -81,13 +77,12 @@ function logUsageAndCost(where: string, modelName: string, anyResponse: unknown)
   const totalT = pickNumber(
     usage.totalTokenCount,
     usage.totalTokens,
-    promptT + candidatesT // fallback
+    promptT + candidatesT
   )
 
   const rate = getPricingForModel(modelName)
   const usdKrw = getUsdKrwRate()
 
-  // 비용 계산은 입력/출력 기준으로만 산정 (캐시/생각 토큰은 별도 표기)
   const inputCostUSD = (promptT / 1_000_000) * rate.input
   const outputCostUSD = (candidatesT / 1_000_000) * rate.output
   const totalCostUSD = inputCostUSD + outputCostUSD
@@ -107,7 +102,6 @@ function logUsageAndCost(where: string, modelName: string, anyResponse: unknown)
   )
 }
 
-
 /**
  * sendChat 옵션 타입
  * @property streaming - true면 스트리밍(실시간), false면 전체 응답만 반환 (기본값: true)
@@ -125,8 +119,16 @@ export interface SendChatOptions {
 export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
   const [modelName, setModelName] = useState<SimpleModel>(initialModel)
   const [systemInstruction, setSystemInstruction] = useState<string | undefined>(undefined)
+  // maximum output tokens / thinking budget
+  const [thinkingBudget, setThinkingBudget] = useState<number>(500)
+
   const modelRef = useRef<GenerativeModel | null>(null)
   const chatRef = useRef<ChatSession | null>(null)
+
+  // thinkingBudget 또는 systemInstruction이 바뀌면 다음 전송 시 새 세션으로 시작되도록 리셋
+  useEffect(() => {
+    chatRef.current = null
+  }, [thinkingBudget, systemInstruction, modelName])
 
   const ensureModel = useCallback(() => {
     if (!app) throw new Error('Firebase app not initialized')
@@ -141,11 +143,17 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
 
   const generate = useCallback(async (prompt: string): Promise<string> => {
     const model = ensureModel()
-    const res = await model.generateContent(prompt)
+    // 단발 요청에도 동일한 budget 적용
+    const res = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        thinkingConfig: { thinking_budget: thinkingBudget } as any,
+      },
+    } as any)
     logUsageAndCost('generate', String(modelName), res)
     const text = res.response.text()
     return text
-  }, [ensureModel, modelName])
+  }, [ensureModel, modelName, thinkingBudget])
 
   /**
    * AI 채팅 메시지 전송 (스트리밍/비스트리밍 모두 지원)
@@ -153,117 +161,120 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
    * @param files - 첨부 파일 배열
    * @param options - SendChatOptions (streaming: true면 실시간, false면 전체 응답만)
    * @returns string (전체 응답)
-   *
-   * 사용 예시:
-   *   sendChat('안녕', [], { streaming: true, onStream: (chunk) => ... })
-   *   sendChat('안녕', [], { streaming: false })
    */
   const sendChat = useCallback(async (
     message: string,
     files: FileUploadData[] = [],
-    options?: SendChatOptions
+    options?: SendChatOptions,
   ): Promise<string> => {
     const model = ensureModel();
-    if (!chatRef.current) chatRef.current = model.startChat();
 
-    // Part 객체 배열 생성
-    const parts: any[] = [];
-    if (message) parts.push({ text: message });
+    // ✅ 첫 메시지부터 thinkingBudget 반영되도록 세션 생성 시 config 주입
+    if (!chatRef.current) {
+      chatRef.current = model.startChat({
+        generationConfig: {
+          thinkingConfig: { thinking_budget: thinkingBudget } as any,
+        },
+      } as any)
+    }
+
+    // Part 배열 생성
+    const parts: any[] = []
+    if (message) parts.push({ text: message })
     if (files.length > 0) {
       for (const file of files) {
         try {
-          const response = await fetch(file.fileUri);
+          const response = await fetch(file.fileUri)
           if (!response.ok) {
-            console.warn(`Failed to fetch file from ${file.fileUri}:`, response.statusText);
-            continue;
+            console.warn(`Failed to fetch file from ${file.fileUri}:`, response.statusText)
+            continue
           }
-          const arrayBuffer = await response.arrayBuffer();
-          const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+          const arrayBuffer = await response.arrayBuffer()
+          const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
           parts.push({
             inlineData: {
               data: base64Data,
               mimeType: file.mimeType,
             },
-          });
+          })
         } catch (error) {
-          console.error(`Error processing file ${file.fileUri}:`, error);
-          continue;
+          console.error(`Error processing file ${file.fileUri}:`, error)
+          continue
         }
       }
     }
-    if (parts.length === 0) return '';
+    if (parts.length === 0) return ''
 
     // 로딩 시작
-    options?.onLoading?.(true);
+    options?.onLoading?.(true)
 
-    // streaming 옵션 기본값 true로 처리
-    const streaming = options?.streaming !== undefined ? options.streaming : true;
+    // streaming 기본값 true
+    const streaming = options?.streaming !== undefined ? options.streaming : true
 
     try {
       if (streaming) {
-        // 스트리밍 모드: chunk 단위로 콜백 전달
-        let result = '';
-        if (typeof chatRef.current.sendMessageStream === 'function') {
-          const streamResult = await chatRef.current.sendMessageStream(parts);
+        // 스트리밍 모드
+        if (typeof chatRef.current!.sendMessageStream === 'function') {
+          const streamResult = await chatRef.current!.sendMessageStream(parts)
+          let result = ''
           for await (const candidate of streamResult.stream) {
-            let chunk: string = '';
-            if (typeof candidate?.text === 'function') {
-              chunk = candidate.text();
-            } else if (typeof candidate?.text === 'string') {
-              chunk = candidate.text;
-            }
+            let chunk = ''
+            if (typeof candidate?.text === 'function') chunk = candidate.text()
+            else if (typeof candidate?.text === 'string') chunk = candidate.text
             if (chunk) {
-              // 콘솔에 실시간 chunk 로그
-              console.log('[useAI] streaming chunk:', chunk);
-              result += chunk;
-              options?.onStream?.(chunk);
-              if (chunk.trim().startsWith('{') && chunk.trim().endsWith('}')) {
+              console.log('[useAI] streaming chunk:', chunk)
+              result += chunk
+              options?.onStream?.(chunk)
+              const trimmed = chunk.trim()
+              if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
                 try {
-                  const json = JSON.parse(chunk);
-                  options?.onEstimateJson?.(json);
+                  const json = JSON.parse(trimmed)
+                  options?.onEstimateJson?.(json)
                 } catch {}
               }
             }
           }
+          // ✅ 스트리밍 후 최종 response로 usage 로깅
+          const finalResp = await streamResult.response
+          logUsageAndCost('sendChat(streaming)', String(modelName), finalResp)
+          return result
         } else {
-          // fallback: 일반 sendMessage 사용
-          const res = await chatRef.current.sendMessage(parts);
-          const text = res.response.text();
-          // 콘솔에 fallback도 로그
-          console.log('[useAI] streaming fallback text:', text);
-          result = text;
-          options?.onStream?.(text);
-          if (text.trim().startsWith('{') && text.trim().endsWith('}')) {
+          // fallback: 일반 sendMessage
+          const res = await chatRef.current!.sendMessage(parts)
+          const text = res.response.text()
+          console.log('[useAI] streaming fallback text:', text)
+          logUsageAndCost('sendChat(streaming-fallback)', String(modelName), res)
+          const trimmed = text.trim()
+          if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
             try {
-              const json = JSON.parse(text);
-              options?.onEstimateJson?.(json);
+              const json = JSON.parse(trimmed)
+              options?.onEstimateJson?.(json)
             } catch {}
           }
+          return text
         }
-        logUsageAndCost('sendChat(streaming)', String(modelName), {}); // 실제 usage 전달 필요
-        return result;
       } else {
         // 비-스트리밍(일반) 모드
-        const res = await chatRef.current.sendMessage(parts);
-        logUsageAndCost('sendChat', String(modelName), res);
-        const text = res.response.text();
-        // 콘솔에 비스트리밍도 로그
-        console.log('[useAI] non-streaming text:', text);
-        if (text.trim().startsWith('{') && text.trim().endsWith('}')) {
+        const res = await chatRef.current!.sendMessage(parts)
+        logUsageAndCost('sendChat', String(modelName), res)
+        const text = res.response.text()
+        console.log('[useAI] non-streaming text:', text)
+        const trimmed = text.trim()
+        if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
           try {
-            const json = JSON.parse(text);
-            options?.onEstimateJson?.(json);
+            const json = JSON.parse(trimmed)
+            options?.onEstimateJson?.(json)
           } catch {}
         }
-        return text;
+        return text
       }
     } catch (error) {
-      console.error('Failed to send multi-modal message:', error);
-      throw error;
+      console.error('Failed to send multi-modal message:', error)
+      throw error
     } finally {
-      options?.onLoading?.(false);
+      options?.onLoading?.(false)
     }
-  }, [ensureModel, modelName]);
+  }, [ensureModel, modelName, thinkingBudget])
 
   const resetChat = useCallback(() => {
     chatRef.current = null
@@ -277,7 +288,12 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
   const testModel = useCallback(async (): Promise<{ ok: boolean; message: string }> => {
     try {
       const model = ensureModel()
-      const res = await model.generateContent('ping')
+      const res = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: 'ping' }] }],
+        generationConfig: {
+          thinkingConfig: { thinking_budget: thinkingBudget } as any,
+        },
+      } as any)
       logUsageAndCost('testModel', String(modelName), res)
       const t = res.response.text()
       return { ok: true, message: t?.slice(0, 160) || 'OK' }
@@ -285,7 +301,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
       const msg = e?.message || String(e)
       return { ok: false, message: msg }
     }
-  }, [ensureModel, modelName])
+  }, [ensureModel, modelName, thinkingBudget])
 
   /**
    * sendChat 사용법:
@@ -293,5 +309,15 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
    * sendChat('메시지', [], { streaming: false })
    * 기본값은 streaming: true (실시간)
    */
-  return { modelName, setModelName, generate, sendChat, resetChat, testModel, setSystemInstruction: setSystem }
+  return {
+    modelName,
+    setModelName,
+    thinkingBudget,
+    setThinkingBudget,
+    generate,
+    sendChat,
+    resetChat,
+    testModel,
+    setSystemInstruction: setSystem,
+  }
 }

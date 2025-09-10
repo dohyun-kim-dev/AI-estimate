@@ -1,7 +1,76 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
+// --- Gradient Text Animation ---
+const gradientText = keyframes`
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+`;
+
+const GradientText = styled.span`
+  font-size: 16px;
+  font-weight: 500;
+  background: linear-gradient(90deg, #6014FF, #5C73D9, #8D55A5, #6014FF);
+  background-size: 300% 300%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: ${gradientText} 1.6s linear infinite;
+`;
+
+// --- Spinner Animation ---
+const rotate = keyframes`
+  100% { transform: rotate(360deg); }
+`;
+const dash = keyframes`
+  0% { stroke-dasharray: 30, 140; stroke-dashoffset: 0; }
+  50% { stroke-dasharray: 90, 140; stroke-dashoffset: -35; }
+  100% { stroke-dasharray: 30, 140; stroke-dashoffset: -110; }
+`;
+
+const SpinnerWrapper = styled.div`
+  position: relative;
+  width: 56px; height: 56px;
+  display: flex; align-items: center; justify-content: center;
+`;
+const SpinnerSvg = styled.svg`
+  position: absolute; top: 0; left: 0;
+  width: 56px; height: 56px;
+  transform: rotate(-90deg);
+  animation: ${rotate} 1.2s linear infinite;
+`;
+const SpinnerCircle = styled.circle`
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke: url(#spinner-gradient);
+  animation: ${dash} 1.2s ease-in-out infinite;
+`;
+const ProfileImg = styled.img`
+  width: 44px; height: 44px; border-radius: 50%;
+  z-index: 1;
+`;
+
+function ProfileSpinner({ src }: { src: string }) {
+  return (
+    <SpinnerWrapper>
+      <SpinnerSvg viewBox="0 0 56 56">
+        <defs>
+          <linearGradient id="spinner-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#6014FF" />
+            <stop offset="50%" stopColor="#5C73D9" />
+            <stop offset="100%" stopColor="#8D55A5" />
+          </linearGradient>
+        </defs>
+        <SpinnerCircle cx="28" cy="28" r="24" />
+      </SpinnerSvg>
+      <ProfileImg src={src} alt="profile" />
+    </SpinnerWrapper>
+  );
+}
 import useAI from '@/hooks/useAI';
 import { useToast } from '@/components/common/ToastProvider';
 import { useChatStore } from '@/store/chatStore';
@@ -439,8 +508,12 @@ const userId = getUserId() || '';
   if (typeof content !== 'string') {
     return null;
   }
-  const parts = content.split('<script');  const textContent = parts[0].replace(/\\n/g, '<br/>').trim();  // \n을 <br/>로 변환
-  const hasEstimate = estimateData && estimateData.categories;
+  const parts = content.split('<script');  
+const textContent = content
+  .replace(/<script\s+type="application\/json"\s+id="invoiceData">[\s\S]*?<\/script>/gi, '')
+  .replace(/\n/g, '<br/>')
+  .replace(/\\n/g, '<br/>')
+  .trim();  const hasEstimate = estimateData && estimateData.categories;
 
 
   
@@ -742,8 +815,13 @@ export default function AiChatPage() {
               return (
                 <StyledAiMessage
                   key={idx}
-                  content={<span style={{ color: '#aaa' }}>로딩 중...</span>}
-                  profileImage="/ai-estimate/pretty.png"
+                  content={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <ProfileSpinner src="/ai-estimate/pretty.png" />
+                      <GradientText>어떤 답변이 도움이 될지 고민하는 중...</GradientText>
+                    </div>
+                  }
+                  profileImage={null}
                   name="강유하"
                   isFullWidth={false}
                 />
@@ -752,7 +830,7 @@ export default function AiChatPage() {
             return (
               <StyledAiMessage
                 key={idx}
-                content={<AiMessageContent content={m.content} chatSessionId={chatSessionId}/>} 
+                content={<AiMessageContent content={m.content} chatSessionId={chatSessionId} estimateDataForConsult={estimateDataForConsult} />} 
                 profileImage="/ai-estimate/pretty.png"
                 name="강유하"
                 isFullWidth={isEstimateMessage(m.content)}

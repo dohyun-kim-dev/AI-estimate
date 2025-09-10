@@ -98,7 +98,7 @@ const Header = ({ compact }: HeaderProps) => {
   return (
     <HeaderWrapper>
       <HeaderContent>
-        <Logo onClick={() => navigate('/')}> {/* ✅ 클릭 시 홈으로 이동 */}
+        <Logo onClick={() => navigate('')}> {/* ✅ 클릭 시 홈으로 이동 */}
           <Icon 
             src={isDarkMode ? '/main/logo_dark.png' : '/main/logo_light.png'} 
             height={32} 
@@ -118,7 +118,7 @@ const Header = ({ compact }: HeaderProps) => {
             {isAuthenticated() && user ? (
               <>
                 {/* <ProfileName>{user.name}</ProfileName> */}
-                <ProfileImage>
+                <ProfileImage onClick={() => {navigate('settings')}}>
                   <img 
                     src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} 
                     alt="프로필" 

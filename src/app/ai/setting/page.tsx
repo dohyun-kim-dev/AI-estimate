@@ -111,19 +111,25 @@ export default function SettingsPage() {
   return (
     <Container>
       <ProfileSection>
-        <ProfileImage>
-          <Icon 
-            src={user?.profileImage || "/main/profile.png"}
-            width={56} 
-            height={56}
-            fallbackIcon="image"
-          />
-        </ProfileImage>
+       <ProfileImage>
+                  <img 
+                    src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} 
+                    alt="프로필" 
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
+                    style={{width: '60px', height: '60px'}}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/main/profile.png';
+                    }}
+                  />
+                </ProfileImage>
+        
         <ProfileInfo>
           <Flex>
           <ProfileName>{user?.name || '사용자'}</ProfileName>
           <div style={{width: '24px', height: '24px', display: 'flex', marginBottom: '8px'}}>
-          <ChevronIcon />          
+          {/* <ChevronIcon />           */}
           </div>
           </Flex>
 

@@ -177,7 +177,7 @@ const StyledCloseButton = styled.button`
 interface SocialLoginModalProps {
   $isOpen: boolean;
   onClose: () => void;
-  purpose: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat' | 'default';
+  purpose?: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat' | 'default';
   onGoogleLoginSuccess?: (userData?: any) => void;  
   onPrimaryButtonClick?: () => void;
   onShare?: () => void;

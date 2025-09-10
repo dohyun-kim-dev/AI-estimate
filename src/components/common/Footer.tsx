@@ -94,9 +94,16 @@ const Footer: React.FC<FooterProps> = ({ compact }) => {
   const [parentWidth, setParentWidth] = useState<number | null>(null)
   const [isEmbed, setIsEmbed] = useState(false)
   
+
+  // 모바일 디바이스(아이폰 포함) 감지
+  const isMobileDevice = (() => {
+    if (typeof navigator === 'undefined') return false;
+    const ua = navigator.userAgent;
+    return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  })();
+
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search)
-    console.log("searchParams!!!",searchParams , companyCode )
     setIsEmbed(searchParams.get('embed') === '1')
     const onMsg = (e: MessageEvent) => {
       if (e?.data?.type === 'aiw:parentViewport' && typeof e.data.width === 'number') {
@@ -107,7 +114,7 @@ const Footer: React.FC<FooterProps> = ({ compact }) => {
     return () => window.removeEventListener('message', onMsg)
   }, [location])
 
-  const hideFull = isEmbed && parentWidth !== null && parentWidth <= 520
+  const hideFull = (isEmbed && parentWidth !== null && parentWidth <= 520) || isMobileDevice;
 
   const navItems: { key: ItemKey; href?: string; fallbackIcon: IconName; text: string; external?: boolean }[] = [
     { key: 'consultation', href: `/aiclient/${companyCode}/`, fallbackIcon: 'chat', text: '견적상담' },
