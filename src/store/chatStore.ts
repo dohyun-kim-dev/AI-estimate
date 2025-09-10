@@ -16,11 +16,11 @@ interface ChatState {
   messages: ChatMessage[];
   chatSessionId: string | null;
   addMessage: (m: ChatMessage) => void;
-  // 변경됨: 객체를 인자로 받도록 수정
   updateLastMessage: (payload: Partial<Omit<ChatMessage, 'role'>>) => void; 
   updateMessageById: (messageId: string, payload: Partial<Omit<ChatMessage, 'role'>>) => void;
   setChatSessionId: (id: string | null) => void;
   clear: () => void;
+  removeLastAiLoadingMessage: () => void;
 }
 
 export const useChatStore = create<ChatState>()(
@@ -63,6 +63,16 @@ export const useChatStore = create<ChatState>()(
         }),
         setChatSessionId: (id) => set({ chatSessionId: id }),
         clear: () => set({ messages: [], chatSessionId: null }),
+        removeLastAiLoadingMessage: () => set((s) => {
+          const messages = [...s.messages];
+          for (let i = messages.length - 1; i >= 0; i--) {
+            if (messages[i].role === 'ai' && messages[i].isLoading) {
+              messages.splice(i, 1);
+              break;
+            }
+          }
+          return { messages };
+        }),
       }),
       {
         name: 'ai-chat-storage',

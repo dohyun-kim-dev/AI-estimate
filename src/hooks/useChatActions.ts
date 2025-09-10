@@ -183,7 +183,8 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     }
   };
 
-  const handleSubmit = async (input: string) => {
+
+  const handleSubmit = async (input: string, abortSignal?: AbortSignal) => {
     if ((!input.trim() && uploadedFiles.length === 0) || isProcessing) return;
 
     setIsProcessing(true);
@@ -302,6 +303,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           });
           if (!firstChunkReceived && wasEmpty) firstChunkReceived = true;
         },
+        abortSignal,
       });
 
       // 스트리밍이 끝나면 마지막 ai 메시지의 isLoading을 false로 변경
@@ -382,8 +384,17 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     }
   };
 
+  // 스트리밍 중단 시 마지막 ai 메시지 정리
+  const stopStreaming = () => {
+    // 마지막 ai isLoading 메시지 삭제
+    if (useChatStore.getState().removeLastAiLoadingMessage) {
+      useChatStore.getState().removeLastAiLoadingMessage();
+    }
+  };
+
   return {
     handleSubmit,
+    stopStreaming,
     isProcessing,
     uploadedFiles,
     isDragOver,

@@ -215,11 +215,15 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
     );
     try {
       await fetch(url, { method: 'GET' });
+
+      console.log("다운로드 카운트 성공")
     } catch (e) {
       // 실패해도 무시 (카운트/내역 목적)
+      console.log("다운로드 카운트 실패 ")
     }
 
     if (!estimateObj._id) throw new Error('uuid 보장 실패');
+    console.log("estimateObj._id:", estimateObj._id);
     return estimateObj._id as string;
   }
 
@@ -235,6 +239,7 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
       const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
       const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
       window.open(previewUrl, '_blank');
+      console.log("estimate:", ensuredUuid);
       success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
     } catch (err) {
       console.error('PDF 미리보기 오픈 중 오류:', err);

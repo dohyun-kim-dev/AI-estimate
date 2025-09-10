@@ -135,7 +135,7 @@ const FilePreviewArea = styled.div`
 
 interface BottomInputProps {
   placeholder?: string;
-  onSubmit?: (value: string) => void;
+  onSubmit?: (value: string, abortSignal?: AbortSignal) => void;
   maxSubmissions?: number;
   onFileInput?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isUploading: boolean;
@@ -150,7 +150,9 @@ interface BottomInputProps {
   ) => void;
   estimateDataForConsult: ProjectEstimate | null;
   chatSessionId: string;
+  onRestoreInput?: (value: string) => void; // 추가: 인풋 복원 콜백
 }
+
 
 const BottomInput: React.FC<BottomInputProps> = ({
   placeholder = "서비스 종류와 주요 기능, 예상 기간/예산을 입력! \n예시: '온라인 쇼핑몰, 결제/배송/회원가입",
@@ -165,6 +167,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
   onInfoSubmit,
   estimateDataForConsult,
   chatSessionId,
+  onRestoreInput
 }) => {
   const [value, setValue] = useState('');
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
@@ -173,6 +176,8 @@ const BottomInput: React.FC<BottomInputProps> = ({
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [loginModalPurpose, setLoginModalPurpose] = useState<'limitReached' | 'limitExceeded' | null>(null);
   const [hasUsedExtraCount, setHasUsedExtraCount] = useState(false);
+
+  const [abortController, setAbortController] = useState<AbortController | null>(null); // 추가
 
   const remainingCountRef = useRef(remainingCount);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -239,20 +244,28 @@ const BottomInput: React.FC<BottomInputProps> = ({
     return () => window.visualViewport?.removeEventListener('resize', handleResize);
   }, []);
 
+  // 스트리밍 시작 시 AbortController 생성, onSubmit에 전달 필요
+  const lastInputRef = useRef('');
   const handleSubmit = () => {
     if (value.trim() && onSubmit) {
+      lastInputRef.current = value;
+      // 스트리밍 시작 시 AbortController 새로 생성
+      if (abortController) {
+        abortController.abort();
+      }
+      const newAbort = new AbortController();
+      setAbortController(newAbort);
+
       if (isLoggedIn) {
-        onSubmit(value.trim());
+        onSubmit(value.trim(), newAbort.signal);
         setValue('');
         return;
       }
 
       const storedCount = Number(localStorage.getItem('remainingCount') || maxSubmissions);
-      
       if (storedCount > 0) {
-        onSubmit(value.trim());
+        onSubmit(value.trim(), newAbort.signal);
         setValue('');
-        
         const newCount = storedCount - 1;
         setRemainingCount(newCount);
         localStorage.setItem('remainingCount', String(newCount));
@@ -264,6 +277,20 @@ const BottomInput: React.FC<BottomInputProps> = ({
           setLoginModalPurpose('limitReached');
           setIsLoginModalOpen(true);
         }
+      }
+    }
+  };
+
+  // 정지 버튼 클릭 시 abort
+  const handleStopStreaming = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+      // 인풋 복원 콜백이 있으면 실행
+      if (onRestoreInput) {
+        onRestoreInput(lastInputRef.current);
+      } else {
+        setValue(lastInputRef.current);
       }
     }
   };
@@ -397,6 +424,12 @@ const BottomInput: React.FC<BottomInputProps> = ({
               height={36} 
             />
           </IconButton>
+          {/* 스트리밍 중일 때만 정지 버튼 노출 */}
+          {isProcessing && (
+            <IconButton type="button" onClick={handleStopStreaming}>
+              <Icon src="/ai-estimate/stop.png" width={36} height={36} />
+            </IconButton>
+          )}
         </InputContainer>
         <RemainingCountText>
           {renderRemainingCountText()}

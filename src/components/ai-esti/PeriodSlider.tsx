@@ -1,10 +1,10 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 
 const SliderWrapper = styled.div<{ $isvisible: boolean }>`
-  max-height: ${({ $isvisible }) => ($isvisible ? '1000px' : '0')};
+  // max-height: ${({ $isvisible }) => ($isvisible ? '1000px' : '0')};
   transition: max-height 0.6s ease-in-out;
   overflow: hidden;
 `;
@@ -163,14 +163,14 @@ const TooltipArrow = styled.div`
 interface PeriodSliderProps {
   value: number;
   onChange: (value: number) => void;
-  $isvisible: boolean;
+  $isvisible?: boolean;
   min?: number;
   max?: number;
   discountedPrice?: number;
   basePrice?: number;
 }
 
-const PeriodSlider: React.FC<PeriodSliderProps> = ({ value, onChange, $isvisible, min=0, max, discountedPrice, basePrice }) => {
+const PeriodSlider: React.FC<PeriodSliderProps> = ({ value = 0, onChange, $isvisible, min=0, max, discountedPrice, basePrice }) => {
   const discountPercentage = ((value - min) / (max - min)) * 10;
   const discountAmount = basePrice - discountedPrice;
   // const tooltipPosition = `calc(${((value - min) / (max - min)) * 50}% + 75px)`;
@@ -199,6 +199,7 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({ value, onChange, $isvisible
           <Slider 
           min={min}
           max={max}
+          step={1}
             type="range"
             $value={value}
             $min={min}

@@ -349,12 +349,12 @@ const parseMessageContent = (content: string) => {
   };
 };
 
-export const AiMessageContent: React.FC<{ content: string; chatSessionId?: string; estimateDataForConsult?: ProjectEstimate }> = ({ content, chatSessionId, estimateDataForConsult }) => {
+export const AiMessageContent: React.FC<{ content: string; chatSessionId?: string; estimateDataForConsult?: ProjectEstimate; estimate_Id?: string }> = ({ content, chatSessionId, estimateDataForConsult, estimate_Id }) => {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
   const estimateData = estimateDataForConsult || extractEstimateData(content);
   const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash', selectedPromptId: 'default' });
-  const estimateId = estimateData?.uuid;
+  const estimateId = estimate_Id || estimateData?.uuid;
   const effectiveChatSessionId = chatSessionId || localStorage.getItem('chatSessionId') || '';
   const updateLastMessage = useChatStore((s) => s.updateLastMessage); // ⭐️ 추가: updateLastMessage 가져오기
   const messages = useChatStore((s) => s.messages); // ⭐️ 추가: messages 배열 가져오기
@@ -543,11 +543,11 @@ const userId = getUserId() || '';
                 }
               </DetailsToggle>
               <PeriodSlider 
-                value={projectPeriod || 0}  // ⭐️ 수정: 기본값 0 추가
+                value={Math.max(0, (projectPeriod || 0) - (basePeriod || 0))}  // 0~8
                 onChange={setProjectPeriod}
                 $isvisible={isDetailsVisible}
-                min={basePeriod || 0}         // ⭐️ 수정: 기본값 0 추가
-                max={(basePeriod || 0) + 8}   // ⭐️ 수정: 기본값 0 추가
+                min={0}         // ⭐️ 수정: 기본값 0 추가
+                max={8}   // ⭐️ 수정: 기본값 0 추가
                 discountedPrice={discountedPrice || 0} // ⭐️ 수정: 기본값 0 추가
                 basePrice={basePrice || 0}    // ⭐️ 수정: 기본값 0 추가
               />            
@@ -596,6 +596,7 @@ export default function AiChatPage() {
 
   const {
     handleSubmit,
+    stopStreaming,
     isProcessing,
     uploadedFiles,
     isDragOver,
@@ -607,6 +608,15 @@ export default function AiChatPage() {
     handleFileInput,
     removeFile,
   } = useChatActions({ modelName, selectedPromptId });
+
+  // 인풋 복원용 state
+  const [restoreInput, setRestoreInput] = useState<string | null>(null);
+
+  // 정지 버튼 핸들러: ai 메시지 정리 + 인풋 복원
+  const handleRestoreInput = (input: string) => {
+    setRestoreInput(input);
+    stopStreaming();
+  };
   
   const [estimateDataForConsult, setEstimateDataForConsult] = useState<ProjectEstimate | null>(null);
   const [chatSessionId, setChatSessionId] = useState('');
@@ -807,6 +817,8 @@ export default function AiChatPage() {
               </UserMessage>
             );
           } else {
+
+            const estimateId = m.estimateId
             if (m.isLoading) {
               return (
                 <StyledAiMessage
@@ -826,7 +838,7 @@ export default function AiChatPage() {
             return (
               <StyledAiMessage
                 key={idx}
-                content={<AiMessageContent content={m.content} chatSessionId={chatSessionId} estimateDataForConsult={estimateDataForConsult} />} 
+                content={<AiMessageContent content={m.content} chatSessionId={chatSessionId} estimate_Id={estimateId} />} 
                 profileImage="/ai-estimate/pretty.png"
                 name="강유하"
                 isFullWidth={isEstimateMessage(m.content)}
@@ -849,7 +861,9 @@ export default function AiChatPage() {
         onDeleteFile={removeFile}
         onInfoSubmit={handleInfoSubmit}
         estimateDataForConsult={estimateDataForConsult}
-        chatSessionId={chatSessionId} 
+        chatSessionId={chatSessionId}
+        onRestoreInput={handleRestoreInput}
+        key={restoreInput !== null ? `restore-${restoreInput}` : undefined}
       />
     </Container>
   );

@@ -12,7 +12,7 @@ import { useAuthStore } from '@/store/authStore';
 import { v4 as uuidv4 } from 'uuid';
 import { SocialLoginModal } from './SocialLoginModal';
 import { useNavigate } from 'react-router-dom';
-import { googleLoginInitial, googleLoginUpdate, uploadEstimatePdf } from '@/lib/api/user/userApi';
+import { getDownloadEstimateUrlWithUserInfo, googleLoginInitial, googleLoginUpdate, uploadEstimatePdf } from '@/lib/api/user/userApi';
 import { buildFullEstimateData } from '@/hooks/estimate';
 import IssuerInfoModal, { IssuerInfo } from '@/components/ai-esti/IssuerInfoModal';
 
@@ -165,32 +165,46 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
     }
   }, [isAuthenticated]);
 
-  /** uuid 없으면 1회 서버 저장해서 uuid 보장 */
-  async function ensureUuidOnce(estimateObj: any, title: string) {
-    if (estimateObj?.uuid) return estimateObj.uuid;
-
-    const chatSessionId = localStorage.getItem('chatSessionId') || '';
-    if (!chatSessionId) throw new Error('세션 ID가 없습니다.');
-
-    let userId = '';
-    const authStorage = localStorage.getItem('auth-storage');
-    if (authStorage) {
-      const authData = JSON.parse(authStorage);
-      userId = authData?.state?.user?.id || authData?.state?.user?._id || '';
+  
+    async function ensureUuidOnce(estimateObj: any, title: string) {
+      if (estimateObj?.uuid) return estimateObj.uuid;
+  
+      // 유저 정보 추출
+      let userId = '';
+      let name = '';
+      let email = '';
+      let cellphone = '';
+      const authStorage = localStorage.getItem('auth-storage');
+      if (authStorage) {
+        const authData = JSON.parse(authStorage);
+        userId = authData?.state?.user?.id || authData?.state?.user?._id || '';
+        name = authData?.state?.user?.name || '';
+        email = authData?.state?.user?.email || '';
+        cellphone = authData?.state?.user?.cellphone || '';
+      }
+      if (!userId) {
+        userId = localStorage.getItem('guest-uuid') || '';
+      }
+      if (!userId) throw new Error('사용자 ID가 없습니다.');
+  
+  
+      // getDownloadEstimateUrlWithUserInfo는 URL만 반환하므로, 실제로 호출을 발생시켜야 함
+      const url = getDownloadEstimateUrlWithUserInfo(
+        companyCode,
+        estimateObj._id,
+        { id: userId, name, email, cellphone }
+      );
+      try {
+        await fetch(url, { method: 'GET' });
+      } catch (e) {
+        // 실패해도 무시 (카운트/내역 목적)
+      }
+  
+      if (!estimateObj._id) throw new Error('uuid 보장 실패');
+      console.log("estimateObj._id:", estimateObj._id);
+      return estimateObj._id as string;
     }
-    if (!userId) {
-      userId = localStorage.getItem('guest-uuid') || '';
-    }
-    if (!userId) throw new Error('사용자 ID가 없습니다.');
-
-    const dataStr = buildFullEstimateData(estimateObj);
-    const res = await uploadEstimatePdf(chatSessionId, title || '견적서', userId, dataStr);
-    if (res?.statusCode !== 200) throw new Error(res?.error?.message || '견적 저장 실패');
-
-    if (!estimateObj.uuid) throw new Error('uuid 보장 실패');
-    return estimateObj.uuid as string;
-  }
-
+  
 
 
   const ensureUuidAndGetUrl = async () => {

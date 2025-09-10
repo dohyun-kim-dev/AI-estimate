@@ -114,6 +114,7 @@ export interface SendChatOptions {
   onStream?: (chunk: string) => void;
   onEstimateJson?: (json: any) => void;
   onLoading?: (loading: boolean) => void;
+  abortSignal?: AbortSignal; // 스트리밍 중단용
 }
 
 export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
@@ -218,6 +219,10 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
           const streamResult = await chatRef.current!.sendMessageStream(parts)
           let result = ''
           for await (const candidate of streamResult.stream) {
+            if (options?.abortSignal?.aborted) {
+              devLog('[useAI] sendChat: streaming aborted by user');
+              break;
+            }
             let chunk = ''
             if (typeof candidate?.text === 'function') chunk = candidate.text()
             else if (typeof candidate?.text === 'string') chunk = candidate.text
