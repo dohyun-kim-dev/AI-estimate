@@ -17,7 +17,7 @@ const ItemWrapper = styled.div<{ depth: number; $isOpen?: boolean }>`
   ${({ depth, theme }) => depth === 1 && `
     &::before {
       content: '';
-      position: absolute;
+      // position: absolute;
       top: 0;
       left: 0;
       right: 0;
@@ -48,7 +48,12 @@ const Header = styled.div<{ depth: number; $isSelected: boolean; $isOpen: boolea
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: ${({ depth }) => depth === 1 ? '24px 18px 24px 10px' : '24px 18px 24px 30px'};
+    padding: ${({ depth, theme }) => {
+      if (depth === 1) return '24px 18px 24px 10px';
+      // theme.body가 어두운 계열이면 다크모드로 간주
+      const isDark = theme.body && typeof theme.body === 'string' && theme.body.toLowerCase() !== '#ffffff';
+      return isDark ? '24px 18px 36px 30px' : '24px 18px 24px 30px';
+    }};
   cursor: pointer;
   background-color: ${({ theme, depth, $isSelected }) => 
     $isSelected ? theme.pick : theme[`accordionLevel${depth}`]};
@@ -135,7 +140,7 @@ const ListItem = styled.div<{ $isSelected: boolean; $isDeleted: boolean; depth?:
   transition: background-color 0.2s ease;
   border-bottom: 1px solid ${({ theme }) => theme.border};
   position: relative;
-  
+  overflow: visible;
   // 삭제된 항목 스타일
   opacity: ${({ $isDeleted }) => $isDeleted ? '0.5' : '1'};
   ${({ $isDeleted }) => $isDeleted && `
@@ -146,9 +151,17 @@ const ListItem = styled.div<{ $isSelected: boolean; $isDeleted: boolean; depth?:
     }
   `}
 
+  // 마지막 아이템: 다크모드(배경이 어두움)면 40px, 라이트모드면 24px
   &:last-child {
     border-bottom: none;
-    padding-bottom: 24px;
+    padding-bottom: ${({ depth, theme }) => {
+      if (depth === 2 || depth === 3) {
+        // theme.body가 어두운 계열이면 다크모드로 간주
+        const isDark = theme.body && typeof theme.body === 'string' && theme.body.toLowerCase() !== '#ffffff';
+        return isDark ? '40px' : '24px';
+      }
+      return '24px';
+    }};
   }
   
   .name {

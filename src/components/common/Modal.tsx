@@ -12,6 +12,7 @@ interface ModalProps {
   width?: number
   height?: string | number
   centerTitle?: boolean
+  closeOnOverlayClick?: boolean // overlay 클릭 시 닫힘 여부 (기본값 true)
 }
 
 const Overlay = styled.div`
@@ -67,10 +68,11 @@ const Body = styled.div`
   padding: 16px 20px 20px;
 `
 
-export default function Modal({ open, title, onClose, children, width, height, centerTitle = false }: ModalProps) {
+export default function Modal({ open, title, onClose, children, width, height, centerTitle = false, closeOnOverlayClick = true }: ModalProps) {
   if (!open) return null
+  const handleOverlayClick = closeOnOverlayClick ? onClose : undefined;
   return (
-    <Overlay onClick={onClose}>
+    <Overlay onClick={handleOverlayClick}>
       <Dialog $width={width} $height={height} onClick={(e) => e.stopPropagation()}>
         <Header>
           <CloseButton aria-label="close" onClick={onClose}>

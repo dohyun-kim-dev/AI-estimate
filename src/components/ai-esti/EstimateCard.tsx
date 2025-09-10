@@ -196,8 +196,10 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       );
       try {
         await fetch(url, { method: 'GET' });
+        console.log("다운로드 카운트 성공")
+
       } catch (e) {
-        // 실패해도 무시 (카운트/내역 목적)
+      console.log("다운로드 카운트 실패 ")
       }
   
       if (!estimateObj._id) throw new Error('uuid 보장 실패');

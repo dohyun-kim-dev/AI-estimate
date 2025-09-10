@@ -92,7 +92,7 @@ const IssuerInfoModal: React.FC<IssuerInfoModalProps> = ({
     !info.termsAgreed;
 
   return (
-    <Modal open={open} title="발행자 정보 입력" onClose={onClose} width={520} centerTitle={true}>
+    <Modal open={open} title="발행자 정보 입력" onClose={onClose} width={520} centerTitle={true} closeOnOverlayClick={false}>
       <div style={{ fontSize: 14, textAlign: "center", marginBottom: 32 }} />
       <Form onSubmit={handleSubmit}>
         <TextField
