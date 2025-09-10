@@ -101,7 +101,7 @@ const IssuerInfoModal: React.FC<IssuerInfoModalProps> = ({
           id="issuer-name"
           label="이름2"
           placeholder="이름을 입력해주세요"
-          required
+          autoComplete="off" 
           value={info.name}
           onChange={(e) => setInfo((p) => ({ ...p, name: e.target.value }))}
         />
@@ -110,7 +110,7 @@ const IssuerInfoModal: React.FC<IssuerInfoModalProps> = ({
           label="이메일"
           type="email"
           placeholder="이메일을 입력해주세요"
-          required
+          autoComplete="off" 
           value={info.email}
           onChange={(e) => setInfo((p) => ({ ...p, email: e.target.value }))}
         />
@@ -118,7 +118,7 @@ const IssuerInfoModal: React.FC<IssuerInfoModalProps> = ({
           id="issuer-phone"
           label="전화번호"
           placeholder="전화번호를 입력해주세요"
-          required
+          autoComplete="off" 
           value={info.cellphone}
           pattern="[0-9]{10,11}"
           type="tel"

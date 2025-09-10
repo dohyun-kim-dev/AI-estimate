@@ -291,7 +291,6 @@ useEffect(() => {
           onChange={(e) => setName(e.target.value)}
           placeholder="이름을 입력해주세요"
           autoComplete="off" 
-          required
         />
         <TextField
           id="email"
@@ -300,7 +299,7 @@ useEffect(() => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="회사 이메일을 입력해주세요"
-          required
+          autoComplete="off" 
         />
         <div>
           <PhoneContainer>
@@ -315,8 +314,8 @@ useEffect(() => {
                     setCellphone(value)
                   }
                 }}
+                autoComplete="off" 
                 placeholder="휴대번호 입력해주세요"
-                required
               />
             </InputContainer>
             <ButtonContainer>

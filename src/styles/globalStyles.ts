@@ -71,4 +71,16 @@ export const GlobalStyle = createGlobalStyle`
   ::-webkit-scrollbar-thumb:hover {
     background: ${({ theme }) => theme.subtleText};
   }
+  input, textarea, select {
+    input:-webkit-autofill,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:active {
+      background-color: #fff !important;
+      -webkit-box-shadow: 0 0 0 1000px #fff inset !important;
+      -webkit-text-fill-color: #111827 !important;
+      color: #111827 !important;
+      transition: background-color 5000s ease-in-out 0s;
+    }
+  }
 `

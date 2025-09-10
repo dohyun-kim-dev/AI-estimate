@@ -118,7 +118,7 @@ const TabsContainer = styled.div`
   margin-bottom: 1rem;
 `;
 
-const TabButton = styled.button<{ active: boolean }>`
+const TabButton = styled.button.attrs({ type: 'button' })<{ active: boolean }>`
   background: none;
   border: none;
   padding: 10px 15px;
