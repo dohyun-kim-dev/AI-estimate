@@ -9,16 +9,34 @@ const gradientText = keyframes`
   100% { background-position: 0% 50%; }
 `;
 
+// 기존 그라데이션 텍스트는 보류
+// const GradientText = styled.span`
+//   font-size: 16px;
+//   font-weight: 500;
+//   background: linear-gradient(90deg, #D1D1F3,#ADADCF , #8383A6, #6A6ABB, #5E5E7E);
+//   background-size: 300% 300%;
+//   background-clip: text;
+//   -webkit-background-clip: text;
+//   color: transparent;
+//   -webkit-text-fill-color: transparent;
+//   animation: ${gradientText} 1.6s linear infinite;
+// `;
+
+// 5가지 단일색이 시간차로 변하는 애니메이션
+const colorCycle = keyframes`
+  0% { color: #D1D1F3; }
+  20% { color: #ADADCF; }
+  40% { color: #8383A6; }
+  60% { color: #6A6ABB; }
+  80% { color: #5E5E7E; }
+  100% { color: #D1D1F3; }
+`;
+
 const GradientText = styled.span`
   font-size: 16px;
   font-weight: 500;
-  background: linear-gradient(90deg, #6014FF, #5C73D9, #8D55A5, #6014FF);
-  background-size: 300% 300%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  animation: ${gradientText} 1.6s linear infinite;
+  color: #D1D1F3;
+  animation: ${colorCycle} 5s linear infinite;
 `;
 
 // --- Spinner Animation ---
@@ -28,7 +46,7 @@ const rotate = keyframes`
 const dash = keyframes`
   0% { stroke-dasharray: 30, 140; stroke-dashoffset: 0; }
   50% { stroke-dasharray: 90, 140; stroke-dashoffset: -35; }
-  100% { stroke-dasharray: 30, 140; stroke-dashoffset: -110; }
+  100% { stroke-dasharray: 30, 140; stroke-dashoffset: -150; }
 `;
 
 const SpinnerWrapper = styled.div`
@@ -40,14 +58,14 @@ const SpinnerSvg = styled.svg`
   position: absolute; top: 0; left: 0;
   width: 56px; height: 56px;
   transform: rotate(-90deg);
-  animation: ${rotate} 1.2s linear infinite;
+  animation: ${rotate} 3s linear infinite;
 `;
 const SpinnerCircle = styled.circle`
   fill: none;
   stroke-width: 4;
   stroke-linecap: round;
   stroke: url(#spinner-gradient);
-  animation: ${dash} 1.2s ease-in-out infinite;
+  animation: ${dash} 3s ease-in-out infinite;
 `;
 const ProfileImg = styled.img`
   width: 44px; height: 44px; border-radius: 50%;

@@ -43,6 +43,7 @@ type IssuerInfoModalProps = {
   onSubmit: (info: IssuerInfo) => void;
   /** 초기값이 있으면 전달 (선택) */
   initial?: Partial<IssuerInfo>;
+  closeOnOverlayClick?: boolean;
 };
 
 const defaultInfo: IssuerInfo = {
@@ -58,6 +59,7 @@ const IssuerInfoModal: React.FC<IssuerInfoModalProps> = ({
   onClose,
   onSubmit,
   initial,
+  closeOnOverlayClick = false,
 }) => {
   const [info, setInfo] = useState<IssuerInfo>({ ...defaultInfo, ...initial });
 
@@ -97,7 +99,7 @@ const IssuerInfoModal: React.FC<IssuerInfoModalProps> = ({
       <Form onSubmit={handleSubmit}>
         <TextField
           id="issuer-name"
-          label="이름"
+          label="이름2"
           placeholder="이름을 입력해주세요"
           required
           value={info.name}

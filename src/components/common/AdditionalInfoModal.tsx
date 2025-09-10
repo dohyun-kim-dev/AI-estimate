@@ -281,7 +281,7 @@ useEffect(() => {
   }, [open]);
 
   return (
-    <Modal open={open} onClose={onClose} title="추가 정보 입력" width={520} centerTitle>
+    <Modal open={open} onClose={onClose} title="추가 정보 입력" width={520} centerTitle ={true} closeOnOverlayClick={false}>
       <div style={{ fontSize: 14, textAlign: 'center' }}>정확한 서비스 이용을 위해 <br></br>추가 정보를 입력해주세요</div>
       <Form onSubmit={handleSubmit}>
         <TextField

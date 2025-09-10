@@ -70,7 +70,15 @@ const Body = styled.div`
 
 export default function Modal({ open, title, onClose, children, width, height, centerTitle = false, closeOnOverlayClick = true }: ModalProps) {
   if (!open) return null
-  const handleOverlayClick = closeOnOverlayClick ? onClose : undefined;
+  
+   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!closeOnOverlayClick) return;
+    // 오버레이(배경)만 클릭했을 때만 onClose 실행
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
     <Overlay onClick={handleOverlayClick}>
       <Dialog $width={width} $height={height} onClick={(e) => e.stopPropagation()}>
@@ -86,5 +94,5 @@ export default function Modal({ open, title, onClose, children, width, height, c
         <Body>{children}</Body>
       </Dialog>
     </Overlay>
-  )
+  );
 }
