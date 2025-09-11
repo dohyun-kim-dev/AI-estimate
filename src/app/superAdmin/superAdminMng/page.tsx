@@ -11,39 +11,14 @@ import dayjs from 'dayjs';
 import styled from 'styled-components';
 import { THEME_COLORS } from '@/styles/theme_colors';
 import ActionButton from '@/components/ActionButton';
-import CmsPopup from '@/components/CmsPopup';
-import { TextField } from '@/components/TextField';
-import CommonTextField from '@/components/common/TextField';
-
-import SelectionField from '@/components/selectionField';
-import { AppColors } from '@/styles/colors';
 import { Validators } from '@/lib/utils/validators';
 import { toast, ToastContainer } from 'react-toastify';
 import { adminCreate,adminUpdate } from '@/lib/api/admin';
-import Switch from '@/components/Switch';
-import { SwitchInput } from '@/components/SwitchInput';
+import { AdminUpdateParams } from '@/lib/api/admin/adminApi.types';
 import { devLog } from '@/lib/utils/devLogger';
 import PasswordPopup from './PasswordPopup';
 import CmsResponsiveContainer from '@components/CustomList/ResponsiveList/CmsResponsiveContainer';
-import TextArea from '@/components/common/TextArea';
-
-const SwitchRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: start;
-  /* margin: 12px 0; */
-`;
-
-
-
-const SwitchLabel = styled.label`
-  font-size: 16px;
-  /* font-weight: 500; */
-  margin-left: 10px;
-  margin-right: 33px;
-  color: #000;
-  width:auto;
-`;
+import AdminFormPopup from './AdminFormPopup';
 
 // API 응답 타입 정의
 interface ApiResponse<T> {
@@ -73,54 +48,6 @@ type AdminUser = {
   smsYn?: 'Y' | 'N';
   description?: string;
 };
-
-const PopupFooter = styled.div`
-  display: flex;
-  justify-content: space-between; /* 좌우로 분리 */
-  align-items: center;
-  width: 100%;
-  gap: 12px;
-`;
-
-
-const FooterButton = styled.button`
-  width: 120px;
-  height: 48px;
-  border-radius: 6px;
-  font-weight: bold;
-  font-size: 16px;
-  cursor: pointer;
-  border: none;
-`;
-
-const CancelButton = styled(FooterButton)`
-  background-color: #ffffff;
-  color: ${AppColors.onSurface};
-  border: 1px solid ${AppColors.border};
-`;
-
-const SaveButton = styled(FooterButton)`
-  background-color: ${AppColors.primary};
-  border: 1px solid ${AppColors.border};
-  color: ${AppColors.onPrimary};
-`;
-
-
-const PwdChangeButton = styled(FooterButton)`
-  background-color: ${AppColors.primary};
-  color: ${AppColors.onPrimary};
-  border: 1px solid ${AppColors.border};
-  height: 48px;
-  width: 160px !important; /* !important를 추가하여 강제로 덮어쓰기 */
-`;
-const FormContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  gap: 22px;
-  justify-content: space-evenly;
-  padding-top: 10px;
-`;
 
 const RegisterButton = styled(ActionButton)<{ $themeMode: 'light' | 'dark' }>`
   background: ${({ $themeMode }) =>
@@ -247,7 +174,8 @@ const AdminMngPage: React.FC = () => {
     try {
       if (selectedUser) {
         // 수정 모드
-        const updatePayload = {
+        const updatePayload: AdminUpdateParams = {
+          _id: selectedUser._id || '',
           targetAdminId: userId,
           name,
           cellphone,
@@ -255,12 +183,13 @@ const AdminMngPage: React.FC = () => {
           email,
           emailYn,
           smsYn,
+          // companyCode는 슈퍼 관리자이므로 전달하지 않음
         };
   
         const response = await adminUpdate(updatePayload) as unknown as ApiResponse<AdminUser>[];
         const apiResponse = Array.isArray(response) ? response[0] : response;
         
-        if (apiResponse && (apiResponse.statusCode === 200 || apiResponse.statusCode === '200') && apiResponse.message === 'success') {
+        if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
           toast.success('관리자 정보가 수정되었습니다.');
           setIsPopupOpen(false);
           
@@ -292,7 +221,7 @@ const AdminMngPage: React.FC = () => {
         // 배열의 첫 번째 요소를 사용 (API가 배열로 응답하는 경우)
         const apiResponse = Array.isArray(response) ? response[0] : response;
         
-        if (apiResponse && (apiResponse.statusCode === 200 || apiResponse.statusCode === '200') && apiResponse.message === 'success') {
+        if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
           toast.success('관리자가 성공적으로 등록되었습니다.');
           setIsPopupOpen(false);
           
@@ -337,7 +266,7 @@ const AdminMngPage: React.FC = () => {
         // 배열의 첫 번째 요소를 사용 (API가 배열로 응답하는 경우)
         const apiResponse = Array.isArray(response) ? response[0] : response;
         
-        if (apiResponse && (apiResponse.statusCode === 200 || apiResponse.statusCode === '200') && apiResponse.message === 'success') {
+        if (apiResponse && apiResponse.message === 'success') {
           // API 응답 데이터를 AdminUser 타입에 맞게 매핑
           const mappedData = (apiResponse.data || []).map((item: any) => ({
             _id: item._id,
@@ -356,9 +285,9 @@ const AdminMngPage: React.FC = () => {
 
           return {
             data: mappedData,
-            totalItems: parseInt(apiResponse.metadata?.totalCnt) || 0,
-            allItems: parseInt(apiResponse.metadata?.allCnt) || 0
-          };
+            totalItems: apiResponse.metadata?.totalCnt || 0,
+            allItems: apiResponse.metadata?.allCnt || 0
+          } as FetchResult<AdminUser>;
         } else {
           console.error('API Error:', apiResponse);
           return {
@@ -385,10 +314,14 @@ const AdminMngPage: React.FC = () => {
 
         console.log('handleDropdownChange', adminId, type, newValue);
 
-        const response = await adminUpdate({
+        const updateParams: AdminUpdateParams = {
+          _id: adminId, // adminId를 _id로 사용 (API에서는 targetAdminId를 URL에 사용)
           targetAdminId: adminId,
           [type]: newValue,
-        }) as unknown as ApiResponse<AdminUser>;
+          // companyCode는 슈퍼 관리자이므로 전달하지 않음
+        };
+
+        const response = await adminUpdate(updateParams) as unknown as ApiResponse<AdminUser>;
   
         if (response.statusCode === 200 && response.message === 'success') {
           toast.success(`${type === 'emailYn' ? '메일' : 'SMS'} 수신 설정이 변경되었습니다.`);
@@ -453,11 +386,18 @@ const AdminMngPage: React.FC = () => {
         style={{ zIndex: 10000 }}
       ></ToastContainer>
 
-    <CmsResponsiveContainer<AdminUser>
+<CmsResponsiveContainer<AdminUser>
   title="통합 관리자 관리"
   data={[]} // 초기값, fetchData가 있으면 무시됨
   columns={columns}
-  fetchData={() => fetchData({})} // Promise<{ data, totalItems, allItems }>
+  fetchData={async () => {
+    const result = await fetchData({});
+    return {
+      data: result.data,
+      totalItems: result.totalItems,
+      allItems: result.allItems || result.totalItems // allItems가 undefined면 totalItems 사용
+    };
+  }}
   onRowClick={handleRowClick}
   onAdd={handleHeaderButtonClick} // "추가" 버튼 클릭시 동작
   addButtonLabel='관리자 등록'
@@ -466,166 +406,39 @@ const AdminMngPage: React.FC = () => {
   defaultViewMode="detail" // 모바일 기본 보기 모드
   enableDateFilter={false}
 />
-<CmsPopup
-  title={selectedUser ? "관리자 수정" : "관리자 등록"}
+
+<AdminFormPopup
   isOpen={isPopupOpen}
   onClose={closePopup}
-  isWide={false}
-  showRequiredMark={true}
-  backgroundColor="white"
-  bottomFloating={
-<PopupFooter>
-  {/* 왼쪽 영역: 삭제 버튼 */}
-  {selectedUser ? (
-    <CancelButton
-      style={{ backgroundColor: 'eeeeee', color: '#333333' }}
-      onClick={() => toast.info('삭제 기능은 추후 구현 예정입니다.')}
-    >
-      삭제
-    </CancelButton>
-  ) : (
-    <div /> // 빈 영역 유지
-  )}
-
-  {/* 오른쪽 영역: 저장/닫기 */}
-  <div style={{ display: 'flex', gap: '12px' }}>
-    <SaveButton onClick={handleSave}>저장</SaveButton>
-    <CancelButton onClick={closePopup}>닫기</CancelButton>
-  </div>
-</PopupFooter>
-
-  }
-  
->
-  <FormContainer>
-<CommonTextField
-  value={userId}
-  label="아이디"
-  onChange={(e) => setUserId(e.target.value)}
-  placeholder="영문자와 숫자를 포함한 6~20자"
-  errorMessage={idError ?? undefined}
-  readOnly={!!selectedUser} // ✅ 조건부 readOnly
+  onSave={handleSave}
+  onPwdChangeClick={() => setIsPwdChangeOpen(true)}
+  onDeleteClick={() => toast.info('삭제 기능은 추후 구현 예정입니다.')}
+  selectedUser={selectedUser}
+  userId={userId}
+  setUserId={setUserId}
+  password={password}
+  setPassword={setPassword}
+  confirmPassword={confirmPassword}
+  setConfirmPassword={setConfirmPassword}
+  name={name}
+  setName={setName}
+  email={email}
+  setEmail={setEmail}
+  cellphone={cellphone}
+  setCellphone={setCellphone}
+  emailYn={emailYn}
+  setEmailYn={setEmailYn}
+  smsYn={smsYn}
+  setSmsYn={setSmsYn}
+  description={description}
+  setDescription={setDescription}
+  idError={idError}
+  pwdError={pwdError}
+  confirmPwdError={confirmPwdError}
+  nameError={nameError}
+  emailError={emailError}
+  cellphoneError={cellphoneError}
 />
-
-  {/* 신규 등록 시: 아이디 아래에 비밀번호 입력 */}
-  {!selectedUser && (
-    <CommonTextField
-      radius="0"
-      value={password}
-      showSuffixIcon={true}
-      label="* 비밀번호"
-      autoComplete="new-password"
-      $labelPosition="horizontal"
-      labelColor="white"
-      onChange={(e) => setPassword(e.target.value)}
-      placeholder="영문 + 숫자 + 특수문자 1개 포함 8자리 이상"
-      isPasswordField={true}
-      errorMessage={pwdError ?? undefined}
-    />
-  )}
-  {/* // 비밀번호 확인 필드 */}
-  {!selectedUser && (
-    <CommonTextField
-      radius="0"
-      value={confirmPassword}
-      showSuffixIcon={true}
-      label="* 비밀번호 확인"
-      autoComplete="new-password"
-      $labelPosition="horizontal"
-      labelColor="white"
-      onChange={(e) => setConfirmPassword(e.target.value)}
-      placeholder="영문 + 숫자 + 특수문자 1개 포함 8자리 이상"
-      isPasswordField={true}
-      errorMessage={confirmPwdError ?? undefined}
-    />
-  )}
-
-
-    <CommonTextField
-      radius="0"
-      value={name}
-      label="* 이름"
-      $labelPosition="horizontal"
-      labelColor="white"
-      onChange={(e) => setName(e.target.value)}
-      placeholder="이름을 입력하세요"
-      errorMessage={nameError ?? undefined}
-    />
-    <CommonTextField
-      radius="0"
-      value={email}
-      label="* 이메일"
-      $labelPosition="horizontal"
-      labelColor="white"
-      onChange={(e) => setEmail(e.target.value)}
-      placeholder="이메일 형식으로 입력하세요"
-      errorMessage={emailError ?? undefined}
-    />
-    <CommonTextField
-      radius="0"
-      value={cellphone}
-      label="* 연락처"
-      $labelPosition="horizontal"
-      labelColor="white"
-      onChange={(e) => {
-        const input = e.target.value;
-        if (/^\d*$/.test(input) && input.length <= 11) {
-          setCellphone(input);
-        }
-      }}
-      placeholder="- 제외 하고 입력하세요"
-      errorMessage={cellphoneError ?? undefined}
-    />
-
-
-  {/* 수정 모드일 때: 이메일 수신 Switch 위에 비밀번호 변경 버튼 */}
-  {selectedUser && (
-<div>
-{/* <SwitchLabel>비밀번호 변경</SwitchLabel> */}
-    <SwitchRow>
-      <PwdChangeButton
-  style={{ width: 'auto', padding: '0px 16px', fontSize: '14px' }}
-  onClick={() => setIsPwdChangeOpen(true)}
->
-  비밀번호 변경
-</PwdChangeButton>
-
-    </SwitchRow></div>
-  )}
-
-
-    {/* <SwitchInput
-      label="이메일 수신"
-      value={emailYn}
-      onChange={setEmailYn}
-      $labelPosition="horizontal"
-      labelColor="white"
-    />
-
-    <SwitchInput
-      label="SMS 수신"
-      value={smsYn}
-      onChange={setSmsYn}
-      $labelPosition="horizontal"
-      labelColor="white"
-    /> */}
-
-    <TextArea
-      radius="0"
-      multiline
-      minLines={4}
-      maxLines={10}
-      height="200px"
-      value={description}
-      label="비고"
-      $labelPosition="horizontal"
-      labelColor="white"
-      onChange={(e) => setDescription(e.target.value)}
-      placeholder="비고를 입력하세요"
-      height="200px"
-    />
-  </FormContainer>
-</CmsPopup>
 
 <PasswordPopup
   adminId={userId}

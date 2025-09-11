@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { useShareChatStore } from '@/store/shareChatStore';
 import { getChatMessages } from '@/lib/api/user/userApi';
@@ -235,12 +235,30 @@ const BackButton = styled.button`
 `;
 
 const SharePage: React.FC = () => {
+    const [searchParams] = useSearchParams();
   const { sessionId, companyCode } = useParams<{ sessionId: string; companyCode: string }>();
   const navigate = useNavigate();
   const { success } = useToast();
   const { setSessionId, addMessage, messages, clearMessages } = useShareChatStore();
   const { isDarkMode } = useThemeStore();
-  
+
+  // 브라우저 주소창에 안내문구 등과 함께 붙여넣었을 때, pathname에서 uuid만 추출해서 리다이렉트
+  useEffect(() => {
+    // 예: /aiclient/heredot/ai/share/0c00386e-a37a-428c-be2c-62c9b27747c8%5Cn%5Cn%E2%8F%AB%EC%9C%84... (줄바꿈, 안내문구 등 포함)
+    const path = window.location.pathname;
+    // uuid 추출
+    const uuidMatch = path.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
+    // companyCode 추출
+    const companyMatch = path.match(/\/aiclient\/([^/]+)/);
+    const companyCodeFromPath = companyMatch ? companyMatch[1] : 'heredot';
+    if (uuidMatch) {
+      const cleanPath = `/aiclient/${companyCodeFromPath}/ai/share/${uuidMatch[0]}`;
+      if (path !== cleanPath) {
+        window.location.replace(cleanPath);
+      }
+    }
+  }, []);
+
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 

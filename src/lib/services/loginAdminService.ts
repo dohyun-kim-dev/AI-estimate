@@ -1,4 +1,4 @@
-import { adminLogin } from '@/lib/api/admin';
+import { adminLogin, adminLoginWithHeaders } from '@/lib/api/admin';
 import { getLoginStatus } from '@/lib/utils/apiLoginStatus';
 import { handleLoginStatus } from '@/lib/utils/handleLoginStatus';
 import { devError, devWarn } from '@lib/utils/devLogger';
@@ -7,13 +7,18 @@ type LoginAdminServiceParams = {
   id: string;
   password: string;
   showMessage?: (msg: string) => void;
-  onSuccess?: (result: { id: string }) => void;
+  onSuccess?: (result: { id: string; token?: string }) => void;
 };
 
 interface LoginResponse {
   message?: string;
   statusCode?: number;
-  data?: unknown;
+  data?: {
+    adminId?: string;
+    token?: string;
+    accessToken?: string;
+    [key: string]: unknown;
+  };
 }
 
 /**
@@ -26,13 +31,43 @@ export async function loginAdminService({
   onSuccess,
 }: LoginAdminServiceParams) {
   try {
-    const response = await adminLogin({ userId: id, password });
+    // 헤더도 함께 받을 수 있는 로그인 함수 사용
+    const response = await adminLoginWithHeaders({ userId: id, password });
     devWarn('로그인 응답:', response);
 
-    // 응답이 배열인 경우 첫 번째 항목 사용
-    const responseData = (Array.isArray(response) ? response[0] : response) as LoginResponse;
+    // 응답 데이터 추출
+    const responseData = response.data as LoginResponse;
     const message = responseData?.message ?? 'unknown';
     const status = getLoginStatus(message);
+
+    // 토큰 추출 시도 - 우선순위: 헤더 > 응답 데이터
+    let token: string | undefined;
+    
+    // 1. 헤더에서 토큰 찾기
+    const authHeader = response.headers.get('authorization') || response.headers.get('Authorization');
+    const adminTokenHeader = response.headers.get('admin_token') || response.headers.get('admin-token');
+    
+    if (authHeader) {
+      token = authHeader.replace('Bearer ', '');
+    } else if (adminTokenHeader) {
+      token = adminTokenHeader;
+    }
+    
+    // 2. 응답 데이터에서 토큰 찾기
+    if (!token && responseData?.data) {
+      token = responseData.data.token || responseData.data.accessToken;
+    }
+
+    console.log('🔍 [loginAdminService] 토큰 추출 결과:', {
+      hasResponseData: !!responseData,
+      hasData: !!responseData?.data,
+      hasToken: !!token,
+      tokenPrefix: token ? token.substring(0, 10) + '...' : 'null',
+      authHeader: !!authHeader,
+      adminTokenHeader: !!adminTokenHeader,
+      dataKeys: responseData?.data ? Object.keys(responseData.data) : [],
+      status: response.status
+    });
 
     handleLoginStatus({
       status,
@@ -40,7 +75,7 @@ export async function loginAdminService({
       showMessage,
       onSuccess: () => {
         // ✅ 외부로 로그인 정보 전달 (context login에서 처리)
-        onSuccess?.({ id });
+        onSuccess?.({ id, token });
       },
       onFail: () => {
         devWarn('로그인 실패:', message);

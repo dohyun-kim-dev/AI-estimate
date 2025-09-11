@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/layout/ScreenWrapper.d.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1757304585124,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1757304585124,
+            "name": "Commit-0",
+            "content": "import React from \"react\";\ninterface ScreenWrapperProps {\n    children: React.ReactNode;\n    className?: string;\n    paddingTop?: string;\n    paddingBottom?: string;\n    paddingHorizontal?: string;\n}\nexport default function ScreenWrapper({ children, className, paddingTop, paddingBottom, paddingHorizontal, }: ScreenWrapperProps): import(\"react/jsx-runtime\").JSX.Element;\nexport {};\n"
+        }
+    ]
+}

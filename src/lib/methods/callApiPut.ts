@@ -1,4 +1,4 @@
-// ✅ 수정된 callApiPut 함수 (callApiPost와 동일한 로직)
+import { pageLoaderController } from "@/contexts/PageLoaderContext";
 import { devLog, devWarn } from '../utils/devLogger';
 
 interface CallApiPutParams {
@@ -6,50 +6,58 @@ interface CallApiPutParams {
   url: string;
   body?: Record<string, unknown>;
   isCallPageLoader?: boolean;
-  headers?: Record<string, string>; // ⭐️ headers 매개변수 추가
+  headers?: Record<string, string>;
 }
 
-export async function callApiPut({
+export async function callApiPut<T = unknown>({
   title,
   url,
   body = {},
   isCallPageLoader = false,
-  headers = {}, // ⭐️ 기본값 설정
-}: CallApiPutParams) {
-  try {
-    // 로더 표시 로직 (isCallPageLoader가 true일 경우)
-    if (isCallPageLoader) {
-      // 로더를 보여주는 함수 호출
-    }
+  headers = {},
+}: CallApiPutParams): Promise<T> {
+  let fullUrl = url;
 
-    // ⭐️ 전달받은 헤더를 기존 헤더와 병합
-    const mergedHeaders = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      ...headers, // ⭐️ 전달받은 헤더를 병합
+  // 배포 환경에서 API_HOST를 사용하여 완전한 URL을 구성합니다.
+  if (import.meta.env.VITE_ENV_NAME !== 'dev' && !url.startsWith('http')) {
+    fullUrl = `${import.meta.env.VITE_API_HOST}${url}`;
+  }
+
+  devLog(`� [${title}]`, fullUrl, body);
+  if (isCallPageLoader) pageLoaderController.open();
+
+  let returnValue = '';
+
+  try {
+    const fetchOptions: RequestInit = {
+      method: 'PUT',
+      credentials: 'include',
+      mode: 'cors' as RequestMode,
+      headers,
+      body: JSON.stringify(body),
     };
 
-       const response = await fetch(url, {
-      method: 'PUT',
-      headers: mergedHeaders, // ⭐️ 병합된 헤더 사용
-      body: JSON.stringify(body),
-         credentials: 'include', // 쿠키 전송 보장
-    });
+    const response = await fetch(fullUrl, fetchOptions);
 
-    const data = await response.json();
-    devLog(`✨ ${title} 응답`, data);
-
-    // 로더 숨김
-    if (isCallPageLoader) {
-      // 로더를 숨기는 함수 호출
+    devLog(`📱 [${title}] 응답 상태:`, response.status, response.statusText);
+    
+    if (!response.ok) {
+      devLog(`❌ [${title}] HTTP 에러:`, response.status, response.statusText);
     }
 
-    return data;
+    returnValue = await response.text();
+    devLog(`📱 [${title}] 응답 내용:`, returnValue);
   } catch (error) {
-    console.error(`❌ ${title} 오류:`, error);
-    if (isCallPageLoader) {
-      // 로더를 숨기는 함수 호출
-    }
-    throw error;
+    devLog(`❌ [${title}] API 요청 에러: 네트워크 문제 또는 CORS 정책 위반이 원인일 수 있습니다.`, error);
+    returnValue = '[]';
+  } finally {
+    if (isCallPageLoader) pageLoaderController.close();
+  }
+
+  try {
+    return JSON.parse(returnValue);
+  } catch (e) {
+    devWarn(`⚠️ [${title}] JSON 파싱 실패`, e);
+    return [] as T;
   }
 }

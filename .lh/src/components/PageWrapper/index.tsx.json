@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/components/PageWrapper/index.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1757309344881,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1757309344881,
+            "name": "Commit-0",
+            "content": "import styled from \"styled-components\";\nimport React from \"react\";\n\n/**\n * CMS 페이지용 공통 PageWrapper 컴포넌트\n * \n * 기본 스타일:\n * - width: 100% (부모 컨테이너에 맞춤)\n * - flexbox layout with column direction\n * - gap: 20px\n * - margin: 0 auto (중앙 정렬)\n */\nconst StyledPageWrapper = styled.div`\n  width: 100%;\n  margin: 0 auto;\n  padding: 0px 0px 0px 0px;\n  display: flex;\n  flex-direction: column;\n  gap: 20px;\n`;\n\ninterface PageWrapperProps {\n  children: React.ReactNode;\n  className?: string;\n}\n\n/**\n * CMS 페이지용 공통 PageWrapper 컴포넌트\n * \n * @param children - 래핑할 컨텐츠\n * @param className - 추가 CSS 클래스명\n */\nexport const PageWrapper: React.FC<PageWrapperProps> = ({ children, className }) => {\n  return <StyledPageWrapper className={className}>{children}</StyledPageWrapper>;\n};\n\nexport default PageWrapper;\n"
+        }
+    ]
+}

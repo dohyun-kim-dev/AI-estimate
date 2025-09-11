@@ -1,0 +1,30 @@
+{
+    "sourceFile": "src/contexts/AdminAuthContext.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1757314104018,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1757314574234,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n \n type AdminAuthContextType = {\n   isLoggedIn: boolean;\n   ready: boolean;\n-  login: (id: string) => void;\n+  login: (id: string, token?: string) => void;\n   logout: () => void;\n };\n \n const AdminAuthContext = createContext<AdminAuthContextType | null>(null);\n@@ -31,10 +31,17 @@\n       window.removeEventListener('storage', syncAuthState);\n     };\n   }, []);\n \n-  const login = (id: string) => {\n+  const login = (id: string, token?: string) => {\n     localStorage.setItem('adminId', id);\n+    \n+    // 토큰이 제공되면 저장 (로컬/HTTP 환경용)\n+    if (token && (import.meta.env?.VITE_ENV_NAME === 'dev' || window.location.protocol === 'http:')) {\n+      localStorage.setItem('adminToken', token);\n+      console.log('🔑 [토큰 저장됨]', { adminId: id, adminToken: token });\n+    }\n+    \n     setIsLoggedIn(true);\n   };\n \n   const logout = () => {\n"
+                },
+                {
+                    "date": 1757320473541,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n \n type AdminAuthContextType = {\n   isLoggedIn: boolean;\n   ready: boolean;\n-  login: (id: string, token?: string) => void;\n+  login: (id: string) => void;\n   logout: () => void;\n };\n \n const AdminAuthContext = createContext<AdminAuthContextType | null>(null);\n@@ -31,27 +31,15 @@\n       window.removeEventListener('storage', syncAuthState);\n     };\n   }, []);\n \n-  const login = (id: string, token?: string) => {\n+  const login = (id: string) => {\n     localStorage.setItem('adminId', id);\n-    \n-    // 토큰이 제공되면 저장 (로컬/HTTP 환경용)\n-    if (token && (import.meta.env?.VITE_ENV_NAME === 'dev' || window.location.protocol === 'http:')) {\n-      localStorage.setItem('adminToken', token);\n-      console.log('🔑 [토큰 저장됨]', { adminId: id, adminToken: token });\n-    }\n-    \n     setIsLoggedIn(true);\n   };\n \n   const logout = () => {\n     localStorage.removeItem('adminId');\n-    // 로컬/HTTP 환경 토큰도 삭제\n-    if (typeof window !== 'undefined' && \n-        (import.meta.env?.VITE_ENV_NAME === 'dev' || window.location.protocol === 'http:')) {\n-      localStorage.removeItem('adminToken');\n-    }\n     setIsLoggedIn(false);\n   };\n \n   // 외부에서 사용할 수 있게 등록\n"
+                },
+                {
+                    "date": 1757405844669,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,9 @@\n \n type AdminAuthContextType = {\n   isLoggedIn: boolean;\n   ready: boolean;\n-  login: (id: string) => void;\n+  login: (id: string, token?: string) => void;\n   logout: () => void;\n };\n \n const AdminAuthContext = createContext<AdminAuthContextType | null>(null);\n@@ -31,15 +31,27 @@\n       window.removeEventListener('storage', syncAuthState);\n     };\n   }, []);\n \n-  const login = (id: string) => {\n+  const login = (id: string, token?: string) => {\n     localStorage.setItem('adminId', id);\n+    \n+    // 토큰이 제공된 경우 저장\n+    if (token) {\n+      localStorage.setItem('admin_access_token', token);\n+      console.log('🔑 [AdminAuthContext] 토큰 저장됨:', {\n+        id,\n+        tokenPrefix: token.substring(0, 10) + '...',\n+        tokenLength: token.length\n+      });\n+    }\n+    \n     setIsLoggedIn(true);\n   };\n \n   const logout = () => {\n     localStorage.removeItem('adminId');\n+    localStorage.removeItem('admin_access_token');\n     setIsLoggedIn(false);\n   };\n \n   // 외부에서 사용할 수 있게 등록\n"
+                }
+            ],
+            "date": 1757314104018,
+            "name": "Commit-0",
+            "content": "'use client';\n\nimport { createContext, useContext, useEffect, useState } from 'react';\n\ntype AdminAuthContextType = {\n  isLoggedIn: boolean;\n  ready: boolean;\n  login: (id: string) => void;\n  logout: () => void;\n};\n\nconst AdminAuthContext = createContext<AdminAuthContextType | null>(null);\nlet externalLogout: (() => void) | null = null;\n\nexport const AdminAuthProvider = ({ children }: { children: React.ReactNode }) => {\n  const [isLoggedIn, setIsLoggedIn] = useState(false);\n  const [ready, setReady] = useState(false);\n\n  useEffect(() => {\n    const adminId = localStorage.getItem('adminId');\n    setIsLoggedIn(!!adminId);\n    setReady(true);\n\n    const syncAuthState = () => {\n      const currentAdminId = localStorage.getItem('adminId');\n      setIsLoggedIn(!!currentAdminId);\n    };\n\n    window.addEventListener('storage', syncAuthState);\n    return () => {\n      window.removeEventListener('storage', syncAuthState);\n    };\n  }, []);\n\n  const login = (id: string) => {\n    localStorage.setItem('adminId', id);\n    setIsLoggedIn(true);\n  };\n\n  const logout = () => {\n    localStorage.removeItem('adminId');\n    // 로컬/HTTP 환경 토큰도 삭제\n    if (typeof window !== 'undefined' && \n        (import.meta.env?.VITE_ENV_NAME === 'dev' || window.location.protocol === 'http:')) {\n      localStorage.removeItem('adminToken');\n    }\n    setIsLoggedIn(false);\n  };\n\n  // 외부에서 사용할 수 있게 등록\n  externalLogout = logout;\n\n  return (\n    <AdminAuthContext.Provider value={{ isLoggedIn, ready, login, logout }}>\n      {children}\n    </AdminAuthContext.Provider>\n  );\n};\n\n// 외부에서 호출 가능하도록 export\nexport const triggerAdminLogout = () => {\n  if (externalLogout) externalLogout();\n};\n\nexport const useAdminAuth = () => {\n  const context = useContext(AdminAuthContext);\n  if (!context) throw new Error('useAdminAuth must be used within AdminAuthProvider');\n  return context;\n};\n"
+        }
+    ]
+}

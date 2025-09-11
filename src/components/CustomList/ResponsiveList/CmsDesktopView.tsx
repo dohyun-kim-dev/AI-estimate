@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef } from "react";
-import GenericListUI, { FetchParams } from "@/components/CustomList/GenericListUI";
+import GenericListUI, { FetchParams, FetchResult } from "@/components/CustomList/GenericListUI";
 import { ColumnDefinition } from "@/components/CustomList/GenericDataTable";
 
 // BaseRecord 타입 정의
@@ -20,7 +20,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   addButtonLabel?: string;
   onExport?: () => void;
   isLoading?: boolean;
-  fetchData?: () => Promise<{ data: T[]; totalItems: number; allItems: number; }>;
+  fetchData?: (params: FetchParams) => Promise<FetchResult<T>>;
   themeMode?: "light" | "dark";
   compactFieldCount?: number; // 모바일용이지만 props 통일을 위해
   defaultViewMode?: 'detail' | 'compact' | 'large'; // 모바일용이지만 props 통일을 위해
@@ -30,6 +30,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   onCompanySelect?: (company: { id: string; name: string }) => void;
   isShowExcelTemplate?: boolean;
   excelUploadBtnCallBack?: () => void;
+  excelTemplateBtnCallBack?: () => void;
 }
 
 export default function CmsDesktopView<T extends BaseRecord>({
@@ -52,9 +53,9 @@ export default function CmsDesktopView<T extends BaseRecord>({
 }: CmsDesktopViewProps<T>) {
   const listRef = useRef<{ refetch: () => void } | null>(null);
 
-  const handleFetchData = async (params: FetchParams) => { // ✅ params를 받습니다.
+  const handleFetchData = async (params: FetchParams) => {
     if (fetchData) {
-      return await fetchData(params); // ✅ params를 전달합니다.
+      return await fetchData(params);
     }
     // 기본 더미 데이터 반환
     return {
