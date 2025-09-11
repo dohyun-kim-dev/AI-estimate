@@ -166,9 +166,10 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
   }, [isAuthenticated]);
 
   
+
     async function ensureUuidOnce(estimateObj: any, title: string) {
       if (estimateObj?.uuid) return estimateObj.uuid;
-  
+
       // 유저 정보 추출
       let userId = '';
       let name = '';
@@ -186,25 +187,45 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
         userId = localStorage.getItem('guest-uuid') || '';
       }
       if (!userId) throw new Error('사용자 ID가 없습니다.');
-  
-  
+
+      // estimateObj._id가 없을 때: 세션스토리지에서 project_name이 content에 포함된 메시지의 estimateId를 찾아 반환
+      let effectiveId = estimateObj._id;
+      if (!effectiveId && estimateObj?.project_name) {
+        try {
+          const raw = sessionStorage.getItem('ai-chat-storage');
+          if (raw) {
+            const storageState = JSON.parse(raw);
+            const messages = storageState.state?.messages || [];
+            // project_name이 content에 포함된 메시지 찾기
+            const hit = messages.find((m: any) =>
+              typeof m.content === 'string' && m.content.includes(estimateObj.project_name)
+            );
+            if (hit && hit.estimateId) {
+              effectiveId = hit.estimateId;
+              console.log("세션스토리지에서 추출한 estimateId:", effectiveId);
+            }
+          }
+        } catch (e) {
+          console.warn('세션스토리지에서 estimateId 추출 실패', e);
+        }
+      }
+
       // getDownloadEstimateUrlWithUserInfo는 URL만 반환하므로, 실제로 호출을 발생시켜야 함
       const url = getDownloadEstimateUrlWithUserInfo(
         companyCode,
-        estimateObj._id,
+        effectiveId,
         { id: userId, name, email, cellphone }
       );
       try {
         await fetch(url, { method: 'GET' });
         console.log("다운로드 카운트 성공")
-
       } catch (e) {
-      console.log("다운로드 카운트 실패 ")
+        console.log("다운로드 카운트 실패 ")
       }
-  
-      if (!estimateObj._id) throw new Error('uuid 보장 실패');
-      console.log("estimateObj._id:", estimateObj._id);
-      return estimateObj._id as string;
+
+      if (!effectiveId) throw new Error('uuid 보장 실패');
+      console.log("estimateObj._id(effectiveId):", effectiveId);
+      return effectiveId as string;
     }
   
 
@@ -221,8 +242,10 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
       const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
       window.open(previewUrl, '_blank');
+      console.log("estimate:", ensuredUuid);
       success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
     } catch (err) {
+      console.log("estimate:", estimate);
       console.error('PDF 미리보기 오픈 중 오류:', err);
       error('PDF 미리보기 오픈에 실패했습니다.');
     }

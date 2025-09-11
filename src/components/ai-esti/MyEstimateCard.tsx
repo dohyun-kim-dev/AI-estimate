@@ -217,10 +217,15 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
       await fetch(url, { method: 'GET' });
 
       console.log("다운로드 카운트 성공")
+      console.log("estimateObj",estimateObj); 
+      console.log("url",url);
     } catch (e) {
       // 실패해도 무시 (카운트/내역 목적)
       console.log("다운로드 카운트 실패 ")
     }
+
+
+  console.log(estimateObj);
 
     if (!estimateObj._id) throw new Error('uuid 보장 실패');
     console.log("estimateObj._id:", estimateObj._id);
