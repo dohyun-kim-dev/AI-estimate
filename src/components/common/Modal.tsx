@@ -64,6 +64,7 @@ const CloseButton = styled.button`
   padding: 0;
 `
 
+
 const Body = styled.div`
   padding: 16px 20px 20px;
 `
