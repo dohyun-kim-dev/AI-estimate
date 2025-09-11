@@ -119,9 +119,45 @@ export async function generatePDF(
 
 //위에거 안쓰고 이것으로 로직변경 서버에서 견적서 text 받아와서 pdf 보여줌
 export async function previewPdfFromServerData(html: string) {
-  console.log("html",html)
+  console.log("html", html);
   const estimateJson = extractInvoiceJSON(html);
   if (!estimateJson) throw new Error('invoiceData가 없습니다.');
+
+  // isDelete가 true인 항목은 제외
+  function filterDeleted(items: any[]) {
+    console.log("items", items);
+    if (!Array.isArray(items)) return [];
+    return items.filter((item) => !item.isDelete && !item.deleted && item.isdelete !== true);
+  }
+
+  // 견적 항목들에서 isDelete가 true인 것 제외
+  const filteredEstimate = {
+    ...estimateJson,
+    items: filterDeleted(estimateJson.items),
+    // 혹시 하위 항목이 있다면 추가적으로 처리
+    ...(estimateJson.sections ? { sections: estimateJson.sections.map((section: any) => ({
+      ...section,
+      items: filterDeleted(section.items)
+    })) } : {})
+  };
+
+  // 총합계, 부가세, 최종가격 직접 계산
+  function calcTotal(items: any[]) {
+    if (!Array.isArray(items)) return 0;
+    return items.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.qty || 1)), 0);
+  }
+  const items = filteredEstimate.items || [];
+  const total = calcTotal(items);
+  const vat = Math.round(total * 0.1);
+  const grandTotal = total + vat;
+
+  // PrintableInvoice에 직접 계산한 값 전달
+  const printableEstimate = {
+    ...filteredEstimate,
+    total,
+    vat,
+    grandTotal,
+  };
 
   const tempDiv = document.createElement('div');
   tempDiv.style.position = 'absolute';
@@ -138,7 +174,7 @@ export async function previewPdfFromServerData(html: string) {
   const { PrintableInvoice } = await import('@/components/ai-esti/PrintableInvoice');
 
   // PrintableInvoice가 estimate 형태를 받는다고 가정
-  reactRoot.render(<PrintableInvoice estimate={estimateJson} />);
+  reactRoot.render(<PrintableInvoice estimate={printableEstimate} />);
 
   await new Promise((r) => setTimeout(r, 100));
 
