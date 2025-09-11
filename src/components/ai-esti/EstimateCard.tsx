@@ -188,7 +188,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       }
       if (!userId) throw new Error('사용자 ID가 없습니다.');
 
-      // estimateObj._id가 없을 때: 세션스토리지에서 project_name이 content에 포함된 메시지의 estimateId를 찾아 반환
+      // estimateObj._id가 없을 때: 세션스토리지에서 project_name이 content에 포함된 메시지 중 estimateId가 존재하는 첫 메시지를 찾아 반환
       let effectiveId = estimateObj._id;
       if (!effectiveId && estimateObj?.project_name) {
         try {
@@ -196,13 +196,20 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
           if (raw) {
             const storageState = JSON.parse(raw);
             const messages = storageState.state?.messages || [];
-            // project_name이 content에 포함된 메시지 찾기
-            const hit = messages.find((m: any) =>
-              typeof m.content === 'string' && m.content.includes(estimateObj.project_name)
-            );
-            if (hit && hit.estimateId) {
-              effectiveId = hit.estimateId;
-              console.log("세션스토리지에서 추출한 estimateId:", effectiveId);
+            console.log("세션스토리지 메시지:", messages);
+            // project_name이 content에 포함된 메시지 중 estimateId가 있는 첫 메시지 찾기
+            let foundId = null;
+            for (const m of messages) {
+              if (typeof m.content === 'string' && m.content.includes(estimateObj.project_name)) {
+                if (m.estimateId) {
+                  foundId = m.estimateId;
+                  console.log("세션스토리지에서 추출한 estimateId:", foundId);
+                  break;
+                }
+              }
+            }
+            if (foundId) {
+              effectiveId = foundId;
             }
           }
         } catch (e) {

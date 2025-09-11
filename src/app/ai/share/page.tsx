@@ -1,5 +1,6 @@
+
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { useShareChatStore } from '@/store/shareChatStore';
 import { getChatMessages } from '@/lib/api/user/userApi';
@@ -116,6 +117,14 @@ const UserMessageContainer = styled.div`
   width: fit-content;
 `;
 
+const  Divider = styled.hr`
+  border: none;
+  border-top: 1px solid ${({ theme }) => theme.border};
+  margin: 12px 0 28px 0;
+  width: 100%;
+  align-self: center;
+`;
+
 const UserImagePreview = styled.img`
   max-width: 200px;
   max-height: 200px;
@@ -138,7 +147,7 @@ const StyledDiv = styled.div`
 
 const ReadOnlyNotice = styled.div`
   text-align: center;
-  padding: 20px;
+  padding: 12px 16px;
   background: ${({ theme }) => theme.surface1};
   border-radius: 8px;
   margin: 12px;
@@ -227,12 +236,28 @@ const BackButton = styled.button`
 `;
 
 const SharePage: React.FC = () => {
+  // useSearchParams는 컴포넌트 최상단에서 한 번만 선언
   const { sessionId, companyCode } = useParams<{ sessionId: string; companyCode: string }>();
   const navigate = useNavigate();
   const { success } = useToast();
   const { setSessionId, addMessage, messages, clearMessages } = useShareChatStore();
   const { isDarkMode } = useThemeStore();
-  
+
+  // sessionId에 uuid가 아닌 안내문구 등이 붙어있을 경우, uuid만 추출해서 쿼리스트링으로 리다이렉트 (pdfPreview.tsx와 동일한 방식)
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    if (!sessionId) return;
+    // uuid는 36자 UUID 형식 (하이픈 포함)
+    const uuidMatch = sessionId.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
+    if (uuidMatch && sessionId !== uuidMatch[0]) {
+      // 잘못된 sessionId 파라미터라면, 올바른 uuid만 남기고 리다이렉트
+      const params = new URLSearchParams(searchParams);
+      params.set('sessionId', uuidMatch[0]);
+      if (companyCode) params.set('companyCode', companyCode);
+      window.location.replace(`${window.location.pathname.split('/ai/share')[0]}/ai/share/${uuidMatch[0]}?${params.toString()}`);
+    }
+  }, [sessionId, companyCode, searchParams]);
+
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -348,7 +373,7 @@ const SharePage: React.FC = () => {
               onClick={handleBack}
             />
           </div> */}
-          <NavTitle>공유된 채팅</NavTitle>
+          {/* <NavTitle>공유된 채팅</NavTitle> */}
           <div className="right-icons"></div>
         </TopNav>
         <Container>
@@ -364,7 +389,7 @@ const SharePage: React.FC = () => {
   if (errorMessage) {
     return (
       <LayoutWrapper>
-        <TopNav>
+        {/* <TopNav> */}
           {/* <div className="left-icons">
             <Icon 
               src={isDarkMode ? '/ai-estimate/arrow_back.png' : '/ai-estimate/arrow_back.png'} 
@@ -373,9 +398,9 @@ const SharePage: React.FC = () => {
               onClick={handleBack}
             />
           </div> */}
-          <NavTitle>공유된 채팅</NavTitle>
+          {/* <NavTitle>공유된 채팅</NavTitle>
           <div className="right-icons"></div>
-        </TopNav>
+        </TopNav> */}
         <Container>
           <ErrorContainer>
             <ErrorIcon>⚠️</ErrorIcon>
@@ -393,7 +418,7 @@ const SharePage: React.FC = () => {
 
   return (
     <LayoutWrapper>
-      <TopNav>
+      {/* <TopNav>
         <div className="left-icons">
           <Icon 
             src={isDarkMode ? '/ai-estimate/arrow_back.png' : '/ai-estimate/arrow_back.png'} 
@@ -404,13 +429,15 @@ const SharePage: React.FC = () => {
         </div>
         <NavTitle>공유된 채팅</NavTitle>
         <div className="right-icons"></div>
-      </TopNav>
+      </TopNav> */}
       
       <Container>
         <ReadOnlyNotice>
-          📖 읽기 전용 모드 - 이 채팅 세션은 공유된 세션입니다. 새로운 메시지를 추가할 수 없습니다.
+          📖 AIGO(에이고) 견적 공유 모드
         </ReadOnlyNotice>
-        
+
+        <Divider />
+
         <ChatBox>
           {messages.map((message, index) => {
             if (message.role === 'user') {

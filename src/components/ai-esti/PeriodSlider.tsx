@@ -176,6 +176,10 @@ interface PeriodSliderProps {
 }
 
 const PeriodSlider: React.FC<PeriodSliderProps> = ({ value = 0, onChange, $isvisible, min=0, max, discountedPrice, basePrice }) => {
+  // url에 'share'가 포함되어 있으면 렌더링하지 않음
+  if (typeof window !== 'undefined' && window.location.pathname.includes('share')) {
+    return null;
+  }
   const discountPercentage = ((value - min) / (max - min)) * 10;
   const discountAmount = basePrice - discountedPrice;
   // const tooltipPosition = `calc(${((value - min) / (max - min)) * 50}% + 75px)`;

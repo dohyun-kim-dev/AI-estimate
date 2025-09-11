@@ -222,6 +222,7 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
     const userPhone = authed ? phone : info?.cellphone;
 
     if (!userId || !userName || !userEmail || !userPhone || !chatSessionId) {
+      console.log("userId,userName,userEmail,userPhone,chatSessionId", { userId, userName, userEmail, userPhone, chatSessionId });
       error('필수 정보가 누락되었습니다. 다시 시도해 주세요.');
       setIsInfoModalOpen(false);
       return;
