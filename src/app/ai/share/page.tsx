@@ -11,6 +11,7 @@ import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import { AiMessageContent } from '@/app/ai/page';
 
 // 메시지 타입 정의
+import type { FileUploadData } from '@/firebase.functions';
 interface ChatMessage {
   _id: string;
   session: string;
@@ -22,6 +23,7 @@ interface ChatMessage {
     file?: string;
   };
   createAt: string;
+  files?: FileUploadData[];
 }
 
 // AI 레이아웃과 동일한 스타일
@@ -114,15 +116,6 @@ const UserMessageContainer = styled.div`
   width: fit-content;
 `;
 
-const  Divider = styled.hr`
-  border: none;
-  border-top: 1px solid ${({ theme }) => theme.border};
-  margin: 12px 0 28px 0;
-  width: 100%;
-  align-self: center;
-`;
-
-
 const UserImagePreview = styled.img`
   max-width: 200px;
   max-height: 200px;
@@ -145,7 +138,7 @@ const StyledDiv = styled.div`
 
 const ReadOnlyNotice = styled.div`
   text-align: center;
-  padding: 12px 16px;
+  padding: 20px;
   background: ${({ theme }) => theme.surface1};
   border-radius: 8px;
   margin: 12px;
@@ -346,18 +339,18 @@ const SharePage: React.FC = () => {
   if (loading) {
     return (
       <LayoutWrapper>
-        {/* <TopNav>
-          <div className="left-icons">
+        <TopNav>
+          {/* <div className="left-icons">
             <Icon 
               src={isDarkMode ? '/ai-estimate/arrow_back.png' : '/ai-estimate/arrow_back.png'} 
               width={24} 
               height={24} 
               onClick={handleBack}
             />
-          </div>
+          </div> */}
           <NavTitle>공유된 채팅</NavTitle>
           <div className="right-icons"></div>
-        </TopNav> */}
+        </TopNav>
         <Container>
           <LoadingContainer>
             <LoadingSpinner />
@@ -371,18 +364,18 @@ const SharePage: React.FC = () => {
   if (errorMessage) {
     return (
       <LayoutWrapper>
-        {/* <TopNav>
-          <div className="left-icons">
+        <TopNav>
+          {/* <div className="left-icons">
             <Icon 
               src={isDarkMode ? '/ai-estimate/arrow_back.png' : '/ai-estimate/arrow_back.png'} 
               width={24} 
               height={24} 
               onClick={handleBack}
             />
-          </div>
+          </div> */}
           <NavTitle>공유된 채팅</NavTitle>
           <div className="right-icons"></div>
-        </TopNav> */}
+        </TopNav>
         <Container>
           <ErrorContainer>
             <ErrorIcon>⚠️</ErrorIcon>
@@ -400,7 +393,7 @@ const SharePage: React.FC = () => {
 
   return (
     <LayoutWrapper>
-      {/* <TopNav>
+      <TopNav>
         <div className="left-icons">
           <Icon 
             src={isDarkMode ? '/ai-estimate/arrow_back.png' : '/ai-estimate/arrow_back.png'} 
@@ -411,32 +404,50 @@ const SharePage: React.FC = () => {
         </div>
         <NavTitle>공유된 채팅</NavTitle>
         <div className="right-icons"></div>
-      </TopNav> */}
+      </TopNav>
       
       <Container>
         <ReadOnlyNotice>
-          📖 AIGO(에이고) 견적 공유 모드
+          📖 읽기 전용 모드 - 이 채팅 세션은 공유된 세션입니다. 새로운 메시지를 추가할 수 없습니다.
         </ReadOnlyNotice>
         
-                <Divider />
-
         <ChatBox>
           {messages.map((message, index) => {
             if (message.role === 'user') {
               const parsedContent = parseMessageContent(message.content);
-              
               return (
                 <UserMessageContainer key={index}>
+                  {/* 텍스트 메시지 */}
                   {parsedContent.text && (
                     <UserMessage>{parsedContent.text}</UserMessage>
                   )}
+                  {/* files 배열 기반 이미지/파일 미리보기 */}
+                  {message.files && message.files.length > 0 && message.files.map((file, idx) =>
+                    file.mimeType && file.mimeType.startsWith('image/') ? (
+                      <UserImagePreview
+                        key={idx}
+                        src={file.fileUri}
+                        alt={file.name}
+                        onError={(e) => {
+                          console.error('이미지 로드 실패:', file.fileUri);
+                          setTimeout(() => {
+                            e.currentTarget.src = file.fileUri + '?retry=' + Date.now();
+                          }, 1000);
+                        }}
+                      />
+                    ) : (
+                      <UserMessage key={idx}>
+                        📎 <a href={file.fileUri} download={file.name} target="_blank" rel="noopener noreferrer">{file.name}</a>
+                      </UserMessage>
+                    )
+                  )}
+                  {/* 기존 텍스트 파싱 방식의 이미지/파일(백워드 호환) */}
                   {parsedContent.isImage && parsedContent.imageUrl && (
-                    <UserImagePreview 
-                      src={parsedContent.imageUrl} 
+                    <UserImagePreview
+                      src={parsedContent.imageUrl}
                       alt={parsedContent.fileName || '첨부된 이미지'}
                       onError={(e) => {
                         console.error('이미지 로드 실패:', parsedContent.imageUrl);
-                        // ⭐️ 재시도 로직: 1초 후 다시 시도
                         setTimeout(() => {
                           e.currentTarget.src = parsedContent.imageUrl + '?retry=' + Date.now();
                         }, 1000);
@@ -454,7 +465,7 @@ const SharePage: React.FC = () => {
               return (
                 <StyledAiMessage
                   key={index}
-                  content={<AiMessageContent content={message.content}/>}
+                  content={<AiMessageContent content={message.content}/>} 
                   profileImage="/ai-estimate/pretty.png"
                   name="강유하"
                   chatSessionId={sessionId}

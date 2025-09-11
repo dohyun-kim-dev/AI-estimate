@@ -21,6 +21,7 @@ interface EstimateAccordionProps {
   title?: string;                 // 없으면 project_name 사용
   onItemDelete?: (itemId: string, updatedItem: any) => void; 
   onItemRestore?: (itemId: string, updatedItem: any) => void; 
+  discountRate?: number; // 각 기능별 할인율 적용
 }
 
 // 간단 딥클론 (structuredClone 미지원 대비)
@@ -84,7 +85,8 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
   userId,
   title,
   onItemDelete,
-  onItemRestore
+  onItemRestore,
+  discountRate
 }) => {
   // 화면에 쓰는 소스 오브 트루스
   const [estimate, setEstimate] = useState<ProjectEstimate>(data);
@@ -99,20 +101,20 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
   // 서버 저장 (디바운스) — 바깥에서 최신 est를 직접 넘겨 받음
   const saveToServer = useMemo(
     () =>
-      debounce(async (est) => {
+      debounce(async (est,effectiveEstimateId) => {
         try {
           // 💡 id 없으면 업데이트 못 하므로 여기서 바로 가드
           console.log("estimateId , chatSessionId, userId", estimateId, chatSessionId, userId);
-          if (!estimateId) {
+          if (!effectiveEstimateId) {
             console.warn("[save] estimateId 없음 — 업데이트 생략");
             return;
           }
 
           // 항상 최신 messageId를 세션스토리지에서 조회 (동시에 여러 탭에서 변경될 수 있어서)
-          const messageId = findMessageIdForEstimate(estimateId);
+          const messageId = findMessageIdForEstimate(effectiveEstimateId);
 
           if (!chatSessionId || !userId || !messageId) {
-            console.warn("[save] 필수값 누락:", { chatSessionId, estimateId, userId, messageId });
+            console.warn("[save] 필수값 누락:", { chatSessionId, effectiveEstimateId, userId, messageId });
             return;
           }
 
@@ -122,7 +124,7 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
             title || est.project_name || "견적서",
             userId,
             dataStr,
-            estimateId // ✅ 수정이라면 반드시 포함
+            effectiveEstimateId // ✅ 수정이라면 반드시 포함
           );
 
           if (uploadResponse?.statusCode === 200) {
@@ -151,7 +153,7 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
 
   // 아이템 is_deleted 토글 (item_id 있으면 우선)
   const toggleDeletedFlag = useCallback(
-    (target: { item_id?: string; name: string }, to: boolean) => {
+    (target: { item_id?: string; name: string }, to: boolean, passedEstimateId?: string) => {
       setEstimate((prev) => {
         const next = deepClone(prev);
         next.categories.forEach((cat) => {
@@ -164,27 +166,30 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
             });
           });
         });
-        // ❗ 상태 저장과 동시에, 이번에 만든 next를 서버로 (스테일 방지)
-        saveToServer(next);
+        // uuid가 없으면 prev.uuid를 복원
+        if (!next.uuid && prev.uuid) next.uuid = prev.uuid;
+        const effectiveEstimateId = passedEstimateId || estimateId || estimate.uuid || data.uuid;
+        console.log("toggleDeletedFlag", target, to, next, "effectiveEstimateId", effectiveEstimateId);
+        saveToServer(next,effectiveEstimateId);
         return next;
       });
     },
-    [saveToServer]
+    [saveToServer, estimateId, data.uuid]
   );
 
   // 자식에서 넘어오는 삭제/복구 콜백 (최신 상태를 직접 만드는 toggle 안에서 저장까지 처리)
   const handleItemDelete = useCallback(
     (_localItemId: string, item: { item_id?: string; name: string }) => {
-      toggleDeletedFlag({ item_id: item.item_id, name: item.name }, true);
+      toggleDeletedFlag({ item_id: item.item_id, name: item.name }, true, estimateId);
     },
-    [toggleDeletedFlag]
+    [toggleDeletedFlag, estimateId]
   );
 
   const handleItemRestore = useCallback(
     (_localItemId: string, item: { item_id?: string; name: string }) => {
-      toggleDeletedFlag({ item_id: item.item_id, name: item.name }, false);
+      toggleDeletedFlag({ item_id: item.item_id, name: item.name }, false, estimateId);
     },
-    [toggleDeletedFlag]
+    [toggleDeletedFlag, estimateId]
   );
 
   return (
@@ -218,6 +223,7 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
             onItemSelect={(itemId) => handleSubItemSelect(category.category_name, itemId)}
             chatRoomId={chatSessionId}
             estimateId={estimateId}
+            discountRate={typeof (discountRate) === 'number' ? discountRate : 0}
           >
             {/* depth=2 : 실제 항목 리스트 (여기서 삭제/복구 콜백 전달) */}
             {category.sub_categories.map((subCategory, subIndex) => (
@@ -244,6 +250,7 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
                 onItemRestore={handleItemRestore} // ✅ 복구 콜백
                 chatRoomId={chatSessionId}
                 estimateId={estimateId}
+                discountRate={typeof (discountRate) === 'number' ? discountRate : 0}
               />
             ))}
           </EstimateAccordionItem>

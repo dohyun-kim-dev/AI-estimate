@@ -201,7 +201,7 @@ const ProgressBar = styled.div<{ $progress: number }>`
 const StyledAiMessage = styled(AiResponseMessage)<{ isFullWidth?: boolean }>`
   padding: 0;
   max-width: 100%;
-  align-self: flex-start;
+  // align-self: flex-start;
 `;
 
 const Controls = styled.div`
@@ -469,32 +469,44 @@ const userId = getUserId() || '';
   }, [basePeriod, basePrice]);
 
   useEffect(() => {
-    const baseCommonCategory = estimateData?.categories
-    .flatMap(category => category.sub_categories)
-    .find(subCategory => subCategory.sub_category_name === '기반 공통');
+    // 💡 `estimateData`가 null이거나 undefined일 경우 바로 종료
+    if (!estimateData) {
+      return;
+    }
 
-  const nonDiscountableSum = baseCommonCategory?.items.reduce((sum, item) => {
-    // 삭제된 항목은 비할인 대상 합산에서도 제외
-    if (item.is_deleted) return sum;
-    const price = typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : item.price;
-    return sum + (price || 0);
-  }, 0) || 0;
+    // `flatMap`을 사용하여 모든 `items`를 단일 배열로 만들고 필터링합니다.
+    const nonDiscountableItems = estimateData.categories
+      .flatMap(category => category.sub_categories)
+      .flatMap(subCategory => subCategory.items)
+      .filter(item => 
+        item.name === '화면설계' || 
+        item.name === '화면디자인' || 
+        item.name === '화면퍼블리싱'
+      );
 
-  const discountableBase = basePrice - nonDiscountableSum;
+    const nonDiscountableSum = nonDiscountableItems.reduce((sum, item) => {
+      // 삭제된 항목은 비할인 대상 합산에서도 제외
+      if (item.is_deleted) return sum;
+      const price = typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : item.price;
+      return sum + (price || 0);
+    }, 0) || 0;
 
-  let discountPercentage = 0;
-  const maxPeriod = basePeriod + 8;
-  const periodDiff = projectPeriod - basePeriod;
-  const maxPeriodDiff = maxPeriod - basePeriod;
+    const discountableBase = basePrice - nonDiscountableSum;
 
-  if (periodDiff > 0 && maxPeriodDiff > 0) {
-    // 슬라이더 위치에 비례하여 0%부터 최대 20%까지 할인율 적용
-    discountPercentage = (periodDiff / maxPeriodDiff) * 0.1;
-  }
+    let discountPercentage = 0;
+    const maxPeriod = basePeriod + 8;
+    const periodDiff = projectPeriod - basePeriod;
+    const maxPeriodDiff = maxPeriod - basePeriod;
 
-  const newDiscountedPrice = discountableBase * (1 - discountPercentage) + nonDiscountableSum;
-  setDiscountedPrice(newDiscountedPrice);
-  }, [projectPeriod, basePeriod, basePrice]);
+    if (periodDiff > 0 && maxPeriodDiff > 0) {
+      // 슬라이더 위치에 비례하여 0%부터 최대 10%까지 할인율 적용
+      discountPercentage = (periodDiff / maxPeriodDiff) * 0.1;
+    }
+
+    const newDiscountedPrice = discountableBase * (1 - discountPercentage) + nonDiscountableSum;
+    setDiscountedPrice(newDiscountedPrice);
+  }, [projectPeriod, basePeriod, basePrice, estimateData]); // 💡 `estimateData`를 디펜던시 배열에 추가
+
 
   const handleItemClick = (item: { name: string; price: string; description: string }) => {
     // EstimateItem 타입으로 변환
@@ -551,8 +563,8 @@ const userId = getUserId() || '';
             <MainContent>
               <EstimateCard 
                 estimate={estimateData} 
-                discountedPrice={discountedPrice || 0} // ⭐️ 수정: 기본값 0 추가
-                projectPeriod={projectPeriod || 0}   // ⭐️ 수정: 기본값 0 추가
+                discountedPrice={discountedPrice || 0} 
+                projectPeriod={projectPeriod || 0}   
               />
               <DetailsToggle onClick={() => setIsDetailsVisible(!isDetailsVisible)}>
                 상세견적 보기 {isDetailsVisible ?
@@ -569,18 +581,47 @@ const userId = getUserId() || '';
                 discountedPrice={discountedPrice || 0} // ⭐️ 수정: 기본값 0 추가
                 basePrice={basePrice || 0}    // ⭐️ 수정: 기본값 0 추가
               />            
-
-              <AnimatedContainer $isvisible={isDetailsVisible}>
-                <EstimateAccordion
-                  data={estimateData}
-                  onItemClick={handleItemClick}
-                  chatSessionId={effectiveChatSessionId}
-                  estimateId={estimateId}
-                  userId={userId}
-                  title={estimateData?.project_name || '견적서'}
-                />
-              </AnimatedContainer>
+ {/* 할인율 계산: discountableBase, discountPercentage */}
+              {(() => {
+                // 할인 제외 항목
+                const NON_DISCOUNT_ITEMS = ['화면설계', '화면디자인', '화면퍼블리싱'];
+                let nonDiscountableSum = 0;
+                let discountableBase = basePrice;
+                if (estimateData && Array.isArray(estimateData.categories)) {
+                  const allItems = estimateData.categories
+                    .flatMap(category => category.sub_categories)
+                    .flatMap(subCategory => subCategory.items);
+                  nonDiscountableSum = allItems
+                    .filter(item => NON_DISCOUNT_ITEMS.includes(item.name) && !item.is_deleted)
+                    .reduce((sum, item) => {
+                      const price = typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : item.price;
+                      return sum + (price || 0);
+                    }, 0);
+                  discountableBase = basePrice - nonDiscountableSum;
+                }
+                let discountPercentage = 0;
+                const maxPeriod = basePeriod + 8;
+                const periodDiff = projectPeriod - basePeriod;
+                const maxPeriodDiff = maxPeriod - basePeriod;
+                if (periodDiff > 0 && maxPeriodDiff > 0) {
+                  discountPercentage = (periodDiff / maxPeriodDiff) * 0.1;
+                }
+                return (
+                  <AnimatedContainer $isvisible={isDetailsVisible}>
+                    <EstimateAccordion
+                      data={estimateData}
+                      onItemClick={handleItemClick}
+                      chatSessionId={effectiveChatSessionId}
+                      estimateId={estimateId}
+                      userId={userId}
+                      title={estimateData?.project_name || '견적서'}
+                      discountRate={discountPercentage}
+                    />
+                  </AnimatedContainer>
+                );
+              })()}
             </MainContent>
+            
             <SideContent>
               <EstimateActionButtons
                 onConsult={() => console.log('문의하기')}

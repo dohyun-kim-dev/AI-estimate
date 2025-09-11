@@ -85,10 +85,22 @@ const PDFPreview: React.FC = () => {
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [estimateMeta, setEstimateMeta] = useState<EstimateMeta | null>(null);
   const companyCode = searchParams.get('company');
-  const uuid = searchParams.get('uuid');
-  
+  let uuid = searchParams.get('uuid');
   // 변경: 하드코딩된 API URL을 Vite 환경 변수로 대체
   const apiUrl = import.meta.env.VITE_API_HOST || 'http://121.157.229.40:8535';
+
+  // uuid에 안내문구 등 불필요한 문자열이 붙어있을 경우, uuid만 추출해서 리다이렉트
+  React.useEffect(() => {
+    if (!uuid) return;
+    // uuid는 36자 UUID 형식 (하이픈 포함)
+    const uuidMatch = uuid.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
+    if (uuidMatch && uuid !== uuidMatch[0]) {
+      // 잘못된 uuid 파라미터라면, 올바른 uuid만 남기고 리다이렉트
+      const params = new URLSearchParams(searchParams);
+      params.set('uuid', uuidMatch[0]);
+      window.location.replace(`${window.location.pathname}?${params.toString()}`);
+    }
+  }, [uuid, searchParams]);
 
   
   useEffect(() => {

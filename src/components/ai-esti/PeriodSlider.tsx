@@ -4,9 +4,14 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 
 const SliderWrapper = styled.div<{ $isvisible: boolean }>`
-  // max-height: ${({ $isvisible }) => ($isvisible ? '1000px' : '0')};
+  max-height: ${({ $isvisible }) => ($isvisible ? '1000px' : '0')};
   transition: max-height 0.6s ease-in-out;
   overflow: hidden;
+
+  @media (min-width: 1020px) {
+    max-height: 1000px !important;
+    overflow: visible;
+  }
 `;
 
 const InnerContainer = styled.div`
