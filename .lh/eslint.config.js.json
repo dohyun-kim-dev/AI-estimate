@@ -1,0 +1,18 @@
+{
+    "sourceFile": "eslint.config.js",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1757304429645,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1757304429645,
+            "name": "Commit-0",
+            "content": "import js from '@eslint/js'\nimport globals from 'globals'\nimport reactHooks from 'eslint-plugin-react-hooks'\nimport reactRefresh from 'eslint-plugin-react-refresh'\nimport tseslint from 'typescript-eslint'\nimport { globalIgnores } from 'eslint/config'\n\nexport default tseslint.config([\n  globalIgnores(['dist']),\n  {\n    files: ['**/*.{ts,tsx}'],\n    extends: [\n      js.configs.recommended,\n      tseslint.configs.recommended,\n      reactHooks.configs['recommended-latest'],\n      reactRefresh.configs.vite,\n    ],\n    languageOptions: {\n      ecmaVersion: 2020,\n      globals: globals.browser,\n    },\n    rules: {\n      // 사용하지 않는 변수/임포트는 워닝으로 처리\n      'no-unused-vars': ['warn', { \"vars\": \"all\", \"args\": \"after-used\", \"ignoreRestSiblings\": false }],\n      'no-unused-imports': 'warn',\n    },\n  },\n])\n"
+        }
+    ]
+}

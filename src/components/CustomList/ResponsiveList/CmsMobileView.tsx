@@ -37,7 +37,7 @@ interface CmsMobileViewProps<T extends BaseRecord> {
   onAdd?: () => void;
   onExport?: () => void;
   isLoading?: boolean;
-  fetchData?: () => Promise<{ data: T[]; totalItems: number; allItems: number; }>;
+  fetchData?: (params: FetchParams) => Promise<FetchResult<T>>;
   compactFieldCount?: number; // compact 모드에서 보여줄 필드 수
   defaultViewMode?: ViewMode; // 기본 보기 모드
   enableSearch?: boolean;
@@ -47,6 +47,9 @@ interface CmsMobileViewProps<T extends BaseRecord> {
   // 고객사 검색 관련 props
   enableCompanySearch?: boolean;
   onCompanySelect?: (company: { id: string; name: string }) => void;
+  isShowExcelTemplate?: boolean;
+  excelUploadBtnCallBack?: () => void;
+  excelTemplateBtnCallBack?: () => void;
 }
 
 export default function CmsMobileView<T extends BaseRecord>({

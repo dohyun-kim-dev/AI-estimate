@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 4,
             "patches": [
                 {
                     "date": 1756797610883,
@@ -20,6 +20,10 @@
                 {
                     "date": 1756798086011,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -55,8 +55,9 @@\n   onCompanySelect,\n   enableCompanySearch,\n   isShowExcelTemplate,\n   excelUploadBtnCallBack,\n+  excelTemplateBtnCallBack,\n }: CmsResponsiveContainerProps<T>) {\n   \n   // 공통 props\n   const commonProps = {\n"
+                },
+                {
+                    "date": 1757378222827,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,10 +1,10 @@\n \"use client\";\n \n import React from \"react\";\n import ResponsiveView from \"@/layout/ResponsiveView\";\n-import { AdminUser } from \"../types\";\n import { ColumnDefinition } from \"@/components/CustomList/GenericDataTable\";\n+import { FetchParams, FetchResult } from \"@/components/CustomList/GenericListUI\";\n import CmsMobileView from \"./CmsMobileView\";\n import CmsDesktopView from \"./CmsDesktopView\";\n \n // BaseRecord 타입 정의\n@@ -25,9 +25,9 @@\n   onAdd?: () => void;\n   addButtonLabel?: string;\n   onExport?: () => void;\n   isLoading?: boolean;\n-  fetchData?: () => Promise<{ data: T[]; totalItems: number; allItems: number; }>;\n+  fetchData?: (params: FetchParams) => Promise<FetchResult<T>>;\n   themeMode?: \"light\" | \"dark\";\n   compactFieldCount?: number;\n   defaultViewMode?: ViewMode; // 모바일에서 기본 보기 모드\n   enableDateFilter: boolean;\n@@ -35,11 +35,12 @@\n   enableCompanySearch?: boolean;\n   onCompanySelect?: (company: { id: string; name: string }) => void;\n   isShowExcelTemplate?: boolean;\n   excelUploadBtnCallBack?: () => void;\n+  excelTemplateBtnCallBack?: () => void;\n }\n \n-export default function CmsResponsiveContainer<T extends BaseRecord = AdminUser>({\n+export default function CmsResponsiveContainer<T extends BaseRecord>({\n   title,\n   data,\n   columns,\n   onRowClick,\n@@ -76,9 +77,9 @@\n     enableCompanySearch,\n     onCompanySelect,\n     isShowExcelTemplate,\n     excelUploadBtnCallBack,\n-\n+    excelTemplateBtnCallBack,\n   };\n \n   return (\n     <ResponsiveView\n"
                 }
             ],
             "date": 1756797610883,

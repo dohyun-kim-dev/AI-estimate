@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1755959544170,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1757494198717,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,21 +1,30 @@\n+// src/lib/utils/devLogger.ts\n+\n /**\n- * 개발 환경에서만 콘솔 로그를 출력하는 유틸 함수\n- * Dev-only logger to prevent logs in production\n+ * 개발 또는 테스트 환경에서만 콘솔 로그를 출력하는 유틸 함수\n+ * - development 환경\n+ * - http 프로토콜 (테스트 서버 등)\n  */\n+\n+const isLocalDev =\n+  typeof window !== 'undefined'\n+    ? process.env.NODE_ENV === 'development' || window.location.protocol === 'http:'\n+    : process.env.NODE_ENV === 'development';\n+\n export const devLog = (...args: any[]) => {\n-  if (import.meta.env.NODE_ENV === 'development') {\n-    console.log('devLog:', ...args);\n+  if (isLocalDev) {\n+    console.log(...args);\n   }\n\\ No newline at end of file\n };\n \n export const devWarn = (...args: any[]) => {\n-  if (import.meta.env.NODE_ENV === 'development') {\n-    console.warn('devWarn:', ...args);\n+  if (isLocalDev) {\n+    console.warn(...args);\n   }\n };\n \n export const devError = (...args: any[]) => {\n-  if (import.meta.env.NODE_ENV === 'development') {\n-    console.error('devError:', ...args);\n+  if (isLocalDev) {\n+    console.error(...args);\n   }\n-};\n+};\n"
                 }
             ],
             "date": 1755959544170,

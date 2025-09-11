@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 19,
+            "activePatchIndex": 20,
             "patches": [
                 {
                     "date": 1755954060714,
@@ -84,6 +84,10 @@
                 {
                     "date": 1756367454983,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -32,15 +32,21 @@\n   const navigate = useNavigate();\n   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});\n \n   const isActive = (path: string) => location.pathname === path;\n+  \n+  // ⭐️ 부모 메뉴의 경로로 시작하는지 확인하는 함수\n+  const isParentActive = (item: MenuItemConfig) => {\n+    return item.subMenu?.some(subItem => location.pathname.startsWith(subItem.path)) || location.pathname.startsWith(item.path);\n+  };\n \n-  const handleMenuToggle = (id: string, path?: string) => {\n+  const handleMenuToggle = (id: string, path: string | undefined, hasSubMenu: boolean) => {\n     setOpenMenus((prev) => ({\n       ...prev,\n       [id]: !prev[id],\n     }));\n-    if (path) {\n+    // ⭐️ 서브메뉴가 없는 경우에만 페이지 이동\n+    if (!hasSubMenu && path) {\n       navigate(path);\n     }\n   };\n \n@@ -73,10 +79,11 @@\n               {hasSubMenu ? (\n                 <MenuItem\n                   as=\"div\"\n                   $isCollapsed={isCollapsed}\n-                  $active={active || expanded}\n-                  onClick={() => handleMenuToggle(item.id, item.path)}\n+                  // ⭐️ isParentActive 함수를 사용하도록 수정\n+                  $active={isParentActive(item)}\n+                  onClick={() => handleMenuToggle(item.id, item.path, hasSubMenu)}\n                 >\n                   <Center $isCollapsed={isCollapsed}>\n                     <IconWrapper $isCollapsed={isCollapsed}>\n                       {item.icon}\n@@ -96,8 +103,9 @@\n                   as={Link}\n                   to={item.path}\n                   $isCollapsed={isCollapsed}\n                   $active={active}\n+                  onClick={() => handleMenuToggle(item.id, item.path, hasSubMenu)}\n                 >\n                   <Center $isCollapsed={isCollapsed}>\n                     <IconWrapper $isCollapsed={isCollapsed}>\n                       {item.icon}\n@@ -135,8 +143,9 @@\n   );\n };\n \n export default CustomSidebar;\n+\n // --- Styled Components ---\n \n const SidebarContainer = styled.div<{ $isCollapsed: boolean }>`\n   position: fixed;\n"
+                },
+                {
+                    "date": 1757402447694,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -151,9 +151,9 @@\n   position: fixed;\n   left: 0;\n   top: 56px;\n   width: ${({ $isCollapsed }) => ($isCollapsed ? '80px' : '250px')};\n-  height: 100vh;\n+  height: calc(100vh - 56px);\n   overflow: hidden;\n   background: #2c2e3c;\n   color: white;\n   display: flex;\n"
                 }
             ],
             "date": 1755954060714,

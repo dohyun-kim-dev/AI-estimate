@@ -64,9 +64,9 @@ export default function LoginPage() {
           toast.error(msg);
         },
         onSuccess: (response) => {
-          login(response.id);
+          login(response.id, response.token);
           toast.success('로그인 성공!');
-          navigate(`/aiclient/${companyCode}/cms`);
+          navigate(`/superadmin`);
         },
       });
     } finally {

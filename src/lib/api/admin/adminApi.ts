@@ -10,6 +10,9 @@ import {
   PromptUpdateParams,
   AdminPasswordUpdateParams,
   UnitPriceGetListParams,
+  AllUnitPricesParams,
+  CompanyGetListParams,
+  UnitPriceUploadParams,
 } from './adminApi.types';
 
 // API URL 생성 헬퍼 함수
@@ -39,6 +42,44 @@ export async function adminLogin(
   });
 }
 
+// 헤더 정보도 함께 반환하는 로그인 함수
+export async function adminLoginWithHeaders(
+  params: AdminLoginParams) {
+  const url = `${BASE_URL}/cms/login`;
+  const body = { adminId: params.userId, password: params.password };
+  
+  // 환경에 따른 URL 설정
+  let fullUrl = url;
+  if (import.meta.env.VITE_ENV_NAME !== 'dev' && !url.startsWith('http')) {
+    fullUrl = `${import.meta.env.VITE_API_HOST}${url}`;
+  }
+
+  try {
+    const response = await fetch(fullUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'x-company-code': 'heredot',
+      },
+      body: JSON.stringify(body),
+      credentials: 'include',
+      mode: 'cors',
+    });
+
+    const data = await response.json();
+    
+    return {
+      data: data,
+      headers: response.headers,
+      status: response.status,
+    };
+  } catch (error) {
+    console.error('로그인 API 에러:', error);
+    throw error;
+  }
+}
+
 // ***************** 관리자
 
 export async function   adminGetList(params: AdminGetListParams) {
@@ -59,6 +100,7 @@ export async function   adminGetList(params: AdminGetListParams) {
     url: `${BASE_URL}/cms/admins?${queryParams.toString()}`,
     method: 'GET',
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }
 
@@ -95,6 +137,7 @@ export async function adminCreate(
     method: 'POST',
     body: requestBody,
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 } 
 
@@ -133,6 +176,7 @@ export async function adminUpdate(params: AdminUpdateParams) {
     method: 'PATCH', // PUT 메서드로 변경
     body: requestBody,
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }
 
@@ -146,6 +190,7 @@ export async function adminPasswordUpdate(
       password: params.password,
     },
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }
 
@@ -157,26 +202,19 @@ export async function termGetList() {
     url: `${BASE_URL}/cms/terms`,
     method: 'GET', // GET 방식으로 변경
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }
 
 // 약관 수정 (PUT) 또는 생성 (POST)
-export async function termUpdate(params: TermGetListParams) {
-  const isCreate = params.index === undefined || params.index === null; // index가 없으면 생성으로 판단
-  const url = isCreate
-    ? `${BASE_URL}/cms/terms`
-    : `${BASE_URL}/cms/terms?id=${params.index}`;
-  const method = isCreate ? 'POST' : 'PUT';
-
+export async function termUpdate( index: number, params: TermGetListParams) {
   return callAdminApi({
-    title: '약관 수정/생성',
-    url: url,
-    method: method,
-    body: {
-      content: params.content,
-      language: params.language, // language는 요청 바디에 포함
-    },
+    title: "약관 생성",
+    url: `${BASE_URL}/api/cms/terms?index=${index}`,
+    method: "PUT",
+    body: params,
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }
 
@@ -189,6 +227,7 @@ export async function promptGetList(
     url: `${BASE_URL}/cms/ai/prompt/get-list`,
     body: { keyword: params.keyword },
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }
 export async function promptHistoryGetList(
@@ -198,6 +237,7 @@ export async function promptHistoryGetList(
     url: `${BASE_URL}/cms/ai/prompt/history/get-list`,
     body: { index: params.index },
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }
 
@@ -211,6 +251,7 @@ export async function promptUpdate(
       content: params.content,
     },
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }
 
@@ -221,5 +262,116 @@ export async function unitPriceGetList(
     title: '단가 리스트 조회',
     url: `${BASE_URL}/cms/ai/unit-price/get-list`,
     isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
+  });
+}
+
+// 모든 단가 조회 API
+export async function getAllUnitPrices(
+  params: AllUnitPricesParams = {}) {
+  const queryParams = new URLSearchParams();
+  
+  // companyCode 파라미터 (필수)
+  if (params.companyCode) {
+    queryParams.append('companyCode', params.companyCode);
+  }
+  
+  // 선택적 파라미터들
+  if (params.keyword) {
+    queryParams.append('keyword', params.keyword);
+  }
+  
+  // fromDate, toDate 처리 (기본값 설정)
+  const fromDate = params.fromDate || '2025-01-01';
+  const toDate = params.toDate || '2025-12-31';
+  queryParams.append('fromDate', fromDate);
+  queryParams.append('toDate', toDate);
+
+  const queryString = queryParams.toString();
+  const url = `${BASE_URL}/cms/unit-prices?${queryString}`;
+
+  return callAdminApi({
+    title: '모든 단가 조회',
+    url: url,
+    method: 'GET',
+    isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
+  });
+}
+
+// ***************** 고객사
+
+// 모든 고객사 조회 API
+export async function getCompanyList(
+  params: CompanyGetListParams = {}) {
+  const queryParams = new URLSearchParams();
+  
+  // 선택적 파라미터들
+  if (params.keyword) queryParams.append('keyword', params.keyword);
+  if (params.fromDate) queryParams.append('fromDate', params.fromDate);
+  if (params.toDate) queryParams.append('toDate', params.toDate);
+
+  const queryString = queryParams.toString();
+  const url = `${BASE_URL}/cms/company${queryString ? `?${queryString}` : ''}`;
+
+  // 토큰 확인 및 디코드
+  const adminToken = localStorage.getItem('admin_access_token');
+  console.log('🔍 [getCompanyList] 토큰 상태 확인:', {
+    params,
+    queryString,
+    fullUrl: url,
+    hasToken: !!adminToken,
+    tokenPrefix: adminToken ? adminToken.substring(0, 10) + '...' : 'null',
+    localStorage: typeof localStorage !== 'undefined'
+  });
+
+  // JWT 토큰 디코드해서 권한 확인
+  if (adminToken) {
+    try {
+      const payload = JSON.parse(atob(adminToken.split('.')[1]));
+      console.log('🔓 [JWT 토큰 디코드]', {
+        payload: payload,
+        isRoot: payload.isRoot,
+        role: payload.role || 'unknown',
+        exp: payload.exp ? new Date(payload.exp * 1000) : 'no expiry'
+      });
+    } catch (error) {
+      console.error('❌ JWT 토큰 디코드 실패:', error);
+    }
+  }
+
+  try {
+    const result = await callAdminApi({
+      title: '고객사 목록 조회',
+      url: url,
+      method: 'GET',
+      isCallPageLoader: true,
+      isWithToken: true, // 토큰 필요
+    });
+    
+    console.log('getCompanyList 응답:', result);
+    return result;
+  } catch (error) {
+    console.error('getCompanyList 에러:', error);
+    throw error;
+  }
+}
+
+// 단가 업로드 API
+export async function uploadUnitPrices(
+  params: UnitPriceUploadParams) {
+  const queryParams = new URLSearchParams();
+  queryParams.append('companyCode', params.companyCode);
+
+  return callAdminApi({
+    title: '단가 업로드',
+    url: `${BASE_URL}/cms/unit-prices?${queryParams.toString()}`,
+    method: 'POST',
+    body: {
+      columns: params.columns,
+      data: params.data
+    },
+    isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
   });
 }

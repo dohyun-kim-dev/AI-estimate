@@ -23,7 +23,18 @@ export type AdminLoginParams = {
     companyCode?: string; // 옵션: 없으면 통합관리자, 있으면 고객사 관리자
   };
 
-  export type UnitPriceGetListParams = Record<string, never>;
+    export type UnitPriceGetListParams = {
+    keyword?: string;
+    fromDate?: string;
+    toDate?: string;
+  };
+
+  export type AllUnitPricesParams = {
+    companyCode?: string;
+    keyword?: string;
+    fromDate?: string;
+    toDate?: string;
+  };
 
   export type AdminUpdateParams = {
     _id: string;
@@ -45,8 +56,6 @@ export type AdminLoginParams = {
 
 
   export type TermGetListParams = {
-    index?: number;
-    termsType: string;
     content: string;
     language: string;
   };
@@ -62,5 +71,25 @@ export type AdminLoginParams = {
   export type PromptUpdateParams = {
     index: number;
     content: string;
+  };
+
+  export type CompanyGetListParams = {
+    keyword?: string;
+    fromDate?: string;
+    toDate?: string;
+  };
+
+  // 단가 업로드 관련 타입들
+  export type UnitPriceColumn = {
+    name: string;
+    type: string;
+    required: boolean;
+    orderNo: number;
+  };
+
+  export type UnitPriceUploadParams = {
+    companyCode: string;
+    columns: UnitPriceColumn[];
+    data: any[];
   };
 

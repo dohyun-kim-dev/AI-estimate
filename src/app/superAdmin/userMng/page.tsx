@@ -6,11 +6,11 @@ import GenericListUI, {
   FetchResult,
 } from '@/components/CustomList/GenericListUI';
 import {
-  Person as PersonIcon,
-  Badge as BadgeIcon,
-  Phone as PhoneIcon,
-  Email as EmailIcon,
 } from '@mui/icons-material';
+import PersonIcon from '@mui/icons-material/Person';
+import BadgeIcon from '@mui/icons-material/Badge';
+import PhoneIcon from '@mui/icons-material/Phone';
+import EmailIcon from '@mui/icons-material/Email';
 import { ColumnDefinition } from '@/components/CustomList/GenericDataTable';
 import { adminGetList } from '@/lib/api/admin/adminApi';
 import dayjs from 'dayjs';
@@ -455,7 +455,7 @@ const UserMngPage: React.FC = () => {
             }
           }}
           placeholder="- 제외하고 입력하세요"
-          required maxLength={11}
+          maxLength={11}
           errorMessage={cellphoneError ?? undefined}
         />
         <MemoField

@@ -70,33 +70,15 @@ const PopupContainer = styled.div<{
 
 
 
-const CloseButton = styled.button`
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  font-size: 24px;
-  border: none;
-  background: transparent;
-  color: #666;
-  cursor: pointer;
-  z-index: 10;
-
-  &:hover {
-    color: #000;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-radius: 50%;
-  }
-`;
-
-const HeaderRow = styled.div`
+const HeaderRow = styled.div<{ $backgroundColor?: string }>`
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 24px;
-  padding-right: 48px;
   font-size: 20px;
   font-weight: 600;
   color: #000;
+  background-color: ${({ $backgroundColor }) => $backgroundColor ?? '#f5f5f5'};
 `;
 
 const RequiredMark = styled.span`
@@ -118,13 +100,13 @@ const PopupContent = styled.div`
   }
 `;
 
-const BottomFloatingWrapper = styled.div`
+const BottomFloatingWrapper = styled.div<{ $backgroundColor?: string }>`
   position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
   z-index: 20;
-  background: #2c2e3c;
+  background: ${({ $backgroundColor }) => $backgroundColor ?? '#2c2e3c'};
   /* background-color: white; */
   padding: 16px 24px;
   /* border-top: 1px solid ${AppColors.border}; */
@@ -178,14 +160,13 @@ const CmsPopup: React.FC<CmsPopupProps> = ({
   $backgroundColor={backgroundColor}
 >
 
-        <CloseButton onClick={onClose} aria-label="닫기">×</CloseButton>
-        <HeaderRow>
+        <HeaderRow $backgroundColor={backgroundColor}>
           <span>{title}</span>
           {showRequiredMark && <RequiredMark>*필수값</RequiredMark>}
         </HeaderRow>
         <PopupContent>{children}</PopupContent>
         {bottomFloating && (
-          <BottomFloatingWrapper>{bottomFloating}</BottomFloatingWrapper>
+          <BottomFloatingWrapper $backgroundColor={backgroundColor}>{bottomFloating}</BottomFloatingWrapper>
         )}
       </PopupContainer>
     </Overlay>

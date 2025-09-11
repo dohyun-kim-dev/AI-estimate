@@ -57,7 +57,6 @@ export const OuterWrapper = styled.div<{
     $scrollbarHeight !== undefined ? `calc(100vh - ${$scrollbarHeight}px)` : "100vh"};
   background-color: #e3e4ea;
   box-sizing: border-box;
-  min-width: 1240px;
 
 
   @media (max-width: 768px) {

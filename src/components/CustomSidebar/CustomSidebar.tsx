@@ -152,7 +152,7 @@ const SidebarContainer = styled.div<{ $isCollapsed: boolean }>`
   left: 0;
   top: 56px;
   width: ${({ $isCollapsed }) => ($isCollapsed ? '80px' : '250px')};
-  height: 100vh;
+  height: calc(100vh - 56px);
   overflow: hidden;
   background: #2c2e3c;
   color: white;

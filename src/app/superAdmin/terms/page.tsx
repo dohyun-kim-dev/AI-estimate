@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
+import React, { Suspense } from "react";
 import { Editor } from "@tiptap/react";
 import styled from "styled-components";
 import CommonButton from "@/components/CommonButton";
@@ -9,9 +9,7 @@ import { termGetList, TermGetListParams, termUpdate } from "@/lib/api/admin";
 import { toast, ToastContainer } from 'react-toastify';
 import { devLog } from "@/lib/utils/devLogger";
 
-const CustomTiptapEditor = dynamic(() => import("@/components/Editor/CustomTiptapEditor"), {
-  ssr: false,
-});
+const CustomTiptapEditor = React.lazy(() => import("@/components/Editor/CustomTiptapEditor"));
 
 const tabs = [
   { key: "terms", label: "이용약관", index: 1, language: "KOR" },
@@ -146,13 +144,12 @@ export default function TermsPage() {
     }
   
     const params = {
-      index: current.index,
       language: current.language,
       content: html,
     };
   
     try {
-      const response = await termUpdate(params);
+      const response = await termUpdate(current.index, params);
       console.log("📦 저장 응답:", response);
   
       const result = response?.[0] || response;
@@ -190,7 +187,7 @@ export default function TermsPage() {
 
   return (
     
-    <div style={{ minHeight: "100vh", padding: "2rem", paddingTop: "88px"}}>
+    <div style={{ minHeight: "100vh", padding: "2rem", paddingTop: "88px", minWidth: "1200px" }}>
         <ToastContainer position="top-center" autoClose={3000} />
       <Title>이용약관 편집</Title>
 
@@ -222,12 +219,14 @@ export default function TermsPage() {
 
       <div className="bg-[#f9f9f9] p-4 rounded border border-gray-300">
         {isDataLoaded ? (
+          <Suspense fallback={<p>에디터를 불러오는 중입니다...</p>}>
             <CustomTiptapEditor
-                initialContent={contents[activeTab]?.content || ""}
-                onEditorReady={handleEditorReady}
+              initialContent={contents[activeTab]?.content || ""}
+              onEditorReady={handleEditorReady}
             />
+          </Suspense>
         ) : (
-            <p>데이터를 불러오는 중입니다...</p>
+          <p>데이터를 불러오는 중입니다...</p>
         )}
       </div>
     </div>

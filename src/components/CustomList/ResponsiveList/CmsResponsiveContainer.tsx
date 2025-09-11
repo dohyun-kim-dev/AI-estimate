@@ -2,8 +2,8 @@
 
 import React from "react";
 import ResponsiveView from "@/layout/ResponsiveView";
-import { AdminUser } from "../types";
 import { ColumnDefinition } from "@/components/CustomList/GenericDataTable";
+import { FetchParams, FetchResult } from "@/components/CustomList/GenericListUI";
 import CmsMobileView from "./CmsMobileView";
 import CmsDesktopView from "./CmsDesktopView";
 
@@ -26,7 +26,7 @@ interface CmsResponsiveContainerProps<T extends BaseRecord> {
   addButtonLabel?: string;
   onExport?: () => void;
   isLoading?: boolean;
-  fetchData?: () => Promise<{ data: T[]; totalItems: number; allItems: number; }>;
+  fetchData?: (params: FetchParams) => Promise<FetchResult<T>>;
   themeMode?: "light" | "dark";
   compactFieldCount?: number;
   defaultViewMode?: ViewMode; // 모바일에서 기본 보기 모드
@@ -36,9 +36,10 @@ interface CmsResponsiveContainerProps<T extends BaseRecord> {
   onCompanySelect?: (company: { id: string; name: string }) => void;
   isShowExcelTemplate?: boolean;
   excelUploadBtnCallBack?: () => void;
+  excelTemplateBtnCallBack?: () => void;
 }
 
-export default function CmsResponsiveContainer<T extends BaseRecord = AdminUser>({
+export default function CmsResponsiveContainer<T extends BaseRecord>({
   title,
   data,
   columns,
