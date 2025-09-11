@@ -49,6 +49,7 @@ export interface FetchParams {
   fromDate?: string; // Optional
   toDate?: string; // Optional
   keyword?: string; // Optional
+  companyCode?: string; // Optional - 고객사 코드
 }
 
 export interface FetchResult<T> {
@@ -182,7 +183,8 @@ const GenericListUIInner = <T extends BaseRecord>(
   const [searchTermInput, setSearchTermInput] = useState(initialState.keyword ?? ""); // 검색 "입력" 상태
   const [searchKeyword, setSearchKeyword] = useState(initialState.keyword ?? ""); // 실제 "적용된" 검색어
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState<{ id: string; name: string } | null>(null);
+  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string | null>(null);
+  const [selectedCompanyName, setSelectedCompanyName] = useState<string>("");
 
   // --- 데이터 로딩 콜백 --- (API 호출 시점 변경)
   const fetchDataCallback = useCallback(async () => {
@@ -191,6 +193,7 @@ const GenericListUIInner = <T extends BaseRecord>(
     try {
       const params: FetchParams = {
         keyword: searchKeyword || undefined,
+        companyCode: selectedCompanyCode || undefined,
       };
       if (enableDateFilter) {
         params.fromDate = fromDate;
@@ -211,7 +214,7 @@ const GenericListUIInner = <T extends BaseRecord>(
     } finally {
       setIsLoading(false);
     }
-  }, [searchKeyword, fromDate, toDate, enableDateFilter, fetchData]); // keyword, date 변경 시 호출
+  }, [searchKeyword, selectedCompanyCode, fromDate, toDate, enableDateFilter, fetchData]); // selectedCompanyCode 의존성 추가
   
   useImperativeHandle(ref, () => ({
     refetch: () => {
@@ -404,7 +407,7 @@ const GenericListUIInner = <T extends BaseRecord>(
                     <CompanySearchInput
                       type="text"
                       placeholder="고객사를 선택하세요"
-                      value={selectedCompany?.name || ''}
+                      value={selectedCompanyName || ''}
                       readOnly
                       onClick={() => setIsCompanyModalOpen(true)}
                       $themeMode={themeMode}
@@ -441,10 +444,15 @@ const GenericListUIInner = <T extends BaseRecord>(
               isOpen={isCompanyModalOpen}
               onClose={() => setIsCompanyModalOpen(false)}
               onSelect={(company) => {
-                setSelectedCompany(company);
+                setSelectedCompanyCode(company.companyCode);
+                setSelectedCompanyName(company.companyName);
                 if (onCompanySelect) {
-                  onCompanySelect(company);
+                  onCompanySelect({ id: company.companyCode, name: company.companyName });
                 }
+                // 회사 선택 시 자동으로 데이터 재로드
+                setTimeout(() => {
+                  fetchDataCallback();
+                }, 0);
               }}
               themeMode={themeMode}
             />
@@ -658,7 +666,7 @@ const CompanySearchInput = styled(BaseInput)`
   
   &:hover {
     background-color: ${({ $themeMode }) =>
-      $themeMode === "light" ? "#f5f5f5" : THEME_COLORS.dark.hoverBackground};
+      $themeMode === "light" ? "#f5f5f5" : THEME_COLORS.dark.background};
   }
 `;
 

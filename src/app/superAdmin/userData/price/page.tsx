@@ -1,31 +1,85 @@
 'use client';
 
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import GenericListUI, {
-  ColumnDefinition,
   FetchParams,
   FetchResult,
 } from '@/components/CustomList/GenericListUI';
+import { ColumnDefinition } from '@/components/CustomList/GenericDataTable';
 import CmsPopup from '@/components/CmsPopup';
 import CmsResponsiveContainer from '@/components/CustomList/ResponsiveList/CmsResponsiveContainer';
+import UploadResultPopup from './UploadResultPopup';
+import PriceEditPopup from './PriceEditPopup';
+import { getAllUnitPrices, uploadUnitPrices } from '@/lib/api/admin/adminApi';
+import { useToast } from '@/components/common/ToastProvider';
 
-// 엑셀 데이터 항목 타입 정의 (엑셀 파일 구조에 맞게 수정)
-type PriceItem = {
-  항목: string;
-  타입: string;
-  카테고리: string;
-  제목: string;
-  설명: string;
-  메모: string;
-  '관리자 페이지': string;
-  '관리자 카테고리': string;
-  '프론트 기간': number;
-  '백엔드 기간': number;
-  금액: number;
+
+// 필수 여부를 한글로 변환하는 함수
+const getRequiredDisplayText = (required: boolean): string => {
+  return required ? '필수' : '선택';
 };
+
+// 한글 필수 여부를 영문 boolean으로 변환하는 함수
+const parseRequiredFromKorean = (value: any): boolean => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  
+  if (typeof value === 'string') {
+    const trimmedValue = value.trim();
+    // 한글 필수/선택 처리
+    if (trimmedValue === '필수') return true;
+    if (trimmedValue === '선택') return false;
+    
+    // 기존 영문 처리도 유지
+    const lowerValue = trimmedValue.toLowerCase();
+    return !['false', '0', 'n', 'no', '거짓', 'x', '선택'].includes(lowerValue);
+  }
+  
+  return Boolean(value);
+};
+
+// 영문 타입을 한글로 변환하는 함수
+const getTypeDisplayText = (type: string): string => {
+  const typeMap: Record<string, string> = {
+    'string': '문자',
+    'number': '숫자',
+    'boolean': '참/거짓',
+    'date': '날짜',
+    'datetime': '날짜시간',
+    'text': '문자',
+    'integer': '정수',
+    'float': '실수',
+    'decimal': '소수'
+  };
+  
+  return typeMap[type.toLowerCase()] || type;
+};
+
+// 한글 타입을 영문으로 변환하는 함수
+const parseTypeFromKorean = (value: string): string => {
+  if (!value || typeof value !== 'string') {
+    return 'string';
+  }
+  
+  const reverseTypeMap: Record<string, string> = {
+    '문자': 'string',
+    '숫자': 'number',
+    '참/거짓': 'boolean',
+    '날짜': 'date',
+    '날짜시간': 'datetime',
+    '정수': 'integer',
+    '실수': 'float',
+    '소수': 'decimal'
+  };
+  
+  const trimmedValue = value.trim();
+  return reverseTypeMap[trimmedValue] || trimmedValue.toLowerCase();
+};
+
 
 type PriceList = {
   no: number;
@@ -45,69 +99,325 @@ type PriceList = {
   updateId: string;
 };
 
-const StyledPopupContent = styled.div`
-  padding: 20px;
-  h3 {
-    margin-top: 0;
-  }
-`;
-
-const ContentContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  width: 100%;
-`;
-
-const OutputSection = styled.div`
-  flex: 1;
-  border: 1px solid #ddd;
-  padding: 20px;
+const ErrorSection = styled.div`
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
   border-radius: 8px;
-  background-color: #f9f9f9;
-  overflow: auto;
-  color: #000000;
+  padding: 15px;
+  margin-bottom: 20px;
+  color: #856404;
 `;
 
-const PreformattedText = styled.pre`
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  font-family: monospace;
-  color: #000000;
+const SuccessSection = styled.div`
+  background-color: #d1edff;
+  border: 1px solid #bee5eb;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  color: #0c5460;
 `;
 
-const convertJsonToMarkdownTable = (jsonData: PriceItem[]): string => {
-  if (!jsonData || jsonData.length === 0) {
-    return '';
+// 데이터 타입 검증 및 변환 함수 (검증 우선, 변환은 나중에)
+const validateAndConvertValue = (value: any, expectedType: string, columnName: string, rowIndex: number) => {
+  const errors: string[] = [];
+  
+  // 빈 값 처리
+  if (value === null || value === undefined || value === '') {
+    return { value: '', errors, isValid: true }; // 빈 값은 일단 통과 (필수 검증은 별도)
   }
-  const headers = Object.keys(jsonData[0]);
-  const headerRow = `| ${headers.join(' | ')} |`;
-  const separatorRow = `|${headers.map(() => '---').join('|')}|`;
+  
+  switch (expectedType) {
+    case 'string':
+      return { value: String(value), errors, isValid: true };
+      
+    case 'number':
+      // 먼저 숫자 타입 검증
+      const numValue = Number(value);
+      if (isNaN(numValue)) {
+        return { 
+          value: value, // 원본 값 유지
+          errors: [], // 에러는 validateAndClassifyData에서 처리
+          isValid: false 
+        };
+      }
+      return { value: numValue, errors, isValid: true };
+      
+    case 'boolean':
+      // 먼저 불린 타입 검증
+      if (typeof value === 'boolean') {
+        return { value, errors, isValid: true };
+      }
+      if (typeof value === 'string') {
+        const lowerValue = value.toLowerCase();
+        if (['true', '1', 'y', 'yes', '참', 'o'].includes(lowerValue)) {
+          return { value: true, errors, isValid: true };
+        }
+        if (['false', '0', 'n', 'no', '거짓', 'x'].includes(lowerValue)) {
+          return { value: false, errors, isValid: true };
+        }
+      }
+      // 변환할 수 없으면 원본 값 유지하고 invalid 처리
+      return { 
+        value: value, // 원본 값 유지
+        errors: [], // 에러는 validateAndClassifyData에서 처리
+        isValid: false 
+      };
+      
+    default:
+      return { value: String(value), errors, isValid: true };
+  }
+};
 
-  const dataRows = jsonData.map((item) => {
-    const values = headers.map((header) => {
-      const value = String(item[header as keyof PriceItem])
-        .replace(/\|/g, '')
-        .replace(/\n/g, '');
-      return value;
-    });
-    return `| ${values.join(' | ')} |`;
+// 컬럼 메타정보 검증 함수 (심각한 오류만 체크)
+const validateColumnMetadata = (uploadColumns: any[], originalColumns: any[]) => {
+  const errors: string[] = [];
+  
+  // id 컬럼을 포함한 전체 원본 컬럼
+  const allOriginalColumns = [
+    { name: 'id', type: 'string', required: false, orderNo: 0 },
+    ...originalColumns
+  ].sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0));
+  
+  console.log('Original columns:', allOriginalColumns);
+  console.log('Upload columns:', uploadColumns);
+  
+  // 필수 컬럼 누락 체크
+  const uploadColumnNames = uploadColumns.map(col => col.name);
+  const missingColumns = allOriginalColumns.filter(
+    originalCol => !uploadColumnNames.includes(originalCol.name)
+  );
+  
+  if (missingColumns.length > 0) {
+    errors.push(`필수 컬럼이 누락되었습니다: ${missingColumns.map(col => `'${col.name}'`).join(', ')}`);
+  }
+  
+  // 각 컬럼의 타입과 필수여부 검증 (컬럼명 기준)
+  uploadColumns.forEach((uploadCol, index) => {
+    const originalCol = allOriginalColumns.find(col => col.name === uploadCol.name);
+    const columnPosition = `${index + 1}번째 컬럼`;
+    const columnInfo = `${columnPosition} '${uploadCol.name}'`;
+    
+    if (!originalCol) {
+      // 원본에 없는 새로운 컬럼은 허용 (경고만)
+      console.warn(`새로운 컬럼이 추가되었습니다: ${columnInfo}`);
+      return;
+    }
+    
+    // 타입 검증
+    if (uploadCol.type !== originalCol.type) {
+      errors.push(`${columnInfo}: 타입이 변경되었습니다. 원본: '${originalCol.type}' → 업로드: '${uploadCol.type}'`);
+    }
+    
+    // 필수 여부 검증
+    if (uploadCol.required !== originalCol.required) {
+      const originalRequired = originalCol.required ? 'Y' : 'N';
+      const uploadRequired = uploadCol.required ? 'Y' : 'N';
+      errors.push(`${columnInfo}: 필수 여부가 변경되었습니다. 원본: '${originalRequired}' → 업로드: '${uploadRequired}'`);
+    }
   });
+  
+  return errors;
+};
 
-  return [headerRow, separatorRow, ...dataRows].join('\n');
+// 데이터 검증 및 분류 함수 (문제가 있는 행만 제외)
+const validateAndClassifyData = (data: any[], columns: any[], originalDataRows: any[][]) => {
+  const successData: any[] = [];
+  const excludedData: any[] = [];
+  const excludeReasons: string[] = [];
+  
+  data.forEach((item, index) => {
+    const rowErrors: string[] = [];
+    let shouldExclude = false;
+    const rowNum = index + 1;
+    const excelRowNum = rowNum + 4; // 실제 엑셀 행 번호 (사용방법, 필수, 타입, 헤더 + 데이터 행)
+    const originalRow = originalDataRows[index] || []; // 원본 데이터 행
+    
+    // 각 필드 검증
+    columns.forEach((column, colIndex) => {
+      const value = item[column.name];
+      const originalValue = originalRow[colIndex]; // 원본 값 (변환 전)
+      const fieldName = column.name;
+      const excelColLetter = String.fromCharCode(66 + colIndex); // B, C, D, E...
+      const cellPosition = `${excelColLetter}${excelRowNum}`;
+      
+      // 필수 필드 검증
+      if (column.required && (value === null || value === undefined || value === '')) {
+        rowErrors.push(`${cellPosition}셀 '${fieldName}': 필수 필드가 비어있음`);
+        shouldExclude = true;
+      }
+      
+      // 타입 검증 (원본 값으로 검증, 값이 있을 때만)
+      if (originalValue !== null && originalValue !== undefined && originalValue !== '') {
+        switch (column.type) {
+          case 'number':
+            if (isNaN(Number(originalValue))) {
+              rowErrors.push(`${cellPosition}셀 '${fieldName}': 숫자가 아님 (입력값: "${originalValue}")`);
+              shouldExclude = true;
+            }
+            break;
+          case 'boolean':
+            let isValidBoolean = false;
+            if (typeof originalValue === 'boolean') {
+              isValidBoolean = true;
+            } else if (typeof originalValue === 'string') {
+              const lowerValue = originalValue.toLowerCase();
+              isValidBoolean = ['true', 'false', '1', '0', 'y', 'n', 'yes', 'no', '참', '거짓', 'o', 'x'].includes(lowerValue);
+            }
+            
+            if (!isValidBoolean) {
+              rowErrors.push(`${cellPosition}셀 '${fieldName}': 올바른 불린값이 아님 (입력값: "${originalValue}", 가능값: Y/N, true/false, 1/0 등)`);
+              shouldExclude = true;
+            }
+            break;
+        }
+      }
+    });
+    
+    if (shouldExclude) {
+      excludedData.push({ ...item, rowIndex: rowNum, excelRowNum, errors: rowErrors });
+      excludeReasons.push(`엑셀 ${excelRowNum}행: ${rowErrors.join(', ')}`);
+    } else {
+      successData.push(item);
+    }
+  });
+  
+  return { 
+    successData, 
+    excludedData, 
+    excludeReasons,
+    totalProcessed: data.length,
+    successCount: successData.length,
+    excludedCount: excludedData.length
+  };
+};
+
+// 필수 컬럼 검증 함수
+const validateRequiredFields = (obj: any, columns: any[], rowIndex: number) => {
+  const errors: string[] = [];
+  
+  columns.forEach(column => {
+    if (column.required) {
+      const value = obj[column.name];
+      if (value === null || value === undefined || value === '') {
+        errors.push(`행 ${rowIndex + 1}, 컬럼 '${column.name}': 필수 값이 비어있습니다.`);
+      }
+    }
+  });
+  
+  return errors;
+};
+
+
+// 엑셀 스타일링 적용 함수
+const applyExcelStyling = (ws: any, sortedColumns: any[]) => {
+  // A1 셀 범위 병합 (A1부터 마지막 컬럼까지)
+  const lastCol = String.fromCharCode(65 + sortedColumns.length); // A=65, B=66, ...
+  const mergeRange = `A1:${lastCol}1`;
+  
+  if (!ws['!merges']) ws['!merges'] = [];
+  ws['!merges'].push(XLSX.utils.decode_range(mergeRange));
+
+  // A1 셀 스타일 (사용방법) - 병합된 셀을 위한 스타일
+  const a1Cell = ws['A1'];
+  if (a1Cell) {
+    if (!a1Cell.s) a1Cell.s = {};
+    a1Cell.s.font = { bold: true, color: { rgb: 'FF0000' }, size: 9 }; // 빨간색, 굵게, 작은 글씨
+    a1Cell.s.alignment = { 
+      horizontal: 'left', 
+      vertical: 'top',
+      wrapText: true 
+    };
+    a1Cell.s.border = {
+      top: { style: 'medium', color: { rgb: 'FF0000' } },
+      bottom: { style: 'medium', color: { rgb: 'FF0000' } },
+      left: { style: 'medium', color: { rgb: 'FF0000' } },
+      right: { style: 'medium', color: { rgb: 'FF0000' } }
+    };
+    a1Cell.s.fill = { fgColor: { rgb: 'FFF2F2' } }; // 연한 빨간색 배경
+  }
+
+  // A2 셀 스타일 (필수)
+  const a2Cell = ws['A2'];
+  if (a2Cell) {
+    if (!a2Cell.s) a2Cell.s = {};
+    a2Cell.s.font = { bold: true, color: { rgb: '0000FF' } }; // 파란색, 굵게
+    a2Cell.s.alignment = { horizontal: 'center' };
+  }
+
+  // A3 셀 스타일 (타입)
+  const a3Cell = ws['A3'];
+  if (a3Cell) {
+    if (!a3Cell.s) a3Cell.s = {};
+    a3Cell.s.font = { bold: true, color: { rgb: '008000' } }; // 초록색, 굵게
+    a3Cell.s.alignment = { horizontal: 'center' };
+  }
+
+  // A4 셀 스타일 (헤더)
+  const a4Cell = ws['A4'];
+  if (a4Cell) {
+    if (!a4Cell.s) a4Cell.s = {};
+    a4Cell.s.font = { bold: true, color: { rgb: '800080' } }; // 보라색, 굵게
+    a4Cell.s.alignment = { horizontal: 'center' };
+  }
+
+  // 헤더 행(4번째 행) 스타일링
+  for (let col = 1; col <= sortedColumns.length; col++) {
+    const cellAddress = XLSX.utils.encode_cell({ r: 3, c: col });
+    if (ws[cellAddress]) {
+      if (!ws[cellAddress].s) ws[cellAddress].s = {};
+      ws[cellAddress].s.font = { bold: true };
+      ws[cellAddress].s.fill = { fgColor: { rgb: 'E0E0E0' } }; // 연한 회색 배경
+      ws[cellAddress].s.alignment = { horizontal: 'center' };
+    }
+  }
+  
+  // 컬럼 너비 조정 (동적으로 설정)
+  const colWidths = [{ wch: 15 }]; // A열: 첫 번째 구분자 컬럼
+  sortedColumns.forEach((col: any) => {
+    let width = 10; // 기본 너비
+    if (col.name === '설명' || col.name === '메모') {
+      width = 30; // 설명/메모는 넓게
+    } else if (col.name === '제목' || col.name === '기능명') {
+      width = 20;
+    } else if (col.name.includes('기간') || col.name.includes('페이지') || col.name.includes('카테고리')) {
+      width = 15;
+    } else if (col.name === 'id') {
+      width = 25; // id 필드는 조금 더 넓게
+    } else if (col.name === '금액') {
+      width = 15; // 금액은 적당히
+    }
+    colWidths.push({ wch: width });
+  });
+  ws['!cols'] = colWidths;
+  
+  // 행 높이 조정 (A1 셀의 긴 텍스트를 위해)
+  ws['!rows'] = [
+    { hpt: 150 }, // 1행: 사용방법 설명 (높이 150pt로 더 확대)
+    { hpt: 25 },  // 2행: 필수
+    { hpt: 25 },  // 3행: 타입  
+    { hpt: 30 }   // 4행: 헤더 (조금 더 높게)
+  ];
 };
 
 const PriceListPage: React.FC = () => {
+  const { show: showToast } = useToast(); // 토스트 훅 추가
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<Partial<PriceList> | null>(
-    null,
-  );
-  const [jsonData, setJsonData] = useState<any[] | null>(null);
-  const [markdownData, setMarkdownData] = useState<any[] | null>(null);
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string | null>(null);
+  const [dynamicColumns, setDynamicColumns] = useState<ColumnDefinition<any>[]>([]);
+  const [currentTableData, setCurrentTableData] = useState<any[]>([]); // 현재 테이블 데이터 저장
+  const [currentColumnsInfo, setCurrentColumnsInfo] = useState<any[]>([]); // 현재 컬럼 정보 저장
+  const [transformedTableData, setTransformedTableData] = useState<any[]>([]); // 변환된 테이블 데이터 (select 필드 포함)
+  const [isAlertOpen, setIsAlertOpen] = useState(false); // 알림 팝업
+  const [alertMessage, setAlertMessage] = useState(''); // 알림 메시지
+  const [alertType, setAlertType] = useState<'success' | 'error' | 'warning'>('error'); // 알림 타입
+  const [refetchTrigger, setRefetchTrigger] = useState(0); // 테이블 새로고침 트리거
+  const [uploadSuccessData, setUploadSuccessData] = useState<any[]>([]); // 업로드 성공 데이터 저장
+  const [uploadColumns, setUploadColumns] = useState<any[]>([]); // 업로드된 컬럼 정보 저장
   const listRef = useRef<{ refetch: () => void }>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleRowClick = (item: PriceList) => {
+  const handleRowClick = (item: any) => {
     setSelectedItem(item);
     setIsPopupOpen(true);
   };
@@ -117,96 +427,237 @@ const PriceListPage: React.FC = () => {
     setSelectedItem(null);
   };
 
-  const fetchData = useCallback(
-    async (params: FetchParams): Promise<FetchResult<PriceList>> => {
-      console.log('Mock Data fetching for PriceList...', params);
-      const mockData: PriceList[] = [
-        {
-          no: 1,
-          select: false,
-          code: 'C1',
-          category_name: 'COMMON',
-          sub_category_name: '화면설계',
-          function_name: '기능1',
-          description: '기능에 대한 상세 설명',
-          memo: '잠재고객/지속적인 연락 필요',
-          frontend_period: 0.2,
-          backend_period: 0.2,
-          price: 500000,
-          createdTime: '2025-05-21T11:31:12Z',
-          updateTime: '2025-05-21T11:31:12Z',
-          createdId: '작성자1',
-          updateId: '작성자1',
-        },
-        {
-          no: 2,
-          select: false,
-          code: 'C2',
-          category_name: 'COMMON',
-          sub_category_name: '기획',
-          function_name: '기능2',
-          description: '새로운 기능 설명',
-          memo: '',
-          frontend_period: 0.3,
-          backend_period: 0.1,
-          price: 350000,
-          createdTime: '2025-05-22T14:00:00Z',
-          updateTime: '2025-05-22T14:00:00Z',
-          createdId: '작성자2',
-          updateId: '작성자2',
-        },
-      ];
-
-      const filteredData = params.keyword
-        ? mockData.filter(
-            (item) =>
-              item.function_name.includes(params.keyword as string) ||
-              item.description.includes(params.keyword as string) ||
-              item.category_name.includes(params.keyword as string),
-          )
-        : mockData;
-
-      return {
-        data: filteredData,
-        totalItems: filteredData.length,
-        allItems: mockData.length,
+  // 단일 항목 저장 핸들러
+  const handleSaveItem = async (formData: any) => {
+    try {
+      // 여기서 실제 API 호출을 해야 하지만, 현재는 uploadUnitPrices를 사용
+      // updateUnitPrice API가 있다면 그것을 사용해야 함
+      const apiPayload = {
+        companyCode: selectedCompanyCode,
+        columns: currentColumnsInfo.map((col: any) => ({
+          name: col.name,
+          type: col.type,
+          required: col.required,
+          orderNo: col.orderNo
+        })),
+        data: [formData] // 단일 항목 배열로 감싸기
       };
+
+      await uploadUnitPrices(apiPayload);
+      
+      // 테이블 새로고침
+      if (selectedCompanyCode) {
+        await handleCompanySelect({ id: selectedCompanyCode, name: '' });
+      }
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Save item error:', error);
+      return Promise.reject(error);
+    }
+  };
+
+  const fetchData = useCallback(
+    async (params: FetchParams): Promise<FetchResult<any>> => {
+      console.log('=== fetchData called ===', {
+        paramsCompanyCode: params.companyCode,
+        selectedCompanyCode,
+        transformedDataLength: transformedTableData.length
+      });
+      
+      // companyCode가 없으면 빈 데이터 반환
+      if (!params.companyCode && !selectedCompanyCode) {
+        console.log('No companyCode, returning empty');
+        return { data: [], totalItems: 0, allItems: 0 };
+      }
+
+      // 현재 상태에 데이터가 있고 같은 회사라면 기존 데이터 반환 (중복 API 호출 방지)
+      const targetCompanyCode = params.companyCode || selectedCompanyCode;
+      if (transformedTableData.length > 0 && selectedCompanyCode === targetCompanyCode) {
+        console.log('Returning cached data, length:', transformedTableData.length);
+        return {
+          data: transformedTableData,
+          totalItems: transformedTableData.length,
+          allItems: transformedTableData.length,
+        };
+      }
+
+      console.log('=== fetchData END (should not reach here often) ===');
+      // 대부분의 경우 여기에 도달하지 않아야 함 (handleCompanySelect에서 처리)
+      return { data: [], totalItems: 0, allItems: 0 };
     },
-    [],
+    [selectedCompanyCode, transformedTableData],
   );
 
-  const columns: ColumnDefinition<PriceList>[] = useMemo(
-    () => [
-      { header: '선택', accessor: 'select', formatter: () => <input type="checkbox" /> },
-      { header: 'No', accessor: 'no', sortable: true },
-      { header: '코드', accessor: 'code', sortable: true },
-      { header: '항목', accessor: 'category_name', sortable: true },
-      { header: '카테고리', accessor: 'sub_category_name', sortable: true },
-      { header: '기능명', accessor: 'function_name', sortable: true },
-      { header: '설명', accessor: 'description', sortable: true },
-      { header: '메모', accessor: 'memo', sortable: true },
-      { header: '프론트 기간', accessor: 'frontend_period' },
-      { header: '백엔드 기간', accessor: 'backend_period' },
-      {
-        header: '금액',
-        accessor: 'price',
-        formatter: (value) => value.toLocaleString(),
-      },
-      {
-        header: '작성일자',
-        accessor: 'createdTime',
-        formatter: (value) => dayjs(value).format('YYYY-MM-DD HH:mm:ss'),
-      },
-      {
-        header: '수정일자',
-        accessor: 'updateTime',
-        formatter: (value) => dayjs(value).format('YYYY-MM-DD HH:mm:ss'),
-      },
-      { header: '작성id', accessor: 'createdId' },
-      { header: '작성자', accessor: 'updateId' },
-    ],
-    [],
-  );
+  const handleCompanySelect = useCallback(async (company: { id: string; name: string }) => {
+    console.log('=== Company selected START ===:', company);
+    
+    // 중복 호출 방지를 위한 체크
+    if (selectedCompanyCode === company.id) {
+      console.log('Same company selected, skipping');
+      return;
+    }
+    
+    try {
+      console.log('Fetching data for company:', company.id);
+      
+      const response = await getAllUnitPrices({
+        companyCode: company.id,
+        keyword: undefined,
+        fromDate: undefined,
+        toDate: undefined,
+      });
+
+      console.log('API response received');
+
+      // API 응답 처리 로직
+      let columnsInfo: any[] = [];
+      let apiData: any[] = [];
+      
+      let actualResponse = response;
+      if (Array.isArray(response) && response.length > 0) {
+        actualResponse = (response as any[])[0];
+      }
+      
+      if (actualResponse && typeof actualResponse === 'object') {
+        // 404 에러 응답 처리
+        if (!Array.isArray(actualResponse) &&
+            'statusCode' in actualResponse && 
+            'message' in actualResponse && 
+            'data' in actualResponse &&
+            ((actualResponse as any).statusCode === 404 || (actualResponse as any).statusCode === "404") && 
+            (actualResponse as any).message === 'not found' &&
+            ((actualResponse as any).data === null || (actualResponse as any).data === "" || (actualResponse as any).data === undefined)) {
+          
+          // 샘플 템플릿용 기본 컬럼 정의
+          columnsInfo = [
+            { name: 'id', type: 'string', required: false, orderNo: 0 },
+            { name: '코드', type: 'string', required: true, orderNo: 1 },
+            { name: '대분류명', type: 'string', required: true, orderNo: 2 },
+            { name: '소분류명', type: 'string', required: false, orderNo: 3 },
+            { name: '기능명', type: 'string', required: true, orderNo: 4 },
+            { name: '설명', type: 'string', required: false, orderNo: 5 },
+            { name: '메모', type: 'string', required: false, orderNo: 6 },
+            { name: '프론트엔드_기간', type: 'number', required: false, orderNo: 7 },
+            { name: '백엔드_기간', type: 'number', required: false, orderNo: 8 },
+            { name: '금액', type: 'number', required: true, orderNo: 9 }
+          ];
+          apiData = [];
+        }
+        else if ('data' in actualResponse && actualResponse.data) {
+          const responseData = actualResponse.data as any;
+          
+          if ('columns' in responseData && Array.isArray(responseData.columns)) {
+            if (Array.isArray(responseData.columns[0])) {
+              columnsInfo = responseData.columns[0];
+            } else {
+              columnsInfo = responseData.columns;
+            }
+          }
+          
+          if ('data' in responseData && Array.isArray(responseData.data)) {
+            apiData = responseData.data;
+          }
+        }
+        else if ('columns' in actualResponse && 'data' in actualResponse) {
+          const responseColumns = (actualResponse as any).columns;
+          const responseData = (actualResponse as any).data;
+          
+          columnsInfo = Array.isArray(responseColumns[0]) 
+            ? responseColumns[0] 
+            : responseColumns;
+          apiData = Array.isArray(responseData) ? responseData : [];
+        }
+      }
+
+      // 컬럼 정보가 있을 때만 처리
+      if (Array.isArray(columnsInfo) && columnsInfo.length > 0) {
+        // id 컬럼 추가
+        const hasIdColumn = columnsInfo.some(col => col.name === 'id');
+        let allColumnsForTable = columnsInfo;
+        if (!hasIdColumn) {
+          const idColumn = { name: 'id', type: 'string', required: false, orderNo: 0 };
+          allColumnsForTable = [idColumn, ...columnsInfo];
+        }
+        
+        // UI 컬럼 생성
+        const generatedColumns: ColumnDefinition<any>[] = allColumnsForTable
+          .sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0))
+          .map((col: any) => {
+            const columnDef: ColumnDefinition<any> = {
+              header: col.name,
+              accessor: col.name,
+              sortable: true,
+            };
+
+            if (col.type === 'number') {
+              if (col.name === '금액' || col.name.toLowerCase().includes('price')) {
+                columnDef.formatter = (value) => {
+                  const numValue = Number(value);
+                  return isNaN(numValue) ? value : numValue.toLocaleString();
+                };
+              } else {
+                columnDef.formatter = (value) => {
+                  const numValue = Number(value);
+                  return isNaN(numValue) ? value : numValue;
+                };
+              }
+            } else if (col.type === 'boolean') {
+              columnDef.formatter = (value) => {
+                if (typeof value === 'boolean') {
+                  return value ? 'Y' : 'N';
+                }
+                if (typeof value === 'string') {
+                  return ['true', '1', 'y', 'yes', '참'].includes(value.toLowerCase()) ? 'Y' : 'N';
+                }
+                return value ? 'Y' : 'N';
+              };
+            } else if (col.name === 'id') {
+              columnDef.formatter = (value) => {
+                if (typeof value === 'string' && value.length > 10) {
+                  return `${value.substring(0, 8)}...`;
+                }
+                return value;
+              };
+            }
+
+            return columnDef;
+          });
+
+        const columnsWithSelect: ColumnDefinition<any>[] = [
+          ...generatedColumns
+        ];
+
+        // 변환된 데이터 생성
+        const transformedData = apiData.map((item: any, index: number) => ({
+          ...item,
+          select: false,
+          no: index + 1,
+        }));
+
+        console.log('Setting all states in batch');
+        
+        // 모든 상태를 한 번에 업데이트 (React 18 batch update)
+        React.startTransition(() => {
+          setSelectedCompanyCode(company.id);
+          setCurrentColumnsInfo(allColumnsForTable);
+          setCurrentTableData(apiData);
+          setDynamicColumns(columnsWithSelect);
+          setTransformedTableData(transformedData);
+          setRefetchTrigger(prev => prev + 1);
+        });
+        
+        console.log('Updated transformedTableData length:', transformedData.length);
+      }
+      
+      console.log('=== Company selected END ===');
+        
+    } catch (error) {
+      console.error('Error fetching data for selected company:', error);
+      // 에러 시에도 회사 코드는 설정
+      setSelectedCompanyCode(company.id);
+    }
+  }, [selectedCompanyCode]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -216,109 +667,441 @@ const PriceListPage: React.FC = () => {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
 
-        const allJsonData: { sheetName: string; data: PriceItem[] }[] = [];
-        const allMarkdownData: { sheetName: string; markdown: string }[] = [];
+        if (workbook.SheetNames.length === 0) {
+          showAlert('업로드할 시트가 없습니다.', 'error');
+          return;
+        }
 
-        workbook.SheetNames.forEach((sheetName) => {
-          const worksheet = workbook.Sheets[sheetName];
-          // ⭐️ 수정된 부분: 첫 번째 행(안내문)을 건너뛰고 두 번째 행(헤더)부터 시작하도록 범위를 지정합니다.
-          const range = XLSX.utils.decode_range(worksheet['!ref'] as string);
-          const newRange = { s: { r: 1, c: 0 }, e: range.e };
+        // 첫 번째 시트만 처리
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        console.log('Processing sheet:', sheetName);
+        
+        // 전체 시트를 읽어서 템플릿 구조 확인
+        const range = XLSX.utils.decode_range(worksheet['!ref'] as string);
+        console.log('Sheet range:', range);
+        
+        const allData = XLSX.utils.sheet_to_json(worksheet, {
+          header: 1,
+          range: range,
+        });
+        console.log('All sheet data:', allData);
 
-          const rawJsonData = XLSX.utils.sheet_to_json(worksheet, {
-            header: 1,
-            range: newRange,
+        if (allData.length < 5) {
+          showAlert('템플릿 구조가 올바르지 않습니다. 최소 5행이 필요합니다 (사용방법, 필수, 타입, 헤더, 데이터).', 'error');
+          return;
+        }
+
+        try {
+          // 템플릿 파싱
+          const requiredRow = allData[1] as any[];
+          const requiredValues = requiredRow.slice(1);
+          
+          const typeRow = allData[2] as any[];
+          const typeValues = typeRow.slice(1);
+          
+          const headerRow = allData[3] as any[];
+          const headers = headerRow.slice(1);
+          
+          const fullDataRows = allData.slice(4);
+          const dataRows = fullDataRows.map(row => (row as any[]).slice(1));
+
+          // 업로드된 컬럼 정보 생성 (원본의 orderNo 유지)
+          const allOriginalColumns = [
+            { name: 'id', type: 'string', required: false, orderNo: 0 },
+            ...currentColumnsInfo
+          ].sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0));
+
+          const uploadColumns = headers.map((header: string, index: number) => {
+            const name = header ? header.trim() : `col${index}`;
+            const type = parseTypeFromKorean(typeValues[index] ? String(typeValues[index]) : 'string');
+            const requiredValue = requiredValues[index];
+            
+            const required = parseRequiredFromKorean(requiredValue);
+
+            // 원본 컬럼에서 orderNo 찾기
+            const originalColumn = allOriginalColumns.find(col => col.name === name);
+            const orderNo = originalColumn ? originalColumn.orderNo : index;
+
+            return {
+              name,
+              type,
+              required,
+              orderNo
+            };
           });
 
-          if (rawJsonData.length > 1) {
-            const headers = rawJsonData[0] as string[];
-            const dataRows = rawJsonData.slice(1);
-
-            const refinedData = dataRows.map((row: any[]) => {
-              const obj: any = {};
-              headers.forEach((header, index) => {
-                const key = header ? header.trim() : `col${index}`;
-                const value = row[index] !== undefined ? row[index] : '';
-                obj[key] =
-                  !isNaN(Number(value)) && !isNaN(parseFloat(value))
-                    ? Number(value)
-                    : value;
-              });
-              return obj as PriceItem;
-            });
-
-            allJsonData.push({ sheetName, data: refinedData });
-            allMarkdownData.push({
-              sheetName,
-              markdown: convertJsonToMarkdownTable(refinedData),
-            });
+          // 1단계: 컬럼 메타정보 검증 (최초 등록이 아닌 경우만)
+          const isFirstRegistration = !currentTableData || currentTableData.length === 0;
+          
+          if (!isFirstRegistration) {
+            // 기존 데이터가 있는 경우만 메타데이터 검증 수행
+            const columnErrors = validateColumnMetadata(uploadColumns, currentColumnsInfo);
+            
+            if (columnErrors.length > 0) {
+              // 컬럼 메타정보 에러가 있으면 팝업으로 표시하고 중단
+              showAlert(`업로드 실패\n\n컬럼 메타정보 오류:\n${columnErrors.join('\n')}`, 'error');
+              return;
+            }
+          } else {
+            // 최초 등록인 경우 업로드된 메타데이터를 새로운 스키마로 사용
+            console.log('최초 등록: 업로드된 메타데이터를 새로운 스키마로 설정합니다.');
           }
-        });
 
-        console.log('JSON Data:', allJsonData);
-        console.log('Markdown Data:', allMarkdownData);
-        setJsonData(allJsonData);
-        setMarkdownData(allMarkdownData);
+          // 2단계: 데이터 파싱 및 변환
+          const parsedData: any[] = [];
+          const parseErrors: string[] = [];
+          
+          dataRows.forEach((row: any[], rowIndex) => {
+            const obj: any = {};
+            let hasParseErrors = false;
+
+            // 헤더와 원본 컬럼의 매핑을 통해 데이터 할당
+            headers.forEach((header, index) => {
+              const key = header ? header.trim() : `col${index}`;
+              const uploadColumn = uploadColumns.find(col => col.name === key);
+              const expectedType = uploadColumn?.type || 'string';
+              
+              const rawValue = row[index] !== undefined ? row[index] : '';
+              const { value, isValid } = validateAndConvertValue(rawValue, expectedType, key, rowIndex);
+              
+              obj[key] = value;
+              
+              // 타입 검증 실패 시 에러 기록
+              if (!isValid && rawValue !== null && rawValue !== undefined && rawValue !== '') {
+                const excelRowNum = rowIndex + 5; // 실제 엑셀 행 번호
+                const excelColLetter = String.fromCharCode(66 + index); // B, C, D, E...
+                const cellPosition = `${excelColLetter}${excelRowNum}`;
+                
+                switch (expectedType) {
+                  case 'number':
+                    parseErrors.push(`${cellPosition}셀 '${key}': 숫자가 아님 (입력값: "${rawValue}")`);
+                    break;
+                  case 'boolean':
+                    parseErrors.push(`${cellPosition}셀 '${key}': 올바른 불린값이 아님 (입력값: "${rawValue}", 가능값: Y/N, true/false, 1/0 등)`);
+                    break;
+                }
+                hasParseErrors = true;
+              }
+            });
+
+            // id 필드가 없거나 비어있으면 빈 값으로 유지 (서버에서 신규로 인식하여 자동 생성)
+            if (!obj.id) {
+              obj.id = '';
+            }
+
+            // 파싱 에러가 있어도 일단 데이터는 추가 (나중에 validateAndClassifyData에서 제외됨)
+            parsedData.push(obj);
+          });
+
+          // 파싱 에러가 있으면 미리 알림
+          if (parseErrors.length > 0) {
+            console.warn('데이터 파싱 중 타입 오류 발견:', parseErrors);
+          }
+
+          // 3단계: 데이터 검증 및 분류 (업데이트된 컬럼 정보로 검증)
+          const { 
+            successData, 
+            excludedData, 
+            excludeReasons,
+            totalProcessed,
+            successCount,
+            excludedCount
+          } = validateAndClassifyData(parsedData, uploadColumns, dataRows);
+
+          // 4단계: 결과 표시 (모든 경우에 동일한 형태로 표시)
+          // 성공 데이터와 컬럼 정보를 상태에 저장 (저장 버튼에서 사용)
+          setUploadSuccessData(successData);
+          setUploadColumns(uploadColumns);
+          
+          showAlert(
+            `업로드 처리 완료\n\n전체 ${totalProcessed}행 중:\n✅ 성공: ${successCount}행\n❌ 제외: ${excludedCount}행${excludedCount > 0 ? `\n\n제외 사유:\n${excludeReasons.slice(0, 10).join('\n')}${excludeReasons.length > 10 ? `\n... 외 ${excludeReasons.length - 10}개` : ''}` : ''}`,
+            excludedCount > 0 ? 'warning' : 'success'
+          );
+
+          // API 업로드는 저장 버튼을 통해서만 수행 (handleSaveUploadResult에서 처리)
+
+        } catch (error) {
+          console.error('File processing error:', error);
+          showAlert('파일 처리 중 오류가 발생했습니다.', 'error');
+        }
       };
       reader.readAsArrayBuffer(file);
+    }
+    
+    // 파일 input 초기화
+    if (event.target) {
+      event.target.value = '';
     }
   };
 
   const handleExcelUpload = useCallback(() => {
+    // 고객사가 선택되지 않은 경우 먼저 체크
+    if (!selectedCompanyCode) {
+      showToast('먼저 고객사를 선택해주세요.', 'error');
+      return;
+    }
+    
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
-  }, []);
+  }, [selectedCompanyCode, showToast]);
 
-  // ⭐️ 업데이트된 부분: 엑셀 템플릿 다운로드 핸들러
-  const handleExcelTemplateDownload = useCallback(() => {
-    const templateData = [
-      ['NOTE: index를 적을 경우 기존에 있는 index 기능을 수정하고, index를 안 적고 제목을 적을 경우 새로운 기능이 추가됩니다.'],
-      ['index', '항목', '타입', '카테고리', '제목', '설명', '메모', '관리자 페이지', '관리자 카테고리', '프론트 기간', '백엔드 기간', '금액'],
-      ['', '필수', '공통', '화면설계', '스토리보드', 'IT 프로젝트 전반적인 설계 정의', '1. PC 또는 모바일 경우 : 본수 기준 1장당 10만원', '', '', 0, 0, 0],
-    ];
+  const handleExcelTemplateDownload = useCallback(async () => {
+    try {
+      // 회사 코드가 선택되지 않은 경우
+      if (!selectedCompanyCode) {
+        showToast('먼저 고객사를 선택해주세요.', 'error');
+        return;
+      }
 
-    const ws = XLSX.utils.aoa_to_sheet(templateData);
+      // 컬럼 정보가 없는 경우 (에러 또는 아직 조회하지 않음)
+      if (!currentColumnsInfo || currentColumnsInfo.length === 0) {
+        showToast('먼저 고객사를 선택하여 데이터를 조회해주세요.', 'error');
+        return;
+      }
 
-    // ⭐️ A1 셀에 'NOTE' 텍스트를 담은 셀 스타일 지정 (텍스트를 래핑하도록)
-    const noteCell = ws['A1'];
-    if (noteCell) {
-        if (!noteCell.s) noteCell.s = {};
-        noteCell.s.alignment = { wrapText: true };
+      // 컬럼은 있지만 데이터가 없는 경우 - 샘플 템플릿 생성
+      if (!currentTableData || currentTableData.length === 0) {
+        console.log('Creating sample template with no data');
+        
+        // currentColumnsInfo에서 orderNo로 정렬 (id 컬럼이 이미 포함되어 있음)
+        const sortedColumns = [...currentColumnsInfo].sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0));
+        
+        // 샘플 템플릿 데이터 구성 (데이터 행 없이)
+        const templateData: any[][] = [];
+        
+        // 1행: 사용방법 설명
+        const usageRow = [
+          '※ 업로드 주의사항 ※\n' +
+          '• A열 무시, B열부터 입력\n' +
+          '• 신규 추가건은 id 란을 비워주세요\n' +
+          '• 컬럼명/타입/필수여부 최초 등록 이 후 변경 금지\n' +
+          '• "필수" 항목 비어있으면 행 제외\n' +
+          '• 타입 불일치 시 행 제외 (예: 숫자컬럼에 문자입력)\n' +
+          '• 참/거짓: Y/N, 참/거짓, true/false, 1/0 입력가능\n' +
+          '• 기존 컬럼 삭제/순서변경 시 업로드 실패\n' +
+          '• 검증실패 행은 제외되고 성공행만 저장'
+        ];
+        // B열부터는 빈 값으로 채움
+        sortedColumns.forEach(() => {
+          usageRow.push('');
+        });
+        templateData.push(usageRow);
+        
+        // 2행: 필수 여부
+        const requiredRow = ['필수'];
+        sortedColumns.forEach((col: any) => {
+          requiredRow.push(getRequiredDisplayText(col.required));
+        });
+        templateData.push(requiredRow);
+        
+        // 3행: 타입 정보
+        const typeRow = ['타입'];
+        sortedColumns.forEach((col: any) => {
+          typeRow.push(getTypeDisplayText(col.type));
+        });
+        templateData.push(typeRow);
+        
+        // 4행: 헤더 정보
+        const headerRow = ['헤더'];
+        sortedColumns.forEach((col: any) => {
+          headerRow.push(col.name);
+        });
+        templateData.push(headerRow);
+        
+        // 5행: 데이터 영역 표시
+        const dataAreaRow = ['데이터 영역'];
+        sortedColumns.forEach((col: any) => {
+          let sampleValue: any = '';
+          switch (col.type) {
+            case 'string':
+              if (col.name === 'id') {
+                sampleValue = ''; // id 필드는 빈값으로 설정
+              } else {
+                sampleValue = `예시_${col.name}`;
+              }
+              break;
+            case 'number':
+              sampleValue = col.name === '금액' ? 100000 : 1;
+              break;
+            case 'boolean':
+              sampleValue = 'Y';
+              break;
+            default:
+              sampleValue = '예시값';
+          }
+          dataAreaRow.push(sampleValue);
+        });
+        templateData.push(dataAreaRow);
+
+        const ws = XLSX.utils.aoa_to_sheet(templateData);
+
+        // 스타일링 적용
+        applyExcelStyling(ws, sortedColumns);
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '단가표_샘플템플릿');
+        XLSX.writeFile(wb, `단가표_샘플템플릿_${new Date().toISOString().split('T')[0]}.xlsx`);
+        
+        showToast('샘플 템플릿을 다운로드했습니다.', 'success');
+        return;
+      }
+
+      // 정상적인 경우 - 실제 데이터로 템플릿 생성
+      console.log('Creating template with actual data');
+      
+      // currentColumnsInfo에서 orderNo로 정렬 (id 컬럼이 이미 포함되어 있음)
+      const allColumns = [...currentColumnsInfo].sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0));
+      
+      // 템플릿 데이터 구성
+      const templateData: any[][] = [];
+      
+      // 1행: 사용방법 설명
+      const usageRow = [
+        '※ 업로드 주의사항 ※\n' +
+        '• A열 무시, B열부터 입력\n' +
+        '• 신규 추가건은 id 란을 비워주세요\n' +
+        '• 컬럼명/타입/필수여부 변경 금지\n' +
+        '• "필수" 항목 비어있으면 행 제외\n' +
+        '• 타입 불일치 시 행 제외 (예: 숫자컬럼에 문자입력)\n' +
+        '• 참/거짓: Y/N, 참/거짓, true/false, 1/0 입력가능\n' +
+        '• 기존 컬럼 삭제/순서변경 시 업로드 실패\n' +
+        '• 검증실패 행은 제외되고 성공행만 저장'
+      ];
+      // B열부터는 빈 값으로 채움
+      allColumns.forEach(() => {
+        usageRow.push('');
+      });
+      templateData.push(usageRow);
+      
+      // 2행: 필수 여부
+      const requiredRow = ['필수'];
+      allColumns.forEach((col: any) => {
+        requiredRow.push(getRequiredDisplayText(col.required));
+      });
+      templateData.push(requiredRow);
+      
+      // 3행: 타입 정보
+      const typeRow = ['타입'];
+      allColumns.forEach((col: any) => {
+        typeRow.push(getTypeDisplayText(col.type));
+      });
+      templateData.push(typeRow);
+      
+      // 4행: 헤더 정보
+      const headerRow = ['헤더'];
+      allColumns.forEach((col: any) => {
+        headerRow.push(col.name);
+      });
+      templateData.push(headerRow);
+      
+      // 5행부터: 실제 데이터
+      currentTableData.forEach((item: any, index: number) => {
+        const dataRow = ['데이터 영역']; // A열에는 구분자
+        allColumns.forEach((col: any) => {
+          const value = item[col.name];
+          dataRow.push(value !== undefined && value !== null ? value : ''); // 값이 없으면 빈 문자열
+        });
+        templateData.push(dataRow);
+      });
+
+      console.log('Template data:', templateData);
+
+      const ws = XLSX.utils.aoa_to_sheet(templateData);
+
+      // 스타일링 적용
+      applyExcelStyling(ws, allColumns);
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '단가표_실제데이터');
+      XLSX.writeFile(wb, `단가표_실제데이터_${new Date().toISOString().split('T')[0]}.xlsx`);
+      
+      showToast('템플릿이 성공적으로 다운로드되었습니다.', 'success');
+      
+    } catch (error) {
+      console.error('Excel template download error:', error);
+      showToast('템플릿 다운로드 중 오류가 발생했습니다.', 'error');
     }
-    
-    // B2:L2 범위에 대한 컬럼 너비 조정 (선택 사항)
-    ws['!cols'] = [
-        { wch: 8 }, // A: index
-        { wch: 10 },// B: 항목
-        { wch: 10 },// C: 타입
-        { wch: 15 },// D: 카테고리
-        { wch: 20 },// E: 제목
-        { wch: 40 },// F: 설명
-        { wch: 40 },// G: 메모
-        { wch: 15 },// H: 관리자 페이지
-        { wch: 15 },// I: 관리자 카테고리
-        { wch: 15 },// J: 프론트 기간
-        { wch: 15 },// K: 백엔드 기간
-        { wch: 12 },// L: 금액
-    ];
+  }, [selectedCompanyCode, currentColumnsInfo, currentTableData]);
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '단가표_템플릿');
-    XLSX.writeFile(wb, '단가표_템플릿.xlsx');
-  }, []);
+  const handleSaveUploadResult = async () => {
+    try {
+      if (!selectedCompanyCode || !uploadSuccessData.length || !uploadColumns.length) {
+        showToast('업로드할 데이터가 없습니다.', 'error');
+        return;
+      }
+
+      // API 형식에 맞춰 데이터 구성
+      const processedData = uploadSuccessData.map((item: any) => {
+        const processedItem = { ...item };
+        
+        // id가 빈 값이면 필드 자체를 제거 (신규 생성으로 인식)
+        if (!processedItem.id || processedItem.id === '') {
+          delete processedItem.id;
+        }
+        
+        return processedItem;
+      });
+
+      const apiPayload = {
+        companyCode: selectedCompanyCode,
+        columns: uploadColumns.map((col: any) => ({
+          name: col.name,
+          type: col.type,
+          required: col.required,
+          orderNo: col.orderNo
+        })),
+        data: processedData
+      };
+
+
+      // 실제 API 호출
+      await uploadUnitPrices(apiPayload);
+      
+      // 업로드 성공 시 처리
+      showToast('데이터가 성공적으로 업로드되었습니다.', 'success');
+      
+      // 업로드 성공 후 테이블 새로고침
+      if (listRef.current) {
+        listRef.current.refetch();
+      }
+      
+      // 팝업 닫기
+      closeAlert();
+      
+      // 상태 초기화
+      setUploadSuccessData([]);
+      setUploadColumns([]);
+      
+    } catch (error) {
+      console.error('단가 업로드 에러:', error);
+      showToast('데이터 업로드 중 오류가 발생했습니다.', 'error');
+    }
+  };
+
+  const showAlert = (message: string, type: 'success' | 'error' | 'warning' = 'error') => {
+    setAlertMessage(message);
+    setAlertType(type);
+    setIsAlertOpen(true);
+  };
+
+  const closeAlert = () => {
+    setIsAlertOpen(false);
+    setAlertMessage('');
+  };
 
   return (
     <>
-      <CmsResponsiveContainer<PriceList>
-        ref={listRef}
+      <CmsResponsiveContainer<any>
+        key={`price-list-${selectedCompanyCode || 'no-company'}-${refetchTrigger}`}
         title="단가표 관리"
-        excelFileName="PriceList"
-        columns={columns}
+        data={transformedTableData}
+        columns={dynamicColumns}
         fetchData={fetchData}
-        enableSearch
         enableDateFilter={false}
-        searchPlaceholder="기능명, 설명, 항목 검색"
+        enableCompanySearch={true}
+        onCompanySelect={handleCompanySelect}
         onRowClick={handleRowClick}
         themeMode="light"
         isShowExcelTemplate={true}
@@ -334,42 +1117,22 @@ const PriceListPage: React.FC = () => {
         accept=".xlsx, .xls"
       />
 
-      {jsonData && markdownData && (
-        <ContentContainer>
-          <OutputSection>
-            <h2>변환된 JSON 데이터</h2>
-            {jsonData.map((sheet, index) => (
-              <div key={index}>
-                <h3>{sheet.sheetName} 시트</h3>
-                <PreformattedText>{JSON.stringify(sheet.data, null, 2)}</PreformattedText>
-              </div>
-            ))}
-          </OutputSection>
-          <OutputSection>
-            <h2>변환된 마크다운 데이터</h2>
-            {markdownData.map((sheet, index) => (
-              <div key={index}>
-                <h3>{sheet.sheetName} 시트</h3>
-                <PreformattedText>{sheet.markdown}</PreformattedText>
-              </div>
-            ))}
-          </OutputSection>
-        </ContentContainer>
-      )}
+      <PriceEditPopup
+        isOpen={isPopupOpen}
+        onClose={closePopup}
+        onSave={handleSaveItem}
+        selectedItem={selectedItem}
+        columnsInfo={currentColumnsInfo}
+      />
 
-      <CmsPopup title="단가표 상세" isOpen={isPopupOpen} onClose={closePopup}>
-        <StyledPopupContent>
-          {selectedItem && (
-            <>
-              <h3>
-                {selectedItem.function_name} ({selectedItem.code})
-              </h3>
-              <p>설명: {selectedItem.description}</p>
-              <p>금액: {selectedItem.price?.toLocaleString()}원</p>
-            </>
-          )}
-        </StyledPopupContent>
-      </CmsPopup>
+      {/* 알림 팝업 */}
+      <UploadResultPopup 
+        isOpen={isAlertOpen}
+        onClose={closeAlert}
+        onSave={alertType === 'success' || alertType === 'warning' ? handleSaveUploadResult : undefined}
+        type={alertType}
+        message={alertMessage}
+      />
     </>
   );
 };

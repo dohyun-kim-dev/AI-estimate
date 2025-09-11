@@ -1,0 +1,26 @@
+{
+    "sourceFile": "src/app/superAdmin/userData/price/UploadResultPopup.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1757470610096,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1757472124089,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -134,8 +134,9 @@\n     <CmsPopup \n       title={getTitle()} \n       isOpen={isOpen} \n       onClose={onClose}\n+      backgroundColor='#fff'\n       bottomFloating={\n         <PopupFooter>\n           <CancelButton onClick={onClose}>닫기</CancelButton>\n           {onSave && (\n"
+                },
+                {
+                    "date": 1757472131473,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -134,9 +134,8 @@\n     <CmsPopup \n       title={getTitle()} \n       isOpen={isOpen} \n       onClose={onClose}\n-      backgroundColor='#fff'\n       bottomFloating={\n         <PopupFooter>\n           <CancelButton onClick={onClose}>닫기</CancelButton>\n           {onSave && (\n"
+                }
+            ],
+            "date": 1757470610096,
+            "name": "Commit-0",
+            "content": "'use client';\n\nimport React from 'react';\nimport styled from 'styled-components';\nimport CmsPopup from '@/components/CmsPopup';\nimport { AppColors } from '@/styles/colors';\n\n// 팝업 내용 영역 스타일\nconst PopupContent = styled.div`\n  padding: 20px;\n  display: flex;\n  flex-direction: column;\n  gap: 16px;\n`;\n\nconst AlertIcon = styled.div`\n  font-size: 32px;\n  text-align: center;\n  margin-bottom: 8px;\n`;\n\nconst AlertMessage = styled.div<{ type: 'success' | 'error' | 'warning' }>`\n  white-space: pre-line;\n  line-height: 1.6;\n  font-size: 14px;\n  color: ${props => {\n    switch (props.type) {\n      case 'success': return '#155724';\n      case 'error': return '#721c24';\n      case 'warning': return '#856404';\n      default: return '#333';\n    }\n  }};\n  background-color: ${props => {\n    switch (props.type) {\n      case 'success': return '#d4edda';\n      case 'error': return '#f8d7da';\n      case 'warning': return '#fff3cd';\n      default: return '#f8f9fa';\n    }\n  }};\n  padding: 16px;\n  border-radius: 8px;\n  border: 1px solid ${props => {\n    switch (props.type) {\n      case 'success': return '#c3e6cb';\n      case 'error': return '#f5c6cb';\n      case 'warning': return '#ffeaa7';\n      default: return '#dee2e6';\n    }\n  }};\n`;\n\n// Footer 버튼 스타일\nconst PopupFooter = styled.div`\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  width: 100%;\n  gap: 12px;\n`;\n\nconst FooterButton = styled.button`\n  width: 120px;\n  height: 48px;\n  border-radius: 6px;\n  font-weight: bold;\n  font-size: 16px;\n  cursor: pointer;\n  border: none;\n`;\n\nconst CancelButton = styled(FooterButton)`\n  background-color: #ffffff;\n  color: ${AppColors.onSurface};\n  border: 1px solid ${AppColors.border};\n\n  &:hover {\n    background-color: #f8f9fa;\n  }\n`;\n\nconst SaveButton = styled(FooterButton)`\n  background-color: ${AppColors.primary};\n  color: ${AppColors.onPrimary};\n  border: 1px solid ${AppColors.primary};\n\n  &:hover {\n    background-color: #0056b3;\n  }\n\n  &:disabled {\n    background-color: #ccc;\n    cursor: not-allowed;\n    border: 1px solid #ccc;\n  }\n`;\n\n// Props 타입 정의\ninterface UploadResultPopupProps {\n  isOpen: boolean;\n  onClose: () => void;\n  onSave?: () => void; // 저장 버튼 콜백 추가\n  type: 'success' | 'error' | 'warning';\n  message: string;\n}\n\nconst UploadResultPopup: React.FC<UploadResultPopupProps> = ({\n  isOpen,\n  onClose,\n  onSave,\n  type,\n  message\n}) => {\n  const getTitle = () => {\n    switch (type) {\n      case 'success': return '성공';\n      case 'warning': return '경고';\n      case 'error': return '오류';\n      default: return '알림';\n    }\n  };\n\n  const getIcon = () => {\n    switch (type) {\n      case 'success': return '✅';\n      case 'warning': return '⚠️';\n      case 'error': return '❌';\n      default: return 'ℹ️';\n    }\n  };\n\n  return (\n    <CmsPopup \n      title={getTitle()} \n      isOpen={isOpen} \n      onClose={onClose}\n      bottomFloating={\n        <PopupFooter>\n          <CancelButton onClick={onClose}>닫기</CancelButton>\n          {onSave && (\n            <SaveButton onClick={onSave}>저장</SaveButton>\n          )}\n        </PopupFooter>\n      }\n    >\n      <PopupContent>\n        <AlertIcon>\n          {getIcon()}\n        </AlertIcon>\n        <AlertMessage type={type}>\n          {message}\n        </AlertMessage>\n      </PopupContent>\n    </CmsPopup>\n  );\n};\n\nexport default UploadResultPopup;\n"
+        }
+    ]
+}

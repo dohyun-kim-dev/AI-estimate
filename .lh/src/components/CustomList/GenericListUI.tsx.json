@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 19,
+            "activePatchIndex": 21,
             "patches": [
                 {
                     "date": 1756112102683,
@@ -84,6 +84,14 @@
                 {
                     "date": 1756798040948,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -77,9 +77,9 @@\n   onAdd?: () => void;\n   addButtonLabel?: string;\n   deleteBtnCallBack?: () => void;\n   isShowExcelTemplate?: boolean;\n-  excelTemplateBtnCallBack?: (() => void); // ⭐️ 추가된 부분: 템플릿 다운로드 콜백\n+  excelTemplateBtnCallBack?: (() => void); \n   excelUploadBtnCallBack?: (() => void);\n   // 고객사 검색 관련 props\n   enableCompanySearch?: boolean;\n   onCompanySelect?: (company: { id: string; name: string }) => void;\n"
+                },
+                {
+                    "date": 1757386800477,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -657,9 +657,9 @@\n   background-size: 16px 16px;\n   \n   &:hover {\n     background-color: ${({ $themeMode }) =>\n-      $themeMode === \"light\" ? \"#f5f5f5\" : THEME_COLORS.dark.hoverBackground};\n+      $themeMode === \"light\" ? \"#f5f5f5\" : THEME_COLORS.dark.background};\n   }\n `;\n \n const SearchButton = styled.button<{ $themeMode: ThemeMode }>`\n"
+                },
+                {
+                    "date": 1757406665362,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -48,8 +48,9 @@\n export interface FetchParams {\n   fromDate?: string; // Optional\n   toDate?: string; // Optional\n   keyword?: string; // Optional\n+  companyCode?: string; // Optional - 고객사 코드\n }\n \n export interface FetchResult<T> {\n   data: T[];\n@@ -181,17 +182,19 @@\n   const [toDate, setToDate] = useState(initialState.toDate ?? dayjs().format(\"YYYY-MM-DD\"));\n   const [searchTermInput, setSearchTermInput] = useState(initialState.keyword ?? \"\"); // 검색 \"입력\" 상태\n   const [searchKeyword, setSearchKeyword] = useState(initialState.keyword ?? \"\"); // 실제 \"적용된\" 검색어\n   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);\n-  const [selectedCompany, setSelectedCompany] = useState<{ id: string; name: string } | null>(null);\n+  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string | null>(null);\n+  const [selectedCompanyName, setSelectedCompanyName] = useState<string>(\"\");\n \n   // --- 데이터 로딩 콜백 --- (API 호출 시점 변경)\n   const fetchDataCallback = useCallback(async () => {\n     setIsLoading(true);\n     setError(null);\n     try {\n       const params: FetchParams = {\n         keyword: searchKeyword || undefined,\n+        companyCode: selectedCompanyCode || undefined,\n       };\n       if (enableDateFilter) {\n         params.fromDate = fromDate;\n         params.toDate = toDate;\n@@ -210,9 +213,9 @@\n       setAllItems(undefined);\n     } finally {\n       setIsLoading(false);\n     }\n-  }, [searchKeyword, fromDate, toDate, enableDateFilter, fetchData]); // keyword, date 변경 시 호출\n+  }, [searchKeyword, selectedCompanyCode, fromDate, toDate, enableDateFilter, fetchData]); // selectedCompanyCode 의존성 추가\n   \n   useImperativeHandle(ref, () => ({\n     refetch: () => {\n       fetchDataCallback(); // 내부 API 호출\n@@ -403,9 +406,9 @@\n                   <Flex>\n                     <CompanySearchInput\n                       type=\"text\"\n                       placeholder=\"고객사를 선택하세요\"\n-                      value={selectedCompany?.name || ''}\n+                      value={selectedCompanyName || ''}\n                       readOnly\n                       onClick={() => setIsCompanyModalOpen(true)}\n                       $themeMode={themeMode}\n                     />\n@@ -440,12 +443,17 @@\n             <CompanySearchModal\n               isOpen={isCompanyModalOpen}\n               onClose={() => setIsCompanyModalOpen(false)}\n               onSelect={(company) => {\n-                setSelectedCompany(company);\n+                setSelectedCompanyCode(company.companyCode);\n+                setSelectedCompanyName(company.companyName);\n                 if (onCompanySelect) {\n-                  onCompanySelect(company);\n+                  onCompanySelect({ id: company.companyCode, name: company.companyName });\n                 }\n+                // 회사 선택 시 자동으로 데이터 재로드\n+                setTimeout(() => {\n+                  fetchDataCallback();\n+                }, 0);\n               }}\n               themeMode={themeMode}\n             />\n           )}\n"
                 }
             ],
             "date": 1756112102683,

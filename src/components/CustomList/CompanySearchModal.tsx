@@ -3,12 +3,39 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { THEME_COLORS, ThemeMode } from "@/styles/theme_colors";
+import { getCompanyList } from '@/lib/api/admin/adminApi';
 
 interface Company {
-  id: string;
+  _id: string;
   name: string;
-  ceo: string;
-  createdTime: string;
+  companyName: string;
+  cellphone: string;
+  email: string;
+  companyCode: string;
+  dbName: string;
+  address: string;
+  detailAddress: string;
+  ciImage: string;
+  businessImage: string;
+  contractType: string;
+  contractStartDate: string;
+  contractEndDate: string;
+  aiConfidence: any;
+  mode: string;
+  category: string;
+  createAt: string;
+  updateAt: string;
+}
+
+interface ApiResponse {
+  statusCode: number;
+  message: string;
+  data: Company[];
+  metadata: {
+    allCnt: number;
+    totalCnt: number;
+  };
+  error: any;
 }
 
 interface CompanySearchModalProps {
@@ -28,42 +55,66 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // 회사 검색 함수 (API 연동 필요)
-  const searchCompanies = async (term: string) => {
+  // 고객사 목록 조회 함수
+  const loadCompanyList = async (keyword?: string) => {
     setLoading(true);
     try {
-      // TODO: API 연동
-      // const response = await fetch(`/api/companies/search?term=${term}`);
-      // const data = await response.json();
-      // setCompanies(data);
+      const today = new Date().toISOString().split('T')[0]; // 오늘 날짜 (YYYY-MM-DD)
+      const params = {
+        keyword: keyword || '',
+        fromDate: '2025-08-09', // 고정값
+        toDate: today // 오늘 날짜
+      };
       
-      // 테스트 데이터
-      setCompanies([
-        {
-          id: '1',
-          name: '엠브이픽',
-          ceo: '김브이',
-          createdTime: '2025-01-10',
-        },
-        {
-          id: '2',
-          name: 'KT 지사',
-          ceo: '김철수',
-          createdTime: '2025-02-20',
-        },
-        {
-          id: '3',
-          name: '여기닷',
-          ceo: '김여기',
-          createdTime: '2025-03-15',
-        },
-      ]);
+      console.log('🔍 고객사 조회 시작');
+      console.log('📅 API 호출 파라미터:', params);
+      
+      // 토큰 상태 확인
+      const adminToken = localStorage.getItem('admin_access_token');
+      console.log('🔑 localStorage에서 토큰 확인:', adminToken ? 'exists' : 'not found');
+      console.log('🌍 현재 환경:', import.meta.env.VITE_ENV_NAME);
+      console.log('🌐 현재 프로토콜:', window.location.protocol);
+      
+      const response = await getCompanyList(params);
+      
+      console.log('✅ 고객사 조회 API 응답 성공:', response);
+      console.log('📊 응답 타입:', typeof response, Array.isArray(response));
+      
+      // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+      const actualResponse = Array.isArray(response) ? response[0] : response;
+      console.log('📋 실제 응답 데이터:', actualResponse);
+      
+      // API 응답 구조에 맞게 data 필드에서 배열을 추출
+      const typedResponse = actualResponse as ApiResponse;
+      if (typedResponse && typedResponse.data && Array.isArray(typedResponse.data)) {
+        console.log('📋 고객사 목록 설정:', typedResponse.data.length, '개');
+        console.log('📋 첫 번째 고객사 데이터:', typedResponse.data[0]);
+        setCompanies(typedResponse.data);
+      } else {
+        console.log('⚠️ API 응답이 예상된 구조가 아님:', typedResponse);
+        setCompanies([]);
+      }
     } catch (error) {
-      console.error('회사 검색 중 오류 발생:', error);
+      console.error('❌ 고객사 목록 조회 중 오류 발생:', error);
+      console.error('❌ 에러 상세:', JSON.stringify(error, null, 2));
+      // 오류 발생 시 빈 배열로 설정
+      setCompanies([]);
     } finally {
       setLoading(false);
     }
   };
+
+  // 회사 검색 함수
+  const searchCompanies = async (term: string) => {
+    await loadCompanyList(term);
+  };
+
+  // 모달이 열릴 때 초기 데이터 로드
+  useEffect(() => {
+    if (isOpen) {
+      loadCompanyList();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (searchTerm.length >= 2) {
@@ -71,8 +122,19 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
         searchCompanies(searchTerm);
       }, 300);
       return () => clearTimeout(debounce);
+    } else if (searchTerm.length === 0) {
+      // 검색어가 없으면 전체 목록 다시 로드
+      loadCompanyList();
     }
   }, [searchTerm]);
+
+  const handleSearch = () => {
+    if (searchTerm.trim()) {
+      searchCompanies(searchTerm.trim());
+    } else {
+      loadCompanyList();
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -92,8 +154,8 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
                       onChange={(e) => setSearchTerm(e.target.value)}
                       $themeMode={themeMode}
                     />
-                    <SearchButton onClick={() => setIsCompanyModalOpen(true)} $themeMode={themeMode}>
-                      검색
+                    <SearchButton onClick={handleSearch} $themeMode={themeMode}>
+                      조회
                     </SearchButton>
                   </Flex>
 
@@ -103,8 +165,8 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
               <tr>
                 <th>No</th>
                 <th>가입일</th>
-                <th>고객사명</th>
-                <th>대표명</th>
+                <th>회사명</th>
+                <th>담당자</th>
               </tr>
             </TableHeader>
             <TableBody>
@@ -117,7 +179,7 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
               ) : companies.length > 0 ? (
                 companies.map((company, index) => (
                   <TableRow
-                    key={company.id}
+                    key={company._id}
                     onClick={() => {
                       onSelect(company);
                       onClose();
@@ -125,16 +187,16 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
                     $themeMode={themeMode}
                   >
                     <td>{index + 1}</td>
-                    <td>{company.createdTime}</td>
+                    <td>{company.createAt}</td>
+                    <td>{company.companyName || company.name}</td>
                     <td>{company.name}</td>
-                    <td>{company.ceo}</td>
                   </TableRow>
                 ))
               ) : (
                 <tr>
                   <td colSpan={4}>
                     <NoResults $themeMode={themeMode}>
-                      {searchTerm.length > 0 ? '검색 결과가 없습니다.' : '검색어를 입력하세요.'}
+                      {searchTerm.length > 0 ? '검색 결과가 없습니다.' : '고객사 목록을 불러오는 중...'}
                     </NoResults>
                   </td>
                 </tr>
@@ -267,7 +329,7 @@ const TableRow = styled.tr<{ $themeMode: ThemeMode }>`
 
   &:hover {
     background-color: ${({ $themeMode }) =>
-      $themeMode === 'light' ? '#f5f5f5' : THEME_COLORS.dark.hoverBackground};
+      $themeMode === 'light' ? '#f5f5f5' : THEME_COLORS.dark.background};
   }
 `;
 
@@ -295,12 +357,12 @@ const CompanySearchInput = styled(SearchInput)`
   margin: 0px;
   &:hover {
     background-color: ${({ $themeMode }) =>
-      $themeMode === "light" ? "#f5f5f5" : THEME_COLORS.dark.hoverBackground};
+      $themeMode === "light" ? "#f5f5f5" : THEME_COLORS.dark.background};
   }
 `;
 
 const SearchButton = styled.button<{ $themeMode: ThemeMode }>`
-  width: 60px;
+  width: 80px;
   height: 40px;
   margin-left: 10px;
   background: ${({ $themeMode }) =>

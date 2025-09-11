@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 7,
             "patches": [
                 {
                     "date": 1756187053867,
@@ -20,6 +20,22 @@
                 {
                     "date": 1756892238115,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -33,8 +33,10 @@\n     description?: string;\n     email?: string;\n     emailYn?: 'Y' | 'N';\n     smsYn?: 'Y' | 'N';\n+    password?: string;\n+    companyCode?: string;\n   };\n \n   export type AdminPasswordUpdateParams = {\n     targetAdminId: string; // 로그인 ID\n@@ -42,11 +44,12 @@\n   };\n \n \n   export type TermGetListParams = {\n-    index: number;\n+    index?: number;\n     termsType: string;\n     content: string;\n+    language: string;\n   };\n \n   export type PromptGetListParams = {\n     keyword: string;\n"
+                },
+                {
+                    "date": 1757381593726,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -22,10 +22,20 @@\n     smsYn?: string;\n     companyCode?: string; // 옵션: 없으면 통합관리자, 있으면 고객사 관리자\n   };\n \n-  export type UnitPriceGetListParams = Record<string, never>;\n+    export type UnitPriceGetListParams = {\n+    keyword?: string;\n+    fromDate?: string;\n+    toDate?: string;\n+  };\n \n+  export type AllUnitPricesParams = {\n+    keyword?: string;\n+    fromDate?: string;\n+    toDate?: string;\n+  };\n+\n   export type AdminUpdateParams = {\n     _id: string;\n     targetAdminId: string; // 로그인 ID\n     name?: string;\n@@ -44,10 +54,8 @@\n   };\n \n \n   export type TermGetListParams = {\n-    index?: number;\n-    termsType: string;\n     content: string;\n     language: string;\n   };\n \n"
+                },
+                {
+                    "date": 1757400389192,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -71,4 +71,10 @@\n     index: number;\n     content: string;\n   };\n \n+  export type CompanyGetListParams = {\n+    keyword?: string;\n+    fromDate?: string;\n+    toDate?: string;\n+  };\n+\n"
+                },
+                {
+                    "date": 1757406786724,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,8 +29,9 @@\n     toDate?: string;\n   };\n \n   export type AllUnitPricesParams = {\n+    companyCode?: string;\n     keyword?: string;\n     fromDate?: string;\n     toDate?: string;\n   };\n"
+                },
+                {
+                    "date": 1757472844799,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -78,4 +78,18 @@\n     fromDate?: string;\n     toDate?: string;\n   };\n \n+  // 단가 업로드 관련 타입들\n+  export type UnitPriceColumn = {\n+    name: string;\n+    type: string;\n+    required: boolean;\n+    orderNo: number;\n+  };\n+\n+  export type UnitPriceUploadParams = {\n+    companyCode: string;\n+    columns: UnitPriceColumn[];\n+    data: any[];\n+  };\n+\n"
                 }
             ],
             "date": 1756187053867,
