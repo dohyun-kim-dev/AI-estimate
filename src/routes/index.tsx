@@ -52,8 +52,9 @@ export default function AppRoutes() {
           <Route path="ai" element={<AI />} />
           <Route path="ai/my-estimate" element={<AIMyEstimate />} />
           <Route path="ai/setting" element={<AISetting />} />
-          <Route path="ai/share/:sessionId" element={<AIShare />} />
         </Route>
+
+          <Route path="ai/share/:sessionId" element={<AIShare />} />
 
         <Route element={<AIEstimateLayout />}>
           <Route path="ai-estimate" element={<AIEstimate />} />

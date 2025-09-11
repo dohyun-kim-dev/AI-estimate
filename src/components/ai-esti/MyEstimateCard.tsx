@@ -267,9 +267,10 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
 
   const handleCopy = async () => {
     try {
-      const textToCopy = `주식회사 여기닷에서 발급된 견적서를 다운로드해보세요 !
- 
-${shareUrl}
+       const textToCopy = `${shareUrl}
+
+
+⏫위 링크 클릭 시 에이고가 발급한 견적서로 이동합니다
 
 🏢공급사명 : 주식회사 여기닷
  
@@ -279,7 +280,8 @@ ${shareUrl}
  
 🌐공급사 홈페이지
 https://heredotcorp.com
-`;
+ 
+ `;
       await navigator.clipboard.writeText(textToCopy);
       success('링크가 복사되었습니다.');
       setOpenShare(false);

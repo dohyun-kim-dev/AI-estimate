@@ -114,6 +114,15 @@ const UserMessageContainer = styled.div`
   width: fit-content;
 `;
 
+const  Divider = styled.hr`
+  border: none;
+  border-top: 1px solid ${({ theme }) => theme.border};
+  margin: 12px 0 28px 0;
+  width: 100%;
+  align-self: center;
+`;
+
+
 const UserImagePreview = styled.img`
   max-width: 200px;
   max-height: 200px;
@@ -136,7 +145,7 @@ const StyledDiv = styled.div`
 
 const ReadOnlyNotice = styled.div`
   text-align: center;
-  padding: 20px;
+  padding: 12px 16px;
   background: ${({ theme }) => theme.surface1};
   border-radius: 8px;
   margin: 12px;
@@ -337,18 +346,18 @@ const SharePage: React.FC = () => {
   if (loading) {
     return (
       <LayoutWrapper>
-        <TopNav>
-          {/* <div className="left-icons">
+        {/* <TopNav>
+          <div className="left-icons">
             <Icon 
               src={isDarkMode ? '/ai-estimate/arrow_back.png' : '/ai-estimate/arrow_back.png'} 
               width={24} 
               height={24} 
               onClick={handleBack}
             />
-          </div> */}
+          </div>
           <NavTitle>공유된 채팅</NavTitle>
           <div className="right-icons"></div>
-        </TopNav>
+        </TopNav> */}
         <Container>
           <LoadingContainer>
             <LoadingSpinner />
@@ -362,18 +371,18 @@ const SharePage: React.FC = () => {
   if (errorMessage) {
     return (
       <LayoutWrapper>
-        <TopNav>
-          {/* <div className="left-icons">
+        {/* <TopNav>
+          <div className="left-icons">
             <Icon 
               src={isDarkMode ? '/ai-estimate/arrow_back.png' : '/ai-estimate/arrow_back.png'} 
               width={24} 
               height={24} 
               onClick={handleBack}
             />
-          </div> */}
+          </div>
           <NavTitle>공유된 채팅</NavTitle>
           <div className="right-icons"></div>
-        </TopNav>
+        </TopNav> */}
         <Container>
           <ErrorContainer>
             <ErrorIcon>⚠️</ErrorIcon>
@@ -391,7 +400,7 @@ const SharePage: React.FC = () => {
 
   return (
     <LayoutWrapper>
-      <TopNav>
+      {/* <TopNav>
         <div className="left-icons">
           <Icon 
             src={isDarkMode ? '/ai-estimate/arrow_back.png' : '/ai-estimate/arrow_back.png'} 
@@ -402,13 +411,15 @@ const SharePage: React.FC = () => {
         </div>
         <NavTitle>공유된 채팅</NavTitle>
         <div className="right-icons"></div>
-      </TopNav>
+      </TopNav> */}
       
       <Container>
         <ReadOnlyNotice>
-          📖 읽기 전용 모드 - 이 채팅 세션은 공유된 세션입니다. 새로운 메시지를 추가할 수 없습니다.
+          📖 AIGO(에이고) 견적 공유 모드
         </ReadOnlyNotice>
         
+                <Divider />
+
         <ChatBox>
           {messages.map((message, index) => {
             if (message.role === 'user') {
