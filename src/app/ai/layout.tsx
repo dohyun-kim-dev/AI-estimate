@@ -274,6 +274,9 @@ export default function AILayout() {
     // 추가할 문구
     const textToCopy = `${shareUrl}
 
+
+⏫위 링크 클릭 시 에이고가 발급한 견적서로 이동합니다
+
 🏢공급사명 : 주식회사 여기닷
  
 📞전화문의 : 031-111-1234

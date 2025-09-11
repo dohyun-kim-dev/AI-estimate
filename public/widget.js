@@ -259,15 +259,25 @@ const isDarkMode = isColorDark(backgroundColor);
   // 상태: 확장 여부
   let isExpanded = false;
 
-  // 높이 적용 함수
+  // 높이/너비 적용 함수
   const applyHeights = () => {
     if (window.innerWidth > 520) {
       const h = isExpanded ? expandedVh : desktopVh;
       root.style.height = h + 'vh';
       root.style.maxHeight = '90vh';
+      // 확장 시 가로도 30vw, 축소 시 원래대로
+      if (isExpanded) {
+        root.style.width = '30vw';
+        root.style.maxWidth = 'calc(100vw - 24px)';
+      } else {
+        root.style.width = W + 'px';
+        root.style.maxWidth = 'calc(100vw - 24px)';
+      }
     } else {
       root.style.height = '80vh';
       root.style.maxHeight = '90vh';
+      root.style.width = '';
+      root.style.maxWidth = '';
     }
   };
 

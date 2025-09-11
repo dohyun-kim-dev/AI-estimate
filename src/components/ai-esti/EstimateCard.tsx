@@ -304,6 +304,8 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
   const handleCopy = async () => {
     try {
       const textToCopy = `${shareUrl}
+      
+⏫위 링크 클릭 시 에이고가 발급한 견적서로 이동합니다
 
 🏢공급사명 : 주식회사 여기닷
  

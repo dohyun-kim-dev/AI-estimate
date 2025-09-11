@@ -157,7 +157,7 @@ interface BottomInputProps {
 const BottomInput: React.FC<BottomInputProps> = ({
   placeholder = "서비스 종류와 주요 기능, 예상 기간/예산을 입력! \n예시: '온라인 쇼핑몰, 결제/배송/회원가입",
   onSubmit,
-  maxSubmissions = 1,
+  maxSubmissions = 10,
   onFileInput,
   isUploading,
   isProcessing,
