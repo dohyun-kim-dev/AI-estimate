@@ -494,7 +494,11 @@ const PriceListPage: React.FC = () => {
 
   const handleCompanySelect = useCallback(async (company: { id: string; name: string }) => {
     console.log('=== Company selected START ===:', company);
-    
+    console.log("companyCode:",company.id);
+     if (!company.id) {
+    showToast('회사 코드가 없습니다. 고객사를 다시 선택해주세요.', 'error');
+    return;
+  }
     // 중복 호출 방지를 위한 체크
     if (selectedCompanyCode === company.id) {
       console.log('Same company selected, skipping');
@@ -650,6 +654,7 @@ const PriceListPage: React.FC = () => {
         
         // 모든 상태를 한 번에 업데이트 (React 18 batch update)
         React.startTransition(() => {
+          console.log("company.id",company.id, company)
           setSelectedCompanyCode(company.id);
           setCurrentColumnsInfo(allColumnsForTable);
           setCurrentTableData(apiData);
