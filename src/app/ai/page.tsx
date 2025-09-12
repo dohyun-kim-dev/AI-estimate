@@ -891,64 +891,32 @@ export default function AiChatPage() {
           } else {
 
             const estimateId = m.estimateId
-             if (m.role === 'ai' && m.isLoading && (!m.content || m.content.trim() === '')) {
-              console.log('빈 스트리밍 메시지 건너뜀', m);
-    return (
-      <StyledAiMessage
-        key={idx}
-        content={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <ProfileSpinner src="/ai-estimate/pretty.png" />
-            <GradientText>어떤 답변이 도움이 될지 고민하는 중...</GradientText>
-          </div>
-        }
-        profileImage={null}
-        name="강유하"
-        isFullWidth={false}
-      />
-    );
-  }
-  // 2. 스트리밍 중 (content 있음, isLoading)
-  if (m.role === 'ai' && m.isLoading && m.content) {
-    console.log('스트리밍 중 메시지 렌더링', m);
-    return (
-      <StyledAiMessage
-        key={idx}
-        content={
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <ProfileSpinner src="/ai-estimate/pretty.png" />
-              <h2 style={{
-                fontSize: 18,
-                fontWeight: 500,
-                lineHeight: '160%',
-                margin: '4px 0 4px 0',
-                color: 'var(--theme-text)' // 실제 테마 컬러로 대체
-              }}>강유하</h2>
-            </div>
-            <div style={{ marginTop: 8 }}>
-              {m.content}
-            </div>
-          </div>
-        }
-        profileImage={null}
-        name={null}
-        isFullWidth={isEstimateMessage(m.content)}
-      />
-    );
-  }}
-  // 3. 답변 완료(기존 메시지)
-  if (m.role === 'ai') {
-    return (
-      <StyledAiMessage
-        key={idx}
-        content={<AiMessageContent content={m.content} chatSessionId={chatSessionId} estimate_Id={m.estimateId} />}
-        profileImage="/ai-estimate/pretty.png"
-        name="강유하"
-        isFullWidth={isEstimateMessage(m.content)}
-      />
-    );
-  }
+                 if (m.isLoading) {
+              return (
+                <StyledAiMessage
+                  key={idx}
+                  content={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <ProfileSpinner src="/ai-estimate/pretty.png" />
+                      <GradientText>어떤 답변이 도움이 될지 고민하는 중...</GradientText>
+                    </div>
+                  }
+                  profileImage={null}
+                  name="강유하"
+                  isFullWidth={false}
+                />
+              );
+            }
+            return (
+              <StyledAiMessage
+                key={idx}
+                content={<AiMessageContent content={m.content} chatSessionId={chatSessionId} estimate_Id={estimateId} />} 
+                profileImage="/ai-estimate/pretty.png"
+                name="강유하"
+                isFullWidth={isEstimateMessage(m.content)}
+              />
+            );
+          }
           // 필요하다면 system 등 다른 role도 분기 가능
           return null;
         })}

@@ -197,10 +197,8 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
     // 사용자 메시지 임시 추가
     addMessage({ role: 'user', content: userMessageContent });
-    // AI 메시지는 content: ''로만, isLoading: true로 한 번만 추가 (중복 방지)
-    setTimeout(() => {
-      addMessage({ role: 'ai', content: '', isLoading: true });
-    }, 0);
+    // ai 메시지는 isLoading: true로 추가 (실시간 업데이트용)
+    addMessage({ role: 'ai', content: '', isLoading: true });
   console.log('사용자 메시지 및 빈 AI 메시지 추가 완료', { userMessageContent }, { role: 'ai', content: '', isLoading: true });
 
     let currentSessionId = chatSessionId;
@@ -296,11 +294,14 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       const reply = await sendChat(combinedPrompt, filesForAI, {
         streaming: true,
         onStream: (chunk) => {
+          const wasEmpty = aiReply.length === 0;
           aiReply += chunk;
           // 스트리밍 중에는 content만 누적, isLoading은 그대로 true 유지
-          updateLastMessage({
-            content: aiReply
+            updateLastMessage({
+            content: aiReply,
+            isLoading: wasEmpty ? false : false, 
           });
+            if (!firstChunkReceived && wasEmpty) firstChunkReceived = true;
         },
         abortSignal,
       });
