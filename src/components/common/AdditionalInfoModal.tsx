@@ -116,14 +116,9 @@ export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoMod
   // 모달이 열릴 때마다 상태 초기화
   useEffect(() => {
     if (open) {
-      // additionalInfoUser의 정보가 있으면 초기값으로 설정
-      if (additionalInfoUser) {
-        setName(additionalInfoUser.name || '');
-        setEmail(additionalInfoUser.email || '');
-      } else {
-        setName('');
-        setEmail('');
-      }
+      // 모달이 열릴 때마다 모든 상태를 초기화
+      setName('');
+      setEmail('');
       setCellphone('')
       setVerificationCode('')
       setShowVerification(false)
@@ -132,7 +127,7 @@ export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoMod
       setTermsAgreed(false)
       setIsFormValid(false)
     }
-  }, [open, additionalInfoUser])
+  }, [open])
 useEffect(() => {
     const isValid = Validators.required(name) &&
       Validators.email(email) &&

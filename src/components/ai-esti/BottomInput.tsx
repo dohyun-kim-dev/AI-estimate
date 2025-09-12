@@ -135,7 +135,7 @@ const FilePreviewArea = styled.div`
 
 interface BottomInputProps {
   placeholder?: string;
-  onSubmit?: (value: string, abortSignal?: AbortSignal) => Promise<void>;
+  onSubmit?: (value: string, options?: { displayMessage?: string; abortSignal?: AbortSignal }) => Promise<void>;
   maxSubmissions?: number;
   onFileInput?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isUploading: boolean;
@@ -258,14 +258,14 @@ const BottomInput: React.FC<BottomInputProps> = ({
       setAbortController(newAbort);
 
       if (isLoggedIn) {
-        await onSubmit(value.trim(), newAbort.signal);
+        await onSubmit(value.trim(), { abortSignal: newAbort.signal });
         setValue('');
         return;
       }
 
       const storedCount = Number(localStorage.getItem('remainingCount') || maxSubmissions);
       if (storedCount > 0) {
-        await onSubmit(value.trim(), newAbort.signal);
+        await onSubmit(value.trim(), { abortSignal: newAbort.signal });
         setValue('');
         const newCount = storedCount - 1;
         setRemainingCount(newCount);

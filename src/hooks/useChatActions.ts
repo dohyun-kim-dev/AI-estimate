@@ -223,13 +223,15 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
   };
 
 
-  const handleSubmit = async (input: string, abortSignal?: AbortSignal) => {
+  const handleSubmit = async (input: string, options?: { displayMessage?: string; abortSignal?: AbortSignal }) => {
+    const displayMessage = options?.displayMessage || input;
+    const abortSignal = options?.abortSignal;
     if ((!input.trim() && uploadedFiles.length === 0) || isProcessing) return;
 
     setIsProcessing(true);
 
     // 🔥 URL 감지 및 처리 (분리된 모듈 사용)
-    const detectedUrls = detectUrls(input);
+    const detectedUrls = detectUrls(displayMessage);
     let urlAnalysisForAI = ''; // AI용 분석 결과
     let hasPartialResults = false;
     
@@ -265,13 +267,13 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     }
 
     // 사용자 메시지 생성 (URL을 짧게 표시)
-    let userMessageContent = input;
+    let userMessageContent = displayMessage;
     if (uploadedFiles.length > 0) {
       const fileInfo = uploadedFiles.map((file) => `[첨부파일: ${file.name}]`).join('\n');
-      userMessageContent = `${input}\n\n${fileInfo}`;
+      userMessageContent = `${displayMessage}\n\n${fileInfo}`;
     }
     
-    // URL이 감지되면 짧게 표시
+    // URL이 감지되면 짧게 표시 (displayMessage에서)
     if (detectedUrls.length > 0) {
       detectedUrls.forEach(url => {
         const shortUrl = shortenUrl(url);
@@ -302,9 +304,9 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       try {
         let createResponse;
         if (isAuthenticated()) {
-          createResponse = await createChatSession(input.slice(0, 20) || '새로운 채팅');
+          createResponse = await createChatSession(displayMessage.slice(0, 20) || '새로운 채팅');
         } else {
-          createResponse = await createGuestChatSession(input.slice(0, 20) || '새로운 채팅', userId);
+          createResponse = await createGuestChatSession(displayMessage.slice(0, 20) || '새로운 채팅', userId);
         }
         if (createResponse && createResponse.statusCode === 200 && createResponse.data && createResponse.data.length > 0 && createResponse.data[0]._id) {
           currentSessionId = createResponse.data[0]._id;

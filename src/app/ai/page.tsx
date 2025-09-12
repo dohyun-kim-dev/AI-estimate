@@ -638,7 +638,25 @@ const userId = getUserId() || '';
             <SideContent>
               <EstimateActionButtons
                 onConsult={() => console.log('문의하기')}
-                onSubmit={(action) => handleSubmit(action)}
+                onSubmit={(action) => {
+                  // 견적 데이터를 포함해서 AI에게 요청
+                  const aiPrompt = estimateData 
+                    ? `${action}\n\n[현재 견적 정보]\n프로젝트명: ${estimateData.project_name}\n총 금액: ${estimateData.categories?.reduce((sum, cat) => 
+                        sum + cat.sub_categories?.reduce((subSum, sub) => 
+                          subSum + sub.items?.reduce((itemSum, item) => 
+                            itemSum + (item.is_deleted ? 0 : parseFloat(item.price?.replace(/,/g, '') || '0')), 0) || 0, 0) || 0, 0)?.toLocaleString()}원\n\n[세부 항목]\n${estimateData.categories?.map(cat => 
+                      `${cat.category_name}:\n${cat.sub_categories?.map(sub => 
+                        `  ${sub.sub_category_name}:\n${sub.items?.filter(item => !item.is_deleted).map(item => 
+                          `    - ${item.name}: ${item.price}원 (${item.front_end_period || 0}주/${item.back_end_period || 0}주)`).join('\n')}`).join('\n')}`).join('\n\n')}\n\n위 견적을 기반으로 ${action}를 진행해주세요.`
+                    : action;
+                  
+                  // 사용자 메시지는 간단하게 표시
+                  const displayMessage = estimateData 
+                    ? `${estimateData.project_name} - ${action}`
+                    : action;
+                  
+                  handleSubmit(aiPrompt, { displayMessage });
+                }}
               />
             </SideContent>
           </TopSection>
