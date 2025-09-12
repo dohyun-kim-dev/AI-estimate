@@ -42,7 +42,8 @@ export const lightTheme = {
   buttonBottom: "#486D8F",
   detailModalBg: '#F5F5F5',
   detailButton: '#2E2E48',
-  detailSubtleText: '#6A6A6A'
+  detailSubtleText: '#6A6A6A',
+  shareTitle: '#585858'
 };
 
 export const darkTheme = {
@@ -88,7 +89,8 @@ export const darkTheme = {
   buttonBottom: "#3391FF",
   detailModalBg: '#37414D',
   detailButton: '#668EC0',
-  detailSubtleText: '#E3E3E3'
+  detailSubtleText: '#E3E3E3',
+  shareTitle: '#E5E5E5'
 };
 
 export type Theme = typeof lightTheme;

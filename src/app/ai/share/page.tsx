@@ -78,6 +78,7 @@ const NavTitle = styled.h1`
 
 const Container = styled.div`
   max-width: 960px;
+  width: 100vw;
   margin: 0 auto;
   padding: 1px;
   // padding-top: 76px;
@@ -148,12 +149,13 @@ const StyledDiv = styled.div`
 const ReadOnlyNotice = styled.div`
   text-align: center;
   padding: 12px 16px;
-  background: ${({ theme }) => theme.surface1};
+  // background: ${({ theme }) => theme.surface1};
   border-radius: 8px;
   margin: 12px;
-  color: ${({ theme }) => theme.subtleText};
-  font-size: 18px;
-  border: 1px solid ${({ theme }) => theme.border};
+  color: ${({ theme }) => theme.shareTitle};
+  font-weight: 600;
+  font-size: 20px;
+  // border: 1px solid ${({ theme }) => theme.border};
 `;
 
 const LoadingContainer = styled.div`
@@ -435,10 +437,10 @@ const SharePage: React.FC = () => {
       
       <Container>
         <ReadOnlyNotice>
-          📖 AIGO(에이고) 견적 공유 모드
+          AIGO 견적 열람 모드
         </ReadOnlyNotice>
 
-        <Divider />
+        {/* <Divider /> */}
 
         <ChatBox>
           {messages.map((message, index) => {

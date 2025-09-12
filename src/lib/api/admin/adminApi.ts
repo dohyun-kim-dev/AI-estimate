@@ -278,7 +278,7 @@ export async function getAllUnitPrices(
   
   // 선택적 파라미터들
   if (params.keyword) {
-    queryParams.append('keyword', params.keyword);
+    queryParams.append('keyword', params.keyword); 
   }
   
   // fromDate, toDate 처리 (기본값 설정)
@@ -288,6 +288,7 @@ export async function getAllUnitPrices(
   queryParams.append('toDate', toDate);
 
   const queryString = queryParams.toString();
+  console.log("query url",queryParams.toString());
   const url = `${BASE_URL}/cms/unit-prices?${queryString}`;
 
   return callAdminApi({
