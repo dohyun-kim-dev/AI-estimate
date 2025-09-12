@@ -372,3 +372,94 @@ export async function getEstimateHistory(offset: number = 0) {
     isCallPageLoader: false,
   });
 }
+
+// 단가표(유닛프라이스) 전체 조회 API (파라미터 없이 호출)
+export async function getAllUnitPrices() {
+  const url = getApiUrl('/company/unit-prices');
+  return callUserApi({
+    title: '단가표 전체 조회',
+    url,
+    method: 'GET',
+    isCallPageLoader: true,
+  });
+}
+
+// ==================== 에러 처리 유틸리티 함수들 ====================
+
+/**
+ * API 응답이 성공인지 확인하는 함수
+ * @param response API 응답 객체
+ * @returns 성공 여부
+ */
+export function isApiSuccess<T>(response: ApiResponse<T>): boolean {
+  return response.statusCode >= 200 && response.statusCode < 300;
+}
+
+/**
+ * API 응답에서 사용자 친화적인 에러 메시지를 추출하는 함수
+ * @param response API 응답 객체
+ * @param defaultMessage 기본 에러 메시지
+ * @returns 사용자 친화적인 에러 메시지
+ */
+export function getApiErrorMessage<T>(response: ApiResponse<T>, defaultMessage: string = '오류가 발생했습니다.'): string {
+  if (response.error?.customMessage) {
+    return response.error.customMessage;
+  }
+  if (response.error?.message) {
+    return response.error.message;
+  }
+  if (response.message && response.message !== 'null') {
+    return response.message;
+  }
+  return defaultMessage;
+}
+
+/**
+ * API 호출 결과를 처리하는 유틸리티 함수
+ * @param apiCall API 호출 Promise
+ * @param successCallback 성공 시 콜백 함수
+ * @param errorCallback 에러 시 콜백 함수
+ * @returns API 응답
+ */
+export async function handleApiCall<T>(
+  apiCall: Promise<ApiResponse<T>>,
+  successCallback?: (data: T) => void,
+  errorCallback?: (errorMessage: string) => void
+): Promise<ApiResponse<T>> {
+  try {
+    const response = await apiCall;
+    
+    if (isApiSuccess(response)) {
+      if (successCallback && response.data) {
+        successCallback(response.data);
+      }
+    } else {
+      const errorMessage = getApiErrorMessage(response);
+      if (errorCallback) {
+        errorCallback(errorMessage);
+      }
+    }
+    
+    return response;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+    console.error('API 호출 중 예외 발생:', error);
+    
+    if (errorCallback) {
+      errorCallback(errorMessage);
+    }
+    
+    // 예외 발생 시 표준 에러 응답 반환
+    return {
+      statusCode: 500,
+      message: errorMessage,
+      data: null as T,
+      metadata: null,
+      error: {
+        statusCode: 500,
+        message: errorMessage,
+        customMessage: '서버와의 통신 중 오류가 발생했습니다.'
+      }
+    };
+  }
+}

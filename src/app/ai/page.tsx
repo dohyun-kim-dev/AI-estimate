@@ -108,9 +108,10 @@ import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import FileUploadSection from '@/components/ai-esti/FileUploadSection';
 import { devLog } from '../../utils/devLogger';
 import { useChatActions } from '@/hooks/useChatActions';
-import { requestEstimateConsult } from '@/lib/api/user/userApi';
+import { getAllUnitPrices, requestEstimateConsult } from '@/lib/api/user/userApi';
 import { getEstimateIdFromContent } from '@/hooks/estimate';
 import { v4 as uuidv4 } from 'uuid';
+import { usePromptStore } from '@/store/promptStore';
 
 
 const Container = styled.div`
@@ -692,6 +693,74 @@ export default function AiChatPage() {
   
   const [estimateDataForConsult, setEstimateDataForConsult] = useState<ProjectEstimate | null>(null);
   const [chatSessionId, setChatSessionId] = useState('');
+
+// 페이지 진입 시 단가표 불러와서 promptStore에 저장
+useEffect(() => {
+  (async () => {
+    try {
+      const res = await getAllUnitPrices();
+      if (res && Array.isArray(res.data)) {
+        usePromptStore.getState().setPriceList(res.data);
+        // 마크다운 변환 및 저장
+        const convertPriceListToMarkdown = (priceList: any[]): string => {
+          if (!priceList || priceList.length === 0) {
+            return '단가표 데이터를 불러오는데 실패했습니다.';
+          }
+
+          let markdown = '# 단가표 정보\n\n';
+          markdown += '다음은 프로젝트 견적 산출에 사용되는 단가표 정보입니다.\n\n';
+
+          const categories = priceList.reduce((acc, item) => {
+            const category = item.category || item.category_name || '기타';
+            if (!acc[category]) {
+              acc[category] = [];
+            }
+            acc[category].push(item);
+            return acc;
+          }, {} as Record<string, any[]>);
+
+          Object.entries(categories).forEach(([categoryName, items]) => {
+            markdown += `## ${categoryName}\n\n`;
+            markdown += '| 항목명 | 단가 | 단위 | 설명 |\n';
+            markdown += '|--------|------|------|------|\n';
+
+            (items as any[]).forEach((item) => {
+              const name = item.name || item.item_name || item.title || 'N/A';
+              const price = item.price || item.unit_price || item.cost || 'N/A';
+              const unit = item.unit || item.unit_type || '원';
+              const description = item.description || item.desc || '설명 없음';
+
+              const formattedPrice = typeof price === 'number'
+                ? price.toLocaleString('ko-KR')
+                : price;
+
+              markdown += `| ${name} | ${formattedPrice} | ${unit} | ${description} |\n`;
+            });
+
+            markdown += '\n';
+          });
+
+          markdown += '---\n\n';
+          markdown += '**참고사항:**\n';
+          markdown += '- 위 단가는 기본 단가이며, 프로젝트 복잡도에 따라 조정될 수 있습니다.\n';
+          markdown += '- 실제 견적은 상세 요구사항 분석 후 산출됩니다.\n';
+          markdown += '- 단가는 VAT 별도 금액입니다.\n';
+
+          return markdown;
+        };
+
+        const markdown = convertPriceListToMarkdown(res.data);
+        usePromptStore.getState().setPriceListMarkdown(markdown);
+        usePromptStore.getState().setPriceDataReady(true);
+        console.log('단가표 불러오기 및 마크다운 변환 성공');
+      }
+    } catch (e) {
+      console.error('단가표 불러오기 실패', e);
+      // 실패 시에도 준비 완료 표시 (무한 로딩 방지)
+      usePromptStore.getState().setPriceDataReady(true);
+    }
+  })();
+}, []);
 
   useEffect(() => {
     // 메시지 목록을 역순으로 순회하여 가장 최근의 견적서를 찾습니다.

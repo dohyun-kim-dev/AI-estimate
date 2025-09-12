@@ -135,7 +135,7 @@ const FilePreviewArea = styled.div`
 
 interface BottomInputProps {
   placeholder?: string;
-  onSubmit?: (value: string, abortSignal?: AbortSignal) => void;
+  onSubmit?: (value: string, abortSignal?: AbortSignal) => Promise<void>;
   maxSubmissions?: number;
   onFileInput?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isUploading: boolean;
@@ -247,7 +247,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
 
   // 스트리밍 시작 시 AbortController 생성, onSubmit에 전달 필요
   const lastInputRef = useRef('');
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (value.trim() && onSubmit) {
       lastInputRef.current = value;
       // 스트리밍 시작 시 AbortController 새로 생성
@@ -258,14 +258,14 @@ const BottomInput: React.FC<BottomInputProps> = ({
       setAbortController(newAbort);
 
       if (isLoggedIn) {
-        onSubmit(value.trim(), newAbort.signal);
+        await onSubmit(value.trim(), newAbort.signal);
         setValue('');
         return;
       }
 
       const storedCount = Number(localStorage.getItem('remainingCount') || maxSubmissions);
       if (storedCount > 0) {
-        onSubmit(value.trim(), newAbort.signal);
+        await onSubmit(value.trim(), newAbort.signal);
         setValue('');
         const newCount = storedCount - 1;
         setRemainingCount(newCount);

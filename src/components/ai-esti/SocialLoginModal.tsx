@@ -217,7 +217,14 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
 
         // 초기 로그인 시도
         const initialResponse = await googleLoginInitial({ providerId: userInfo.sub });
-          console.log('isNew', initialResponse.data.isNew, initialResponse.data.cellphone);
+        
+        // API 에러 처리
+        if (initialResponse.statusCode !== 200) {
+          const errorMessage = initialResponse.error?.customMessage || initialResponse.error?.message || '로그인에 실패했습니다.';
+          throw new Error(errorMessage);
+        }
+        
+        console.log('isNew', initialResponse.data.isNew, initialResponse.data.cellphone);
 
         if (initialResponse.statusCode === 200) {
           console.log('isNew', initialResponse.data.isNew, initialResponse.data.cellphone);
@@ -235,17 +242,19 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
               cellphone: ''  // 추가 정보 모달에서 입력 받을 예정
             });
             
-            if (updateResponse.statusCode === 200) {
-              // 메모리상에만 사용자 정보 세팅 (아직 로컬 퍼시스트는 하지 않음)
-              // setUser(updateResponse.data);
-
-              // 신규 사용자는 추가 정보 모달에서 정보를 입력한 뒤에
-              // 고객사 등록 및 로컬 퍼시스트를 수행하도록 처리합니다.
-              onClose();
-              openAdditionalInfoModal();  // 신규 사용자는 무조건 추가 정보 모달
-            } else {
-              throw new Error(updateResponse.error?.message || '회원가입 중 오류가 발생했습니다.');
+            // API 에러 처리
+            if (updateResponse.statusCode !== 200) {
+              const errorMessage = updateResponse.error?.customMessage || updateResponse.error?.message || '회원가입 중 오류가 발생했습니다.';
+              throw new Error(errorMessage);
             }
+            
+            // 메모리상에만 사용자 정보 세팅 (아직 로컬 퍼시스트는 하지 않음)
+            // setUser(updateResponse.data);
+
+            // 신규 사용자는 추가 정보 모달에서 정보를 입력한 뒤에
+            // 고객사 등록 및 로컬 퍼시스트를 수행하도록 처리합니다.
+            onClose();
+            openAdditionalInfoModal();  // 신규 사용자는 무조건 추가 정보 모달
           } else {
             // 기존 사용자: 로그인 처리
             const userData = initialResponse.data;
@@ -272,13 +281,18 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                 // 고객사 등록 API 호출
                 const registerResponse = await companyRegister();
                 console.log('고객사 등록 응답:', registerResponse);
-                if (registerResponse.statusCode === 200) {
-                  console.log(`고객사 등록 완료: ${currentCompanyCode}`);
+                
+                // API 에러 처리
+                if (registerResponse.statusCode !== 200) {
+                  const errorMessage = registerResponse.error?.customMessage || registerResponse.error?.message || '고객사 등록에 실패했습니다.';
+                  console.error('고객사 등록 실패:', errorMessage);
+                  // 고객사 등록 실패해도 로그인 프로세스는 계속 진행
                 } else {
-                  console.error('고객사 등록 실패:', registerResponse.error);
+                  console.log(`고객사 등록 완료: ${currentCompanyCode}`);
                 }
               } catch (error) {
                 console.error('고객사 등록 API 호출 실패:', error);
+                // 고객사 등록 실패해도 로그인 프로세스는 계속 진행
               }
             }
 
@@ -498,7 +512,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
       <IssuerInfoModal
         open={isInfoModalOpen}
         onClose={() => setIsInfoModalOpen(false)}
-        onSubmit={(info: IssuerInfo) => {
+        onSubmit={async (info: IssuerInfo) => {
           // infoModalPurpose를 기준으로 분기 처리
           if (infoModalPurpose === 'contact') {
             console.log('[IssuerInfoModal submit] purpose: contact', info);
@@ -534,10 +548,23 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                     cellphone: info.cellphone,
                     email: info.email,
                   };
-                  // title은 비워두고, chatSession도 비워둠(추가 필요시 수정)
-                  import('@/lib/api/user/userApi').then(({ requestEstimateConsult }) => {
-                    requestEstimateConsult(lastEstimateId, '', '', user);
-                  });
+                  
+                  try {
+                    const { requestEstimateConsult } = await import('@/lib/api/user/userApi');
+                    const consultResponse = await requestEstimateConsult(lastEstimateId, '', '', user);
+                    
+                    // API 에러 처리
+                    if (consultResponse.statusCode !== 200) {
+                      const errorMessage = consultResponse.error?.customMessage || consultResponse.error?.message || '상담 요청에 실패했습니다.';
+                      console.error('상담 요청 실패:', errorMessage);
+                      showError('상담 요청에 실패했습니다. 잠시 후 다시 시도해주세요.');
+                    } else {
+                      success('상담 요청이 완료되었습니다!');
+                    }
+                  } catch (error) {
+                    console.error('상담 요청 처리 중 오류:', error);
+                    showError('상담 요청 처리 중 오류가 발생했습니다.');
+                  }
                 }
               }
             } catch (e) {

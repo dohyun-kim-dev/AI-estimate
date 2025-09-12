@@ -286,7 +286,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         base64: file.base64
       }));
 
-      const combinedPrompt = combinePrompts(selectedPromptId, input);
+      const combinedPrompt = await combinePrompts(selectedPromptId, input);
 
       // ⭐️ 실시간 스트리밍 반영: onStream에서 마지막 ai 메시지 content 누적 업데이트
       let aiReply = '';

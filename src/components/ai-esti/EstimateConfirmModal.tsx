@@ -52,6 +52,8 @@ const SubTitle = styled.p`
 const ButtonGroup = styled.div`
   gap: 12px;
   justify-content: center;
+  display: flex;
+  flex-direction: column;
 `;
 
 const Button = styled.button`
@@ -77,7 +79,8 @@ const SecondaryButton = styled(Button)`
   border-bottom: 1px solid #A9A9A9;
   // border: 1px solid ${AppColors.primary};
   padding: 0px;
-
+  width: fit-content;
+  margin: 0 auto;
 `;
 
 interface EstimateConfirmModalProps {
