@@ -189,24 +189,27 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
 
   // 폼 데이터 초기화
   useEffect(() => {
-    if (selectedItem && columnsInfo.length > 0) {
+    if (columnsInfo.length > 0) {
       const initialData: Record<string, any> = {};
       
-      columnsInfo.forEach(column => {
-        const value = selectedItem[column.name];
-        
-        // 타입에 따른 초기값 설정
-        switch (column.type) {
-          case 'number':
-            initialData[column.name] = value !== undefined && value !== null ? Number(value) : '';
-            break;
-          case 'boolean':
-            initialData[column.name] = Boolean(value);
-            break;
-          default:
-            initialData[column.name] = value !== undefined && value !== null ? String(value) : '';
-        }
-      });
+      // id 필드 제외하고 초기화
+      columnsInfo
+        .filter(column => column.name !== 'id')
+        .forEach(column => {
+          const value = selectedItem ? selectedItem[column.name] : undefined;
+          
+          // 타입에 따른 초기값 설정
+          switch (column.type) {
+            case 'number':
+              initialData[column.name] = value !== undefined && value !== null ? Number(value) : '';
+              break;
+            case 'boolean':
+              initialData[column.name] = Boolean(value);
+              break;
+            default:
+              initialData[column.name] = value !== undefined && value !== null ? String(value) : '';
+          }
+        });
       
       setFormData(initialData);
       setErrors({});
@@ -309,8 +312,10 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
     }
   };
 
-  // 컬럼 정보를 orderNo로 정렬
-  const sortedColumns = [...columnsInfo].sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0));
+  // 컬럼 정보를 orderNo로 정렬하고 id 필드 제외
+  const sortedColumns = [...columnsInfo]
+    .filter(column => column.name !== 'id') // id 필드 제외
+    .sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0));
 
   // 동적 필드 렌더링
   const renderField = (column: any) => {

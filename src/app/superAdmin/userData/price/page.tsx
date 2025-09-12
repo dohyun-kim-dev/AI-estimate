@@ -1126,6 +1126,16 @@ const PriceListPage: React.FC = () => {
         onCompanySelect={handleCompanySelect}
         onRowClick={handleRowClick}
         themeMode="light"
+        onAdd={() => {
+          if (!selectedCompanyCode) {
+            showToast('먼저 고객사를 선택해주세요.', 'error');
+            return;
+          }
+          
+          // 새로운 항목 추가를 위해 빈 객체 설정
+          setSelectedItem({});
+          setIsPopupOpen(true);
+        }}
         isShowExcelTemplate={true}
         excelUploadBtnCallBack={handleExcelUpload}
         excelTemplateBtnCallBack={handleExcelTemplateDownload}
