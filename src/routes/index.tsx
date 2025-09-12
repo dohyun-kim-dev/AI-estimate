@@ -53,7 +53,9 @@ export default function AppRoutes() {
           <Route path="ai/setting" element={<AISetting />} />
         </Route>
 
+          {/* 공유 링크에 불필요한 텍스트가 붙은 경우도 처리하기 위해 와일드카드 라우트 추가 */}
           <Route path="ai/share/:sessionId" element={<AIShare />} />
+          <Route path="ai/share/*" element={<AIShare />} />
 
         <Route element={<AIEstimateLayout />}>
           <Route path="ai-estimate" element={<AIEstimate />} />

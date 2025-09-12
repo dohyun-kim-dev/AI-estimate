@@ -17,6 +17,7 @@ import UploadResultPopup from './UploadResultPopup';
 import PriceEditPopup from './PriceEditPopup';
 import { getAllUnitPrices, uploadUnitPrices } from '@/lib/api/admin/adminApi';
 import { useToast } from '@/components/common/ToastProvider';
+import { priceApiResponseToMarkdownTable } from '../../../../ai/prompts/priceDataToJson';
 
 
 // 필수 여부를 한글로 변환하는 함수
@@ -519,6 +520,7 @@ const PriceListPage: React.FC = () => {
       let actualResponse = response;
       if (Array.isArray(response) && response.length > 0) {
         actualResponse = (response as any[])[0];
+        console.log('Actual response:', priceApiResponseToMarkdownTable(actualResponse));
       }
       
       if (actualResponse && typeof actualResponse === 'object') {

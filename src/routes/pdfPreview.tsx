@@ -122,7 +122,7 @@ const PDFPreview: React.FC = () => {
       setEstimateMeta(res.data.data); // 필요 시 화면에 title, user 등 노출
 console.log("res값",res)
       // 2) 미리보기 PDF 생성 (응답의 data(HTML) 기반)
-      const { blobUrl,pdfBlob } = await previewPdfFromServerData(res.data);
+      const { blobUrl,pdfBlob } = await previewPdfFromServerData(res.data.data);
       console.log('PDF blobUrl:', blobUrl);
       console.log('PDF pdfBlob:', pdfBlob);
       setPdfBlobUrl(blobUrl);

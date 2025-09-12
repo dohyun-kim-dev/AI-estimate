@@ -12,7 +12,7 @@ import { SocialLoginModal } from '../../components/ai-esti/SocialLoginModal';
 import { tr } from 'date-fns/locale';
 
 const LayoutWrapper = styled.div`
-  // min-height: 100vh;
+  min-height: 100vh;
   padding-bottom: calc(76px + env(safe-area-inset-bottom));
   background-color: ${({ theme }) => theme.body};
 `;
@@ -121,7 +121,7 @@ const ProfileIconWrapper = styled.div`
 
 const Main = styled.main` 
   width: 100vw;
-  padding: 56px 0 84px;
+  padding: 86px 0 80px;
   min-height: auto;
       
 `;

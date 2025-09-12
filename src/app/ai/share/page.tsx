@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { useShareChatStore } from '@/store/shareChatStore';
 import { getChatMessages } from '@/lib/api/user/userApi';
@@ -238,6 +238,7 @@ const BackButton = styled.button`
 const SharePage: React.FC = () => {
   // useSearchParams는 컴포넌트 최상단에서 한 번만 선언
   const { sessionId, companyCode } = useParams<{ sessionId: string; companyCode: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const { success } = useToast();
   const { setSessionId, addMessage, messages, clearMessages } = useShareChatStore();
@@ -246,17 +247,18 @@ const SharePage: React.FC = () => {
   // sessionId에 uuid가 아닌 안내문구 등이 붙어있을 경우, uuid만 추출해서 쿼리스트링으로 리다이렉트 (pdfPreview.tsx와 동일한 방식)
   const [searchParams] = useSearchParams();
   useEffect(() => {
-    if (!sessionId) return;
-    // uuid는 36자 UUID 형식 (하이픈 포함)
-    const uuidMatch = sessionId.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
-    if (uuidMatch && sessionId !== uuidMatch[0]) {
-      // 잘못된 sessionId 파라미터라면, 올바른 uuid만 남기고 리다이렉트
-      const params = new URLSearchParams(searchParams);
-      params.set('sessionId', uuidMatch[0]);
-      if (companyCode) params.set('companyCode', companyCode);
-      window.location.replace(`${window.location.pathname.split('/ai/share')[0]}/ai/share/${uuidMatch[0]}?${params.toString()}`);
+    // 전체 pathname에서 uuid 패턴 검색 (붙여넣기 시 추가 텍스트 포함 가능)
+    const path = location.pathname;
+    const uuidMatch = path.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
+    if (!uuidMatch) return;
+    const pureUuid = uuidMatch[0];
+    const expectedPath = `/aiclient/${companyCode || 'heredot'}/ai/share/${pureUuid}`;
+    if (path !== expectedPath) {
+      // 쿼리 그대로 유지
+      const qs = searchParams.toString();
+      window.location.replace(`${expectedPath}${qs ? `?${qs}` : ''}`);
     }
-  }, [sessionId, companyCode, searchParams]);
+  }, [location.pathname, companyCode, searchParams]);
 
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

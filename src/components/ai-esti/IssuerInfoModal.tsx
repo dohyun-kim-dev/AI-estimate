@@ -99,7 +99,7 @@ const IssuerInfoModal: React.FC<IssuerInfoModalProps> = ({
       <Form onSubmit={handleSubmit}>
         <TextField
           id="issuer-name"
-          label="이름2"
+          label="이름"
           placeholder="이름을 입력해주세요"
           autoComplete="off" 
           value={info.name}

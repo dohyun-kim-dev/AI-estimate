@@ -175,7 +175,7 @@ interface PeriodSliderProps {
   basePrice?: number;
 }
 
-const PeriodSlider: React.FC<PeriodSliderProps> = ({ value = 0, onChange, $isvisible, min=0, max, discountedPrice, basePrice }) => {
+const PeriodSlider: React.FC<PeriodSliderProps> = ({ value = 0, onChange, $isvisible, min=0, max=8, discountedPrice, basePrice }) => {
   // url에 'share'가 포함되어 있으면 렌더링하지 않음
   if (typeof window !== 'undefined' && window.location.pathname.includes('share')) {
     return null;
@@ -206,13 +206,14 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({ value = 0, onChange, $isvis
             </DiscountDisplay>
           )}
           <Slider 
-          min={min}
-          max={max}
+          min={0}
+          max={8}
+          value={value}
           step={1}
-            type="range"
-            $value={value}
-            $min={min}
-            $max={max}
+          type="range"
+          $value={value}
+          $min={min}
+          $max={max}
             onChange={e => onChange(Number(e.target.value))}
           />
   

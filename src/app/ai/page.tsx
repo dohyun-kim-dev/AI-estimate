@@ -268,7 +268,7 @@ const SideContent = styled.div`
   }
 `;
 
-const DetailsToggle = styled.div`
+const DetailsToggle = styled.div<{ $isShare?: boolean }>`
   display: flex;
   justify-content: center;
   align-items: center;
@@ -281,7 +281,7 @@ const DetailsToggle = styled.div`
   letter-spacing: 0.28px;
   color: ${({ theme }) => theme.subtleText};
   cursor: pointer;
-  margin: -20px 0 -20px;
+  margin: ${({ $isShare }) => $isShare ? '0' : '-20px 0 -20px'};
 
   @media (min-width: 1024px) {
     display: none;
@@ -558,6 +558,15 @@ const userId = getUserId() || '';
 
       {/* 견적서가 있는 경우 표시 */}
       {hasEstimate && (
+        <>
+         <StyledDiv 
+          style={{ 
+            marginBottom: hasEstimate ? '24px' : '0',
+            fontSize: '18px',
+            lineHeight: '1.6'
+          }}
+          dangerouslySetInnerHTML={{ __html: textContent }} 
+        />
         <EstimateContainer>
           <TopSection>
             <MainContent>
@@ -566,7 +575,10 @@ const userId = getUserId() || '';
                 discountedPrice={discountedPrice || 0} 
                 projectPeriod={projectPeriod || 0}   
               />
-              <DetailsToggle onClick={() => setIsDetailsVisible(!isDetailsVisible)}>
+              <DetailsToggle
+                onClick={() => setIsDetailsVisible(!isDetailsVisible)}
+                $isShare={typeof window !== 'undefined' && window.location.pathname.includes('share')}
+              >
                 상세견적 보기 {isDetailsVisible ?
                   <DetailsToggleIcon><IoChevronUp size={24} /></DetailsToggleIcon> :
                   <DetailsToggleIcon><IoChevronDown size={24} /></DetailsToggleIcon>
@@ -576,8 +588,8 @@ const userId = getUserId() || '';
                 value={Math.max(0, (projectPeriod || 0) - (basePeriod || 0))}  // 0~8
                 onChange={setProjectPeriod}
                 $isvisible={isDetailsVisible}
-                min={0}         // ⭐️ 수정: 기본값 0 추가
-                max={8}   // ⭐️ 수정: 기본값 0 추가
+                min={0}     
+                max={8}     
                 discountedPrice={discountedPrice || 0} // ⭐️ 수정: 기본값 0 추가
                 basePrice={basePrice || 0}    // ⭐️ 수정: 기본값 0 추가
               />            
@@ -636,6 +648,7 @@ const userId = getUserId() || '';
             />
           )}
         </EstimateContainer>
+        </>
       )}
     </div>
   );
@@ -878,32 +891,64 @@ export default function AiChatPage() {
           } else {
 
             const estimateId = m.estimateId
-            if (m.isLoading) {
-              return (
-                <StyledAiMessage
-                  key={idx}
-                  content={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                      <ProfileSpinner src="/ai-estimate/pretty.png" />
-                      <GradientText>어떤 답변이 도움이 될지 고민하는 중...</GradientText>
-                    </div>
-                  }
-                  profileImage={null}
-                  name="강유하"
-                  isFullWidth={false}
-                />
-              );
-            }
-            return (
-              <StyledAiMessage
-                key={idx}
-                content={<AiMessageContent content={m.content} chatSessionId={chatSessionId} estimate_Id={estimateId} />} 
-                profileImage="/ai-estimate/pretty.png"
-                name="강유하"
-                isFullWidth={isEstimateMessage(m.content)}
-              />
-            );
-          }
+             if (m.role === 'ai' && m.isLoading && (!m.content || m.content.trim() === '')) {
+              console.log('빈 스트리밍 메시지 건너뜀', m);
+    return (
+      <StyledAiMessage
+        key={idx}
+        content={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <ProfileSpinner src="/ai-estimate/pretty.png" />
+            <GradientText>어떤 답변이 도움이 될지 고민하는 중...</GradientText>
+          </div>
+        }
+        profileImage={null}
+        name="강유하"
+        isFullWidth={false}
+      />
+    );
+  }
+  // 2. 스트리밍 중 (content 있음, isLoading)
+  if (m.role === 'ai' && m.isLoading && m.content) {
+    console.log('스트리밍 중 메시지 렌더링', m);
+    return (
+      <StyledAiMessage
+        key={idx}
+        content={
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <ProfileSpinner src="/ai-estimate/pretty.png" />
+              <h2 style={{
+                fontSize: 18,
+                fontWeight: 500,
+                lineHeight: '160%',
+                margin: '4px 0 4px 0',
+                color: 'var(--theme-text)' // 실제 테마 컬러로 대체
+              }}>강유하</h2>
+            </div>
+            <div style={{ marginTop: 8 }}>
+              {m.content}
+            </div>
+          </div>
+        }
+        profileImage={null}
+        name={null}
+        isFullWidth={isEstimateMessage(m.content)}
+      />
+    );
+  }}
+  // 3. 답변 완료(기존 메시지)
+  if (m.role === 'ai') {
+    return (
+      <StyledAiMessage
+        key={idx}
+        content={<AiMessageContent content={m.content} chatSessionId={chatSessionId} estimate_Id={m.estimateId} />}
+        profileImage="/ai-estimate/pretty.png"
+        name="강유하"
+        isFullWidth={isEstimateMessage(m.content)}
+      />
+    );
+  }
           // 필요하다면 system 등 다른 role도 분기 가능
           return null;
         })}

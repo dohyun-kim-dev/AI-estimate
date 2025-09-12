@@ -218,11 +218,12 @@ const BottomInput: React.FC<BottomInputProps> = ({
             localStorage.setItem('remainingCount', String(maxSubmissions));
             setRemainingCount(maxSubmissions);
           }
+          // 하루가 바뀌면 hasUsedExtraCount도 false로 초기화
           const storedHasUsedExtraCount = localStorage.getItem('hasUsedExtraCount');
           setHasUsedExtraCount(storedHasUsedExtraCount === 'true');
         }
       };
-      
+
       checkAndResetCount();
       const intervalId = setInterval(checkAndResetCount, 60 * 60 * 1000);
       return () => clearInterval(intervalId);

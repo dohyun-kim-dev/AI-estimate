@@ -52,7 +52,7 @@ const Header = styled.div<{ depth: number; $isSelected: boolean; $isOpen: boolea
       if (depth === 1) return '24px 18px 24px 10px';
       // theme.body가 어두운 계열이면 다크모드로 간주
       const isDark = theme.body && typeof theme.body === 'string' && theme.body.toLowerCase() !== '#ffffff';
-      return isDark ? '24px 18px 36px 30px' : '24px 18px 24px 30px';
+      return isDark ? '24px 18px 24px 30px' : '24px 18px 24px 30px';
     }};
   cursor: pointer;
   background-color: ${({ theme, depth, $isSelected }) => 
@@ -71,11 +71,12 @@ const Header = styled.div<{ depth: number; $isSelected: boolean; $isOpen: boolea
 
   .title {
     flex-grow: 1;
+    font-size: 14px;
   }
   
   .price {
     margin: 0 20px;
-    font-size: 0.95em;
+    font-size: 14px;
   }
 
   &:hover {
@@ -123,7 +124,7 @@ const Content = styled.div<{ $isOpen: boolean; depth: number }>`
   transition: grid-template-rows 0.35s ease-in-out;
   background-color: ${({ theme, depth }) => theme[`accordionLevel${depth+1}`]};
   position: relative;
-  clip-path: ${({ depth }) => depth === 1 ? 'inset(0 0 12px 0 round 0 0 12px 12px)' : 'inset(0)'};
+  clip-path: ${({ depth }) => depth === 1 ? 'inset(0 0 1px 0 round 0 0 12px 12px)' : 'inset(0)'};
 `;
 
 const ContentInner = styled.div`
@@ -135,7 +136,7 @@ const ListItem = styled.div<{ $isSelected: boolean; $isDeleted: boolean; depth?:
   align-items: center;
   padding: ${({ depth }) => depth === 3 ? '24px 18px 24px 45px' : '24px 18px 24px 35px'};
   color: ${({ theme }) => theme.subtleText};
-  font-size: 0.95em;
+  font-size: 14px;
   cursor: pointer;
   transition: background-color 0.2s ease;
   border-bottom: 1px solid ${({ theme }) => theme.border};
@@ -151,14 +152,13 @@ const ListItem = styled.div<{ $isSelected: boolean; $isDeleted: boolean; depth?:
     }
   `}
 
-  // 마지막 아이템: 다크모드(배경이 어두움)면 40px, 라이트모드면 24px
   &:last-child {
     border-bottom: none;
     padding-bottom: ${({ depth, theme }) => {
       if (depth === 2 || depth === 3) {
         // theme.body가 어두운 계열이면 다크모드로 간주
         const isDark = theme.body && typeof theme.body === 'string' && theme.body.toLowerCase() !== '#ffffff';
-        return isDark ? '40px' : '24px';
+        return isDark ? '24px' : '24px';
       }
       return '24px';
     }};
@@ -228,7 +228,7 @@ interface EstimateItem {
 }
 
 // 할인 제외 항목명
-const NON_DISCOUNT_ITEMS = ['화면설계', '화면디자인', '화면퍼블리싱', '퍼블리싱', 'UI/UX 디자인'];
+const NON_DISCOUNT_ITEMS = ['화면설계', '화면디자인', '화면퍼블리싱', '퍼블리싱', 'UI/UX디자인','화면 설계','화면 퍼블리싱'];
 
 interface EstimateAccordionItemProps {
   name: string;
@@ -357,7 +357,7 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
                 <span className="name" onClick={() => handleItemClick(item, index)}>
                   {item.name}
                 </span>
-                <span className="price" onClick={() => handleItemClick(item, index)}>
+                <span className="price"  onClick={() => handleItemClick(item, index)}>
                   {formatPrice(discounted)}
                   {isDiscounted && (
                     <span style={{ color: '#FF5A5A', fontSize: '0.85em', marginLeft: 4 }}>
