@@ -155,13 +155,14 @@ export async function previewPdfFromServerData(html: string) {
 
   const imgWidth = 210;
   const pageHeight = 297;
-  const marginBottom = 0;
-  const effectivePageHeight = pageHeight - marginBottom;
+  const marginTop = 15; // 위쪽 여백
+  const marginBottom = 30; // 아래쪽 여백
+  const effectivePageHeight = pageHeight - marginTop - marginBottom;
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
   const pdf = new jsPDF('p', 'mm');
   let heightLeft = imgHeight;
-  let position = 0;
+  let position = marginTop; // 위쪽 여백부터 시작
   let pageNumber = 1;
 
   const imageData = canvas.toDataURL('image/jpeg', 0.7);
@@ -169,7 +170,7 @@ export async function previewPdfFromServerData(html: string) {
   heightLeft -= effectivePageHeight;
 
   while (heightLeft >= 0) {
-    position = -(effectivePageHeight * pageNumber);
+    position = marginTop - (effectivePageHeight * pageNumber); // 각 페이지 위쪽 여백 유지
     pdf.addPage();
     pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);
     heightLeft -= effectivePageHeight;

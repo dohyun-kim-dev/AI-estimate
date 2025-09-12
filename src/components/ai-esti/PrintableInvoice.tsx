@@ -14,7 +14,7 @@ const PrintableInvoiceWrapper = styled.div`
   
   @media print {
     @page {
-      margin: 15mm 0; /* 상하 여백 */
+      margin: 30mm 15mm; /* 상하 여백 더 증가 */
     }
   }
 `;
@@ -30,6 +30,35 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
 
   const currentDate = formatDate(new Date());
   const user = useAuthStore((state) => state.user);
+
+  // 각 카테고리의 모든 아이템을 플랫하게 만들기 (is_deleted가 false인 항목만)
+  const allItems = estimate.categories.flatMap((category) =>
+    category.sub_categories.flatMap((subCategory) =>
+      subCategory.items
+        .filter(item => !item.is_deleted) // is_deleted가 true인 항목 제외
+        .map(item => ({
+          ...item,
+          category: category.category_name,
+          subCategory: subCategory.sub_category_name
+        }))
+    )
+  );
+
+  console.log('All items length:', allItems.length);
+  console.log('All items:', allItems);
+
+  // 총 금액 계산 (is_deleted가 false인 항목만)
+  const totalPrice = allItems.reduce((sum, item) => {
+    const price = parseInt(item.price.replace(/[^\d]/g, '')) || 0;
+    console.log('Item price:', item.price, 'Parsed price:', price);
+    return sum + price;
+  }, 0);
+
+  console.log('Total price calculated:', totalPrice);
+  console.log('All items:', allItems);
+
+  // 부가세 포함 금액 계산 (10% 부가세)
+  const vatIncludedPrice = Math.round(totalPrice * 1.1);
 
   const baseCellStyle = {
     padding: '8px 12px',
@@ -127,7 +156,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
           </tr>
           <tr>
             <td style={headerCellStyle}>총 금액 (VAT포함)</td>
-            <td style={valueCellStyle}>KRW {estimate.vat_included_price}</td>
+            <td style={valueCellStyle}>KRW {vatIncludedPrice.toLocaleString()}</td>
             <td style={headerCellStyle}>주소</td>
             <td style={valueCellStyle}>경기도 성남시 수정구 대학판교로 815, 777호 (시흥동, 판교창조경제밸리)</td>
           </tr>
@@ -149,108 +178,101 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
           </tr>
         </thead>
         <tbody>
-          {estimate.categories.map((category) => {
-            // 각 카테고리의 모든 아이템을 플랫하게 만들기 (is_deleted가 false인 항목만)
-            const items = category.sub_categories.reduce((acc, subCategory) => {
-              return [...acc, ...subCategory.items
-                .filter(item => !item.is_deleted) // is_deleted가 true인 항목 제외
-                .map(item => ({
-                  ...item,
-                  category: category.category_name,
-                  subCategory: subCategory.sub_category_name
-                }))];
-            }, [] as any[]);
-
+          {(() => {
             // 연속된 같은 카테고리와 서브카테고리 찾기
             let currentRowSpan = { category: 0, subCategory: 0 };
             let lastCategory = '';
             let lastSubCategory = '';
 
-            return items.map((item, index) => {
-              const showCategory = item.category !== lastCategory;
-              const showSubCategory = item.subCategory !== lastSubCategory || showCategory;
+            return (
+              <>
+                {allItems.map((item, index) => {
+                  const showCategory = item.category !== lastCategory;
+                  const showSubCategory = item.subCategory !== lastSubCategory || showCategory;
 
-              // 다음 항목들 중 같은 카테고리/서브카테고리 개수 계산
-              if (showCategory) {
-                currentRowSpan.category = items.slice(index).filter(i => i.category === item.category).length;
-                lastCategory = item.category;
-              }
-              if (showSubCategory) {
-                currentRowSpan.subCategory = items.slice(index).filter(i => 
-                  i.subCategory === item.subCategory && 
-                  i.category === item.category
-                ).length;
-                lastSubCategory = item.subCategory;
-              }
+                  // 다음 항목들 중 같은 카테고리/서브카테고리 개수 계산
+                  if (showCategory) {
+                    currentRowSpan.category = allItems.slice(index).filter(i => i.category === item.category).length;
+                    lastCategory = item.category;
+                  }
+                  if (showSubCategory) {
+                    currentRowSpan.subCategory = allItems.slice(index).filter(i => 
+                      i.subCategory === item.subCategory && 
+                      i.category === item.category
+                    ).length;
+                    lastSubCategory = item.subCategory;
+                  }
 
-              return (
-                <tr 
-                  key={`${item.category}-${item.subCategory}-${index}`}
-                  style={{ pageBreakInside: 'avoid' }}
-                >
-                  {showCategory && (
-                    <td style={{ 
-                      ...valueCellStyle, 
-                      textAlign: 'center',
-                      pageBreakInside: 'avoid'
-                    }} rowSpan={currentRowSpan.category}>
-                      {item.category.replace(/[^\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F\uA960-\uA97F\uAC00-\uD7A3\s]/g, '').trim()}
-                    </td>
-                  )}
-                  {showSubCategory && (
-                    <td style={{ 
-                      ...valueCellStyle, 
-                      textAlign: 'center',
-                      pageBreakInside: 'avoid',
-                      breakAfter: 'auto',
-                      breakBefore: 'auto',
-                      paddingTop: '4px',
-                      paddingBottom: '4px'
-                    }} rowSpan={currentRowSpan.subCategory}>
-                      {item.subCategory}
-                    </td>
-                  )}
-                  <td style={{ 
-                    ...valueCellStyle, 
-                    textAlign: 'center',
-                    paddingTop: '4px',
-                    paddingBottom: '4px'
-                  }}>{item.name}</td>
-                  <td style={{ 
-                    ...valueCellStyle,
-                    paddingTop: '4px',
-                    paddingBottom: '4px'
-                  }}>{item.description}</td>
-                  <td style={{ 
-                    ...valueCellStyle, 
-                    textAlign: 'right',
-                    paddingTop: '4px',
-                    paddingBottom: '4px'
-                  }}>{item.price}</td>
+                  return (
+                    <tr 
+                      key={`${item.category}-${item.subCategory}-${index}`}
+                      style={{ pageBreakInside: 'avoid' }}
+                    >
+                      {showCategory && (
+                        <td style={{ 
+                          ...valueCellStyle, 
+                          textAlign: 'center',
+                          pageBreakInside: 'avoid'
+                        }} rowSpan={currentRowSpan.category}>
+                          {item.category.replace(/[^\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F\uA960-\uA97F\uAC00-\uD7A3\s]/g, '').trim()}
+                        </td>
+                      )}
+                      {showSubCategory && (
+                        <td style={{ 
+                          ...valueCellStyle, 
+                          textAlign: 'center',
+                          pageBreakInside: 'avoid',
+                          breakAfter: 'auto',
+                          breakBefore: 'auto',
+                          paddingTop: '4px',
+                          paddingBottom: '4px'
+                        }} rowSpan={currentRowSpan.subCategory}>
+                          {item.subCategory}
+                        </td>
+                      )}
+                      <td style={{ 
+                        ...valueCellStyle, 
+                        textAlign: 'center',
+                        paddingTop: '4px',
+                        paddingBottom: '4px'
+                      }}>{item.name}</td>
+                      <td style={{ 
+                        ...valueCellStyle,
+                        paddingTop: '4px',
+                        paddingBottom: '4px'
+                      }}>{item.description}</td>
+                      <td style={{ 
+                        ...valueCellStyle, 
+                        textAlign: 'right',
+                        paddingTop: '4px',
+                        paddingBottom: '4px'
+                      }}>{item.price}</td>
+                    </tr>
+                  );
+                })}
+                <tr>
+                  <td colSpan={4} style={{ ...headerCellStyle, textAlign: 'right' }}>
+                    <strong>합계 (부가세 별도)</strong>
+                  </td>
+                  <td style={{ ...valueCellStyle, textAlign: 'right' }}>
+                    <strong>{totalPrice.toLocaleString()}</strong>
+                  </td>
                 </tr>
-              );
-            });
-          })}
-          <tr>
-            <td colSpan={4} style={{ ...headerCellStyle, textAlign: 'right' }}>
-              <strong>합계 (부가세 별도)</strong>
-            </td>
-            <td style={{ ...valueCellStyle, textAlign: 'right' }}>
-              <strong>{estimate.total_price}</strong>
-            </td>
-          </tr>
-          <tr>
-            <td colSpan={4} style={{ ...headerCellStyle, textAlign: 'right' }}>
-              <strong>부가세 포함</strong>
-            </td>
-            <td style={{ ...valueCellStyle, textAlign: 'right' }}>
-              <strong>{estimate.vat_included_price}</strong>
-            </td>
-          </tr>
-          <tr>
-            <td colSpan={4} style={{ ...headerCellStyle, textAlign: 'right' }}>개발 기간</td>
-                         <td style={{ ...valueCellStyle, textAlign: 'right' }}>{`${estimate.estimated_period}(약 ${Math.ceil(parseInt(estimate.estimated_period) / 4.345)}개월)`}</td>
-          </tr>
+                <tr>
+                  <td colSpan={4} style={{ ...headerCellStyle, textAlign: 'right' }}>
+                    <strong>부가세 포함</strong>
+                  </td>
+                  <td style={{ ...valueCellStyle, textAlign: 'right' }}>
+                    <strong>{vatIncludedPrice.toLocaleString()}</strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td colSpan={4} style={{ ...headerCellStyle, textAlign: 'right' }}>개발 기간</td>
+                  <td style={{ ...valueCellStyle, textAlign: 'right' }}>{`${estimate.estimated_period}(약 ${Math.ceil(parseInt(estimate.estimated_period) / 4.345)}개월)`}</td>
+                </tr>
+              </>
+            );
+          })()}
         </tbody>
       </table>
 

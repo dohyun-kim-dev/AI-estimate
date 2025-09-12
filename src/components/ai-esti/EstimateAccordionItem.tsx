@@ -228,7 +228,7 @@ interface EstimateItem {
 }
 
 // 할인 제외 항목명
-const NON_DISCOUNT_ITEMS = ['화면설계', '화면디자인', '화면퍼블리싱', '퍼블리싱', 'UI/UX디자인','화면 설계','화면 퍼블리싱'];
+const NON_DISCOUNT_ITEMS = ['화면설계', '화면디자인', '화면퍼블리싱', '퍼블리싱', 'UI/UX디자인','화면 설계','화면 퍼블리싱','UI/UX 디자인'];
 
 interface EstimateAccordionItemProps {
   name: string;
