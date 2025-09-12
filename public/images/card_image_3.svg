@@ -1,0 +1,26 @@
+<svg width="264" height="190" viewBox="0 0 264 190" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_200_7622)">
+<rect x="12" y="8" width="240.599" height="174.785" rx="4" fill="#B8C8FF"/>
+<rect x="25.8383" y="45.3105" width="117.038" height="109.072" rx="4" fill="#ACBFFF"/>
+<rect x="35.6852" y="131.943" width="12.5423" height="17.9851" fill="#7081FF"/>
+<rect width="12.5423" height="54.5362" transform="matrix(1 0 0 -1 56.8857 149.928)" fill="#7081FF"/>
+<rect x="78.0862" y="111.995" width="12.5423" height="37.9324" fill="#7081FF"/>
+<rect x="99.2867" y="111.995" width="12.5423" height="37.9324" fill="#7081FF"/>
+<rect x="120.487" y="124.722" width="12.5423" height="25.2059" fill="#7081FF"/>
+<rect width="51.0593" height="10.7703" rx="4" transform="matrix(1 0 0 -1 35.6852 64.375)" fill="#89A4FF"/>
+<rect opacity="0.5" width="38.8086" height="10.7703" rx="4" transform="matrix(1 0 0 -1 25.8383 30.3652)" fill="#89A4FF"/>
+<rect opacity="0.5" width="14.4673" height="10.7703" rx="4" transform="matrix(1 0 0 -1 115.465 30.3652)" fill="#89A4FF"/>
+<rect opacity="0.5" width="14.4673" height="10.7703" rx="4" transform="matrix(1 0 0 -1 132.699 30.3652)" fill="#89A4FF"/>
+<rect opacity="0.5" width="14.4673" height="10.7703" rx="4" transform="matrix(1 0 0 -1 149.933 30.3652)" fill="#89A4FF"/>
+<rect width="21.2005" height="10.7703" rx="4" transform="matrix(1 0 0 -1 111.829 64.375)" fill="#89A4FF"/>
+<rect x="154.553" y="45.3105" width="117.038" height="109.072" rx="4" fill="#ACBFFF"/>
+<rect width="51.0593" height="10.7703" rx="4" transform="matrix(1 0 0 -1 164.4 64.373)" fill="#89A4FF"/>
+<circle cx="230.806" cy="109.048" r="34.3566" fill="#7081FF"/>
+<path d="M265.163 109.047C265.163 115.195 263.513 121.232 260.384 126.525C257.256 131.819 252.765 136.176 247.379 139.142C241.992 142.108 235.909 143.574 229.763 143.387C223.617 143.201 217.634 141.368 212.438 138.081C207.241 134.793 203.023 130.171 200.222 124.698C197.42 119.224 196.14 113.099 196.513 106.961C196.886 100.824 198.9 94.8989 202.343 89.8049C205.787 84.7109 210.535 80.6344 216.091 78.0008L230.806 109.047L265.163 109.047Z" fill="#616AFF"/>
+</g>
+<defs>
+<clipPath id="clip0_200_7622">
+<rect x="12" y="8" width="240.599" height="174.785" rx="4" fill="white"/>
+</clipPath>
+</defs>
+</svg>

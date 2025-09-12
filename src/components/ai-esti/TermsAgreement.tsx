@@ -123,11 +123,14 @@ const TabButton = styled.button.attrs({ type: 'button' })<{ active: boolean }>`
   border: none;
   padding: 10px 15px;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: ${({ active }) => (active ? 'bold' : 'normal')};
   color: ${({ active }) => (active ? AppColors.primary : '#555')};
   border-bottom: 2px solid ${({ active }) => (active ? AppColors.primary : 'transparent')};
   transition: all 0.2s;
+  white-space: pre-line;
+  text-align: center;
+  line-height: 1.2;
   &:hover {
     color: ${AppColors.primary};
   }
@@ -141,9 +144,9 @@ interface TermsModalProps {
 }
 
 const termsTabs = [
-  { id: 1, key: 'terms', label: '이용약관' },
-  { id: 2, key: 'privacy', label: '개인정보 취급방침' },
-  { id: 3, key: 'company', label: '사업자 정보' },
+  { id: 1, key: 'terms', label: '이용\n약관' },
+  { id: 2, key: 'privacy', label: '개인정보\n취급방침' },
+  { id: 3, key: 'company', label: '사업자\n정보' },
 ];
 
 const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, initialTab = 'terms' }) => {
@@ -174,6 +177,16 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, initialTab = '
     }
   }, [isOpen]);
 
+  // 탭 변경 시 스크롤을 맨 위로 이동
+  useEffect(() => {
+    if (isOpen) {
+      const termsContent = document.querySelector('.terms-content-scroll');
+      if (termsContent) {
+        termsContent.scrollTop = 0;
+      }
+    }
+  }, [activeTab, isOpen]);
+
   
   const getModalContent = () => {
     if (isLoading) {
@@ -183,7 +196,7 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, initialTab = '
     const currentTabContent = allTermsData.find(term => term.language === 'KOR' && term._id.toString() === termsTabs.find(tab => tab.key === activeTab)?.id.toString());
     
     const content = currentTabContent?.content || '약관 내용을 불러오지 못했습니다.';
-    return <TermsContent dangerouslySetInnerHTML={{ __html: content }} />;
+    return <TermsContent className="terms-content-scroll" dangerouslySetInnerHTML={{ __html: content }} />;
   };
 
   return (

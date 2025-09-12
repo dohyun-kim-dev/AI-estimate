@@ -84,6 +84,7 @@ const PDFPreview: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [estimateMeta, setEstimateMeta] = useState<EstimateMeta | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const companyCode = searchParams.get('company');
   let uuid = searchParams.get('uuid');
   // 변경: 하드코딩된 API URL을 Vite 환경 변수로 대체
@@ -102,6 +103,21 @@ const PDFPreview: React.FC = () => {
     }
   }, [uuid, searchParams]);
 
+  // 모바일 기기 감지
+  useEffect(() => {
+    const checkIsMobile = () => {
+      const userAgent = navigator.userAgent.toLowerCase();
+      const mobileKeywords = ['android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'];
+      const isMobileDevice = mobileKeywords.some(keyword => userAgent.includes(keyword));
+      const isSmallScreen = window.innerWidth <= 768;
+      setIsMobile(isMobileDevice || isSmallScreen);
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
   
   useEffect(() => {
   if (!uuid) {
@@ -119,10 +135,13 @@ const PDFPreview: React.FC = () => {
       }
 
       // 서버가 내려준 원본(표시용)
-      setEstimateMeta(res.data.data); // 필요 시 화면에 title, user 등 노출
+      setEstimateMeta(res.data); // 메타데이터 저장
 console.log("res값",res)
+console.log("res.data 타입:", typeof res.data)
+console.log("res.data.data 타입:", typeof res.data.data)
       // 2) 미리보기 PDF 생성 (응답의 data(HTML) 기반)
-      const { blobUrl,pdfBlob } = await previewPdfFromServerData(res.data.data);
+      const htmlContent = typeof res.data.data === 'string' ? res.data.data : res.data.data?.data || '';
+      const { blobUrl,pdfBlob } = await previewPdfFromServerData(htmlContent);
       console.log('PDF blobUrl:', blobUrl);
       console.log('PDF pdfBlob:', pdfBlob);
       setPdfBlobUrl(blobUrl);
@@ -152,10 +171,18 @@ console.log("res값",res)
     }
   };
   
+  const getPDFViewerUrl = (blobUrl: string) => {
+    if (isMobile) {
+      // 모바일에서는 Google Docs Viewer 사용
+      return `https://docs.google.com/viewer?url=${encodeURIComponent(blobUrl)}&embedded=true`;
+    }
+    return blobUrl;
+  };
+
   const handleIframeLoad = () => {
     console.log('PDF iframe 로드 완료');
   };
-  
+
   const handleIframeError = () => {
     console.log('PDF iframe 로드 실패');
     setError('PDF를 표시할 수 없습니다.');
@@ -182,23 +209,29 @@ console.log("res값",res)
   
   return (
     <PreviewContainer>
-      {/* <Header>
+      <Header>
         <Title>견적서 미리보기</Title>
         <DownloadButton onClick={handleDownload}>
           다운로드
         </DownloadButton>
-      </Header> */}
+      </Header>
       
       {loading && <LoadingMessage>PDF를 불러오는 중...</LoadingMessage>}
       
-      {pdfBlobUrl && (
-        <PDFViewer
-          id="pdf-iframe"
-          src={pdfBlobUrl}
-          title="견적서 PDF"
-          onLoad={handleIframeLoad}
-          onError={handleIframeError}
-        />
+      {error && <ErrorMessage>{error}</ErrorMessage>}
+      
+      {!loading && !error && (
+        <>
+          {pdfBlobUrl && (
+            <PDFViewer
+              id="pdf-iframe"
+              src={getPDFViewerUrl(pdfBlobUrl)}
+              title="견적서 PDF"
+              onLoad={handleIframeLoad}
+              onError={handleIframeError}
+            />
+          )}
+        </>
       )}
     </PreviewContainer>
   );

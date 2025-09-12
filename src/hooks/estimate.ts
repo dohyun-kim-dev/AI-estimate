@@ -2,7 +2,7 @@
 import { v4 as uuidv4 } from 'uuid';
 
 /** 견적 객체에 uuid가 없으면 생성해서 채워줌 */
-export function ensureEstimateUuid<T extends Record<string, any>>(est: T): T {
+export function ensureEstimateUuid(est: any) {
   if (!est) return est;
   if (!est.uuid) est.uuid = uuidv4();
   return est;
@@ -30,19 +30,37 @@ export function extractIntroFromReply(reply: string) {
 }
 
 /** 인트로 + 스크립트(JSON) 문자열 조립 */
-export function buildFullEstimateData(estimate: any, intro?: string) {
-  const prepared = normalizeEstimate(JSON.parse(JSON.stringify(estimate || {})));
-  const json = JSON.stringify(prepared, null, 2);
-  const headline =
-    (intro && intro.length > 0)
-      ? intro
-      : '지금까지 논의된 내용을 바탕으로 주요 기능과 예상 비용을 정리한 견적서를 아래에 바로 제공드립니다.';
+export function buildFullEstimateData(input: any) {
+  if (typeof input === 'string') {
+    // content인 경우
+    const intro = extractIntroFromReply(input);
+    const estimate = extractEstimateData(input);
+    if (!estimate) return input; // 견적서가 없으면 원본 반환
+    
+    const prepared = normalizeEstimate(JSON.parse(JSON.stringify(estimate)));
+    const json = JSON.stringify(prepared, null, 2);
+    const headline =
+      (intro && intro.length > 0)
+        ? intro
+        : '지금까지 논의된 내용을 바탕으로 주요 기능과 예상 비용을 정리한 견적서를 아래에 바로 제공드립니다.';
 
-  return `${headline}
+    return `${headline}
 
 <script type="application/json" id="invoiceData">
 ${json}
 </script>`;
+  } else {
+    // estimate 객체인 경우 (하위 호환성)
+    const prepared = normalizeEstimate(JSON.parse(JSON.stringify(input || {})));
+    const json = JSON.stringify(prepared, null, 2);
+    const headline = '지금까지 논의된 내용을 바탕으로 주요 기능과 예상 비용을 정리한 견적서를 아래에 바로 제공드립니다.';
+
+    return `${headline}
+
+<script type="application/json" id="invoiceData">
+${json}
+</script>`;
+  }
 }
 
 // HTML 안의 <script id="invoiceData">...</script> 에서 JSON 뽑기

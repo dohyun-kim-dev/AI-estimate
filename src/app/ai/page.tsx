@@ -539,8 +539,16 @@ const userId = getUserId() || '';
   if (typeof content !== 'string') {
     return null;
   }
-  const parts = content.split('<script');  
-  const textContent = parts[0].replace(/\\n/g, '<br/>').trim();  // \n을 <br/>로 변환
+  
+  // <script id="invoiceData"> 태그를 찾아서 텍스트와 분리
+  const scriptMatch = content.match(/<script[^>]*id="invoiceData"[^>]*>[\s\S]*?<\/script>/);
+  let textContent = content;
+  if (scriptMatch) {
+    textContent = content.replace(scriptMatch[0], '').replace(/\\n/g, '<br/>').trim();
+  } else {
+    textContent = content.replace(/\\n/g, '<br/>').trim();
+  }
+  
   const hasEstimate = estimateData && estimateData.categories;
   
   return (
@@ -559,15 +567,6 @@ const userId = getUserId() || '';
 
       {/* 견적서가 있는 경우 표시 */}
       {hasEstimate && (
-        <>
-         <StyledDiv 
-          style={{ 
-            marginBottom: hasEstimate ? '24px' : '0',
-            fontSize: '18px',
-            lineHeight: '1.6'
-          }}
-          dangerouslySetInnerHTML={{ __html: textContent }} 
-        />
         <EstimateContainer>
           <TopSection>
             <MainContent>
@@ -667,7 +666,6 @@ const userId = getUserId() || '';
             />
           )}
         </EstimateContainer>
-        </>
       )}
     </div>
   );

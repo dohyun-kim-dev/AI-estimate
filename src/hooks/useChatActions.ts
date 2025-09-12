@@ -412,8 +412,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           if (!userId) throw new Error('사용자 ID를 가져올 수 없습니다.');
           ensureEstimateUuid(estimateData);
           const estimateId = estimateData.uuid;
-          const intro = extractIntroFromReply(reply);
-          const dataStr = buildFullEstimateData(estimateData, intro);
+          const dataStr = buildFullEstimateData(reply);
           const uploadResponse = await uploadEstimatePdf(
             currentSessionId,
             invoiceTitle,
@@ -424,8 +423,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           if (uploadResponse?.statusCode !== 200) {
             throw new Error(uploadResponse?.error?.message || '견적 저장 실패');
           }
-          const updatedReply =
-            `<script type="application/json" id="invoiceData">${JSON.stringify(estimateData)}</script>`;
+          const updatedReply = dataStr;
           const aiMessageResponse: ChatMessageResponseData = await sendChatMessage(currentSessionId, {
             role: 'AI',
             content: { type: 'text', value: updatedReply },

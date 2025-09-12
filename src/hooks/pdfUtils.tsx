@@ -20,6 +20,7 @@ export async function generatePDF(
     estimateId?: string;  // ✅ 업데이트면 전달
     success?: (msg: string) => void;
     error?: (msg: string) => void;
+    content?: string;     // AI 메시지 전체 텍스트
   } = {}
 ): Promise<PDFResult | null> {
   const {
@@ -40,7 +41,7 @@ export async function generatePDF(
       if (!userId) throw new Error('사용자 ID가 없습니다.');
 
       // AI 전문(텍스트 + <script id="invoiceData">JSON</script>)을 문자열로 구성
-      const data = buildFullEstimateData(estimate);
+      const data = buildFullEstimateData(options.content || estimate);
 
       const res = await uploadEstimatePdf(
         sessionId,
@@ -196,7 +197,8 @@ export async function generateAndUploadPdf(
   userId: string,
   success: (msg: string) => void,
   error: (msg: string) => void,
-  estimateId?: string // ✅ 업데이트면 넘겨주기
+  estimateId?: string, // ✅ 업데이트면 넘겨주기
+  content?: string     // AI 메시지 전체 텍스트
 ) {
   return generatePDF(estimate, {
     forPreview: false,
@@ -206,5 +208,6 @@ export async function generateAndUploadPdf(
     estimateId,
     success,
     error,
+    content,
   });
 }

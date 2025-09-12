@@ -13,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { SocialLoginModal } from './SocialLoginModal';
 import { useNavigate } from 'react-router-dom';
 import { getDownloadEstimateUrlWithUserInfo, googleLoginInitial, googleLoginUpdate, uploadEstimatePdf } from '@/lib/api/user/userApi';
-import { buildFullEstimateData } from '@/hooks/estimate';
+import { buildFullEstimateData, extractEstimateData } from '@/hooks/estimate';
 import IssuerInfoModal, { IssuerInfo } from '@/components/ai-esti/IssuerInfoModal';
 
 const CardWrapper = styled.div`
@@ -188,7 +188,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       }
       if (!userId) throw new Error('사용자 ID가 없습니다.');
 
-      // estimateObj._id가 없을 때: 세션스토리지에서 project_name이 content에 포함된 메시지 중 estimateId가 존재하는 첫 메시지를 찾아 반환
+      // estimateObj._id가 없을 때: 세션스토리지에서 project_name과 total_price가 일치하는 메시지 중 estimateId가 있는 가장 최근 메시지를 찾아 반환
       let effectiveId = estimateObj._id;
       if (!effectiveId && estimateObj?.project_name) {
         try {
@@ -197,9 +197,10 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
             const storageState = JSON.parse(raw);
             const messages = storageState.state?.messages || [];
             console.log("세션스토리지 메시지:", messages);
-            // project_name이 content에 포함된 메시지 중 estimateId가 있는 첫 메시지 찾기
+            // 메시지를 역순으로 순회하여 가장 최근의 일치하는 estimateId 찾기
+            const reversedMessages = messages.slice().reverse();
             let foundId = null;
-            for (const m of messages) {
+            for (const m of reversedMessages) {
               if (typeof m.content === 'string' && m.content.includes(estimateObj.project_name)) {
                 if (m.estimateId) {
                   foundId = m.estimateId;

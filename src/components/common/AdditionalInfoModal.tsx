@@ -91,6 +91,55 @@ const ButtonContainer = styled.div`
   flex: 1;
 `;
 
+const ConfirmModalContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+`;
+
+const ConfirmMessage = styled.div`
+  font-size: 16px;
+  text-align: center;
+  line-height: 1.5;
+  color: #333;
+`;
+
+const ConfirmButtons = styled.div`
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+`;
+
+const ConfirmButton = styled.button<{ variant?: 'primary' | 'secondary' }>`
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  min-width: 80px;
+
+  ${({ variant }) => variant === 'primary' ? `
+    background: #2E2E48;
+    color: #fff;
+    border: none;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  ` : `
+    background: #fff;
+    color: #2E2E48;
+    border: 1px solid #2E2E48;
+
+    &:hover {
+      background: #f5f5f5;
+    }
+  `}
+`;
+
 interface AdditionalInfoModalProps {
   open: boolean
   onClose: () => void
@@ -103,8 +152,11 @@ export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoMod
   const [verificationCode, setVerificationCode] = useState('')
   const [showVerification, setShowVerification] = useState(false)
   const [isVerified, setIsVerified] = useState(false)
+  const [verifiedPhoneNumber, setVerifiedPhoneNumber] = useState('')
+  const [previousPhoneNumber, setPreviousPhoneNumber] = useState('')
   const [privacyAgreed, setPrivacyAgreed] = useState(false)
   const [termsAgreed, setTermsAgreed] = useState(false)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
   const { user, closeAdditionalInfoModal, additionalInfoUser, persistUser } = useAuthStore()
     const navigate = useNavigate();
   const { success, error: showError } = useToast(); // useToast 훅 사용
@@ -123,8 +175,11 @@ export default function AdditionalInfoModal({ open, onClose }: AdditionalInfoMod
       setVerificationCode('')
       setShowVerification(false)
       setIsVerified(false)
+      setVerifiedPhoneNumber('')
+      setPreviousPhoneNumber('')
       setPrivacyAgreed(false)
       setTermsAgreed(false)
+      setShowConfirmModal(false)
       setIsFormValid(false)
     }
   }, [open])
@@ -143,6 +198,12 @@ useEffect(() => {
       showError('올바른 휴대폰 번호를 입력해주세요'); // toast.error 대신 showError 사용
       return;
     }
+
+    // 인증받기 버튼을 누르면 이전 인증 정보 초기화
+    setVerifiedPhoneNumber('')
+    setIsVerified(false)
+    setVerificationCode('')
+    setShowVerification(true)
 
     setIsSendingCode(true);
     try {
@@ -172,6 +233,7 @@ useEffect(() => {
       const response = await validateAuthCode(cellphone.replace(/[^0-9]/g, ''), verificationCode);
       if (response.statusCode === 200) {
         setIsVerified(true);
+        setVerifiedPhoneNumber(cellphone.replace(/[^0-9]/g, ''));
         success('인증이 완료되었습니다'); // toast.success 대신 success 사용
       } else {
         showError(response.error?.message || '인증번호가 일치하지 않습니다'); // toast.error 대신 showError 사용
@@ -202,19 +264,13 @@ useEffect(() => {
     return '';
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!isFormValid) {
-      showError(getErrorMessage()); // toast.error 대신 showError 사용
-      return;
-    }
-
+  const performRegistration = async () => {
     try {
       const response = await googleLoginUpdate({
         providerId: additionalInfoUser?.providerId || user?.providerId || '',
         name,
         email,
-        cellphone: cellphone.replace(/[^0-9]/g, ''),
+        cellphone: verifiedPhoneNumber || cellphone.replace(/[^0-9]/g, ''),
         profileImage: additionalInfoUser?.profileImage || user?.profileImage || '',
       });
 
@@ -261,6 +317,31 @@ useEffect(() => {
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!isFormValid) {
+      showError(getErrorMessage()); // toast.error 대신 showError 사용
+      return;
+    }
+
+    // 인증 완료된 번호와 현재 입력된 번호가 다른 경우 컨펌 모달 표시
+    if (isVerified && verifiedPhoneNumber && verifiedPhoneNumber !== cellphone.replace(/[^0-9]/g, '')) {
+      setShowConfirmModal(true);
+      return;
+    }
+
+    await performRegistration();
+  };
+
+  const handleConfirmYes = async () => {
+    setShowConfirmModal(false);
+    await performRegistration();
+  };
+
+  const handleConfirmNo = () => {
+    setShowConfirmModal(false);
+  };
+
   useEffect(() => {
     if (!open) {
       setName('');
@@ -271,11 +352,15 @@ useEffect(() => {
       setVerificationCode('');
       setShowVerification(false);
       setIsVerified(false);
+      setVerifiedPhoneNumber('');
+      setPreviousPhoneNumber('');
+      setShowConfirmModal(false);
       setIsFormValid(false);
     }
   }, [open]);
 
   return (
+    <>
     <Modal open={open} onClose={onClose} title="추가 정보 입력" width={520} centerTitle ={true} closeOnOverlayClick={false}>
       <div style={{ fontSize: 14, textAlign: 'center' }}>정확한 서비스 이용을 위해 <br></br>추가 정보를 입력해주세요</div>
       <Form onSubmit={handleSubmit}>
@@ -309,6 +394,15 @@ useEffect(() => {
                     setCellphone(value)
                   }
                 }}
+                onBlur={() => {
+                  // 포커스가 벗어날 때 번호가 변경되었으면 인증 상태 리셋
+                  if (previousPhoneNumber && previousPhoneNumber !== cellphone) {
+                    // setIsVerified(false)
+                    // setShowVerification(false)
+                    setVerificationCode('')
+                  }
+                  setPreviousPhoneNumber(cellphone)
+                }}
                 autoComplete="off" 
                 placeholder="휴대번호 입력해주세요"
               />
@@ -317,7 +411,7 @@ useEffect(() => {
               <VerifyButton
                 type="button"
                 onClick={handleRequestVerification}
-                disabled={!Validators.phone(cellphone) || isVerified || isSendingCode}
+                disabled={!Validators.phone(cellphone)|| isSendingCode }
               >
                 {isSendingCode ? '전송 중...' : isVerified ? '인증완료' : '인증받기'}
               </VerifyButton>
@@ -363,5 +457,21 @@ useEffect(() => {
         </SubmitButton>
       </Form>
     </Modal>
+    <Modal open={showConfirmModal} onClose={handleConfirmNo} title="휴대폰 번호 확인" width={400} centerTitle={true}>
+      <ConfirmModalContainer>
+        <ConfirmMessage>
+          인증하신 {verifiedPhoneNumber?.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3')}로<br />
+          가입을 진행하시겠습니까?
+        </ConfirmMessage>
+        <ConfirmButtons>
+          <ConfirmButton variant="secondary" onClick={handleConfirmNo}>
+            아니오
+          </ConfirmButton>
+          <ConfirmButton variant="primary" onClick={handleConfirmYes}>
+            예
+          </ConfirmButton>
+        </ConfirmButtons>
+      </ConfirmModalContainer>
+    </Modal>    </>
   )
 }
