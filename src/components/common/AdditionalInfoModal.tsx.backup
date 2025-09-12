@@ -2,7 +2,27 @@ import React, { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { toast } from 'react-toastify'
 import { useNavigate } from "react-router-dom";
-import Modal from '@components/common/Modal'
+import Modal from '@co  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!isFormValid) {
+      showError(getErrorMessage());
+      return;
+    }
+
+    console.log('AdditionalInfoModal handleSubmit:', {
+      additionalInfoUser,
+      user,
+      providerId: additionalInfoUser?.providerId || user?.providerId || ''
+    });
+
+    try {
+      const response = await googleLoginUpdate({
+        providerId: additionalInfoUser?.providerId || user?.providerId || '',
+        name,
+        email,
+        cellphone: cellphone.replace(/[^0-9]/g, ''),
+        profileImage: additionalInfoUser?.profileImage || user?.profileImage || '',
+      });/Modal'
 import TextField from '@components/common/TextField'
 import styled from 'styled-components'
 import { Validators } from '@/lib/utils/validators'

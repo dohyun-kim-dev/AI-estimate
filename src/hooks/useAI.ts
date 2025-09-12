@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, useEffect } from 'react'
-import { getAI, getGenerativeModel, GenerativeModel, ChatSession } from 'firebase/ai'
+import { getAI, getGenerativeModel, GenerativeModel, ChatSession, SchemaType } from 'firebase/ai'
 import { app } from '@/firebaseConfig'
 import { devLog } from '@/utils/devLogger'
 import { FileUploadData } from '@/firebase.functions'
@@ -137,8 +137,41 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     modelRef.current = getGenerativeModel(ai, {
       model: modelName,
       ...(systemInstruction ? { systemInstruction } : {}),
+      // 🔥 웹 검색 및 함수 호출 기능 활성화
+      tools: [
+        {
+          functionDeclarations: [
+            {
+              name: 'analyze_url_content',
+              description: '웹사이트 URL을 분석하여 콘텐츠를 추출하고 요약합니다. 프로젝트 기획이나 견적서 작성에 유용한 정보를 가져옵니다.',
+              parameters: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  url: {
+                    type: SchemaType.STRING,
+                    description: '분석할 웹사이트의 URL'
+                  },
+                  analysis_type: {
+                    type: SchemaType.STRING,
+                    enum: ['summary', 'full_content', 'project_info'],
+                    description: '분석 타입: 요약(summary), 전체 내용(full_content), 프로젝트 정보(project_info)'
+                  }
+                },
+                required: ['url']
+              }
+            }
+          ]
+        }
+      ],
+      // 웹 검색 기능 활성화 (Gemini Pro에서 지원)
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 2048,
+      }
     })
-    devLog('[useAI] model initialized:', modelName)
+    devLog('[useAI] model initialized with web search and function calling:', modelName)
     return modelRef.current
   }, [modelName, systemInstruction])
 

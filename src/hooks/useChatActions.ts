@@ -14,6 +14,7 @@ import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import { v4 as uuidv4 } from 'uuid';
 import { ensureEstimateUuid, buildFullEstimateData, extractIntroFromReply } from '@/hooks/estimate';
 import { uploadEstimatePdf } from '@/lib/api/user/userApi';
+import { detectUrls, shortenUrl, analyzeUrls } from './useUrlAnalyzer';
 
 // 견적서 데이터를 추출하는 유틸리티 함수
 const extractEstimateData = (content: string): ProjectEstimate | null => {
@@ -76,6 +77,44 @@ const fileToBase64 = (file: File): Promise<string> => {
     };
     reader.onerror = error => reject(error);
   });
+};
+
+// 파일을 base64로 인코딩하는 함수// 파일을 base64로 인코딩하는 함수
+
+// 빠른 설명 추출
+const extractDescription = (html: string): string => {
+  const patterns = [
+    /<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["'][^>]*>/i,
+    /<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["'][^>]*>/i,
+    /<meta[^>]*name=["']twitter:description["'][^>]*content=["']([^"']+)["'][^>]*>/i
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match && match[1]) {
+      return match[1].trim().substring(0, 200); // 200자 제한
+    }
+  }
+  return '';
+};
+
+// 빠른 키워드 추출
+const extractKeywords = (html: string): string[] => {
+  const keywords = [];
+
+  // 메타 키워드
+  const metaKeywords = html.match(/<meta[^>]*name=["']keywords["'][^>]*content=["']([^"']+)["'][^>]*>/i);
+  if (metaKeywords && metaKeywords[1]) {
+    keywords.push(...metaKeywords[1].split(',').map(k => k.trim()).slice(0, 3));
+  }
+
+  // 헤더 태그들 (빠른 추출)
+  const headers = html.match(/<h[1-2][^>]*>([^<]+)<\/h[1-2]>/gi);
+  if (headers) {
+    keywords.push(...headers.map(h => h.replace(/<[^>]+>/g, '').trim()).slice(0, 2));
+  }
+
+  return keywords.slice(0, 5); // 최대 5개 키워드
 };
 
 // 비회원 UUID 관리 함수
@@ -189,13 +228,58 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
     setIsProcessing(true);
 
+    // 🔥 URL 감지 및 처리 (분리된 모듈 사용)
+    const detectedUrls = detectUrls(input);
+    let urlAnalysisForAI = ''; // AI용 분석 결과
+    let hasPartialResults = false;
+    
+    if (detectedUrls.length > 0) {
+      // 사용자에게 즉시 알림 (분석 시작)
+      const shortUrls = detectedUrls.map(shortenUrl);
+      success(`🔍 ${detectedUrls.length}개의 웹사이트 분석 시작: ${shortUrls.join(', ')}`);
+      
+      try {
+        // analyzeUrls 함수를 사용하여 URL 분석 수행
+        const analysisResult = await analyzeUrls(detectedUrls, (progress) => {
+          // 진행 상황 로깅 (필요시 UI 업데이트 가능)
+          console.log(`URL 분석 진행: ${progress.completed}/${progress.total}`);
+        });
+        
+        urlAnalysisForAI = analysisResult.summary;
+        hasPartialResults = analysisResult.hasPartialResults;
+        
+        // 사용자에게 결과 알림
+        const successfulCount = analysisResult.results.filter(r => r.success).length;
+        if (successfulCount > 0) {
+          success(`✅ ${successfulCount}개 웹사이트 분석 완료! AI가 이를 참고하여 답변을 생성합니다.`);
+        } else {
+          success('⚠️ 웹사이트 분석에 시간이 걸려 기본 답변을 제공합니다.');
+          urlAnalysisForAI = '';
+        }
+        
+      } catch (error) {
+        console.error('URL 콘텐츠 분석 실패:', error);
+        success('⚠️ 웹사이트 분석에 시간이 걸려 기본 답변을 제공합니다.');
+        urlAnalysisForAI = '';
+      }
+    }
+
+    // 사용자 메시지 생성 (URL을 짧게 표시)
     let userMessageContent = input;
     if (uploadedFiles.length > 0) {
       const fileInfo = uploadedFiles.map((file) => `[첨부파일: ${file.name}]`).join('\n');
       userMessageContent = `${input}\n\n${fileInfo}`;
     }
+    
+    // URL이 감지되면 짧게 표시
+    if (detectedUrls.length > 0) {
+      detectedUrls.forEach(url => {
+        const shortUrl = shortenUrl(url);
+        userMessageContent = userMessageContent.replace(url, shortUrl);
+      });
+    }
 
-    // 사용자 메시지 임시 추가
+    // 사용자 메시지 임시 추가 (깔끔한 버전)
     addMessage({ role: 'user', content: userMessageContent });
     // ai 메시지는 isLoading: true로 추가 (실시간 업데이트용)
     addMessage({ role: 'ai', content: '', isLoading: true });
@@ -288,10 +372,16 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
       const combinedPrompt = await combinePrompts(selectedPromptId, input);
 
+      // 🔥 URL 분석 결과가 있으면 AI 프롬프트에 추가 (사용자에게는 보이지 않음)
+      let finalPrompt = combinedPrompt;
+      if (urlAnalysisForAI) {
+        finalPrompt = `${combinedPrompt}\n\n[웹사이트 분석 정보 - AI 참고용]\n${urlAnalysisForAI}`;
+      }
+
       // ⭐️ 실시간 스트리밍 반영: onStream에서 마지막 ai 메시지 content 누적 업데이트
       let aiReply = '';
       let firstChunkReceived = false;
-      const reply = await sendChat(combinedPrompt, filesForAI, {
+      const reply = await sendChat(finalPrompt, filesForAI, {
         streaming: true,
         onStream: (chunk) => {
           const wasEmpty = aiReply.length === 0;

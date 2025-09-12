@@ -254,7 +254,12 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
             // 신규 사용자는 추가 정보 모달에서 정보를 입력한 뒤에
             // 고객사 등록 및 로컬 퍼시스트를 수행하도록 처리합니다.
             onClose();
-            openAdditionalInfoModal();  // 신규 사용자는 무조건 추가 정보 모달
+            openAdditionalInfoModal({
+              providerId: userInfo.sub,
+              profileImage: userInfo.picture,
+              email: userInfo.email,
+              name: `${userInfo.family_name || ''}${userInfo.given_name || ''}`.trim()
+            });  // ✅ 신규 사용자도 userInfo 전달
           } else {
             // 기존 사용자: 로그인 처리
             const userData = initialResponse.data;
