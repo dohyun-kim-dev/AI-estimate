@@ -18,7 +18,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     // 프록시 설정 - 모든 환경에서 사용
   const proxyConfig: Record<string, ProxyOptions> = {
     '/api': {
-      target: ENV_NAME === 'dev' ? API_HOST : 'https://api.aigopartners.com',
+      target: ENV_NAME === 'dev' ? API_HOST : API_HOST,
       changeOrigin: true,
       secure: false,
       rewrite: (path: string) => path.replace(/^\/api/, ''),

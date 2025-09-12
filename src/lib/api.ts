@@ -11,8 +11,11 @@ const createApiUrl = (endpoint: string) => {
     return apiPath
   }
   
-  const API_HOST = (import.meta.env.VITE_PUBLIC_API_HOST || 'http://121.157.229.40:8535').replace(/\/$/, '')
-  const fullUrl = `${API_HOST}${apiPath}`
+  // 프로덕션 환경에서는 VITE_API_HOST 사용 (VITE_PUBLIC_API_HOST가 아닌)
+  const API_HOST = (import.meta.env.VITE_API_HOST || 'https://aigopartners.com').replace(/\/$/, '')
+  // API 경로에서 /api 제거하여 중복 방지
+  const cleanPath = apiPath.replace(/^\/api/, '')
+  const fullUrl = `${API_HOST}${cleanPath}`
   console.log('Production API Request:', fullUrl)
   return fullUrl
 }

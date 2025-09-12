@@ -24,11 +24,13 @@ export async function callApiPost<T = unknown>({
 }: CallApiPostParams): Promise<T> {
   let fullUrl = url;
 
-  // 배포 환경에서 API_HOST를 사용하여 완전한 URL을 구성합니다.
-  // import.meta.env는 Vite가 환경 변수를 노출하는 방식입니다.
+  // 프로덕션 환경에서 API_HOST를 사용하여 완전한 URL을 구성합니다.
   // 개발 환경에서는 프록시가 있으므로 상대 경로를 사용합니다.
   if (import.meta.env.VITE_ENV_NAME !== 'dev' && !url.startsWith('http')) {
-    fullUrl = `${import.meta.env.VITE_API_HOST}${url}`;
+    const API_HOST = (import.meta.env.VITE_API_HOST || 'https://aigopartners.com').replace(/\/$/, '')
+    // URL이 /api로 시작하면 제거하여 중복 방지
+    const cleanUrl = url.replace(/^\/api/, '')
+    fullUrl = `${API_HOST}${cleanUrl}`;
   }
 
   devLog(`📱 [${title}]`, fullUrl, body);
@@ -39,7 +41,7 @@ export async function callApiPost<T = unknown>({
   try {
     const fetchOptions: RequestInit = {
       method,
-      credentials: 'include',
+      credentials: 'include', // 쿠키를 항상 포함
       mode: 'cors' as RequestMode,
     };
 
