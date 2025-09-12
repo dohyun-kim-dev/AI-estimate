@@ -150,13 +150,15 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
         </thead>
         <tbody>
           {estimate.categories.map((category) => {
-            // 각 카테고리의 모든 아이템을 플랫하게 만들기
+            // 각 카테고리의 모든 아이템을 플랫하게 만들기 (is_deleted가 false인 항목만)
             const items = category.sub_categories.reduce((acc, subCategory) => {
-              return [...acc, ...subCategory.items.map(item => ({
-                ...item,
-                category: category.category_name,
-                subCategory: subCategory.sub_category_name
-              }))];
+              return [...acc, ...subCategory.items
+                .filter(item => !item.is_deleted) // is_deleted가 true인 항목 제외
+                .map(item => ({
+                  ...item,
+                  category: category.category_name,
+                  subCategory: subCategory.sub_category_name
+                }))];
             }, [] as any[]);
 
             // 연속된 같은 카테고리와 서브카테고리 찾기

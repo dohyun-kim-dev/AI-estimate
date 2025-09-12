@@ -31,6 +31,7 @@ export interface EstimateItem {
     name: string;
     price: string;
     description: string;
+    is_deleted?: boolean;
 }
 
 

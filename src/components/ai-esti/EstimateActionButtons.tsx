@@ -318,8 +318,6 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
         open={isInfoModalOpen}
         onClose={() => setIsInfoModalOpen(false)}
         onSubmit={(info) => handleSubmit(info)}
-        // 필요시 로그인 정보로 초기값 프리필
-        initial={{ name, email, cellphone: phone }}
       />
     </ButtonsContainer>
   );

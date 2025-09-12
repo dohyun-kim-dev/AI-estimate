@@ -39,7 +39,7 @@ const ItemWrapper = styled.div<{ depth: number; $isOpen?: boolean }>`
 
     &:last-child {
       border-bottom: none;
-      padding-bottom: ${theme.accordionLevel1 === '#ffffff' ? '12px' : '0px'};
+      padding-bottom: 0px;
     }
   `}
 `;

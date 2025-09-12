@@ -148,8 +148,9 @@ const Tooltip = styled.div<{ $left: string }>`
   z-index: 10;
   pointer-events: none; /* 클릭 이벤트 방지 */
 
-  ${SliderContainer}:hover & {
-    opacity: 1; /* 호버 시 나타남 */
+  .slider-container:hover &,
+  .slider-container.dragging & {
+    opacity: 1; /* 호버 또는 드래그 시 나타남 */
   }
 `;
 
@@ -180,6 +181,8 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({ value = 0, onChange, $isvis
   if (typeof window !== 'undefined' && window.location.pathname.includes('share')) {
     return null;
   }
+  
+  const [isDragging, setIsDragging] = useState(false);
   const discountPercentage = ((value - min) / (max - min)) * 10;
   const discountAmount = basePrice - discountedPrice;
   // const tooltipPosition = `calc(${((value - min) / (max - min)) * 50}% + 75px)`;
@@ -189,7 +192,7 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({ value = 0, onChange, $isvis
       <InnerContainer>
         <Title>프로젝트 기간 설정 <span className="p">(주 단위)</span></Title>
         <Description>견적기간을 늘릴 경우 할인된 금액으로 변경됩니다</Description>
-        <SliderContainer>
+        <SliderContainer className={`slider-container ${isDragging ? 'dragging' : ''}`}>
           <Tooltip $left={tooltipPosition}>
             {discountPercentage.toFixed(1)}% 할인이 적용되었어요! 
           {value > min && (
@@ -215,6 +218,10 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({ value = 0, onChange, $isvis
           $min={min}
           $max={max}
             onChange={e => onChange(Number(e.target.value))}
+            onMouseDown={() => setIsDragging(true)}
+            onMouseUp={() => setIsDragging(false)}
+            onTouchStart={() => setIsDragging(true)}
+            onTouchEnd={() => setIsDragging(false)}
           />
   
           <Labels>
