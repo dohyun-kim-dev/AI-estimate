@@ -335,7 +335,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
 
 🏢공급사명 : 주식회사 여기닷
  
-📞전화문의 : 031-111-1234
+📞전화문의 : 031-8039-7981
  
 ※ 위 견적서는 공급사 공식 홈페이지에서도 조회할 수 있습니다
  
@@ -377,7 +377,7 @@ https://heredotcorp.com
             setIsSocialLoginModalOpen(false);
             openAdditionalInfoModal();
           } else {
-            throw new Error(updateResponse.error?.message || '회원가입 중 오류가 발생했습니다.');
+            throw new Error(updateResponse.error?.customMessage || '회원가입 중 오류가 발생했습니다.');
           }
         } else {
           await login(initialResponse.data);
@@ -394,7 +394,7 @@ https://heredotcorp.com
           }
         }
       } else {
-        throw new Error(initialResponse.error?.message || '로그인에 실패했습니다.');
+        throw new Error(initialResponse.error?.customMessage || '로그인에 실패했습니다.');
       }
     } catch (err) {
       console.error('Google 로그인 후 처리 에러:', err);

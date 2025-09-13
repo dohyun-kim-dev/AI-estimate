@@ -342,12 +342,12 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
             }
           }
         } else {
-          throw new Error(initialResponse.error?.message || '로그인에 실패했습니다.');
+          throw new Error(initialResponse.error?.customMessage || '로그인에 실패했습니다.');
         }
 
       } catch (error: any) {
         console.error('Google 로그인 에러:', error);
-        setLoginError(error.message || '로그인 처리 중 오류가 발생했습니다.');
+        setLoginError(error.customMessage || '로그인 처리 중 오류가 발생했습니다.');
         showError('로그인 처리 중 오류가 발생했습니다.');
       } finally {
         setIsLoading(false);

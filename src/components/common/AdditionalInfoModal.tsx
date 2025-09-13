@@ -212,7 +212,7 @@ useEffect(() => {
         success('인증번호가 발송되었습니다'); // toast.success 대신 success 사용
         setShowVerification(true);
       } else {
-        showError(response.error?.message || '인증번호 발송에 실패했습니다'); // toast.error 대신 showError 사용
+        showError(response.error?.customMessage || '인증번호 발송에 실패했습니다'); // toast.error 대신 showError 사용
       }
     } catch (error) {
       console.error('인증번호 요청 에러:', error);
@@ -236,7 +236,7 @@ useEffect(() => {
         setVerifiedPhoneNumber(cellphone.replace(/[^0-9]/g, ''));
         success('인증이 완료되었습니다'); // toast.success 대신 success 사용
       } else {
-        showError(response.error?.message || '인증번호가 일치하지 않습니다'); // toast.error 대신 showError 사용
+        showError(response.error?.customMessage || '인증번호가 일치하지 않습니다'); // toast.error 대신 showError 사용
       }
     } catch (error) {
       console.error('인증번호 확인 에러:', error);
@@ -309,7 +309,7 @@ useEffect(() => {
         setTermsAgreed(false);
         success('회원가입이 완료되었습니다!'); // toast.success 대신 success 사용
       } else {
-        showError(response.error?.message || '회원가입 중 오류가 발생했습니다'); // toast.error 대신 showError 사용
+        showError(response.error?.customMessage || '회원가입 중 오류가 발생했습니다'); // toast.error 대신 showError 사용
       }
     } catch (error) {
       console.error('회원가입 에러:', error);

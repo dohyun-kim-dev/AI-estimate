@@ -55,7 +55,7 @@ export async function generatePDF(
         success?.(estimateId ? '견적서가 업데이트되었습니다.' : '견적서가 생성되었습니다.');
         return res;
       }
-      throw new Error(res?.error?.message || '업로드 실패');
+      throw new Error(res?.error?.customMessage || '업로드 실패');
     }
 
     // ✅ 미리보기 모드: 여기서만 PDF 생성

@@ -340,7 +340,7 @@ const SharePage: React.FC = () => {
           setLoading(false);
           
         } else {
-          throw new Error(messagesResponse?.error?.message || '메시지를 찾을 수 없습니다.');
+          throw new Error(messagesResponse?.error?.customMessage || '메시지를 찾을 수 없습니다.');
         }
         
       } catch (err) {

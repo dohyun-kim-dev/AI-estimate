@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { AppColors } from '@/styles/colors';
 import Modal from '@/components/common/Modal';
-import { toast } from 'react-toastify';
-import { termsGetList } from '@/lib/api/user/userApi'; // 사용자 API import
+import { termsGetList } from '@/lib/api/user/userApi';
 
 const TermsContent = styled.div`
   white-space: pre-wrap;
@@ -22,19 +21,24 @@ const TabsContainer = styled.div`
   display: flex;
   border-bottom: 2px solid #ddd;
   margin-bottom: 1rem;
+  gap: 4px;
+  flex-wrap: wrap;
 `;
 
 const TabButton = styled.button<{ active: boolean }>`
   background: none;
   border: none;
-  padding: 10px 15px;
-  font-size: 16px;
+  padding: 10px 12px;
+  font-size: 15px;
   cursor: pointer;
   font-weight: ${({ active }) => (active ? 'bold' : 'normal')};
   color: ${({ active }) => (active ? AppColors.primary : '#555')};
   border-bottom: 2px solid ${({ active }) => (active ? AppColors.primary : 'transparent')};
-  
   transition: all 0.2s;
+  white-space: pre-line;        /* 줄바꿈 적용 */
+  line-height: 1.2;
+  text-align: center;
+
   &:hover {
     color: ${AppColors.primary};
   }
@@ -51,19 +55,47 @@ const termsTabs = [
   { id: 3, key: 'company', label: '사업자 정보' },
 ];
 
+// 작은 화면(<=386px)에서 줄바꿈된 라벨 반환
+const getResponsiveLabel = (key: string, isNarrow: boolean) => {
+  if (isNarrow) return (
+    {
+      terms: '이용\n약관',
+      privacy: '개인정보\n취급방침',
+      company: '사업자\n정보'
+    } as Record<string, string>
+  )[key];
+
+  return (
+    {
+      terms: '이용약관',
+      privacy: '개인정보 취급방침',
+      company: '사업자 정보'
+    } as Record<string, string>
+  )[key];
+};
+
 const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('terms');
   const [allTermsData, setAllTermsData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isNarrow, setIsNarrow] = useState(false);
 
+  // 화면 폭 감지
+  useEffect(() => {
+    const check = () => setIsNarrow(window.innerWidth <= 386);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  // 약관 로드
   useEffect(() => {
     if (isOpen) {
       const fetchData = async () => {
         setIsLoading(true);
         try {
-          const termsResponse = await termsGetList(); 
-          let termsList = termsResponse?.data || [];
-          
+          const termsResponse = await termsGetList();
+          const termsList = termsResponse?.data || [];
           if (termsList) {
             const sortedList = termsList.sort((a: any, b: any) => a._id - b._id);
             setAllTermsData(sortedList);
@@ -77,14 +109,14 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
       fetchData();
     }
   }, [isOpen]);
-  
+
   const getModalContent = () => {
-    if (isLoading) {
-      return '로딩 중...';
-    }
-    
-    const currentTabContent = allTermsData.find(term => term.language === 'KOR' && term._id.toString() === termsTabs.find(tab => tab.key === activeTab)?.id.toString());
-    
+    if (isLoading) return '로딩 중...';
+
+    const currentId = termsTabs.find(t => t.key === activeTab)?.id;
+    const currentTabContent = allTermsData.find(
+      term => term.language === 'KOR' && term._id?.toString() === currentId?.toString()
+    );
     const content = currentTabContent?.content || '약관 내용을 불러오지 못했습니다.';
     return <TermsContent dangerouslySetInnerHTML={{ __html: content }} />;
   };
@@ -92,13 +124,13 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
   return (
     <Modal open={isOpen} onClose={onClose} title="약관 보기" width={600} height={'85vh'}>
       <TabsContainer>
-        {termsTabs.map((tab) => (
+        {termsTabs.map(tab => (
           <TabButton
             key={tab.key}
             active={activeTab === tab.key}
             onClick={() => setActiveTab(tab.key)}
           >
-            {tab.label}
+            {getResponsiveLabel(tab.key, isNarrow)}
           </TabButton>
         ))}
       </TabsContainer>

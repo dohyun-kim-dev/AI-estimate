@@ -279,7 +279,7 @@ export default function AILayout() {
 
 🏢공급사명 : 주식회사 여기닷
  
-📞전화문의 : 031-111-1234
+📞전화문의 : 031-8039-7981
  
 ※ 위 견적서는 공급사 공식 홈페이지에서도 조회할 수 있습니다
  
@@ -298,11 +298,26 @@ https://heredotcorp.com
       error('링크 복사에 실패했습니다.');
     }
   };
-
-  const handleNewChat = () => {
-    resetChat();
-    success('새로운 채팅 세션이 시작되었습니다.');
-  };
+const handleNewChat = () => {
+  const storedData = sessionStorage.getItem('ai-chat-storage');
+  if (storedData) {
+    try {
+      const parsedData = JSON.parse(storedData);
+      const messages = parsedData.state?.messages || [];
+      if (messages.length >= 2) {
+        resetChat();
+        success('새로운 채팅 세션이 시작되었습니다.');
+      } else {
+        success('이미 새로운 채팅 세션이 시작되었습니다.');
+      }
+    } catch (e) {
+      console.error('세션스토리지 데이터 파싱 오류:', e);
+      error('데이터 확인 중 오류가 발생했습니다.');
+    }
+  } else {
+    error('저장된 채팅이 없습니다.');
+  }
+};
 
   const handleGoToSettings = () => {
     if (isAuthenticated()) {
