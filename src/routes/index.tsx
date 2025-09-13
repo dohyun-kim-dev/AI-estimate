@@ -61,6 +61,8 @@ export default function AppRoutes() {
           <Route path="ai-estimate" element={<AIEstimate />} />
         </Route>
 
+        <Route path="pdf-preview" element={<PDFPreview />} />
+        
         <Route element={<CMSLayout />}>
           <Route path="cms" element={<CMS />} />
           <Route path="cms/login" element={<CMSLogin />} />
@@ -135,7 +137,6 @@ export default function AppRoutes() {
         </Route>
       
       {/* PDF 미리보기 페이지 - 별도 경로로 설정 */}
-      <Route path="/pdf-preview" element={<PDFPreview />} />
       
       {/* /superAdmin으로 시작하지 않는 모든 경로를 /aiclient/default로 리다이렉트 */}
       <Route 

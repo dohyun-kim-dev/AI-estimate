@@ -121,9 +121,9 @@ const ProfileIconWrapper = styled.div`
 
 const Main = styled.main` 
   width: 100vw;
-  padding: 86px 0 80px;
+  padding: 100px 0 80px;
   min-height: auto;
-      
+  
 `;
 
 const ShareInput = styled.div`

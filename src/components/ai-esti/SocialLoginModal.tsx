@@ -177,11 +177,12 @@ const StyledCloseButton = styled.button`
 interface SocialLoginModalProps {
   $isOpen: boolean;
   onClose: () => void;
-  purpose?: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat' | 'default';
+  purpose?: 'contact' | 'download' | 'share' | 'limitReached' | 'limitExceeded' | 'shareChat' | 'consult' | 'default';
   onGoogleLoginSuccess?: (userData?: any) => void;  
   onPrimaryButtonClick?: () => void;
   onShare?: () => void;
   onDownload?: () => void;
+  onIssuerInfoSubmit?: (info: IssuerInfo) => void;
 }
 
 export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
@@ -335,9 +336,12 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                 if (purpose === 'shareChat') {
                   openShareChatModal();
                 }
-              if (purpose === 'limitExceeded') {
-                openEstimateModal();
-              }
+                if (purpose === 'limitExceeded') {
+                  openEstimateModal();
+                }
+                if (purpose === 'consult') {
+                  onGoogleLoginSuccess && onGoogleLoginSuccess();
+                }
               onClose();
             }
           }
@@ -433,6 +437,15 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
             <Highlight>무제한 이용​</Highlight> 혜택받기​</>),
           subtitle: `해당 기능을 사용하기 위해서​\n발행자 정보가 필요합니다​`,
           primaryButtonText: '가입없이 이용하기',
+          secondaryButtonText: '가입하고 혜택 받기',
+          secondaryButtonSubText: '',
+        };
+      case 'consult': // ✅ 문의하기 케이스 추가
+        return {
+          title: (<>로그인 후 모든 기능​<br />
+            <Highlight>무제한 이용​</Highlight> 혜택받기​</>),
+          subtitle: `해당 기능을 사용하기 위해서​\n발행자 정보가 필요합니다​`,
+          primaryButtonText: '비회원으로 문의하기',
           secondaryButtonText: '가입하고 혜택 받기',
           secondaryButtonSubText: '',
         };
@@ -578,6 +591,10 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
           } else if (infoModalPurpose === 'shareChat') {
             console.log('[IssuerInfoModal submit] purpose: shareChat', infoModalPurpose, info);
             openShareChatModal();
+          } else if (infoModalPurpose === 'consult') {
+            console.log('[IssuerInfoModal submit] purpose: consult', infoModalPurpose, info);
+            // 문의 API 호출
+            props.onIssuerInfoSubmit && props.onIssuerInfoSubmit(info);
           } else if (infoModalPurpose === 'default') {
             console.log('[IssuerInfoModal submit] purpose: default', info);
           } else {

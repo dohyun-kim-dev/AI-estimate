@@ -225,16 +225,22 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
                 setSelectedCategory(category.category_name);
               }
             }}
-            // depth=1에서는 하위 섹션 합계를 보여주기 위한 items 구성 (표시용)
-            items={category.sub_categories.map((sub) => ({
-              name: sub.sub_category_name,
-              price: sub.items
-                .filter((i) => !i.is_deleted) // 삭제 제외
-                .reduce((sum, item) => sum + getDiscountedPrice(item, typeof (discountRate) === 'number' ? discountRate : 0), 0)
-                .toLocaleString(),
-              description: "",
-              is_deleted: false,
-            })) as any}
+            // depth=1에서는 2뎁스에서 props로 전달된 price(실제 표시 금액)만 합산해서 보여줌
+            items={category.sub_categories.map((sub) => {
+              // 2뎁스에서 실제로 화면에 표시되는 금액을 EstimateAccordionItem에서 계산해서 props로 전달받는다고 가정
+              // 여기서는 sub.items의 price(이미 할인/제외 적용된 값)를 단순 합산
+              // (실제 구조상 sub.items의 price가 이미 할인/제외 적용된 값이어야 함)
+              return {
+                name: sub.sub_category_name,
+                // sub.items의 price를 모두 더함 (이미 할인/제외 적용된 값)
+                price: sub.items
+                  .filter((i) => !i.is_deleted)
+                  .reduce((sum, item) => sum + toNumberLike(item.price), 0)
+                  .toLocaleString(),
+                description: "",
+                is_deleted: false,
+              };
+            }) as any}
             selectedItemId={selectedSubItem}
             onItemSelect={(itemId) => handleSubItemSelect(category.category_name, itemId)}
             chatRoomId={chatSessionId}

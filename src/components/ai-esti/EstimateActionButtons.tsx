@@ -10,6 +10,7 @@ import { useChatStore } from '@/store/chatStore';
 import { requestEstimateConsult } from '@/lib/api/user/userApi';
 import { useLocation } from 'react-router-dom';
 import IssuerInfoModal, { IssuerInfo } from '@/components/ai-esti/IssuerInfoModal';
+import { SocialLoginModal } from '@/components/ai-esti/SocialLoginModal';
 
 const ButtonsContainer = styled.div`
   display: flex;
@@ -151,6 +152,8 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
   onSubmit,
 }) => {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [isSocialLoginModalOpen, setIsSocialLoginModalOpen] = useState(false); // ✅ 추가: 소셜 로그인 모달 상태
+  const [socialLoginPurpose, setSocialLoginPurpose] = useState<'consult' | null>(null); // ✅ 추가: 목적 상태
   const [name, setName] = useState('');   // 로그인 사용자 프리필 용
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -189,9 +192,22 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
       // 회원은 바로 API 호출
       await handleSubmit();
     } else {
-      // 비회원은 정보 입력 모달 표시
-      setIsInfoModalOpen(true);
+      // ✅ 수정: 비회원일 때 소셜 로그인 모달 띄움
+      setSocialLoginPurpose('consult');
+      setIsSocialLoginModalOpen(true);
     }
+  };
+
+  // 소셜 로그인 모달에서 기본 버튼 클릭 → 발행자 정보 입력 모달 오픈
+  const handlePrimaryButtonClick = () => {
+    setIsSocialLoginModalOpen(false);
+    setIsInfoModalOpen(true);
+  };
+
+  // 소셜 로그인 성공 시 바로 문의 API 호출
+  const handleSocialLoginSuccess = async () => {
+    setIsSocialLoginModalOpen(false);
+    await handleSubmit(); // ✅ 소셜 로그인 성공 시 바로 문의 API 호출
   };
 
   // 상담 요청 공통 처리: 로그인/비로그인 모두 지원
@@ -318,6 +334,16 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
         open={isInfoModalOpen}
         onClose={() => setIsInfoModalOpen(false)}
         onSubmit={(info) => handleSubmit(info)}
+      />
+
+      {/* ✅ 추가: 소셜 로그인 모달 */}
+      <SocialLoginModal
+        $isOpen={isSocialLoginModalOpen}
+        onClose={() => setIsSocialLoginModalOpen(false)}
+        purpose={socialLoginPurpose || 'consult'}
+        onPrimaryButtonClick={handlePrimaryButtonClick}
+        onGoogleLoginSuccess={handleSocialLoginSuccess}
+        onIssuerInfoSubmit={handleSubmit}
       />
     </ButtonsContainer>
   );

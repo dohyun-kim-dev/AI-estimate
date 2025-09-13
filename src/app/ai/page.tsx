@@ -152,6 +152,7 @@ const UserMessage = styled.div`
 
 const FileUploadArea = styled.div<{ $isDragOver: boolean }>`
   position: absolute;
+  height: 90vh;
   top: 0;
   left: 0;
   right: 0;
@@ -179,6 +180,13 @@ const FileUploadSubtext = styled.div`
   color: ${({ theme }) => theme.subtleText};
   font-size: 18px;
   opacity: 0.8;
+`;
+
+const FilePreviewArea = styled.div`
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 0 16px;
+  margin-bottom: 16px;
 `;
 
 const ProgressBar = styled.div<{ $progress: number }>`
@@ -689,8 +697,8 @@ export default function AiChatPage() {
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
   const {
-    handleSubmit,
-    stopStreaming,
+    handleSubmit: originalHandleSubmit,
+    stopStreaming: originalStopStreaming,
     isProcessing,
     uploadedFiles,
     isDragOver,
@@ -702,6 +710,18 @@ export default function AiChatPage() {
     handleFileInput,
     removeFile,
   } = useChatActions({ modelName, selectedPromptId });
+
+  const handleSubmit = async (value: string, options?: { displayMessage?: string; abortSignal?: AbortSignal }) => {
+    // 전송 버튼 누르자마자 파일 미리보기 사라지게 하기
+    uploadedFiles.forEach(file => removeFile(file.fileUri));
+    await originalHandleSubmit(value, options);
+  };
+
+  const stopStreaming = () => {
+    originalStopStreaming();
+    // 정지 버튼 시 파일 미리보기 사라지게 하기
+    uploadedFiles.forEach(file => removeFile(file.fileUri));
+  };
 
   // 인풋 복원용 state
   const [restoreInput, setRestoreInput] = useState<string | null>(null);
@@ -850,13 +870,15 @@ useEffect(() => {
     }
   }, [error, success]);
   
-  const initialAiMessage = `AI 컨설턴트 강유하 입니다 만나 뵙게 되어 반갑습니다
-어떤 종류의 프로젝트를 만들고 싶으신가요?
+  const initialAiMessage = `안녕하세요, (주)여기닷 AI 기술영업팀 강유하입니다 
+견적 발행을 위해 프로젝트의 큰 그림을 한 줄로 알려주시겠어요?`
+//   `AI 컨설턴트 강유하 입니다 만나 뵙게 되어 반갑습니다
+// 어떤 종류의 프로젝트를 만들고 싶으신가요?
 
-  프로젝트의 큰 그림을 알려주세요
-  <ul style="padding-left: 30px;"><li>프로젝트의 핵심 목표는 무엇인가요?</li><li>주요 사용자층은 누구인가요?
-</li><li>꼭 필요한 핵심 기능은 무엇인가요?</li></ul>
-궁금하신 점이나 추가로 설명하고 싶으신 내용이 있다면 언제든지 편하게 이야기해주세요.`;
+//   프로젝트의 큰 그림을 알려주세요
+//   <ul style="padding-left: 30px;"><li>프로젝트의 핵심 목표는 무엇인가요?</li><li>주요 사용자층은 누구인가요?
+// </li><li>꼭 필요한 핵심 기능은 무엇인가요?</li></ul>
+// 궁금하신 점이나 추가로 설명하고 싶으신 내용이 있다면 언제든지 편하게 이야기해주세요.`;
   const [hasShownInitialMessage, setHasShownInitialMessage] = useState(false);
 
   useEffect(() => {
@@ -1025,6 +1047,7 @@ useEffect(() => {
         estimateDataForConsult={estimateDataForConsult}
         chatSessionId={chatSessionId}
         onRestoreInput={handleRestoreInput}
+        onStopStreaming={stopStreaming}
         key={restoreInput !== null ? `restore-${restoreInput}` : undefined}
       />
     </Container>

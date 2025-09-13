@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import styled, { useTheme } from 'styled-components';
 import Icon from './Icon';
 import TextareaAutosize from 'react-textarea-autosize';
-import { customScrollbar } from '@/styles/commonStyles';
 import { useAuthStore } from '@/store/authStore';
 import { SocialLoginModal } from './SocialLoginModal';
 import FileUploadSection from './FileUploadSection';
@@ -116,9 +115,22 @@ const AutoSizeInput = styled(TextareaAutosize)`
     cursor: not-allowed;
     color: ${({ theme }) => theme.subtleText};
   }
-  ${customScrollbar({
-     trackColor: '#262528',
-  })}
+
+  /* 스크롤바 스타일링 */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.surface1};
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.border};
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${({ theme }) => theme.subtleText};
+  }
 `;
 
 const RemainingCountText = styled.p`
@@ -128,10 +140,32 @@ const RemainingCountText = styled.p`
   padding: 4px 16px 0;
 `;
 
-const FilePreviewArea = styled.div`
-  max-width: 1024px;
-  margin: 0 auto;
-  padding: 0 16px;
+const FilePreviewContainer = styled.div`
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 0;
+  max-width: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: ${({ theme }) => theme.border} transparent;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.border};
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${({ theme }) => theme.subtleText};
+  }
 `;
 
 interface BottomInputProps {
@@ -152,6 +186,7 @@ interface BottomInputProps {
   estimateDataForConsult: ProjectEstimate | null;
   chatSessionId: string;
   onRestoreInput?: (value: string) => void; // 추가: 인풋 복원 콜백
+  onStopStreaming?: () => void; // 추가: 정지 버튼 콜백
 }
 
 
@@ -168,7 +203,8 @@ const BottomInput: React.FC<BottomInputProps> = ({
   onInfoSubmit,
   estimateDataForConsult,
   chatSessionId,
-  onRestoreInput
+  onRestoreInput,
+  onStopStreaming
 }) => {
   const [value, setValue] = useState('');
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
@@ -251,6 +287,9 @@ const BottomInput: React.FC<BottomInputProps> = ({
   const handleSubmit = async () => {
     if (value.trim() && onSubmit) {
       lastInputRef.current = value;
+      // 전송 버튼 누르자마자 인풋 텍스트 지우기
+      setValue('');
+      
       // 스트리밍 시작 시 AbortController 새로 생성
       if (abortController) {
         abortController.abort();
@@ -259,19 +298,19 @@ const BottomInput: React.FC<BottomInputProps> = ({
       setAbortController(newAbort);
 
       if (isLoggedIn) {
-        await onSubmit(value.trim(), { abortSignal: newAbort.signal });
-        setValue('');
+        await onSubmit(lastInputRef.current.trim(), { abortSignal: newAbort.signal });
         return;
       }
 
       const storedCount = Number(localStorage.getItem('remainingCount') || maxSubmissions);
       if (storedCount > 0) {
-        await onSubmit(value.trim(), { abortSignal: newAbort.signal });
-        setValue('');
+        await onSubmit(lastInputRef.current.trim(), { abortSignal: newAbort.signal });
         const newCount = storedCount - 1;
         setRemainingCount(newCount);
         localStorage.setItem('remainingCount', String(newCount));
       } else {
+        // 횟수가 부족해서 전송하지 못한 경우 텍스트 복원
+        setValue(lastInputRef.current);
         if (hasUsedExtraCount) {
           setLoginModalPurpose('limitExceeded');
           setIsLoginModalOpen(true);
@@ -294,6 +333,9 @@ const BottomInput: React.FC<BottomInputProps> = ({
       } else {
         setValue(lastInputRef.current);
       }
+    }
+    if (onStopStreaming) {
+      onStopStreaming();
     }
   };
 
@@ -384,15 +426,16 @@ const BottomInput: React.FC<BottomInputProps> = ({
       <InputWrapper style={{ 
         bottom: isKeyboardVisible ? window.visualViewport?.height - window.innerHeight : 0 
       }}>
-        <FilePreviewArea>
-          <FileUploadSection
-            uploadedFiles={uploadedFiles}
-            uploadProgress={uploadProgress}
-            onDeleteFile={onDeleteFile}
-            lang="ko"
-          />
-        </FilePreviewArea>
-
+        {uploadedFiles.length > 0 && (
+          <FilePreviewContainer>
+            <FileUploadSection
+              uploadedFiles={uploadedFiles}
+              uploadProgress={uploadProgress}
+              onDeleteFile={onDeleteFile}
+              lang="ko"
+            />
+          </FilePreviewContainer>
+        )}
         <InputContainer>
           <input
             ref={fileInputRef}
@@ -432,7 +475,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
           {/* 스트리밍 중일 때만 정지 버튼 노출 */}
           {isProcessing && (
             <IconButton type="button" onClick={handleStopStreaming}>
-              <Icon src="/ai-estimate/stop.png" width={36} height={36} />
+              <Icon src={isLightTheme ? "/ai-estimate/stop.png" : "/ai-estimate/stop_dark.png"}  width={36} height={36} />
             </IconButton>
           )}
         </InputContainer>

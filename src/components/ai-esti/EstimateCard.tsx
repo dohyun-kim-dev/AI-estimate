@@ -168,7 +168,8 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
   
 
     async function ensureUuidOnce(estimateObj: any, title: string) {
-      if (estimateObj?.uuid) return estimateObj.uuid;
+      //todo 같이 수정 견적서 id 관련 꼬임 수정
+      // if (estimateObj?.uuid) return estimateObj.uuid;
 
       // 유저 정보 추출
       let userId = '';
@@ -189,7 +190,10 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       if (!userId) throw new Error('사용자 ID가 없습니다.');
 
       // estimateObj._id가 없을 때: 세션스토리지에서 project_name과 total_price가 일치하는 메시지 중 estimateId가 있는 가장 최근 메시지를 찾아 반환
-      let effectiveId = estimateObj._id;
+      // let effectiveId = estimateObj._id;
+
+      //todo 수정
+      let effectiveId = null;
       if (!effectiveId && estimateObj?.project_name) {
         try {
           const raw = sessionStorage.getItem('ai-chat-storage');
@@ -240,7 +244,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
 
   const ensureUuidAndGetUrl = async () => {
     const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
-    return `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+    return `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
   };
 
 
@@ -248,7 +252,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
   const openPreviewTab = async () => {
     try {
       const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
-      const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+      const previewUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
       window.open(previewUrl, '_blank');
       console.log("estimate:", ensuredUuid);
       success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
@@ -308,11 +312,11 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
 
       if (pendingPurpose === 'download') {
-        const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+        const previewUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
         window.open(previewUrl, '_blank');
         success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
       } else if (pendingPurpose === 'share') {
-        const newShareUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+        const newShareUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
         setShareUrl(newShareUrl);
         setOpenShare(true);
         success('공유 링크가 생성되었습니다!');
@@ -387,7 +391,7 @@ https://heredotcorp.com
           // 로그인 후 목적대로 바로 진행
           if (socialLoginPurpose === 'download') {
             const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
-            const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+            const previewUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
             window.open(previewUrl, '_blank');
           } else if (socialLoginPurpose === 'share') {
             await handleShareClick();

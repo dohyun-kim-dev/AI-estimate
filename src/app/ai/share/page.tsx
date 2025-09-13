@@ -29,7 +29,11 @@ interface ChatMessage {
 
 // AI 레이아웃과 동일한 스타일
 const LayoutWrapper = styled.div`
-  min-height: 100vh;
+  // min-height: 100vw;
+  max-width: 960px;
+  margin : 0 auto;
+  display: flex;
+  justify-content: center;
   padding-bottom: calc(76px + env(safe-area-inset-bottom));
   background-color: ${({ theme }) => theme.body};
 `;
@@ -81,6 +85,8 @@ const Container = styled.div`
   width: 100vw;
   margin: 0 auto;
   padding: 1px;
+  // display: flex;
+  // justify-content: center;
   // padding-top: 76px;
   padding-bottom: 20px;
   min-height: 100vh;
@@ -89,6 +95,7 @@ const Container = styled.div`
 const ChatBox = styled.div`
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 20px;
   border-radius: 8px;
   padding: 12px;
@@ -266,26 +273,30 @@ const SharePage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // 메시지에서 파일 정보를 파싱하는 함수
+  // 유저 메시지에서 ai 프롬프트(견적 정보 등) 제거
+  const stripAiPrompt = (text: string) => {
+    // [현재 견적 정보] ~ 위 견적을 기반으로 ... 패턴 제거
+    return text.replace(/\[현재 견적 정보][\s\S]*?위 견적을 기반으로 [^\n]*를 진행해주세요\./g, '').trim();
+  };
+
   const parseMessageContent = (content: string) => {
     const fileMatch = content.match(/\[첨부파일: (.+?)\]/);
+    let textContent = content;
     if (fileMatch) {
       const fileName = fileMatch[1];
-      const textContent = content.replace(/\[첨부파일: .+?\]/, '').trim();
+      textContent = content.replace(/\[첨부파일: .+?\]/, '').trim();
       const imageUrl = `/file/${fileName}`;
-      
       // 이미지 파일인지 확인
       const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
-      
       return {
-        text: textContent,
+        text: stripAiPrompt(textContent),
         fileName,
         imageUrl,
         isImage
       };
     }
-    
     return {
-      text: content,
+      text: stripAiPrompt(content),
       fileName: null,
       imageUrl: null,
       isImage: false

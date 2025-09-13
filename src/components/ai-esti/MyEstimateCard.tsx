@@ -263,16 +263,16 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
 
   const ensureUuidAndGetUrl = async () => {
     const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
-    return `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+    return `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
   };
 
 
  const openPreviewTab = async () => {
     try {
       const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
-      const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+      const previewUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
       window.open(previewUrl, '_blank');
-      console.log("estimate:", ensuredUuid);
+      console.log("estimate:", estimate);
       success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
     } catch (err) {
       console.error('PDF 미리보기 오픈 중 오류:', err);
@@ -283,7 +283,7 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
   const handleShareClick = async () => {
     // 공유는 새탭을 열지 않고 링크만 생성
     const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
-    const newShareUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+    const newShareUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
     setShareUrl(newShareUrl);
     setOpenShare(true);
   };
