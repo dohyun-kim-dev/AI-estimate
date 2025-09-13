@@ -76,6 +76,22 @@ function findMessageIdForEstimate(estimateId?: string | null) {
     return null;
   }
 }
+  // 할인 제외 항목명 (2뎁스와 동일하게 유지)
+  const NON_DISCOUNT_ITEMS = [
+    '화면설계', '화면디자인', '화면퍼블리싱', '퍼블리싱', 'UI/UX디자인',
+    '화면 설계', '화면 퍼블리싱', 'UI/UX 디자인'
+  ];
+
+  // 할인 적용 함수 (2뎁스와 동일)
+  const getDiscountedPrice = (item: any, discountRate: number) => {
+    if (NON_DISCOUNT_ITEMS.includes(item.name)) return toNumberLike(item.price);
+    if (discountRate > 0) {
+      return Math.round(toNumberLike(item.price) * (1 - discountRate));
+    }
+    return toNumberLike(item.price);
+  };
+
+  // ...기존 유틸 함수들(deepClone, debounce, toNumberLike, findMessageIdForEstimate) 아래에 유지...
 
 const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
   data,
@@ -214,7 +230,7 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
               name: sub.sub_category_name,
               price: sub.items
                 .filter((i) => !i.is_deleted) // 삭제 제외
-                .reduce((sum, item) => sum + toNumberLike(item.price), 0)
+                .reduce((sum, item) => sum + getDiscountedPrice(item, typeof (discountRate) === 'number' ? discountRate : 0), 0)
                 .toLocaleString(),
               description: "",
               is_deleted: false,

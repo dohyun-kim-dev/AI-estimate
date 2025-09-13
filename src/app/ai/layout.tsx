@@ -235,8 +235,29 @@ export default function AILayout() {
 
   // '공유' 버튼을 눌렀을 때 실행될 함수 (AILayout에서 호출됨)
   const handleOpenShare = () => {
-    isAuthenticated() ? openShareChatModal() : openLoginModal('shareChat');
-  };
+  if (!isAuthenticated()) {
+    openLoginModal('shareChat');
+    return;
+  }
+
+  const storedData = sessionStorage.getItem('ai-chat-storage');
+  if (storedData) {
+    try {
+      const parsedData = JSON.parse(storedData);
+      const messages = parsedData.state?.messages || [];
+      if (messages.length >= 2) {
+        openShareChatModal();
+      } else {
+        error('공유할 대화내역이 없습니다');
+      }
+    } catch (e) {
+      console.error('세션스토리지 데이터 파싱 오류:', e);
+      error('데이터 확인 중 오류가 발생했습니다');
+    }
+  } else {
+    error('공유할 채팅 데이터가 없습니다.');
+  }
+};
 
   const handleCloseShare = () => {
     closeShareChatModal();
@@ -306,13 +327,13 @@ const handleNewChat = () => {
       const messages = parsedData.state?.messages || [];
       if (messages.length >= 2) {
         resetChat();
-        success('새로운 채팅 세션이 시작되었습니다.');
+        success('새로운 채팅방이 시작되었습니다');
       } else {
-        success('이미 새로운 채팅 세션이 시작되었습니다.');
+        success('이미 새로운 채팅방입니다');
       }
     } catch (e) {
       console.error('세션스토리지 데이터 파싱 오류:', e);
-      error('데이터 확인 중 오류가 발생했습니다.');
+      error('데이터 확인 중 오류가 발생했습니다');
     }
   } else {
     error('저장된 채팅이 없습니다.');

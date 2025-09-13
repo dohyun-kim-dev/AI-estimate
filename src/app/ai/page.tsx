@@ -482,7 +482,12 @@ const userId = getUserId() || '';
       .filter(item => 
         item.name === '화면설계' || 
         item.name === '화면디자인' || 
-        item.name === '화면퍼블리싱'
+        item.name === '화면퍼블리싱' ||
+        item.name === '퍼블리싱' ||
+        item.name === 'UI/UX디자인' ||
+        item.name === '화면 설계' ||
+        item.name === '화면 퍼블리싱' ||
+        item.name === 'UI/UX 디자인'
       );
 
     const nonDiscountableSum = nonDiscountableItems.reduce((sum, item) => {
