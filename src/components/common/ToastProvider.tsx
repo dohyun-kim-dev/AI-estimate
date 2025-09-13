@@ -62,11 +62,11 @@ const Card = styled.div<{ $type: ToastType }>`
   pointer-events: all;
   animation: ${slideDown} 0.16s ease both;
   overflow: hidden;
-  min-width: 280px;
+  min-width: 280px; 
   max-width: min(360px, calc(100vw - 24px));
-  padding: 16px 20px;
+  padding: 16px 16px;
   position: relative;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); 
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); 
 
 `
 
@@ -95,12 +95,11 @@ const CloseButton = styled.button`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  color: #FFFFFF;
+  // width: 24px;
+  // height: 24px;
   opacity: 0.8;
   transition: opacity 0.2s;
-  
+  padding: 0;
   &:hover {
     opacity: 1;
   }

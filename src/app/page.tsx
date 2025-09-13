@@ -499,7 +499,7 @@ export default function Home() {
           </StatCard>
         </StatsSection>
 
-        <TestimonialSection>
+        {/* <TestimonialSection>
           <SectionTitle>고객 후기</SectionTitle>
           <SectionSubtitle>
             다양한 기업들이 에이고 "견적 AI서비스"로
@@ -566,7 +566,7 @@ export default function Home() {
               </TestimonialFooter>
             </TestimonialMainContent>
           </TestimonialCard>
-        </TestimonialSection>
+        </TestimonialSection> */}
 
         <ConsultButton onClick={() => navigate(`/aiclient/${companyCode}/ai`)}>AI 견적 상담하기</ConsultButton>
       </MainContent>

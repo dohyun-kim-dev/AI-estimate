@@ -712,9 +712,9 @@ export default function AiChatPage() {
   } = useChatActions({ modelName, selectedPromptId });
 
   const handleSubmit = async (value: string, options?: { displayMessage?: string; abortSignal?: AbortSignal }) => {
-    // 전송 버튼 누르자마자 파일 미리보기 사라지게 하기
-    uploadedFiles.forEach(file => removeFile(file.fileUri));
     await originalHandleSubmit(value, options);
+    // 입력 완료 시 파일 미리보기 사라지게 하기
+    uploadedFiles.forEach(file => removeFile(file.fileUri));
   };
 
   const stopStreaming = () => {
@@ -959,6 +959,14 @@ useEffect(() => {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      <FilePreviewArea>
+        <FileUploadSection
+          uploadedFiles={uploadedFiles}
+          uploadProgress={uploadProgress}
+          onDeleteFile={removeFile}
+          lang="ko"
+        />
+      </FilePreviewArea>
       <FileUploadArea
         $isDragOver={isDragOver}
       >

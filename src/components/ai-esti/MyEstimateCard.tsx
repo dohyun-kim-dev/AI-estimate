@@ -303,11 +303,12 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
 🏢공급사명 : 주식회사 여기닷
  
 📞전화문의 : 031-8039-7981
- 
-※ 위 견적서는 공급사 공식 홈페이지에서도 조회할 수 있습니다
- 
+
 🌐공급사 홈페이지
-https://heredotcorp.com
+https://heredotcorp.com 
+
+※ 위 견적서는 공급사 공식 
+홈페이지에서도 조회할 수 있습니다
  
  `;
       await navigator.clipboard.writeText(textToCopy);

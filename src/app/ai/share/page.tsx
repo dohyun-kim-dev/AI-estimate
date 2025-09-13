@@ -27,16 +27,26 @@ interface ChatMessage {
   files?: FileUploadData[];
 }
 
+
+const CenterFlex = styled.div`
+width: 100vw;
+  display: flex;  
+  justify-content: center;
+`
+
 // AI 레이아웃과 동일한 스타일
 const LayoutWrapper = styled.div`
   // min-height: 100vw;
   max-width: 960px;
   margin : 0 auto;
   display: flex;
+    position: relative;
+
   justify-content: center;
   padding-bottom: calc(76px + env(safe-area-inset-bottom));
   background-color: ${({ theme }) => theme.body};
 `;
+
 
 const TopNav = styled.nav`
   position: fixed;
@@ -378,6 +388,7 @@ const SharePage: React.FC = () => {
 
   if (loading) {
     return (
+      <CenterFlex>
       <LayoutWrapper>
         <TopNav>
           {/* <div className="left-icons">
@@ -398,11 +409,14 @@ const SharePage: React.FC = () => {
           </LoadingContainer>
         </Container>
       </LayoutWrapper>
+      </CenterFlex>
     );
   }
 
   if (errorMessage) {
     return (
+
+      <CenterFlex>
       <LayoutWrapper>
         {/* <TopNav> */}
           {/* <div className="left-icons">
@@ -428,11 +442,12 @@ const SharePage: React.FC = () => {
           </ErrorContainer>
         </Container>
       </LayoutWrapper>
+
+      </CenterFlex>
     );
   }
 
-  return (
-    <LayoutWrapper>
+  
       {/* <TopNav>
         <div className="left-icons">
           <Icon 
@@ -445,7 +460,10 @@ const SharePage: React.FC = () => {
         <NavTitle>공유된 채팅</NavTitle>
         <div className="right-icons"></div>
       </TopNav> */}
+  return (
       
+      <CenterFlex>
+          <LayoutWrapper>
       <Container>
         <ReadOnlyNotice>
           AIGO 견적 열람 모드
@@ -522,6 +540,7 @@ const SharePage: React.FC = () => {
 
 
     </LayoutWrapper>
+    </CenterFlex>
   );
 };
 

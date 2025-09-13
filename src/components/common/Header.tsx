@@ -98,7 +98,7 @@ const Header = ({ compact }: HeaderProps) => {
   return (
     <HeaderWrapper>
       <HeaderContent>
-        <Logo onClick={() => window.location.href = 'https://aigopartners.com/'}> {/* ✅ 클릭 시 외부 홈페이지로 이동 */}
+        <Logo as="a" href="https://aigopartners.com/" target="_blank" rel="noopener noreferrer"> {/* 새 탭에서 열기 */}
           <Icon 
             src={isDarkMode ? '/main/logo_dark.png' : '/main/logo_light.png'} 
             height={32} 
