@@ -190,10 +190,10 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       if (!userId) throw new Error('사용자 ID가 없습니다.');
 
       // estimateObj._id가 없을 때: 세션스토리지에서 project_name과 total_price가 일치하는 메시지 중 estimateId가 있는 가장 최근 메시지를 찾아 반환
-      // let effectiveId = estimateObj._id;
-
+      let effectiveId = estimateObj.uuid;
+      console.log("estimateObj.estimateId:", estimateObj.estimateId);
       //todo 수정
-      let effectiveId = null;
+      // let effectiveId = null;
       if (!effectiveId && estimateObj?.project_name) {
         try {
           const raw = sessionStorage.getItem('ai-chat-storage');
@@ -223,7 +223,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       }
 
       // getDownloadEstimateUrlWithUserInfo는 URL만 반환하므로, 실제로 호출을 발생시켜야 함
-      const url = getDownloadEstimateUrlWithUserInfo(
+      const url:string = getDownloadEstimateUrlWithUserInfo(
         companyCode,
         effectiveId,
         { id: userId, name, email, cellphone }
@@ -244,6 +244,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
 
   const ensureUuidAndGetUrl = async () => {
     const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
+    console.log("ensuredUuid:", ensuredUuid); 
     return `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
   };
 
@@ -251,6 +252,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
   // 미리보기 새탭 오픈 (다운로드/공유 공용)
   const openPreviewTab = async () => {
     try {
+      console.log("openPreviewTab 함수 호출 직전 estimate:", estimate);
       const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
       const previewUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
       window.open(previewUrl, '_blank');

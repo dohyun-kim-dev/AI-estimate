@@ -5,7 +5,7 @@ export interface ProjectEstimate {
   estimated_period: string;
   categories: Category[];
   filePath?: string; // 서버에서 반환된 파일 경로
-  uuid?: string; // 서버에서 반환된 UUID
+  uuid: string; // 서버에서 반환된 UUID
 }
 
 export interface Category {

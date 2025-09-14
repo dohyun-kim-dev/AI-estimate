@@ -10,7 +10,9 @@ export function ensureEstimateUuid(est: any) {
 
 /** 견적 객체 정규화: uuid 보장, is_deleted 기본값, item_id 기본값 부여 */
 export function normalizeEstimate<T extends Record<string, any>>(est: T): T {
+console.log("normalizeEstimate called with:", est);
   ensureEstimateUuid(est);
+  console.log("normalizeEstimate:", est);
   est?.categories?.forEach((c: any, ci: number) =>
     c?.sub_categories?.forEach((sc: any, si: number) =>
       sc?.items?.forEach((it: any, ii: number) => {
@@ -35,9 +37,11 @@ export function buildFullEstimateData(input: any) {
     // content인 경우
     const intro = extractIntroFromReply(input);
     const estimate = extractEstimateData(input);
+    console.log("buildFullEstimateData extracted estimate:", estimate);
     if (!estimate) return input; // 견적서가 없으면 원본 반환
-    
+    console.log("buildFullEstimateData input (string):", input);
     const prepared = normalizeEstimate(JSON.parse(JSON.stringify(estimate)));
+    console.log("buildFullEstimateData:", prepared);
     const json = JSON.stringify(prepared, null, 2);
     const headline =
       (intro && intro.length > 0)
@@ -51,7 +55,9 @@ ${json}
 </script>`;
   } else {
     // estimate 객체인 경우 (하위 호환성)
+    console.log("buildFullEstimateData input:", input);
     const prepared = normalizeEstimate(JSON.parse(JSON.stringify(input || {})));
+    console.log("buildFullEstimateData:", prepared);
     const json = JSON.stringify(prepared, null, 2);
     const headline = '지금까지 논의된 내용을 바탕으로 주요 기능과 예상 비용을 정리한 견적서를 아래에 바로 제공드립니다.';
 
@@ -97,7 +103,9 @@ export function getOrEnsureEstimateFromContent<T = any>(content: string) {
   const est = extractEstimateData<T>(content);
   if (!est) return { estimate: null as T | null };
   // 깊은 복사 후 정규화(= uuid/flags/id 보장)
+  console.log("extractEstimateData est:", est);
   const ensured = normalizeEstimate(JSON.parse(JSON.stringify(est)));
+  console.log("getOrEnsureEstimateFromContent:", ensured);
   return { estimate: ensured as T };
 }
 

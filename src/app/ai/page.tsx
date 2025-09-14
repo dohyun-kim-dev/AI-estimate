@@ -338,9 +338,10 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
     if(typeof content !== 'string') { console.log('string이 아닌 content', typeof content,content);}
     const match = content.match(/<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/);
     if (!match) return null;
-
+    console.log('match', match);
     const jsonStr = match[1];
     const data = JSON.parse(jsonStr);
+    console.log('파싱된 견적 데이터:', data);
 
     if (!data || typeof data !== 'object' || !Array.isArray(data.categories)) {
       console.error('Invalid estimate data structure:', data);
@@ -376,12 +377,12 @@ const parseMessageContent = (content: string) => {
   };
 };
 
-export const AiMessageContent: React.FC<{ content: string; chatSessionId?: string; estimateDataForConsult?: ProjectEstimate; estimate_Id?: string }> = ({ content, chatSessionId, estimateDataForConsult, estimate_Id }) => {
+export const AiMessageContent: React.FC<{ content: string; chatSessionId?: string; estimateDataForConsult?: ProjectEstimate }> = ({ content, chatSessionId, estimateDataForConsult }) => {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
-  const estimateData = estimateDataForConsult || extractEstimateData(content);
+  const estimateData = useMemo(() => estimateDataForConsult || extractEstimateData(content), [content, estimateDataForConsult]);
   const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash', selectedPromptId: 'default' });
-  const estimateId = estimate_Id || estimateData?.uuid;
+  const estimateId = estimateData?.uuid;
   const effectiveChatSessionId = chatSessionId || localStorage.getItem('chatSessionId') || '';
   const updateLastMessage = useChatStore((s) => s.updateLastMessage); // ⭐️ 추가: updateLastMessage 가져오기
   const messages = useChatStore((s) => s.messages); // ⭐️ 추가: messages 배열 가져오기
@@ -609,7 +610,11 @@ const userId = getUserId() || '';
  {/* 할인율 계산: discountableBase, discountPercentage */}
               {(() => {
                 // 할인 제외 항목
-                const NON_DISCOUNT_ITEMS = ['화면설계', '화면디자인', '화면퍼블리싱'];
+                  const NON_DISCOUNT_ITEMS = [
+                  '화면설계', '화면디자인', '화면퍼블리싱', '퍼블리싱', 'UI/UX디자인',
+                  '화면 설계', '화면 퍼블리싱', 'UI/UX 디자인'
+                ];
+
                 let nonDiscountableSum = 0;
                 let discountableBase = basePrice;
                 if (estimateData && Array.isArray(estimateData.categories)) {
@@ -1010,7 +1015,6 @@ useEffect(() => {
             );
           } else {
 
-            const estimateId = m.estimateId
                  if (m.isLoading) {
               return (
                 <StyledAiMessage
@@ -1030,7 +1034,7 @@ useEffect(() => {
             return (
               <StyledAiMessage
                 key={idx}
-                content={<AiMessageContent content={m.content} chatSessionId={chatSessionId} estimate_Id={estimateId} />} 
+                content={<AiMessageContent content={m.content} chatSessionId={chatSessionId} />} 
                 profileImage="/ai-estimate/pretty.png"
                 name="강유하"
                 isFullWidth={isEstimateMessage(m.content)}

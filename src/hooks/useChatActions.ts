@@ -26,11 +26,13 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
       /<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/
     );
     if (!match) return null;
+    console.log("extractEstimateData match[1]:", match[1]);
 
     const data = JSON.parse(match[1]);
     if (!data || typeof data !== 'object' || !Array.isArray(data.categories)) {
       return null;
     }
+    console.log("extractEstimateData data:", data);
     return data as ProjectEstimate;
   } catch (err) {
     console.error('Failed to parse estimate data:', err);
@@ -406,11 +408,13 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
       // 견적 JSON 감지 및 저장 로직은 reply 전체가 온 뒤 기존대로 처리
       const estimateData = extractEstimateData(reply);
+      console.log('extractEstimateData 직후 추출된 견적 데이터:', estimateData); 
       if (estimateData) {
         try {
           const invoiceTitle = estimateData.project_name || '새로운 견적서';
           if (!userId) throw new Error('사용자 ID를 가져올 수 없습니다.');
           ensureEstimateUuid(estimateData);
+          console.log('견적 데이터 저장 시작', estimateData);
           const estimateId = estimateData.uuid;
           const dataStr = buildFullEstimateData(reply);
           const uploadResponse = await uploadEstimatePdf(

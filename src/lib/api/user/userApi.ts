@@ -248,7 +248,7 @@ export async function uploadEstimatePdf(
     companyCode,   // ★ 에러가 요구한 필드
   };
   if (estimateId) payload.id = estimateId; // 업데이트면만 추가
-
+console.log("uploadEstimatePdf payload:", payload);
   return callUserApi({
     title: '견적 저장',
     url: getApiUrl('/users/company/estimate/upload'),
