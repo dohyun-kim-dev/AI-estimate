@@ -328,8 +328,9 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                 console.log('onGoogleLoginSuccess =', onGoogleLoginSuccess);
                 console.log('purpose =', purpose);
                 if(purpose==='share'){
+                  // 회원/비회원 모두 공유 목적이면 onShare 콜백 호출 (공유 모달 오픈)
                   props.onShare && props.onShare();
-                } 
+                }
                 if(purpose === 'download'){
                   props.onDownload && props.onDownload();
                 }
