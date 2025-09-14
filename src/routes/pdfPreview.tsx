@@ -103,20 +103,27 @@ const PDFPreview: React.FC = () => {
     }
   }, [uuid, searchParams]);
 
-  // 모바일 기기 감지
+  // 인앱 브라우저 감지 및 처리
   useEffect(() => {
-    const checkIsMobile = () => {
+    const isInAppBrowser = () => {
       const userAgent = navigator.userAgent.toLowerCase();
-      const mobileKeywords = ['android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'];
-      const isMobileDevice = mobileKeywords.some(keyword => userAgent.includes(keyword));
-      const isSmallScreen = window.innerWidth <= 768;
-      setIsMobile(isMobileDevice || isSmallScreen);
+      return userAgent.includes('kakaotalk') || 
+             (userAgent.includes('mobile') && !(window as any).navigator.standalone && userAgent.includes('safari'));
     };
 
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    return () => window.removeEventListener('resize', checkIsMobile);
-  }, []);
+    if (isInAppBrowser() && pdfBlobUrl) {
+      const confirmed = window.confirm('카카오톡이나 인앱 브라우저에서 PDF가 제대로 표시되지 않을 수 있습니다. 새 브라우저 창으로 열어 PDF를 다운로드하시겠습니까?');
+      if (confirmed) {
+        // PDF 다운로드 트리거
+        const link = document.createElement('a');
+        link.href = pdfBlobUrl;
+        link.download = `견적서_${uuid}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+  }, [pdfBlobUrl, uuid]);
 
   
   useEffect(() => {
@@ -135,7 +142,7 @@ const PDFPreview: React.FC = () => {
       }
 
       // 서버가 내려준 원본(표시용)
-      setEstimateMeta(res.data); // 메타데이터 저장
+      setEstimateMeta(res.data.data); // 메타데이터 저장
 console.log("res값",res)
 console.log("res.data 타입:", typeof res.data)
 console.log("res.data.data 타입:", typeof res.data.data)
@@ -173,8 +180,8 @@ console.log("res.data.data 타입:", typeof res.data.data)
   
   const getPDFViewerUrl = (blobUrl: string) => {
     if (isMobile) {
-      // 모바일에서는 Google Docs Viewer 사용
-      return `https://docs.google.com/viewer?url=${encodeURIComponent(blobUrl)}&embedded=true`;
+      // 모바일에서는 브라우저 내장 PDF 뷰어 사용 (blob URL 직접 사용)
+      return blobUrl;
     }
     return blobUrl;
   };
@@ -223,13 +230,25 @@ console.log("res.data.data 타입:", typeof res.data.data)
       {!loading && !error && (
         <>
           {pdfBlobUrl && (
-            <PDFViewer
-              id="pdf-iframe"
-              src={getPDFViewerUrl(pdfBlobUrl)}
-              title="견적서 PDF"
-              onLoad={handleIframeLoad}
-              onError={handleIframeError}
-            />
+            <>
+              {isMobile ? (
+                <embed
+                  src={pdfBlobUrl}
+                  type="application/pdf"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 'none' }}
+                />
+              ) : (
+                <PDFViewer
+                  id="pdf-iframe"
+                  src={getPDFViewerUrl(pdfBlobUrl)}
+                  title="견적서 PDF"
+                  onLoad={handleIframeLoad}
+                  onError={handleIframeError}
+                />
+              )}
+            </>
           )}
         </>
       )}

@@ -491,7 +491,12 @@ https://heredotcorp.com
         onPrimaryButtonClick={handlePrimaryButtonClick}
         onGoogleLoginSuccess={handleSocialLoginSuccess}
         onDownload={openPreviewTab}
-        onShare={openPreviewTab}
+        onShare={async () => {
+          const newShareUrl = await ensureUuidAndGetUrl();
+          setShareUrl(newShareUrl);
+          setOpenShare(true);
+          success('공유 링크가 생성되었습니다!');
+        }}
       />
     </CardWrapper>
   );

@@ -280,9 +280,6 @@ const ConsultButton = styled.button`
   transition: opacity 0.2s ease-in-out;
   z-index: 1000;
 
-  &:hover {
-    opacity: 0.9;
-  }
 `;
 
 const TestimonialAvatar = styled.img`
