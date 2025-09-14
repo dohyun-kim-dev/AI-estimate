@@ -210,7 +210,12 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
       let effectiveId = estimateObj._id;
       if (!effectiveId && estimateObj?.project_name) {
         try {
-          const raw = sessionStorage.getItem('ai-chat-storage');
+          // 일반 채팅 스토리지 확인
+          let raw = sessionStorage.getItem('ai-chat-storage');
+          if (!raw) {
+            // 공유 채팅 스토리지 확인
+            raw = sessionStorage.getItem('share-chat-storage');
+          }
           if (raw) {
             const storageState = JSON.parse(raw);
             const messages = storageState.state?.messages || [];

@@ -410,9 +410,8 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         try {
           const invoiceTitle = estimateData.project_name || '새로운 견적서';
           if (!userId) throw new Error('사용자 ID를 가져올 수 없습니다.');
-          // estimateId 생성 및 견적서에 박음
-          const estimateId = uuidv4();
-          estimateData.uuid = estimateId;
+          ensureEstimateUuid(estimateData);
+          const estimateId = estimateData.uuid;
           const dataStr = buildFullEstimateData(reply);
           const uploadResponse = await uploadEstimatePdf(
             currentSessionId,

@@ -167,8 +167,83 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
 
   
 
+    async function ensureUuidOnce(estimateObj: any, title: string) {
+      //todo 같이 수정 견적서 id 관련 꼬임 수정
+      // if (estimateObj?.uuid) return estimateObj.uuid;
+
+      // 유저 정보 추출
+      let userId = '';
+      let name = '';
+      let email = '';
+      let cellphone = '';
+      const authStorage = localStorage.getItem('auth-storage');
+      if (authStorage) {
+        const authData = JSON.parse(authStorage);
+        userId = authData?.state?.user?.id || authData?.state?.user?._id || '';
+        name = authData?.state?.user?.name || '';
+        email = authData?.state?.user?.email || '';
+        cellphone = authData?.state?.user?.cellphone || '';
+      }
+      if (!userId) {
+        userId = localStorage.getItem('guest-uuid') || '';
+      }
+      if (!userId) throw new Error('사용자 ID가 없습니다.');
+
+      // estimateObj._id가 없을 때: 세션스토리지에서 project_name과 total_price가 일치하는 메시지 중 estimateId가 있는 가장 최근 메시지를 찾아 반환
+      // let effectiveId = estimateObj._id;
+
+      //todo 수정
+      let effectiveId = null;
+      if (!effectiveId && estimateObj?.project_name) {
+        try {
+          const raw = sessionStorage.getItem('ai-chat-storage');
+          if (raw) {
+            const storageState = JSON.parse(raw);
+            const messages = storageState.state?.messages || [];
+            console.log("세션스토리지 메시지:", messages);
+            // 메시지를 역순으로 순회하여 가장 최근의 일치하는 estimateId 찾기
+            const reversedMessages = messages.slice().reverse();
+            let foundId = null;
+            for (const m of reversedMessages) {
+              if (typeof m.content === 'string' && m.content.includes(estimateObj.project_name)) {
+                if (m.estimateId) {
+                  foundId = m.estimateId;
+                  console.log("세션스토리지에서 추출한 estimateId:", foundId);
+                  break;
+                }
+              }
+            }
+            if (foundId) {
+              effectiveId = foundId;
+            }
+          }
+        } catch (e) {
+          console.warn('세션스토리지에서 estimateId 추출 실패', e);
+        }
+      }
+
+      // getDownloadEstimateUrlWithUserInfo는 URL만 반환하므로, 실제로 호출을 발생시켜야 함
+      const url = getDownloadEstimateUrlWithUserInfo(
+        companyCode,
+        effectiveId,
+        { id: userId, name, email, cellphone }
+      );
+      try {
+        await fetch(url, { method: 'GET' });
+        console.log("다운로드 카운트 성공")
+      } catch (e) {
+        console.log("다운로드 카운트 실패 ")
+      }
+
+      if (!effectiveId) throw new Error('uuid 보장 실패');
+      console.log("estimateObj._id(effectiveId):", effectiveId);
+      return effectiveId as string;
+    }
+  
+
+
   const ensureUuidAndGetUrl = async () => {
-    const ensuredUuid = estimate.uuid || uuidv4();
+    const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
     return `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
   };
 
@@ -176,7 +251,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
   // 미리보기 새탭 오픈 (다운로드/공유 공용)
   const openPreviewTab = async () => {
     try {
-      const ensuredUuid = estimate.uuid || uuidv4();
+      const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
       const previewUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
       window.open(previewUrl, '_blank');
       console.log("estimate:", ensuredUuid);
@@ -246,7 +321,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
         localStorage.setItem('guest-uuid', guestUuid);
       }
 
-      const ensuredUuid = estimate.uuid || uuidv4();
+      const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
 
       if (pendingPurpose === 'download') {
         const previewUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
@@ -328,7 +403,7 @@ https://heredotcorp.com
 
           // 로그인 후 목적대로 바로 진행
           if (socialLoginPurpose === 'download') {
-            const ensuredUuid = estimate.uuid || uuidv4();
+            const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
             const previewUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
             window.open(previewUrl, '_blank');
           } else if (socialLoginPurpose === 'share') {
@@ -414,12 +489,7 @@ https://heredotcorp.com
         onPrimaryButtonClick={handlePrimaryButtonClick}
         onGoogleLoginSuccess={handleSocialLoginSuccess}
         onDownload={openPreviewTab}
-        onShare={async () => {
-          const newShareUrl = await ensureUuidAndGetUrl();
-          setShareUrl(newShareUrl);
-          setOpenShare(true);
-          success('공유 링크가 생성되었습니다!');
-        }}
+        onShare={openPreviewTab}
       />
     </CardWrapper>
   );
