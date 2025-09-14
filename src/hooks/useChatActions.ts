@@ -426,7 +426,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           const updatedReply = dataStr;
           const aiMessageResponse: ChatMessageResponseData = await sendChatMessage(currentSessionId, {
             role: 'AI',
-            content: { type: 'text', value: updatedReply },
+            content: { type: 'text', value: updatedReply, estimateId },
             uid: userId
           });
           const aiMessageId = aiMessageResponse?.data?._id;
