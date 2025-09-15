@@ -5,6 +5,7 @@ interface PromptStoreState {
   priceListMarkdown: string;
   isPriceDataReady: boolean;
   aiPrompts: string;
+  greeting: string;
   setPriceList: (list: any[]) => void;
   getPriceList: () => any[];
   setPriceListMarkdown: (markdown: string) => void;
@@ -13,6 +14,8 @@ interface PromptStoreState {
   getIsPriceDataReady: () => boolean;
   setAiPrompts: (prompts: string) => void;
   getAiPrompts: () => string;
+  setGreeting: (greeting: string) => void;
+  getGreeting: () => string;
 }
 
 export const usePromptStore = create<PromptStoreState>((set, get) => ({
@@ -20,6 +23,7 @@ export const usePromptStore = create<PromptStoreState>((set, get) => ({
   priceListMarkdown: '',
   isPriceDataReady: false,
   aiPrompts: '',
+  greeting: '',
   setPriceList: (list) => set({ priceList: list }),
   getPriceList: () => get().priceList,
   setPriceListMarkdown: (markdown) => set({ priceListMarkdown: markdown }),
@@ -28,4 +32,6 @@ export const usePromptStore = create<PromptStoreState>((set, get) => ({
   getIsPriceDataReady: () => get().isPriceDataReady,
   setAiPrompts: (prompts) => set({ aiPrompts: prompts }),
   getAiPrompts: () => get().aiPrompts,
+  setGreeting: (greeting) => set({ greeting }),
+  getGreeting: () => get().greeting,
 }));

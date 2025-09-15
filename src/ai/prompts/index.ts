@@ -171,7 +171,10 @@ export const combineSystemPrompts = async () => {
   console.log('[combineSystemPrompts] 최종 프롬프트 생성 완료, 길이:', finalPrompt.length);
   console.log('[combineSystemPrompts] AI 프롬프트 포함 여부:', finalPrompt.includes(aiPromptsContent.substring(0, 50)));
   console.log('[combineSystemPrompts] 단가표 마크다운 포함 여부:', finalPrompt.includes('# 단가표 정보'));
+  console.log('priceListMarkdown', priceListMarkdown);
+  console.log('priceList', priceList);
   
+
   // 최종 프롬프트에 마크다운이 포함되었는지 상세 확인
   if (finalPrompt.includes('# 단가표 정보')) {
     console.log('[combineSystemPrompts] ✅ 최종 프롬프트에 단가표 마크다운이 정상 포함됨');

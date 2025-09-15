@@ -752,11 +752,20 @@ useEffect(() => {
         const promptsData = aiPromptsResponse.data as any[];
         console.log('AI 프롬프트 데이터:', promptsData);
         
-        // 모든 프롬프트 항목의 content를 순차 연결
-        const aiPromptsContent = promptsData
-          .filter(item => item.content) // content가 있는 항목만
-          .map(item => item.content)
-          .join('\n\n'); // 각 content 사이에 줄바꿈 추가
+        // GREETING 분리
+        const greetingItem = promptsData.find(item => item.name === 'GREETING');
+        if (greetingItem && greetingItem.content) {
+          usePromptStore.getState().setGreeting(greetingItem.content);
+          setInitialAiMessage(greetingItem.content);
+        }
+        
+        // INSTRUCTION을 맨 위에, 나머지 프롬프트 연결
+        const instructionItem = promptsData.find(item => item.name === 'INSTRUCTION');
+        const otherPrompts = promptsData.filter(item => item.name !== 'GREETING' && item.name !== 'INSTRUCTION' && item.content);
+        const aiPromptsContent = [
+          ...(instructionItem && instructionItem.content ? [instructionItem.content] : []),
+          ...otherPrompts.map(item => item.content)
+        ].join('\n\n');
         
         console.log('AI 프롬프트 content 연결 완료, 길이:', aiPromptsContent.length);
         
@@ -767,8 +776,10 @@ useEffect(() => {
       }
 
       const res = await getAllUnitPrices();
-      if (res && Array.isArray(res.data)) {
-        usePromptStore.getState().setPriceList(res.data);
+      console.log('단가표 API 응답:', res);
+      if (res && res.statusCode === 200 && res.data && Array.isArray(res.data.data)) {
+        const priceList = res.data.data;
+        usePromptStore.getState().setPriceList(priceList);
         // 마크다운 변환 및 저장
         const convertPriceListToMarkdown = (priceList: any[]): string => {
           if (!priceList || priceList.length === 0) {
@@ -817,7 +828,7 @@ useEffect(() => {
           return markdown;
         };
 
-        const markdown = convertPriceListToMarkdown(res.data);
+        const markdown = convertPriceListToMarkdown(priceList);
         usePromptStore.getState().setPriceListMarkdown(markdown);
         usePromptStore.getState().setPriceDataReady(true);
         console.log('단가표 불러오기 및 마크다운 변환 성공');
@@ -886,10 +897,10 @@ useEffect(() => {
         chatSessionId,
         userForApi
       );
-      if (response.statusCode === 200) {
+      if (response && response.statusCode === 200) {
         success('성공적으로 견적 요청이 접수되었습니다. 곧 연락드리겠습니다.');
       } else {
-        error(`견적 요청에 실패했습니다: ${response.error?.message || '알 수 없는 오류'}`);
+        error(`견적 요청에 실패했습니다: ${response?.error?.message || '알 수 없는 오류'}`);
       }
     } catch (e) {
       console.error(e);
@@ -897,11 +908,11 @@ useEffect(() => {
     }
   }, [error, success]);
   
-  const initialAiMessage = `안녕하세요, (주)여기닷 AI 기술영업팀 강유하입니다 
-견적 발행을 위해 프로젝트의 큰 그림을 한 줄로 알려주시겠어요?`
+  const [initialAiMessage, setInitialAiMessage] = useState(`안녕하세요, (주)여기닷 AI 기술영업팀 강유하입니다 
+견적 발행을 위해 프로젝트의 큰 그림을 한 줄로 알려주시겠어요?`)
 //   `AI 컨설턴트 강유하 입니다 만나 뵙게 되어 반갑습니다
 // 어떤 종류의 프로젝트를 만들고 싶으신가요?
-
+console.log('initialAiMessage', initialAiMessage);
 //   프로젝트의 큰 그림을 알려주세요
 //   <ul style="padding-left: 30px;"><li>프로젝트의 핵심 목표는 무엇인가요?</li><li>주요 사용자층은 누구인가요?
 // </li><li>꼭 필요한 핵심 기능은 무엇인가요?</li></ul>
