@@ -15,7 +15,7 @@ import { usePromptStore } from '@/store/promptStore';
 const promptStore = usePromptStore.getState();
 
 // 단가표 데이터를 마크다운 형식으로 변환하는 함수
-const convertPriceListToMarkdown = (priceList: any[]): string => {
+const convertPriceListToMarkdown = (priceList: any[], columns?: any[]): string => {
   console.log('[convertPriceListToMarkdown] 변환 시작, 데이터 개수:', priceList?.length || 0);
   
   if (!priceList || priceList.length === 0) {
@@ -25,11 +25,52 @@ const convertPriceListToMarkdown = (priceList: any[]): string => {
   }
 
   console.log('[convertPriceListToMarkdown] ✅ 데이터 확인됨, 변환 진행');
+  console.log('[convertPriceListToMarkdown] 첫 번째 데이터 샘플:', priceList[0]);
+  console.log('[convertPriceListToMarkdown] columns 정보:', columns);
   
-  let markdown = '# 단가표 정보\n\n';
-  markdown += '다음은 프로젝트 견적 산출에 사용되는 단가표 정보입니다.\n\n';
+  let markdown = `# 단가표 정보
 
-  // 카테고리별로 그룹화하여 처리 (분류 또는 카테고리 필드 사용)
+다음은 프로젝트 견적 산출에 사용되는 단가표 정보입니다.
+
+`;
+
+  // 컬럼 정보가 제공되지 않은 경우 기본 컬럼 사용
+  const defaultColumns = [
+    { name: '제목', type: 'string' },
+    { name: '금액', type: 'number' },
+    { name: '설명', type: 'string' },
+    { name: '프론트 기간', type: 'number' },
+    { name: '백엔드 기간', type: 'number' }
+  ];
+  
+  // columns가 string 배열인 경우 object 배열로 변환
+  let activeColumns: any[] = [];
+  if (Array.isArray(columns) && columns.length > 0) {
+    if (typeof columns[0] === 'string') {
+      // string 배열인 경우
+      activeColumns = columns
+        .filter(col => col !== 'id') // id 제외
+        .map(col => ({ name: col, type: 'string' })); // 기본적으로 string 타입으로 설정
+      
+      // 특정 컬럼들은 타입을 지정
+      activeColumns = activeColumns.map(col => {
+        if (col.name === '금액' || col.name.includes('기간')) {
+          return { ...col, type: 'number' };
+        }
+        console.log("col",col);
+        return col;
+      });
+    } else {
+      // object 배열인 경우
+      activeColumns = columns.filter(col => col.name !== 'id');
+    }
+  } else {
+    activeColumns = defaultColumns;
+  }
+  
+  console.log('[convertPriceListToMarkdown] 표시할 컬럼들:', activeColumns.map(col => col.name));
+
+  // 카테고리별로 그룹화하여 처리 (분류 필드 사용)
   const categories = priceList.reduce((acc, item) => {
     const category = item.분류 || item.카테고리 || item.category || item.category_name || '기타';
     if (!acc[category]) {
@@ -44,53 +85,58 @@ const convertPriceListToMarkdown = (priceList: any[]): string => {
   Object.entries(categories).forEach(([categoryName, items]) => {
     console.log(`[convertPriceListToMarkdown] 카테고리 "${categoryName}" 처리 중, 항목 수: ${(items as any[]).length}`);
     
-    markdown += `## ${categoryName}\n\n`;
-    markdown += '| 항목명 | 단가 | 단위 | 설명 | 기간 |\n';
-    markdown += '|--------|------|------|------|------|\n';
+    markdown += `## ${categoryName}
+
+`;
+    
+    // 동적 헤더 생성
+    const headers = activeColumns.map(col => col.name);
+    markdown += `| ${headers.join(' | ')} |\n`;
+    markdown += `|${headers.map(() => '--------').join('|')}|\n`;
 
     (items as any[]).forEach((item, index) => {
-      const name = item.제목 || item.title || item.name || item.item_name || 'N/A';
-      const price = item.금액 || item.price || item.unit_price || item.cost || 'N/A';
-      const unit = '원'; // 기본적으로 원화 단위
-      const description = item.설명 || item.description || item.desc || '설명 없음';
+      const rowData: string[] = [];
       
-      // 기간 정보 (프론트엔드 + 백엔드)
-      let period = '';
-      if (item['프론트 기간'] && item['백엔드 기간']) {
-        period = `FE: ${item['프론트 기간']}일, BE: ${item['백엔드 기간']}일`;
-      } else if (item['프론트 기간']) {
-        period = `FE: ${item['프론트 기간']}일`;
-      } else if (item['백엔드 기간']) {
-        period = `BE: ${item['백엔드 기간']}일`;
-      } else {
-        period = '기간 미정';
-      }
-
-      // 가격이 숫자라면 포맷팅
-      const formattedPrice = typeof price === 'number'
-        ? price.toLocaleString('ko-KR')
-        : price;
-
-      markdown += `| ${name} | ${formattedPrice} | ${unit} | ${description} | ${period} |\n`;
+      activeColumns.forEach((column) => {
+        const columnName = column.name;
+        let value = item[columnName];
+        
+        // 타입에 따른 포맷팅
+        if (column.type === 'number' && value !== undefined && value !== null && value !== '') {
+          // 숫자 타입인 경우 천단위 콤마 추가
+          const numValue = Number(value);
+          if (!isNaN(numValue)) {
+            value = numValue.toLocaleString('ko-KR');
+          }
+        } else if (value === undefined || value === null || value === '') {
+          value = '-';
+        }
+        
+        rowData.push(String(value));
+      });
+      
+      markdown += `| ${rowData.join(' | ')} |\n`;
       
       // 첫 번째 항목만 샘플로 로깅
       if (index === 0) {
         console.log(`[convertPriceListToMarkdown] 샘플 항목 변환:`, {
           original: item,
-          converted: { name, price: formattedPrice, description, period }
+          formatted: rowData
         });
       }
     });
 
-    markdown += '\n';
+    markdown += `\n`;
   });
 
-  markdown += '---\n\n';
-  markdown += '**참고사항:**\n';
-  markdown += '- 위 단가는 기본 단가이며, 프로젝트 복잡도에 따라 조정될 수 있습니다.\n';
-  markdown += '- 실제 견적은 상세 요구사항 분석 후 산출됩니다.\n';
-  markdown += '- 단가는 VAT 별도 금액입니다.\n';
-  markdown += '- 기간은 프론트엔드(FE)와 백엔드(BE) 개발 기간을 합산한 기준입니다.\n';
+  markdown += `---
+
+**참고사항:**
+- 위 단가는 기본 단가이며, 프로젝트 복잡도에 따라 조정될 수 있습니다.
+- 실제 견적은 상세 요구사항 분석 후 산출됩니다.
+- 단가는 VAT 별도 금액입니다.
+- 기간은 프론트엔드(FE)와 백엔드(BE) 개발 기간을 합산한 기준입니다.
+`;
 
   console.log('[convertPriceListToMarkdown] ✅ 마크다운 변환 완료, 최종 길이:', markdown.length);
   return markdown;
@@ -114,13 +160,16 @@ export const combineSystemPrompts = async () => {
 
       if (response && response.statusCode === 200 && response.data && (response.data as any).data && Array.isArray((response.data as any).data)) {
         const priceList = (response.data as any).data;
+        const columns = (response.data as any).columns || [];
 
         // promptStore에 데이터 저장
         promptStore.setPriceList(priceList);
+        promptStore.setPriceListColumns(columns);
         console.log('[combineSystemPrompts] 단가표 데이터 저장 완료, 길이:', priceList.length);
+        console.log('[combineSystemPrompts] 컬럼 정보 저장 완료, 개수:', columns.length);
 
-        // 마크다운 형식으로 변환하여 저장
-        const priceListMarkdown = convertPriceListToMarkdown(priceList);
+        // 마크다운 형식으로 변환하여 저장 (컬럼 정보 포함)
+        const priceListMarkdown = convertPriceListToMarkdown(priceList, columns);
         
         // 마크다운 생성 결과 확인 및 콘솔 출력
         if (priceListMarkdown && priceListMarkdown !== '단가표 데이터를 불러오는데 실패했습니다.') {
@@ -154,11 +203,13 @@ export const combineSystemPrompts = async () => {
 
   // 이제 데이터가 준비되었으므로 프롬프트 생성
   const priceList = promptStore.getPriceList();
+  const priceListColumns = promptStore.getPriceListColumns();
   const priceListMarkdown = promptStore.getPriceListMarkdown();
   const aiPromptsContent = promptStore.getAiPrompts();
 
   console.log('[combineSystemPrompts] 최종 데이터 상태:', {
     priceListLength: priceList?.length || 0,
+    columnsLength: priceListColumns?.length || 0,
     hasMarkdown: !!priceListMarkdown,
     markdownLength: priceListMarkdown?.length || 0,
     hasAiPrompts: !!aiPromptsContent,

@@ -912,7 +912,7 @@ useEffect(() => {
 견적 발행을 위해 프로젝트의 큰 그림을 한 줄로 알려주시겠어요?`)
 //   `AI 컨설턴트 강유하 입니다 만나 뵙게 되어 반갑습니다
 // 어떤 종류의 프로젝트를 만들고 싶으신가요?
-console.log('initialAiMessage', initialAiMessage);
+// console.log('initialAiMessage', initialAiMessage);
 //   프로젝트의 큰 그림을 알려주세요
 //   <ul style="padding-left: 30px;"><li>프로젝트의 핵심 목표는 무엇인가요?</li><li>주요 사용자층은 누구인가요?
 // </li><li>꼭 필요한 핵심 기능은 무엇인가요?</li></ul>

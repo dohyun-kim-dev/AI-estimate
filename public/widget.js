@@ -54,6 +54,40 @@
     transform: scale(1);
   } 
 
+  /* 말풍선 툴팁 */
+  .aiw-tooltip {
+    position: fixed;
+    bottom: 100px;
+    ${pos}: 30px;
+    background: #746AED;
+    color: white;
+    padding: 12px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 2147483644;
+    white-space: pre-line;
+  }
+  .aiw-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 80%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #746AED;
+  }
+  @media (max-width: 520px) {
+    .aiw-tooltip {
+      bottom: 170px;
+      ${pos}: 10px;
+    }
+  }
+
   /* 바깥 투명 컨테이너 */
   .aiw-root{position:fixed;${pos}:40px;bottom:100px;z-index:2147483646;width:${W}px;max-width:calc(100vw - 24px);display:none;}
   .aiw-root.open{display:block}
@@ -115,6 +149,11 @@ openIcon.innerHTML = `
 `;
 btn.appendChild(openIcon);
 
+
+  // 말풍선 툴팁 요소 생성
+  const tooltip = document.createElement('div');
+  tooltip.className = 'aiw-tooltip';
+  tooltip.textContent = '24시간 맞춤\n견적 상담 AI';
 
   const root = document.createElement('div'); root.className='aiw-root';
   const wrap = document.createElement('div'); wrap.className='aiw-wrap';
@@ -225,12 +264,16 @@ const isDarkMode = isColorDark(backgroundColor);
     postViewport();
   });
 
+  // 말풍선 호버 이벤트 제거 (항상 표시)
+
   btn.onclick = ()=> {
-    // 모바일 디바이스(아이폰 포함) 감지
-    var isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    if (isMobile) {
-      window.open(targetUrl, '_blank');
-      return;
+    // 말풍선 숨기기 또는 표시
+    if (root.classList.contains('open')) {
+      // 닫힐 예정이므로 말풍선 표시
+      tooltip.style.opacity = '1';
+    } else {
+      // 열릴 예정이므로 말풍선 숨김
+      tooltip.style.opacity = '0';
     }
     root.classList.toggle('open');
     btn.classList.toggle('open'); // 버튼에도 'open' 클래스 토글
@@ -257,6 +300,7 @@ const isDarkMode = isColorDark(backgroundColor);
     if(e?.data?.type==='aiw:close') {
       root.classList.remove('open'); 
       btn.classList.remove('open'); // 버튼에서 'open' 클래스 제거
+      tooltip.style.opacity = '1'; // 말풍선 다시 표시
       document.body.style.overflow = ''; // 바깥 페이지 스크롤 복원
     }
   });
@@ -277,13 +321,14 @@ const isDarkMode = isColorDark(backgroundColor);
   const mount = () => {
     if (!document.body) return;
     if (!btn.isConnected) document.body.appendChild(btn);
+    if (!tooltip.isConnected) document.body.appendChild(tooltip);
     if (!root.isConnected) document.body.appendChild(root);
     if (window.innerWidth > 520) handle.style.display = 'flex';
     applyHeights();
-    if (openOnLoad) {
-      root.classList.add('open');
-      btn.classList.add('open'); // 페이지 로드 시 위젯이 열리면 버튼도 'open' 상태로
-    }
+    // 항상 위젯 열린 상태로 시작
+    root.classList.add('open');
+    btn.classList.add('open');
+    tooltip.style.opacity = '0'; // 위젯 열린 상태이므로 말풍선 숨김
     postViewport();
   };
 

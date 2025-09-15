@@ -406,41 +406,63 @@ const handleNewChat = () => {
             
             {/* 설정/로그인 버튼 */}
             <ProfileIconWrapper className="profile-menu">
-              {isAuthenticated() ? (
-                <ProfileImage onClick={handleGoToSettings}>
- <img 
-                    src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} 
-                    alt="프로필" 
-                    referrerPolicy="no-referrer"
-                    crossOrigin="anonymous"
-                    style={{width: '36px', height: '36px'}}
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = '/main/profile.png';
-                    }}
-                  />                </ProfileImage>
-              ) : (
-                <>
-                  <span className="icon" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-                    <Icon src={icons.setting} width={36} height={36} />
-                  </span>
-                  <DropdownMenu $isOpen={isDropdownOpen}>
-                    <DropdownItem onClick={() => {
-                      setIsDropdownOpen(false);
-                      openLoginModal();
-                    }}>
-                      로그인 하기
-                    </DropdownItem>
-                    <DropdownItem onClick={() => {
-                      setIsDropdownOpen(false);
-                      toggleTheme();
-                    }}>
-                      {isDarkMode ? '라이트 모드로 변경' : '다크 모드로 변경'}
-                    </DropdownItem>
-                  </DropdownMenu>
-                </>
-              )}
-            </ProfileIconWrapper>
+  {isAuthenticated() ? (
+    // 로그인 상태일 때 프로필 이미지를 클릭하면 드롭다운 메뉴가 열리도록 변경
+    <ProfileImage onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+      <img
+        src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'}
+        alt="프로필"
+        referrerPolicy="no-referrer"
+        crossOrigin="anonymous"
+        style={{ width: '36px', height: '36px' }}
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          target.src = '/main/profile.png';
+        }}
+      />
+    </ProfileImage>
+  ) : (
+    // 로그인하지 않은 상태일 때 설정 아이콘을 클릭하면 드롭다운 메뉴가 열림
+    <span className="icon" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+      <Icon src={icons.setting} width={36} height={36} />
+    </span>
+  )}
+
+  {/* 드롭다운 메뉴 - 로그인 상태와 비로그인 상태 모두에서 사용 */}
+  <DropdownMenu $isOpen={isDropdownOpen}>
+    {isAuthenticated() ? (
+      <>
+        <DropdownItem onClick={() => {
+          setIsDropdownOpen(false);
+          handleGoToSettings(); // 마이페이지로 이동
+        }}>
+          마이페이지
+        </DropdownItem>
+        <DropdownItem onClick={() => {
+          setIsDropdownOpen(false);
+          toggleTheme(); // 테마 변경
+        }}>
+          {isDarkMode ? '라이트 모드로 변경' : '다크 모드로 변경'}
+        </DropdownItem>
+      </>
+    ) : (
+      <>
+        <DropdownItem onClick={() => {
+          setIsDropdownOpen(false);
+          openLoginModal();
+        }}>
+          로그인 하기
+        </DropdownItem>
+        <DropdownItem onClick={() => {
+          setIsDropdownOpen(false);
+          toggleTheme();
+        }}>
+          {isDarkMode ? '라이트 모드로 변경' : '다크 모드로 변경'}
+        </DropdownItem>
+      </>
+    )}
+  </DropdownMenu>
+</ProfileIconWrapper>
           </div>
         )}
       </TopNav>
