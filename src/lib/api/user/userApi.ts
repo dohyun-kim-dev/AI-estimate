@@ -1,4 +1,3 @@
-
 import { callUserApi } from '../../methods/callUserApi';
 import { GoogleLoginInitialParams, GoogleLoginUpdateParams, GoogleLoginResponse } from './userApi.types';
 import { ApiResponse } from './userApi.types';
@@ -451,4 +450,12 @@ export async function handleApiCall<T>(
       }
     };
   }
+}
+
+export async function getAiPrompts() {
+  return callUserApi({
+    title: 'AI 프롬프트 조회',
+    url: getApiUrl('/users/company/ai-prompts'),
+    method: 'GET'
+  });
 }
