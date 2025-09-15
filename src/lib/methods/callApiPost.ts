@@ -8,7 +8,8 @@ interface CallApiPostParams {
   body?: Record<string, unknown> | FormData;
   isCallPageLoader?: boolean;
   headers?: Record<string, string>;
-  isFormData?: boolean; 
+  isFormData?: boolean;
+  accessToken?: string; // 추가
 }
 
 export async function callApiPost<T = unknown>({
@@ -19,7 +20,8 @@ export async function callApiPost<T = unknown>({
   isCallPageLoader = false,
   headers = {},
   isFormData = false,
-}: CallApiPostParams): Promise<T> {
+  accessToken, // 추가
+}: CallApiPostParams): Promise<{ data: any, headers: Headers }> {
   let fullUrl = url;
 
   // 배포 환경에서 API_HOST를 사용하여 완전한 URL을 구성합니다.
@@ -37,12 +39,25 @@ export async function callApiPost<T = unknown>({
   try {
     const fetchOptions: RequestInit = {
       method,
-      credentials: 'include',
+      // credentials: 'include',
       mode: 'cors' as RequestMode,
     };
 
     // 상위에서 전달받은 헤더 사용
-    fetchOptions.headers = headers;
+    fetchOptions.headers = { 
+      'x-company-code': 'heredot',
+      ...headers 
+    };
+    
+    // JSON body인 경우 Content-Type 추가
+    if (!isFormData && method !== 'GET') {
+      (fetchOptions.headers as Record<string, string>)['Content-Type'] = 'application/json';
+    }
+    
+    // accessToken이 있으면 Authorization 헤더 추가
+    if (accessToken) {
+      (fetchOptions.headers as Record<string, string>)['Authorization'] = `Bearer ${accessToken}`;
+    }
     
     // body 설정
     if (!isFormData && method !== 'GET') {
@@ -62,17 +77,21 @@ export async function callApiPost<T = unknown>({
 
     returnValue = await response.text();
     devLog(`📱 [${title}] 응답 내용:`, returnValue);
+    
+    let parsedData;
+    try {
+      parsedData = JSON.parse(returnValue);
+    } catch (e) {
+      devWarn(`⚠️ [${title}] JSON 파싱 실패`, e);
+      parsedData = {};
+    }
+
+    // 항상 { data, headers } 형태로 반환
+    return { data: parsedData, headers: response.headers };
   } catch (error) {
     devLog(`❌ [${title}] API 요청 에러: 네트워크 문제 또는 CORS 정책 위반이 원인일 수 있습니다.`, error);
-    returnValue = '[]';
+    return { data: [], headers: new Headers() };
   } finally {
     if (isCallPageLoader) pageLoaderController.close();
-  }
-
-  try {
-    return JSON.parse(returnValue);
-  } catch (e) {
-    devWarn(`⚠️ [${title}] JSON 파싱 실패`, e);
-    return [] as T;
   }
 }

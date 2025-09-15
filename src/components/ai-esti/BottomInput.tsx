@@ -358,9 +358,16 @@ const BottomInput: React.FC<BottomInputProps> = ({
   };
 
   const handleFileButtonClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
+    // 아이폰 등 모바일에서 키보드 내리기
+    if (inputRef.current) {
+      inputRef.current.blur();
     }
+    // 약간의 딜레이 후 파일 입력 클릭 (키보드가 완전히 내려간 후)
+    setTimeout(() => {
+      if (fileInputRef.current) {
+        fileInputRef.current.click();
+      }
+    }, 100);
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

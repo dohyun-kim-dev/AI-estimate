@@ -62,7 +62,7 @@ export default function AppRoutes() {
         </Route>
 
         <Route path="pdf-preview" element={<PDFPreview />} />
-        
+
         <Route element={<CMSLayout />}>
           <Route path="cms" element={<CMS />} />
           <Route path="cms/login" element={<CMSLogin />} />
@@ -135,23 +135,6 @@ export default function AppRoutes() {
           <Route path="superadmin/aigo-settings" element={<AigoSettingsPage />} />
           <Route path="superadmin/terms" element={<CMSTerms />} />
         </Route>
-      
-      {/* PDF 미리보기 페이지 - 별도 경로로 설정 */}
-      
-      {/* /superAdmin으로 시작하지 않는 모든 경로를 /aiclient/default로 리다이렉트 */}
-      <Route 
-        path="*" 
-        element={
-          <Navigate 
-            to={
-              location.pathname.startsWith('/superadmin') 
-                ? location.pathname 
-                : '/aiclient/default'
-            } 
-            replace 
-          />
-        } 
-      />
     </Routes>
   )
 }

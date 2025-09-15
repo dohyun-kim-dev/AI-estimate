@@ -1,5 +1,5 @@
 
-import { callUserApi } from './callUserApi';
+import { callUserApi } from '../../methods/callUserApi';
 import { GoogleLoginInitialParams, GoogleLoginUpdateParams, GoogleLoginResponse } from './userApi.types';
 import { ApiResponse } from './userApi.types';
 
@@ -55,10 +55,9 @@ export async function validateAuthCode(cellphone, authCode) {
 
 // ***************** 소셜 로그인 관련
 export async function googleLoginInitial(params: GoogleLoginInitialParams) {
-  return callUserApi<GoogleLoginResponse>({
+  return callUserApi({
     title: '구글 로그인 초기화',
     url: getApiUrl('/users/login/google'),
-    method: 'POST',
     body: {
       providerId: params.providerId,
     },
@@ -86,16 +85,6 @@ export async function companyRegister() {
   return callUserApi({
     title: '고객사 등록',
     url: getApiUrl('/company/register'),
-    method: 'POST',
-    body: {},
-    isCallPageLoader: false,
-  });
-}
-
-export async function logoutUser() {
-  return callUserApi<null>({
-    title: '로그아웃',
-    url: getApiUrl('/users/logout'),
     method: 'POST',
     body: {},
     isCallPageLoader: false,

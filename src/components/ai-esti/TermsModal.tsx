@@ -82,8 +82,13 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
 
   // 화면 폭 감지
   useEffect(() => {
-    const check = () => setIsNarrow(window.innerWidth <= 386);
-    check();
+    const check = () => {
+      const width = window.innerWidth;
+      const narrow = width <= 386;
+      console.log("window.innerWidth:", width, "isNarrow:", narrow);
+      setIsNarrow(narrow);
+    };
+    check(); // 초기 체크
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
@@ -95,8 +100,8 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
         setIsLoading(true);
         try {
           const termsResponse = await termsGetList();
-          const termsList = termsResponse?.data || [];
-          if (termsList) {
+          const termsList = Array.isArray(termsResponse?.data) ? termsResponse.data : [];
+          if (termsList.length > 0) {
             const sortedList = termsList.sort((a: any, b: any) => a._id - b._id);
             setAllTermsData(sortedList);
           } else {

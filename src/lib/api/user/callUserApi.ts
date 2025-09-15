@@ -51,6 +51,12 @@ export async function callUserApi<T>({
       'x-company-code': companyCode
     };
 
+    // user_token 추가
+    const userToken = localStorage.getItem('user_token');
+    if (userToken) {
+      commonHeaders['user_token'] = userToken;
+    }
+
     // FormData 여부에 따른 헤더 설정
     const isFormData = body instanceof FormData;
     const headers = isFormData ? 

@@ -112,15 +112,10 @@ const PDFPreview: React.FC = () => {
     };
 
     if (isInAppBrowser() && pdfBlobUrl) {
-      const confirmed = window.confirm('카카오톡이나 인앱 브라우저에서 PDF가 제대로 표시되지 않을 수 있습니다. 새 브라우저 창으로 열어 PDF를 다운로드하시겠습니까?');
+      const confirmed = window.confirm('카카오톡이나 인앱 브라우저에서 PDF가 제대로 표시되지 않을 수 있습니다. 새 브라우저 창으로 열어 PDF를 확인하시겠습니까?');
       if (confirmed) {
-        // PDF 다운로드 트리거
-        const link = document.createElement('a');
-        link.href = pdfBlobUrl;
-        link.download = `견적서_${uuid}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // 아이폰 등 모바일에서는 새 탭으로 PDF 열기
+        window.open(pdfBlobUrl, '_blank');
       }
     }
   }, [pdfBlobUrl, uuid]);

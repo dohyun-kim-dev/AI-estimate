@@ -9,6 +9,7 @@ export interface ApiResponse<T> {
     message: string;
     customMessage?: string;
   } | null;
+  headers?: Headers;
 }
 
 // 첫 번째 요청 파라미터

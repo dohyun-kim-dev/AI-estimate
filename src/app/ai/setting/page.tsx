@@ -4,7 +4,7 @@ import Icon from '@/components/ai-esti/Icon'
 import { IoChevronForward } from 'react-icons/io5'
 import LanguageSelector from '@/components/common/LanguageSelector'
 import { useAuthStore } from '@/store/authStore'
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import TermsModal from '@/components/ai-esti/TermsModal'     
 
 const Container = styled.div`
@@ -97,10 +97,11 @@ export default function SettingsPage() {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false); // 👈 모달 상태 추가
+  const { companyCode } = useParams();  
 
   const handleLogout = () => {
     logout()
-    navigate('/ai')
+    navigate(`/aiclient/${companyCode}/ai`)
   }
 
   const handleViewTerms = () => {

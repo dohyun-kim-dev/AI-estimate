@@ -13,7 +13,7 @@ export async function callApiPatch<T = unknown>({
   body?: Record<string, unknown>;
   isCallPageLoader?: boolean;
   headers?: Record<string, string>;
-}): Promise<T> {
+}): Promise<{ data: any, headers: Headers }> {
   let fullUrl = url;
 
   // 배포 환경에서 API_HOST를 사용하여 완전한 URL을 구성합니다.
@@ -25,6 +25,7 @@ export async function callApiPatch<T = unknown>({
   if (isCallPageLoader) pageLoaderController.open();
 
   let returnValue = '';
+  let response: Response | null = null;
 
   try {
     const fetchOptions: RequestInit = {
@@ -35,7 +36,7 @@ export async function callApiPatch<T = unknown>({
       body: JSON.stringify(body),
     };
 
-    const response = await fetch(fullUrl, fetchOptions);
+    response = await fetch(fullUrl, fetchOptions);
 
     devLog(`📱 [${title}] 응답 상태:`, response.status, response.statusText);
     
@@ -53,9 +54,10 @@ export async function callApiPatch<T = unknown>({
   }
 
   try {
-    return JSON.parse(returnValue);
+    const parsedData = JSON.parse(returnValue);
+    return { data: parsedData, headers: response?.headers || new Headers() };
   } catch (e) {
     devWarn(`⚠️ [${title}] JSON 파싱 실패`, e);
-    return [] as T;
+    return { data: [], headers: new Headers() };
   }
 }

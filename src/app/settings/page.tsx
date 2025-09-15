@@ -104,7 +104,7 @@ export default function SettingsPage() {
   const { user, logout } = useAuthStore();
 
   const handleLogout = async () => {
-    await logout()
+    logout()
     navigate('/')
   }
 

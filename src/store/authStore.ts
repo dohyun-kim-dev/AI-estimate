@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { GoogleLoginResponse } from '@/lib/api/user/userApi.types';
-import { logoutUser } from '@/lib/api/user/userApi';
 import { useChatStore } from '@/store/chatStore';
+import { clearAllTokens } from '@/lib/utils/tokenUtils';
 
 export interface UserData extends GoogleLoginResponse {
   isLoggedIn: boolean;
@@ -69,13 +69,8 @@ export const useAuthStore = create<AuthState>()(
         }),
 
       logout: async () => {
-        try {
-          // 로그아웃 API 호출
-          await logoutUser();
-        } catch (error) {
-          console.error('로그아웃 API 호출 실패:', error);
-          // API 호출이 실패해도 로컬 로그아웃은 진행
-        }
+        // 로컬 토큰 삭제
+        clearAllTokens();
         
         // 로컬 상태 초기화
         set({
