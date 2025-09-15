@@ -203,6 +203,7 @@ const isDarkMode = isColorDark(backgroundColor);
       if (isExpanded) {
         root.style.width = '30vw';
         root.style.maxWidth = 'calc(100vw - 24px)';
+        root.style.minWidth = W + 'px';
       } else {
         root.style.width = W + 'px';
         root.style.maxWidth = 'calc(100vw - 24px)';

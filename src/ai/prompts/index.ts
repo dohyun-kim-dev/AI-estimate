@@ -99,29 +99,6 @@ const convertPriceListToMarkdown = (priceList: any[]): string => {
 export const combineSystemPrompts = async () => {
   console.log('[combineSystemPrompts] 시작');
 
-  // AI 프롬프트 데이터 가져오기
-  let aiPromptsContent = '';
-  try {
-    const aiPromptsResponse = await getAiPrompts();
-    console.log('[combineSystemPrompts] AI 프롬프트 API 응답:', aiPromptsResponse);
-
-    if (aiPromptsResponse && aiPromptsResponse.statusCode === 200 && aiPromptsResponse.data) {
-      const promptsData = aiPromptsResponse.data as any;
-      
-      // GREETING, INSTRUCTION, OTHER의 content를 순차 연결
-      const greetingContent = promptsData.GREETING?.content || '';
-      const instructionContent = promptsData.INSTRUCTION?.content || '';
-      const otherContent = promptsData.OTHER?.content || '';
-      
-      aiPromptsContent = `${greetingContent}${instructionContent}${otherContent}`;
-      console.log('[combineSystemPrompts] AI 프롬프트 content 연결 완료, 길이:', aiPromptsContent.length);
-    } else {
-      console.warn('[combineSystemPrompts] AI 프롬프트 데이터를 불러오는데 실패했습니다:', aiPromptsResponse);
-    }
-  } catch (error) {
-    console.warn('[combineSystemPrompts] AI 프롬프트 API 호출 실패:', error);
-  }
-
   // 데이터 준비 상태 확인
   const isDataReady = promptStore.getIsPriceDataReady();
   console.log('[combineSystemPrompts] 데이터 준비 상태:', isDataReady);
@@ -178,11 +155,14 @@ export const combineSystemPrompts = async () => {
   // 이제 데이터가 준비되었으므로 프롬프트 생성
   const priceList = promptStore.getPriceList();
   const priceListMarkdown = promptStore.getPriceListMarkdown();
+  const aiPromptsContent = promptStore.getAiPrompts();
 
   console.log('[combineSystemPrompts] 최종 데이터 상태:', {
     priceListLength: priceList?.length || 0,
     hasMarkdown: !!priceListMarkdown,
-    markdownLength: priceListMarkdown?.length || 0
+    markdownLength: priceListMarkdown?.length || 0,
+    hasAiPrompts: !!aiPromptsContent,
+    aiPromptsLength: aiPromptsContent?.length || 0
   });
 
   // AI 프롬프트 content와 priceListMarkdown을 결합

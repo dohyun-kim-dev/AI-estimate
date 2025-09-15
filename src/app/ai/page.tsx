@@ -108,7 +108,7 @@ import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import FileUploadSection from '@/components/ai-esti/FileUploadSection';
 import { devLog } from '../../utils/devLogger';
 import { useChatActions } from '@/hooks/useChatActions';
-import { getAllUnitPrices, requestEstimateConsult } from '@/lib/api/user/userApi';
+import { getAllUnitPrices, requestEstimateConsult, getAiPrompts } from '@/lib/api/user/userApi';
 import { getEstimateIdFromContent } from '@/hooks/estimate';
 import { v4 as uuidv4 } from 'uuid';
 import { usePromptStore } from '@/store/promptStore';
@@ -744,6 +744,28 @@ export default function AiChatPage() {
 useEffect(() => {
   (async () => {
     try {
+      // AI 프롬프트 데이터 불러오기
+      const aiPromptsResponse = await getAiPrompts();
+      console.log('AI 프롬프트 API 응답:', aiPromptsResponse);
+
+      if (aiPromptsResponse && aiPromptsResponse.statusCode === 200 && aiPromptsResponse.data.length > 0  ) {
+        const promptsData = aiPromptsResponse.data as any[];
+        console.log('AI 프롬프트 데이터:', promptsData);
+        
+        // 모든 프롬프트 항목의 content를 순차 연결
+        const aiPromptsContent = promptsData
+          .filter(item => item.content) // content가 있는 항목만
+          .map(item => item.content)
+          .join('\n\n'); // 각 content 사이에 줄바꿈 추가
+        
+        console.log('AI 프롬프트 content 연결 완료, 길이:', aiPromptsContent.length);
+        
+        usePromptStore.getState().setAiPrompts(aiPromptsContent);
+        console.log('AI 프롬프트 저장 완료', aiPromptsContent);
+      } else {
+        console.warn('AI 프롬프트 데이터를 불러오는데 실패했습니다:', aiPromptsResponse.data[0]);
+      }
+
       const res = await getAllUnitPrices();
       if (res && Array.isArray(res.data)) {
         usePromptStore.getState().setPriceList(res.data);
@@ -801,7 +823,7 @@ useEffect(() => {
         console.log('단가표 불러오기 및 마크다운 변환 성공');
       }
     } catch (e) {
-      console.error('단가표 불러오기 실패', e);
+      console.error('단가표 또는 AI 프롬프트 불러오기 실패', e);
       // 실패 시에도 준비 완료 표시 (무한 로딩 방지)
       usePromptStore.getState().setPriceDataReady(true);
     }

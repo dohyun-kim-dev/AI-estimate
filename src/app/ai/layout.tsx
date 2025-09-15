@@ -156,6 +156,25 @@ const ShareInput = styled.div`
   }
 `;
 
+
+const ProfileImage = styled.div`
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: ${({ theme }) => theme.surface1};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+`;
+
 export default function AILayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -165,10 +184,10 @@ export default function AILayout() {
   const resetChat = useChatStore((s) => s.clear);
   const chatSessionId = useChatStore((s) => s.chatSessionId);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const { isAuthenticated } = useAuthStore();
-  const { 
-    isLoginModalOpen, 
-    loginModalPurpose, 
+  const { user, isAuthenticated } = useAuthStore();
+  const {
+    isLoginModalOpen,
+    loginModalPurpose,
     closeLoginModal,
     openLoginModal,
     shareChatModal,
@@ -388,9 +407,18 @@ const handleNewChat = () => {
             {/* 설정/로그인 버튼 */}
             <ProfileIconWrapper className="profile-menu">
               {isAuthenticated() ? (
-                <span className="icon" onClick={handleGoToSettings}>
-                  <Icon src={icons.profile} width={36} height={36} />
-                </span>
+                <ProfileImage onClick={handleGoToSettings}>
+ <img 
+                    src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} 
+                    alt="프로필" 
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
+                    style={{width: '36px', height: '36px'}}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/main/profile.png';
+                    }}
+                  />                </ProfileImage>
               ) : (
                 <>
                   <span className="icon" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
