@@ -186,8 +186,15 @@ const AdminMngPage: React.FC = () => {
           // companyCode는 슈퍼 관리자이므로 전달하지 않음
         };
   
-        const response = await adminUpdate(updatePayload) as unknown as ApiResponse<AdminUser>[];
-        const apiResponse = Array.isArray(response) ? response[0] : response;
+        const response = await adminUpdate(updatePayload);
+        
+        console.log('adminUpdate response:', response);
+        
+        // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+        const actualResponse = Array.isArray(response) ? response[0] : response;
+        
+        // actualResponse.data에서 실제 API 응답을 가져옴
+        const apiResponse = (actualResponse as any)?.data as ApiResponse<AdminUser>;
         
         if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
           toast.success('관리자 정보가 수정되었습니다.');
@@ -214,12 +221,15 @@ const AdminMngPage: React.FC = () => {
         };
   
         console.log('Creating admin with payload:', createPayload);
-        const response = await adminCreate(createPayload) as unknown as ApiResponse<AdminUser>[];
+        const response = await adminCreate(createPayload);
         
         console.log('Create response:', response);
         
-        // 배열의 첫 번째 요소를 사용 (API가 배열로 응답하는 경우)
-        const apiResponse = Array.isArray(response) ? response[0] : response;
+        // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+        const actualResponse = Array.isArray(response) ? response[0] : response;
+        
+        // actualResponse.data에서 실제 API 응답을 가져옴
+        const apiResponse = (actualResponse as any)?.data as ApiResponse<AdminUser>;
         
         if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
           toast.success('관리자가 성공적으로 등록되었습니다.');
@@ -259,12 +269,17 @@ const AdminMngPage: React.FC = () => {
           keyword: params.keyword || '',
           fromDate: fromDate, 
           toDate: toDate, 
-        }) as unknown as ApiResponse<AdminUser>[]; // 배열로 타입 캐스팅
+        });
 
         console.log('response', response);
         
-        // 배열의 첫 번째 요소를 사용 (API가 배열로 응답하는 경우)
-        const apiResponse = Array.isArray(response) ? response[0] : response;
+        // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+        const actualResponse = Array.isArray(response) ? response[0] : response;
+        console.log('actualResponse', actualResponse);
+        
+        // actualResponse.data에서 실제 API 응답을 가져옴
+        const apiResponse = (actualResponse as any)?.data as ApiResponse<AdminUser>;
+        console.log('apiResponse', apiResponse);
         
         if (apiResponse && apiResponse.message === 'success') {
           // API 응답 데이터를 AdminUser 타입에 맞게 매핑
@@ -321,13 +336,21 @@ const AdminMngPage: React.FC = () => {
           // companyCode는 슈퍼 관리자이므로 전달하지 않음
         };
 
-        const response = await adminUpdate(updateParams) as unknown as ApiResponse<AdminUser>;
+        const response = await adminUpdate(updateParams);
+
+        console.log('adminUpdate response:', response);
+        
+        // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+        const actualResponse = Array.isArray(response) ? response[0] : response;
+        
+        // actualResponse.data에서 실제 API 응답을 가져옴
+        const apiResponse = (actualResponse as any)?.data as ApiResponse<AdminUser>;
   
-        if (response.statusCode === 200 && response.message === 'success') {
+        if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
           toast.success(`${type === 'emailYn' ? '메일' : 'SMS'} 수신 설정이 변경되었습니다.`);
           listRef.current?.refetch();
         } else {
-          const errorMessage = response.error?.customMessage || response.message || '변경에 실패했습니다.';
+          const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '변경에 실패했습니다.';
           toast.error(errorMessage);
         }
       } catch (error) {

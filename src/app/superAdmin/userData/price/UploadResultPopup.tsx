@@ -138,7 +138,7 @@ const UploadResultPopup: React.FC<UploadResultPopupProps> = ({
       bottomFloating={
         <PopupFooter>
           <CancelButton onClick={onClose}>닫기</CancelButton>
-          {onSave && (
+          {onSave && type === 'success' && (
             <SaveButton onClick={onSave}>저장</SaveButton>
           )}
         </PopupFooter>

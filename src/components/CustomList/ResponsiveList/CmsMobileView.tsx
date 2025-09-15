@@ -47,6 +47,8 @@ interface CmsMobileViewProps<T extends BaseRecord> {
   // 고객사 검색 관련 props
   enableCompanySearch?: boolean;
   onCompanySelect?: (company: { id: string; name: string }) => void;
+  selectedCompanyCode?: string | null;
+  selectedCompanyName?: string;
   isShowExcelTemplate?: boolean;
   excelUploadBtnCallBack?: () => void;
   excelTemplateBtnCallBack?: () => void;
@@ -68,7 +70,9 @@ export default function CmsMobileView<T extends BaseRecord>({
   enableDateFilter = false,
   itemsPerPageOptions = [10, 20, 50],
   enableCompanySearch = false,
-  onCompanySelect
+  onCompanySelect,
+  selectedCompanyCode,
+  selectedCompanyName
 }: CmsMobileViewProps<T>) {
   const [viewMode, setViewMode] = useState<ViewMode>(defaultViewMode);
   const [itemsPerPage, setItemsPerPage] = useState<number>(itemsPerPageOptions[0] ?? 10);
@@ -78,7 +82,11 @@ export default function CmsMobileView<T extends BaseRecord>({
   const [searchTermInput, setSearchTermInput] = useState<string>("");
   const [searchKeyword, setSearchKeyword] = useState<string>("");
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState<{ id: string; name: string } | null>(null);
+  
+  // 외부에서 관리되는 고객사 정보 사용
+  const selectedCompany = selectedCompanyCode && selectedCompanyName 
+    ? { id: selectedCompanyCode, name: selectedCompanyName }
+    : null;
 
   // Fetching state (aligns with GenericListUI behavior)
   const [allData, setAllData] = useState<T[]>(data ?? []);
@@ -107,6 +115,7 @@ export default function CmsMobileView<T extends BaseRecord>({
     try {
       const params: FetchParams = {
         keyword: searchKeyword || undefined,
+        companyCode: selectedCompanyCode || undefined,
       };
       if (enableDateFilter) {
         params.fromDate = fromDate;
@@ -128,7 +137,7 @@ export default function CmsMobileView<T extends BaseRecord>({
     } finally {
       setIsLoadingLocal(false);
     }
-  }, [fetchData, searchKeyword, fromDate, toDate, enableDateFilter]);
+  }, [fetchData, searchKeyword, fromDate, toDate, enableDateFilter, selectedCompanyCode]);
 
   // Initial load and when dependencies change
   useEffect(() => {
@@ -391,9 +400,8 @@ export default function CmsMobileView<T extends BaseRecord>({
             isOpen={isCompanyModalOpen}
             onClose={() => setIsCompanyModalOpen(false)}
             onSelect={(company) => {
-              setSelectedCompany(company);
               if (onCompanySelect) {
-                onCompanySelect(company);
+                onCompanySelect({ id: company.companyCode, name: company.companyName });
               }
             }}
             themeMode="light"

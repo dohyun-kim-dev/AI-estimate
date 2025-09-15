@@ -301,12 +301,16 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
     
     setIsLoading(true);
     try {
+      console.log('=== PriceEditPopup handleSave START ===');
       await onSave(formData);
-      showToast('성공적으로 저장되었습니다.', 'success');
-      onClose();
+      console.log('=== PriceEditPopup onSave completed ===');
+      
+      // 테이블 새로고침이 완료된 후 팝업 닫기 (약간의 지연)
+      setTimeout(() => {
+        onClose();
+      }, 100);
     } catch (error) {
       console.error('Save error:', error);
-      showToast('저장 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsLoading(false);
     }

@@ -3,120 +3,106 @@
     "message": "success",
     "data": {
         "columns": [
-            [
-                {
-                    "name": "id",
-                    "type": "string",
-                    "required": false,
-                    "orderNo": 0
-                },
-                {
-                    "name": "코드",
-                    "type": "string",
-                    "required": true,
-                    "orderNo": 1
-                },
-                {
-                    "name": "대분류명",
-                    "type": "string",
-                    "required": true,
-                    "orderNo": 2
-                },
-                {
-                    "name": "소분류명",
-                    "type": "string",
-                    "required": false,
-                    "orderNo": 3
-                },
-                {
-                    "name": "기능명",
-                    "type": "string",
-                    "required": true,
-                    "orderNo": 4
-                },
-                {
-                    "name": "설명",
-                    "type": "string",
-                    "required": false,
-                    "orderNo": 5
-                },
-                {
-                    "name": "메모",
-                    "type": "string",
-                    "required": false,
-                    "orderNo": 6
-                },
-                {
-                    "name": "프론트엔드_기간",
-                    "type": "number",
-                    "required": false,
-                    "orderNo": 7
-                },
-                {
-                    "name": "백엔드_기간",
-                    "type": "number",
-                    "required": false,
-                    "orderNo": 8
-                },
-                {
-                    "name": "금액",
-                    "type": "number",
-                    "required": true,
-                    "orderNo": 9
-                },
-                {
-                    "name": "수수료",
-                    "type": "number",
-                    "required": false,
-                    "orderNo": 10
-                }
-            ]
+            {
+                "name": "id",
+                "type": "string",
+                "required": false,
+                "orderNo": 0
+            },
+            {
+                "name": "코드",
+                "type": "string",
+                "required": true,
+                "orderNo": 1
+            },
+            {
+                "name": "대분류명",
+                "type": "string",
+                "required": true,
+                "orderNo": 2
+            },
+            {
+                "name": "소분류명",
+                "type": "string",
+                "required": false,
+                "orderNo": 3
+            },
+            {
+                "name": "기능명",
+                "type": "string",
+                "required": true,
+                "orderNo": 4
+            },
+            {
+                "name": "설명",
+                "type": "string",
+                "required": false,
+                "orderNo": 5
+            },
+            {
+                "name": "메모",
+                "type": "string",
+                "required": false,
+                "orderNo": 6
+            },
+            {
+                "name": "프론트엔드_기간",
+                "type": "number",
+                "required": false,
+                "orderNo": 7
+            },
+            {
+                "name": "백엔드_기간",
+                "type": "number",
+                "required": false,
+                "orderNo": 8
+            },
+            {
+                "name": "금액",
+                "type": "number",
+                "required": true,
+                "orderNo": 9
+            },
+            {
+                "name": "추가",
+                "type": "string",
+                "required": true,
+                "orderNo": 10
+            }
         ],
         "data": [
             {
-                "id": "",
-                "코드": "예시_코드2",
-                "대분류명": "예시_대분류명2",
-                "소분류명": "예시_소분류명2",
-                "기능명": "예시_기능명2",
-                "설명": "예시_설명2",
-                "메모": "예시_메모2",
-                "프론트엔드_기간": 2,
-                "백엔드_기간": 2,
-                "금액": 200000,
-                "수수료": 10
-            },
-            {
-                "id": "",
-                "코드": "예시_코드3",
-                "대분류명": "예시_대분류명3",
-                "소분류명": "예시_소분류명3",
-                "기능명": "예시_기능명3",
-                "설명": "예시_설명3",
-                "메모": "예시_메모3",
-                "프론트엔드_기간": 3,
-                "백엔드_기간": 3,
-                "금액": 300000,
-                "수수료": 5
-            },
-            {
-                "id": "",
-                "코드": "예시_코드1",
-                "대분류명": "예시_대분류명1",
-                "소분류명": "예시_소분류명1",
-                "기능명": "예시_기능명1",
-                "설명": "예시_설명1",
-                "메모": "예시_메모1",
+                "no": 2,
+                "id": "68c7bac789bdff30bd60a813",
+                "코드": "예시_코드",
+                "대분류명": "예시_대분류명",
+                "소분류명": "예시_소분류명",
+                "기능명": "예시_기능명",
+                "설명": "예시_설명",
+                "메모": "예시_메모",
                 "프론트엔드_기간": 1,
                 "백엔드_기간": 1,
                 "금액": 100000,
-                "수수료": 0
+                "추가": "추가"
+            },
+            {
+                "no": 1,
+                "id": "68c7ba8c4b393f0aff0ea85d",
+                "코드": "예시_코드",
+                "대분류명": "예시_대분류명",
+                "소분류명": "예시_소분류명",
+                "기능명": "예시_기능명",
+                "설명": "예시_설명",
+                "메모": "예시_메모",
+                "프론트엔드_기간": 1,
+                "백엔드_기간": 1,
+                "금액": 100000
             }
         ]
     },
     "metadata": {
-        "allCnt": 3,
-        "totalCnt": 3
+        "allCnt": 2,
+        "totalCnt": 2
     },
     "error": null
 }

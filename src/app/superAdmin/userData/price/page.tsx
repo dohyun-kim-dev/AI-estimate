@@ -407,6 +407,7 @@ const PriceListPage: React.FC = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [selectedCompanyCode, setSelectedCompanyCode] = useState<string | null>(null);
+  const [selectedCompanyName, setSelectedCompanyName] = useState<string>(''); // 선택된 고객사명 추가
   const [dynamicColumns, setDynamicColumns] = useState<ColumnDefinition<any>[]>([]);
   const [currentTableData, setCurrentTableData] = useState<any[]>([]); // 현재 테이블 데이터 저장
   const [currentColumnsInfo, setCurrentColumnsInfo] = useState<any[]>([]); // 현재 컬럼 정보 저장
@@ -414,10 +415,8 @@ const PriceListPage: React.FC = () => {
   const [isAlertOpen, setIsAlertOpen] = useState(false); // 알림 팝업
   const [alertMessage, setAlertMessage] = useState(''); // 알림 메시지
   const [alertType, setAlertType] = useState<'success' | 'error' | 'warning'>('error'); // 알림 타입
-  const [refetchTrigger, setRefetchTrigger] = useState(0); // 테이블 새로고침 트리거
   const [uploadSuccessData, setUploadSuccessData] = useState<any[]>([]); // 업로드 성공 데이터 저장
   const [uploadColumns, setUploadColumns] = useState<any[]>([]); // 업로드된 컬럼 정보 저장
-  const listRef = useRef<{ refetch: () => void }>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleRowClick = (item: any) => {
@@ -433,6 +432,11 @@ const PriceListPage: React.FC = () => {
   // 단일 항목 저장 핸들러
   const handleSaveItem = async (formData: any) => {
     try {
+      console.log('=== handleSaveItem START ===');
+      console.log('formData:', formData);
+      console.log('selectedCompanyCode:', selectedCompanyCode);
+      console.log('currentColumnsInfo:', currentColumnsInfo);
+      
       // 여기서 실제 API 호출을 해야 하지만, 현재는 uploadUnitPrices를 사용
       // updateUnitPrice API가 있다면 그것을 사용해야 함
       const apiPayload = {
@@ -446,51 +450,48 @@ const PriceListPage: React.FC = () => {
         data: [formData] // 단일 항목 배열로 감싸기
       };
 
-      await uploadUnitPrices(apiPayload);
+      console.log('API payload:', apiPayload);
+      const response = await uploadUnitPrices(apiPayload);
       
-      // 테이블 새로고침
-      if (selectedCompanyCode) {
-        await handleCompanySelect({ id: selectedCompanyCode, name: '' });
+      console.log('uploadUnitPrices response:', response);
+      
+      // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+      const actualResponse = Array.isArray(response) ? response[0] : response;
+      
+      // actualResponse.data에서 실제 API 응답을 가져옴
+      const apiResponse = (actualResponse as any)?.data;
+      
+      console.log('API response details:', apiResponse);
+      
+      if (apiResponse && (apiResponse.statusCode === 200 || apiResponse.statusCode === "200") && apiResponse.message === 'success') {
+        showToast('데이터가 성공적으로 저장되었습니다.', 'success');
+        
+        console.log('About to refresh table...');
+        // 테이블 새로고침
+        if (selectedCompanyCode) {
+          await handleCompanySelect({ id: selectedCompanyCode, name: selectedCompanyName });
+        }
+        
+        console.log('=== handleSaveItem SUCCESS END ===');
+        return Promise.resolve();
+      } else {
+        const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '저장에 실패했습니다.';
+        console.log('API response error:', errorMessage);
+        showToast(errorMessage, 'error');
+        return Promise.reject(new Error(errorMessage));
       }
-      
-      return Promise.resolve();
     } catch (error) {
       console.error('Save item error:', error);
+      const err = error as Error | { customMessage?: string };
+      const errorMessage = 'customMessage' in err 
+        ? err.customMessage 
+        : err instanceof Error 
+          ? err.message 
+          : '저장에 실패했습니다.';
+      showToast(errorMessage, 'error');
       return Promise.reject(error);
     }
   };
-
-  const fetchData = useCallback(
-    async (params: FetchParams): Promise<FetchResult<any>> => {
-      console.log('=== fetchData called ===', {
-        paramsCompanyCode: params.companyCode,
-        selectedCompanyCode,
-        transformedDataLength: transformedTableData.length
-      });
-      
-      // companyCode가 없으면 빈 데이터 반환
-      if (!params.companyCode && !selectedCompanyCode) {
-        console.log('No companyCode, returning empty');
-        return { data: [], totalItems: 0, allItems: 0 };
-      }
-
-      // 현재 상태에 데이터가 있고 같은 회사라면 기존 데이터 반환 (중복 API 호출 방지)
-      const targetCompanyCode = params.companyCode || selectedCompanyCode;
-      if (transformedTableData.length > 0 && selectedCompanyCode === targetCompanyCode) {
-        console.log('Returning cached data, length:', transformedTableData.length);
-        return {
-          data: transformedTableData,
-          totalItems: transformedTableData.length,
-          allItems: transformedTableData.length,
-        };
-      }
-
-      console.log('=== fetchData END (should not reach here often) ===');
-      // 대부분의 경우 여기에 도달하지 않아야 함 (handleCompanySelect에서 처리)
-      return { data: [], totalItems: 0, allItems: 0 };
-    },
-    [selectedCompanyCode, transformedTableData],
-  );
 
   const handleCompanySelect = useCallback(async (company: { id: string; name: string }) => {
     console.log('=== Company selected START ===:', company);
@@ -499,11 +500,6 @@ const PriceListPage: React.FC = () => {
     showToast('회사 코드가 없습니다. 고객사를 다시 선택해주세요.', 'error');
     return;
   }
-    // 중복 호출 방지를 위한 체크
-    if (selectedCompanyCode === company.id) {
-      console.log('Same company selected, skipping');
-      return;
-    }
     
     try {
       console.log('Fetching data for company:', company.id);
@@ -517,27 +513,52 @@ const PriceListPage: React.FC = () => {
 
       console.log('API response received');
 
-      // API 응답 처리 로직
+      // API 응답 처리 로직 (superAdminMng 스타일로 수정)
       let columnsInfo: any[] = [];
       let apiData: any[] = [];
       
-      let actualResponse = response;
-      if (Array.isArray(response) && response.length > 0) {
-        actualResponse = (response as any[])[0];
-        console.log('Actual response:', priceApiResponseToMarkdownTable(actualResponse));
-      }
+      // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+      const actualResponse = Array.isArray(response) ? response[0] : response;
+      console.log('actualResponse', actualResponse);
       
-      if (actualResponse && typeof actualResponse === 'object') {
-        // 404 에러 응답 처리
-        if (!Array.isArray(actualResponse) &&
-            'statusCode' in actualResponse && 
-            'message' in actualResponse && 
-            'data' in actualResponse &&
-            ((actualResponse as any).statusCode === 404 || (actualResponse as any).statusCode === "404") && 
-            (actualResponse as any).message === 'not found' &&
-            ((actualResponse as any).data === null || (actualResponse as any).data === "" || (actualResponse as any).data === undefined)) {
-          
-          // 샘플 템플릿용 기본 컬럼 정의
+      // actualResponse.data에서 실제 API 응답을 가져옴
+      const apiResponse = (actualResponse as any)?.data;
+      console.log('apiResponse', apiResponse);
+      
+      if (apiResponse) {
+        if ((apiResponse.statusCode === 404 || apiResponse.statusCode === "404") && apiResponse.message === 'not found') {
+          // 404 에러 응답 처리 - 샘플 템플릿용 기본 컬럼 정의
+          columnsInfo = [
+            { name: 'id', type: 'string', required: false, orderNo: 0 },
+            { name: '코드', type: 'string', required: true, orderNo: 1 },
+            { name: '대분류명', type: 'string', required: true, orderNo: 2 },
+            { name: '소분류명', type: 'string', required: false, orderNo: 3 },
+            { name: '기능명', type: 'string', required: true, orderNo: 4 },
+            { name: '설명', type: 'string', required: false, orderNo: 5 },
+            { name: '메모', type: 'string', required: false, orderNo: 6 },
+            { name: '프론트엔드_기간', type: 'number', required: false, orderNo: 7 },
+            { name: '백엔드_기간', type: 'number', required: false, orderNo: 8 },
+            { name: '금액', type: 'number', required: true, orderNo: 9 }
+          ];
+          apiData = [];
+        } else if ((apiResponse.statusCode === 200 || apiResponse.statusCode === "200") && apiResponse.message === 'success') {
+          // 성공 응답 처리
+          if (apiResponse.data && typeof apiResponse.data === 'object') {
+            const responseData = apiResponse.data;
+            
+            if ('columns' in responseData && Array.isArray(responseData.columns)) {
+              columnsInfo = Array.isArray(responseData.columns[0]) 
+                ? responseData.columns[0] 
+                : responseData.columns;
+            }
+            
+            if ('data' in responseData && Array.isArray(responseData.data)) {
+              apiData = responseData.data;
+            }
+          }
+        } else {
+          console.error('API Error:', apiResponse);
+          // 기본 컬럼으로 폴백
           columnsInfo = [
             { name: 'id', type: 'string', required: false, orderNo: 0 },
             { name: '코드', type: 'string', required: true, orderNo: 1 },
@@ -552,30 +573,22 @@ const PriceListPage: React.FC = () => {
           ];
           apiData = [];
         }
-        else if ('data' in actualResponse && actualResponse.data) {
-          const responseData = actualResponse.data as any;
-          
-          if ('columns' in responseData && Array.isArray(responseData.columns)) {
-            if (Array.isArray(responseData.columns[0])) {
-              columnsInfo = responseData.columns[0];
-            } else {
-              columnsInfo = responseData.columns;
-            }
-          }
-          
-          if ('data' in responseData && Array.isArray(responseData.data)) {
-            apiData = responseData.data;
-          }
-        }
-        else if ('columns' in actualResponse && 'data' in actualResponse) {
-          const responseColumns = (actualResponse as any).columns;
-          const responseData = (actualResponse as any).data;
-          
-          columnsInfo = Array.isArray(responseColumns[0]) 
-            ? responseColumns[0] 
-            : responseColumns;
-          apiData = Array.isArray(responseData) ? responseData : [];
-        }
+      } else {
+        console.error('No API response data');
+        // 기본 컬럼으로 폴백
+        columnsInfo = [
+          { name: 'id', type: 'string', required: false, orderNo: 0 },
+          { name: '코드', type: 'string', required: true, orderNo: 1 },
+          { name: '대분류명', type: 'string', required: true, orderNo: 2 },
+          { name: '소분류명', type: 'string', required: false, orderNo: 3 },
+          { name: '기능명', type: 'string', required: true, orderNo: 4 },
+          { name: '설명', type: 'string', required: false, orderNo: 5 },
+          { name: '메모', type: 'string', required: false, orderNo: 6 },
+          { name: '프론트엔드_기간', type: 'number', required: false, orderNo: 7 },
+          { name: '백엔드_기간', type: 'number', required: false, orderNo: 8 },
+          { name: '금액', type: 'number', required: true, orderNo: 9 }
+        ];
+        apiData = [];
       }
 
       // 컬럼 정보가 있을 때만 처리
@@ -643,24 +656,31 @@ const PriceListPage: React.FC = () => {
           ...generatedColumns
         ];
 
-        // 2. 데이터에 orderNo(1부터)로 no 필드 부여
+        // 2. 데이터에 서버에서 전달받은 no 필드 사용 (없으면 index + 1로 폴백)
         const transformedData = apiData.map((item: any, index: number) => ({
           ...item,
           select: false,
-          no: (item.orderNo !== undefined ? item.orderNo : index + 1),
+          no: (item.no !== undefined ? item.no : index + 1),
         }));
 
         console.log('Setting all states in batch');
         
         // 모든 상태를 한 번에 업데이트 (React 18 batch update)
         React.startTransition(() => {
+          console.log("=== Setting states START ===");
           console.log("company.id",company.id, company)
+          console.log("apiData length:", apiData.length);
+          console.log("transformedData length:", transformedData.length);
+          console.log("allColumnsForTable:", allColumnsForTable);
+          
           setSelectedCompanyCode(company.id);
+          setSelectedCompanyName(company.name); // 고객사명도 저장
           setCurrentColumnsInfo(allColumnsForTable);
           setCurrentTableData(apiData);
           setDynamicColumns(columnsWithSelect);
           setTransformedTableData(transformedData);
-          setRefetchTrigger(prev => prev + 1);
+          
+          console.log("=== Setting states END ===");
         });
         
         console.log('Updated transformedTableData length:', transformedData.length);
@@ -673,7 +693,7 @@ const PriceListPage: React.FC = () => {
       // 에러 시에도 회사 코드는 설정
       setSelectedCompanyCode(company.id);
     }
-  }, [selectedCompanyCode]);
+  }, [showToast]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1078,15 +1098,29 @@ const PriceListPage: React.FC = () => {
           columns: columnsPayload,
           data: chunks[i]
         };
-        await uploadUnitPrices(apiPayload);
+        
+        const response = await uploadUnitPrices(apiPayload);
+        
+        console.log(`Chunk ${i + 1} upload response:`, response);
+        
+        // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+        const actualResponse = Array.isArray(response) ? response[0] : response;
+        
+        // actualResponse.data에서 실제 API 응답을 가져옴
+        const apiResponse = (actualResponse as any)?.data;
+        
+        if (!apiResponse || (apiResponse.statusCode !== 200 && apiResponse.statusCode !== "200") || apiResponse.message !== 'success') {
+          const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || `청크 ${i + 1} 업로드에 실패했습니다.`;
+          throw new Error(errorMessage);
+        }
       }
 
       // 업로드 성공 시 처리
       showToast('데이터가 성공적으로 업로드되었습니다.', 'success');
 
       // 업로드 성공 후 테이블 새로고침
-      if (listRef.current) {
-        listRef.current.refetch();
+      if (selectedCompanyCode) {
+        await handleCompanySelect({ id: selectedCompanyCode, name: selectedCompanyName });
       }
 
       // 팝업 닫기
@@ -1098,7 +1132,13 @@ const PriceListPage: React.FC = () => {
 
     } catch (error) {
       console.error('단가 업로드 에러:', error);
-      showToast('데이터 업로드 중 오류가 발생했습니다.', 'error');
+      const err = error as Error | { customMessage?: string };
+      const errorMessage = 'customMessage' in err 
+        ? err.customMessage 
+        : err instanceof Error 
+          ? err.message 
+          : '데이터 업로드 중 오류가 발생했습니다.';
+      showToast(errorMessage, 'error');
     }
   };
 
@@ -1116,14 +1156,15 @@ const PriceListPage: React.FC = () => {
   return (
     <>
       <CmsResponsiveContainer<any>
-        key={`price-list-${selectedCompanyCode || 'no-company'}-${refetchTrigger}`}
+        key={`price-list-${selectedCompanyCode || 'no-company'}-${transformedTableData.length}`}
         title="단가표 관리"
         data={transformedTableData}
         columns={dynamicColumns}
-        fetchData={fetchData}
         enableDateFilter={false}
         enableCompanySearch={true}
         onCompanySelect={handleCompanySelect}
+        selectedCompanyCode={selectedCompanyCode}
+        selectedCompanyName={selectedCompanyName}
         onRowClick={handleRowClick}
         themeMode="light"
         onAdd={() => {
