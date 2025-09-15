@@ -34,6 +34,8 @@ interface CmsResponsiveContainerProps<T extends BaseRecord> {
   // 고객사 검색 관련 props
   enableCompanySearch?: boolean;
   onCompanySelect?: (company: { id: string; name: string }) => void;
+  selectedCompanyCode?: string | null; // 현재 선택된 고객사 코드
+  selectedCompanyName?: string; // 현재 선택된 고객사명
   isShowExcelTemplate?: boolean;
   excelUploadBtnCallBack?: () => void;
   excelTemplateBtnCallBack?: () => void;
@@ -55,6 +57,8 @@ export default function CmsResponsiveContainer<T extends BaseRecord>({
   enableDateFilter,
   onCompanySelect,
   enableCompanySearch,
+  selectedCompanyCode,
+  selectedCompanyName,
   isShowExcelTemplate,
   excelUploadBtnCallBack,
   excelTemplateBtnCallBack,
@@ -76,6 +80,8 @@ export default function CmsResponsiveContainer<T extends BaseRecord>({
     enableDateFilter,
     enableCompanySearch,
     onCompanySelect,
+    selectedCompanyCode,
+    selectedCompanyName,
     isShowExcelTemplate,
     excelUploadBtnCallBack,
     excelTemplateBtnCallBack,

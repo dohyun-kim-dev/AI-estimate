@@ -28,6 +28,8 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   // 고객사 검색 관련 props
   enableCompanySearch?: boolean;
   onCompanySelect?: (company: { id: string; name: string }) => void;
+  selectedCompanyCode?: string | null;
+  selectedCompanyName?: string;
   isShowExcelTemplate?: boolean;
   excelUploadBtnCallBack?: () => void;
   excelTemplateBtnCallBack?: () => void;
@@ -47,6 +49,8 @@ export default function CmsDesktopView<T extends BaseRecord>({
   enableDateFilter,
   enableCompanySearch,
   onCompanySelect,
+  selectedCompanyCode,
+  selectedCompanyName,
   isShowExcelTemplate,
   excelUploadBtnCallBack,
   excelTemplateBtnCallBack,
@@ -79,6 +83,8 @@ export default function CmsDesktopView<T extends BaseRecord>({
       enableDateFilter={enableDateFilter}
       enableCompanySearch={enableCompanySearch}
       onCompanySelect={onCompanySelect}
+      selectedCompanyCode={selectedCompanyCode}
+      selectedCompanyName={selectedCompanyName}
       isShowExcelTemplate={isShowExcelTemplate}
       excelUploadBtnCallBack={excelUploadBtnCallBack}
       excelTemplateBtnCallBack={excelTemplateBtnCallBack}

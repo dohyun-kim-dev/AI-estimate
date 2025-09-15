@@ -84,6 +84,8 @@ interface GenericListUIProps<T extends BaseRecord> {
   // 고객사 검색 관련 props
   enableCompanySearch?: boolean;
   onCompanySelect?: (company: { id: string; name: string }) => void;
+  selectedCompanyCode?: string | null; // 외부에서 관리되는 선택된 고객사 코드
+  selectedCompanyName?: string; // 외부에서 관리되는 선택된 고객사명
 
   initialState?: InitialState;
   keyExtractor?: (item: T, index: number) => string | number;
@@ -161,7 +163,9 @@ const GenericListUIInner = <T extends BaseRecord>(
     deleteBtnCallBack,
     excelUploadBtnCallBack,
     enableCompanySearch,
-    onCompanySelect
+    onCompanySelect,
+    selectedCompanyCode: externalSelectedCompanyCode,
+    selectedCompanyName: externalSelectedCompanyName
   }: GenericListUIProps<T>,
   ref: React.Ref<{ refetch: () => void }>
 ) => {
@@ -183,8 +187,10 @@ const GenericListUIInner = <T extends BaseRecord>(
   const [searchTermInput, setSearchTermInput] = useState(initialState.keyword ?? ""); // 검색 "입력" 상태
   const [searchKeyword, setSearchKeyword] = useState(initialState.keyword ?? ""); // 실제 "적용된" 검색어
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
-  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string | null>(null);
-  const [selectedCompanyName, setSelectedCompanyName] = useState<string>("");
+  
+  // 외부에서 관리되는 고객사 정보 사용 (내부 상태 제거)
+  const selectedCompanyCode = externalSelectedCompanyCode;
+  const selectedCompanyName = externalSelectedCompanyName || "";
 
   // --- 데이터 로딩 콜백 --- (API 호출 시점 변경)
   const fetchDataCallback = useCallback(async () => {
@@ -444,15 +450,11 @@ const GenericListUIInner = <T extends BaseRecord>(
               isOpen={isCompanyModalOpen}
               onClose={() => setIsCompanyModalOpen(false)}
               onSelect={(company) => {
-                setSelectedCompanyCode(company.companyCode);
-                setSelectedCompanyName(company.companyName);
+                // 외부 콜백으로 고객사 선택 처리 위임
                 if (onCompanySelect) {
                   onCompanySelect({ id: company.companyCode, name: company.companyName });
                 }
-                // 회사 선택 시 자동으로 데이터 재로드
-                setTimeout(() => {
-                  fetchDataCallback();
-                }, 0);
+                // 자동 데이터 재로드는 외부에서 처리하므로 제거
               }}
               themeMode={themeMode}
             />

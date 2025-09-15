@@ -84,14 +84,17 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
       const actualResponse = Array.isArray(response) ? response[0] : response;
       console.log('📋 실제 응답 데이터:', actualResponse);
       
+      // actualResponse.data에서 실제 API 응답을 가져옴
+      const apiData = (actualResponse as any)?.data as ApiResponse;
+      console.log('📋 API 데이터:', apiData);
+      
       // API 응답 구조에 맞게 data 필드에서 배열을 추출
-      const typedResponse = actualResponse as ApiResponse;
-      if (typedResponse && typedResponse.data && Array.isArray(typedResponse.data)) {
-        console.log('📋 고객사 목록 설정:', typedResponse.data.length, '개');
-        console.log('📋 첫 번째 고객사 데이터:', typedResponse.data[0]);
-        setCompanies(typedResponse.data);
+      if (apiData && apiData.data && Array.isArray(apiData.data)) {
+        console.log('📋 고객사 목록 설정:', apiData.data.length, '개');
+        console.log('📋 첫 번째 고객사 데이터:', apiData.data[0]);
+        setCompanies(apiData.data);
       } else {
-        console.log('⚠️ API 응답이 예상된 구조가 아님:', typedResponse);
+        console.log('⚠️ API 응답이 예상된 구조가 아님:', apiData);
         setCompanies([]);
       }
     } catch (error) {
