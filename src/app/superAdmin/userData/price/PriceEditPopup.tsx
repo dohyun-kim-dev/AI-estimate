@@ -192,7 +192,7 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
     if (columnsInfo.length > 0) {
       const initialData: Record<string, any> = {};
       
-      // id 필드 제외하고 초기화
+      // id 필드 제외하고 초기화 (표시용 필드)
       columnsInfo
         .filter(column => column.name !== 'id')
         .forEach(column => {
@@ -210,6 +210,11 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
               initialData[column.name] = value !== undefined && value !== null ? String(value) : '';
           }
         });
+      
+      // 수정 시 id 추가 (API 전송용)
+      if (selectedItem && selectedItem.id) {
+        initialData.id = selectedItem.id;
+      }
       
       setFormData(initialData);
       setErrors({});

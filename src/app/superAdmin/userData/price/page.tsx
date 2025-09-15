@@ -437,6 +437,13 @@ const PriceListPage: React.FC = () => {
       console.log('selectedCompanyCode:', selectedCompanyCode);
       console.log('currentColumnsInfo:', currentColumnsInfo);
       
+      // formData 복사 및 id 처리 (생성 시 id 제거, 수정 시 id 유지)
+      const processedFormData = { ...formData };
+      if (!processedFormData.id || processedFormData.id === '') {
+        delete processedFormData.id; // 생성 시 id 필드 제거
+      }
+      // 수정 시 id가 있으면 그대로 유지
+      
       // 여기서 실제 API 호출을 해야 하지만, 현재는 uploadUnitPrices를 사용
       // updateUnitPrice API가 있다면 그것을 사용해야 함
       const apiPayload = {
@@ -447,7 +454,7 @@ const PriceListPage: React.FC = () => {
           required: col.required,
           orderNo: col.orderNo
         })),
-        data: [formData] // 단일 항목 배열로 감싸기
+        data: [processedFormData] // 처리된 단일 항목 배열로 감싸기
       };
 
       console.log('API payload:', apiPayload);
@@ -666,22 +673,20 @@ const PriceListPage: React.FC = () => {
         console.log('Setting all states in batch');
         
         // 모든 상태를 한 번에 업데이트 (React 18 batch update)
-        React.startTransition(() => {
-          console.log("=== Setting states START ===");
-          console.log("company.id",company.id, company)
-          console.log("apiData length:", apiData.length);
-          console.log("transformedData length:", transformedData.length);
-          console.log("allColumnsForTable:", allColumnsForTable);
-          
-          setSelectedCompanyCode(company.id);
-          setSelectedCompanyName(company.name); // 고객사명도 저장
-          setCurrentColumnsInfo(allColumnsForTable);
-          setCurrentTableData(apiData);
-          setDynamicColumns(columnsWithSelect);
-          setTransformedTableData(transformedData);
-          
-          console.log("=== Setting states END ===");
-        });
+        console.log("=== Setting states START ===");
+        console.log("company.id",company.id, company)
+        console.log("apiData length:", apiData.length);
+        console.log("transformedData length:", transformedData.length);
+        console.log("allColumnsForTable:", allColumnsForTable);
+        
+        setSelectedCompanyCode(company.id);
+        setSelectedCompanyName(company.name); // 고객사명도 저장
+        setCurrentColumnsInfo(allColumnsForTable);
+        setCurrentTableData(apiData);
+        setDynamicColumns(columnsWithSelect);
+        setTransformedTableData(transformedData);
+        
+        console.log("=== Setting states END ===");
         
         console.log('Updated transformedTableData length:', transformedData.length);
       }
@@ -1156,7 +1161,7 @@ const PriceListPage: React.FC = () => {
   return (
     <>
       <CmsResponsiveContainer<any>
-        key={`price-list-${selectedCompanyCode || 'no-company'}-${transformedTableData.length}`}
+        key={`price-list-${selectedCompanyCode || 'no-company'}-${transformedTableData.length}-${Date.now()}`}
         title="단가표 관리"
         data={transformedTableData}
         columns={dynamicColumns}

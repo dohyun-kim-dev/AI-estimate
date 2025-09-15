@@ -39,10 +39,10 @@ export default function LoginPage() {
 
     let hasError = false;
 
-    // if (!userIdRegex.test(userId)) {
-    //   setIdError('아이디는 영문자와 숫자를 포함한 6~20자여야 합니다.');
-    //   hasError = true;
-    // }
+    if (!userIdRegex.test(userId)) {
+      setIdError('아이디는 영문자와 숫자를 포함한 6~20자여야 합니다.');
+      hasError = true;
+    }
 
     if (!passwordRegex.test(password)) {
       setPwdError(
