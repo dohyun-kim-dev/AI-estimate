@@ -538,6 +538,11 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
             console.log('[IssuerInfoModal submit] purpose: contact', info);
           } else if (infoModalPurpose === 'download') {
             console.log('[IssuerInfoModal submit] purpose: download', info);
+            // 비회원 정보를 sessionStorage에 저장
+            sessionStorage.setItem('guestInfo', JSON.stringify({
+              name: info.name,
+              email: info.email
+            }));
             props.onDownload && props.onDownload();
           } else if (infoModalPurpose === 'share') {
             console.log('[IssuerInfoModal submit] purpose: share', info);

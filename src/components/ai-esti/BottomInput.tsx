@@ -5,6 +5,7 @@ import styled, { useTheme } from 'styled-components';
 import Icon from './Icon';
 import TextareaAutosize from 'react-textarea-autosize';
 import { useAuthStore } from '@/store/authStore';
+import { useUsageStore } from '@/store/usageStore';
 import { SocialLoginModal } from './SocialLoginModal';
 import FileUploadSection from './FileUploadSection';
 import { FileUploadData } from '@/firebase.functions';
@@ -189,6 +190,7 @@ interface BottomInputProps {
   chatSessionId: string;
   onRestoreInput?: (value: string) => void; // 추가: 인풋 복원 콜백
   onStopStreaming?: () => void; // 추가: 정지 버튼 콜백
+  onUsageCheck?: () => { canProceed: boolean; showModal: boolean; modalPurpose: 'limitReached' | 'limitExceeded' }; // 추가: 사용량 체크
 }
 
 
@@ -207,25 +209,31 @@ const BottomInput: React.FC<BottomInputProps> = ({
   estimateDataForConsult,
   chatSessionId,
   onRestoreInput,
-  onStopStreaming
+  onStopStreaming,
+  onUsageCheck
 }) => {
   const [value, setValue] = useState('');
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  const [remainingCount, setRemainingCount] = useState(maxSubmissions);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [loginModalPurpose, setLoginModalPurpose] = useState<'limitReached' | 'limitExceeded' | null>(null);
-  const [hasUsedExtraCount, setHasUsedExtraCount] = useState(false);
 
-  const [abortController, setAbortController] = useState<AbortController | null>(null); // 추가
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
-  const remainingCountRef = useRef(remainingCount);
+  const remainingCountRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const theme = useTheme();
   const isLightTheme = theme.body === '#FFFFFF';
   const { isAuthenticated } = useAuthStore();
+  const { 
+    remainingCount, 
+    hasUsedExtraCount, 
+    decreaseCount, 
+    addExtraCount, 
+    checkAndResetIfNewDay 
+  } = useUsageStore();
   const isLoggedIn = isAuthenticated();
 
   useEffect(() => {
@@ -234,63 +242,9 @@ const BottomInput: React.FC<BottomInputProps> = ({
 
   useEffect(() => {
     if (!isLoggedIn) {
-      const checkAndResetCount = () => {
-        let deviceId = localStorage.getItem('deviceId');
-        let lastResetDate = localStorage.getItem('lastResetDate');
-        const today = new Date().toDateString();
-
-        if (!deviceId) {
-          deviceId = generateUUID();
-          localStorage.setItem('deviceId', deviceId);
-        }
-
-        if (lastResetDate !== today) {
-          localStorage.setItem('lastResetDate', today);
-          localStorage.setItem('remainingCount', String(maxSubmissions));
-          localStorage.removeItem('hasUsedExtraCount');
-          setRemainingCount(maxSubmissions);
-          setHasUsedExtraCount(false);
-        } else {
-          const storedCount = localStorage.getItem('remainingCount');
-          if (storedCount) {
-            setRemainingCount(Number(storedCount));
-          } else {
-            localStorage.setItem('remainingCount', String(maxSubmissions));
-            setRemainingCount(maxSubmissions);
-          }
-          // 하루가 바뀌면 hasUsedExtraCount도 false로 초기화
-          const storedHasUsedExtraCount = localStorage.getItem('hasUsedExtraCount');
-          setHasUsedExtraCount(storedHasUsedExtraCount === 'true');
-        }
-      };
-
-      checkAndResetCount();
-      const intervalId = setInterval(checkAndResetCount, 60 * 60 * 1000);
-      
-      // 🔥 localStorage 변경 감지 이벤트 리스너 추가
-      const handleStorageChange = (e: StorageEvent) => {
-        if (e.key === 'remainingCount' && e.newValue) {
-          setRemainingCount(Number(e.newValue));
-        }
-      };
-      
-      window.addEventListener('storage', handleStorageChange);
-      
-      // 🔥 같은 탭에서의 localStorage 변경도 감지 (storage 이벤트는 다른 탭에서만 발생)
-      const pollRemainingCount = setInterval(() => {
-        const currentCount = localStorage.getItem('remainingCount');
-        if (currentCount && Number(currentCount) !== remainingCount) {
-          setRemainingCount(Number(currentCount));
-        }
-      }, 100); // 100ms마다 체크
-      
-      return () => {
-        clearInterval(intervalId);
-        clearInterval(pollRemainingCount);
-        window.removeEventListener('storage', handleStorageChange);
-      };
+      checkAndResetIfNewDay();
     }
-  }, [isLoggedIn, maxSubmissions, remainingCount]);
+  }, [isLoggedIn, checkAndResetIfNewDay]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -327,12 +281,9 @@ const BottomInput: React.FC<BottomInputProps> = ({
         return;
       }
 
-      const storedCount = Number(localStorage.getItem('remainingCount') || maxSubmissions);
-      if (storedCount > 0) {
+      if (remainingCount > 0) {
         await onSubmit(lastInputRef.current.trim(), { abortSignal: newAbort.signal });
-        const newCount = storedCount - 1;
-        setRemainingCount(newCount);
-        localStorage.setItem('remainingCount', String(newCount));
+        decreaseCount();
       } else {
         // 횟수가 부족해서 전송하지 못한 경우 텍스트 복원
         setValue(lastInputRef.current);
@@ -429,11 +380,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
   const handlePrimaryButtonClick = () => {
     setIsLoginModalOpen(false);
     if (loginModalPurpose === 'limitReached') {
-      const newCount = 10;
-      setRemainingCount(newCount);
-      localStorage.setItem('remainingCount', String(newCount));
-      localStorage.setItem('hasUsedExtraCount', 'true');
-      setHasUsedExtraCount(true);
+      addExtraCount();
     } else if (loginModalPurpose === 'limitExceeded') {
       setIsInfoModalOpen(true);
     }
@@ -452,6 +399,27 @@ const BottomInput: React.FC<BottomInputProps> = ({
       console.error('Google login error:', error);
     }
   };
+
+  // 사용량 체크 함수 (외부에서 호출 가능)
+  const checkUsage = () => {
+    if (isLoggedIn) {
+      return { canProceed: true, showModal: false, modalPurpose: 'limitReached' };
+    }
+    
+    if (remainingCount > 0) {
+      return { canProceed: true, showModal: false, modalPurpose: 'limitReached' };
+    } else {
+      const purpose = hasUsedExtraCount ? 'limitExceeded' : 'limitReached';
+      return { canProceed: false, showModal: true, modalPurpose: purpose };
+    }
+  };
+
+  // onUsageCheck prop으로 전달될 수 있도록 useEffect로 설정
+  useEffect(() => {
+    if (onUsageCheck) {
+      // onUsageCheck 함수를 외부에서 호출할 수 있도록 설정하는 로직이 필요하다면 여기에 구현
+    }
+  }, [onUsageCheck]);
 
   return (
     <>

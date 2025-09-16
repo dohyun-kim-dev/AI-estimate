@@ -6,6 +6,7 @@ import { IoChevronForward } from 'react-icons/io5';
 import Icon from './Icon';
 import { useToast } from '@/components/common/ToastProvider'
 import { useAuthStore } from '@/store/authStore';
+import { useUsageStore } from '@/store/usageStore';
 import { useChatStore } from '@/store/chatStore';
 import { requestEstimateConsult } from '@/lib/api/user/userApi';
 import { useLocation } from 'react-router-dom';
@@ -154,12 +155,20 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [isSocialLoginModalOpen, setIsSocialLoginModalOpen] = useState(false); // ✅ 추가: 소셜 로그인 모달 상태
   const [socialLoginPurpose, setSocialLoginPurpose] = useState<'consult' | null>(null); // ✅ 추가: 목적 상태
+  const [pendingAIAction, setPendingAIAction] = useState<"AI 예산 줄이기" | "AI 맞춤 추천" | null>(null); // 추가: 대기 중인 AI 액션
   const [name, setName] = useState('');   // 로그인 사용자 프리필 용
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
   const { success, error } = useToast();
   const { isAuthenticated } = useAuthStore();
+  const { 
+    remainingCount, 
+    hasUsedExtraCount, 
+    decreaseCount, 
+    addExtraCount,
+    checkAndResetIfNewDay 
+  } = useUsageStore();
   const { messages } = useChatStore();
   const location = useLocation();
 
@@ -204,8 +213,11 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
           setPhone(user.cellphone || '');
         }
       }
+    } else {
+      // 비회원인 경우 사용량 체크
+      checkAndResetIfNewDay();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, checkAndResetIfNewDay]);
 
   // 상담 버튼 클릭
   const handleConsultClick = async () => {
@@ -230,6 +242,48 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
   const handleSocialLoginSuccess = async () => {
     setIsSocialLoginModalOpen(false);
     await handleSubmit(); // ✅ 소셜 로그인 성공 시 바로 문의 API 호출
+  };
+
+  // AI 기능 사용 전 횟수 체크 및 차감
+  const handleAIFeatureClick = (action: "AI 예산 줄이기" | "AI 맞춤 추천") => {
+    if (isAuthenticated()) {
+      // 회원은 바로 실행
+      onSubmit?.(action);
+      return;
+    }
+
+    // 비회원 횟수 체크
+    if (remainingCount > 0) {
+      // 횟수 차감 후 실행
+      decreaseCount();
+      onSubmit?.(action);
+    } else {
+      // 횟수 부족 시 - 어떤 액션인지 저장하고 모달 표시
+      setPendingAIAction(action);
+      
+      if (hasUsedExtraCount) {
+        // 이미 10회 추가를 사용한 경우 - limitExceeded 모달
+        setIsSocialLoginModalOpen(true);
+      } else {
+        // 아직 10회 추가를 사용하지 않은 경우 - limitReached 모달 (10회 추가 기회)
+        setIsSocialLoginModalOpen(true);
+      }
+    }
+  };
+
+  // 소셜 로그인 모달의 기본 버튼 클릭 (10회 추가 또는 정보 입력)
+  const handleAIFeaturePrimaryClick = () => {
+    setIsSocialLoginModalOpen(false);
+    if (!hasUsedExtraCount && pendingAIAction) {
+      // 10회 추가하고 대기 중인 AI 기능 실행
+      addExtraCount();
+      decreaseCount(); // 추가된 횟수에서 1회 차감
+      onSubmit?.(pendingAIAction);
+      setPendingAIAction(null); // 대기 액션 초기화
+    } else {
+      // 정보 입력 모달 오픈
+      setIsInfoModalOpen(true);
+    }
   };
 
   // 상담 요청 공통 처리: 로그인/비로그인 모두 지원
@@ -314,7 +368,7 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
         <ActionButtonBottom>상담 요청 하기</ActionButtonBottom>
       </ActionButton>
      
-          <ActionButton onClick={() => onSubmit?.("AI 예산 줄이기")}>
+          <ActionButton onClick={() => handleAIFeatureClick("AI 예산 줄이기")}>
             <LeftContent>
               <TextContent>
                 <Flex>
@@ -332,7 +386,7 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
             <ActionButtonBottom $isSecondary>AI 예산 줄이기</ActionButtonBottom>
           </ActionButton>
 
-          <ActionButton onClick={() => onSubmit?.("AI 맞춤 추천")}>
+          <ActionButton onClick={() => handleAIFeatureClick("AI 맞춤 추천")}>
             <LeftContent>
               <TextContent>
                 <Flex>
@@ -362,9 +416,12 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
       {/* ✅ 추가: 소셜 로그인 모달 */}
       <SocialLoginModal
         $isOpen={isSocialLoginModalOpen}
-        onClose={() => setIsSocialLoginModalOpen(false)}
-        purpose={socialLoginPurpose || 'consult'}
-        onPrimaryButtonClick={handlePrimaryButtonClick}
+        onClose={() => {
+          setIsSocialLoginModalOpen(false);
+          setPendingAIAction(null); // 모달 닫을 때 대기 액션도 초기화
+        }}
+        purpose={hasUsedExtraCount ? 'limitExceeded' : 'limitReached'}
+        onPrimaryButtonClick={pendingAIAction ? handleAIFeaturePrimaryClick : handlePrimaryButtonClick}
         onGoogleLoginSuccess={handleSocialLoginSuccess}
         onIssuerInfoSubmit={handleSubmit}
       />

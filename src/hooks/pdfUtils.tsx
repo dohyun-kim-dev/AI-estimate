@@ -69,12 +69,23 @@ export async function generatePDF(
     root.style.backgroundColor = 'white';
     tempDiv.appendChild(root);
 
-    const { createRoot } = await import('react-dom/client');
-    const reactRoot = createRoot(root);
-    const { PrintableInvoice } = await import('@/components/ai-esti/PrintableInvoice');
-    reactRoot.render(<PrintableInvoice estimate={estimate} />);
-
-    await new Promise((r) => setTimeout(r, 100));
+  const { createRoot } = await import('react-dom/client');
+  const reactRoot = createRoot(root);
+  const { PrintableInvoice } = await import('@/components/ai-esti/PrintableInvoice');
+  
+  // 비회원 정보가 있다면 estimate에 반영
+  const guestInfo = sessionStorage.getItem('guestInfo');
+  if (guestInfo) {
+    const { name, email } = JSON.parse(guestInfo);
+    if (estimate.customer) {
+      estimate.customer.name = name || estimate.customer.name;
+      estimate.customer.email = email || estimate.customer.email;
+    } else {
+      estimate.customer = { name, email };
+    }
+  }
+  
+  reactRoot.render(<PrintableInvoice estimate={estimate} />);    await new Promise((r) => setTimeout(r, 100));
 
     const html2canvas = (await import('html2canvas')).default;
     const { jsPDF } = await import('jspdf');
@@ -138,6 +149,18 @@ export async function previewPdfFromServerData(html: string) {
   const reactRoot = createRoot(root);
   const { PrintableInvoice } = await import('@/components/ai-esti/PrintableInvoice');
 
+  // 비회원 정보가 있다면 estimateJson에 반영
+  const guestInfo = sessionStorage.getItem('guestInfo');
+  if (guestInfo) {
+    const { name, email } = JSON.parse(guestInfo);
+    if (estimateJson.customer) {
+      estimateJson.customer.name = name || estimateJson.customer.name;
+      estimateJson.customer.email = email || estimateJson.customer.email;
+    } else {
+      estimateJson.customer = { name, email };
+    }
+  }
+  
   // PrintableInvoice가 estimate 형태를 받는다고 가정
   reactRoot.render(<PrintableInvoice estimate={estimateJson} />);
 
