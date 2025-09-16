@@ -18,12 +18,14 @@ import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import FileUploadSection from '@/components/ai-esti/FileUploadSection';
 import { devLog } from '../../utils/devLogger';
 import { useChatActions } from '@/hooks/useChatActions';
-import { getAllUnitPrices, requestEstimateConsult, getAiPrompts } from '@/lib/api/user/userApi';
+import { getAllUnitPrices, requestEstimateConsult, getAiPrompts, getChatSessions, transferChatSessionToUser, getChatSessionMessages, ChatMessage } from '@/lib/api/user/userApi';
 import { getEstimateIdFromContent } from '@/hooks/estimate';
 import { v4 as uuidv4 } from 'uuid';
 import { usePromptStore } from '@/store/promptStore';
+import { useAuthStore } from '@/store/authStore';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 // --- Gradient Text Animation ---
 const gradientText = keyframes`
@@ -116,10 +118,11 @@ function ProfileSpinner({ src }: { src: string }) {
 const Container = styled.div`
   max-width: 960px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 0px 16px 16px 16px;
   padding-bottom: calc(0px + env(safe-area-inset-bottom));
   position: relative;
-  // min-height: 100vh;
+  // height: 100dvh;
+  // max-height: 80dvh;
 
   @media (max-width: 400px) {
   padding: 0px;
@@ -355,6 +358,16 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
 };
 
 const parseMessageContent = (content: string) => {
+  // content가 undefined나 null인 경우 처리
+  if (!content || typeof content !== 'string') {
+    return {
+      text: '',
+      fileName: null,
+      imageUrl: null,
+      isImage: false
+    };
+  }
+  
   const fileMatch = content.match(/\[첨부파일: (.+?)\]/);
   if (fileMatch) {
     const fileName = fileMatch[1];
@@ -695,6 +708,7 @@ export default function AiChatPage() {
   const clear = useChatStore((s) => s.clear);
   const [selectedPromptId, setSelectedPromptId] = useState('default');
   const updateLastMessage = useChatStore((s) => s.updateLastMessage);
+  const { isAuthenticated, user } = useAuthStore(); // user 상태도 가져오기
 
   const [isFirebaseChecking, setIsFirebaseChecking] = useState(true);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
@@ -737,6 +751,7 @@ export default function AiChatPage() {
   
   const [estimateDataForConsult, setEstimateDataForConsult] = useState<ProjectEstimate | null>(null);
   const [chatSessionId, setChatSessionId] = useState('');
+  const location = useLocation();
 
 // 페이지 진입 시 단가표 불러와서 promptStore에 저장
 useEffect(() => {
@@ -923,6 +938,110 @@ useEffect(() => {
 // 궁금하신 점이나 추가로 설명하고 싶으신 내용이 있다면 언제든지 편하게 이야기해주세요.`;
   const [hasShownInitialMessage, setHasShownInitialMessage] = useState(false);
 
+  // 세션 관리 로직 추가
+
+  useEffect(() => {
+    // URL에서 세션ID 파싱
+    const searchParams = new URLSearchParams(location.search);
+    const urlSessionId = searchParams.get('sessionId');
+
+    const handleSessionManagement = async () => {
+      const localChatSessionId = localStorage.getItem('chatSessionId');
+      let effectiveSessionId = urlSessionId || localChatSessionId;
+
+      if (urlSessionId) {
+        localStorage.setItem('chatSessionId', urlSessionId);
+        setChatSessionId(urlSessionId);
+        try {
+          const messagesResponse = await getChatSessionMessages(urlSessionId) as any;
+          if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
+            const chatMessages = messagesResponse.data.map((msg: ChatMessage) => ({
+              role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
+              content: msg.content.value || msg.content.content || '',
+              messageId: msg._id
+            }));
+            clear();
+            addMessage({ role: 'ai', content: initialAiMessage });
+            chatMessages.forEach((msg: any) => addMessage(msg));
+            setHasShownInitialMessage(true);
+          }
+        } catch (error) {
+          console.error('URL 세션 메시지 조회 실패:', error);
+        }
+        return;
+      }
+
+      if (isAuthenticated()) {
+        if (localChatSessionId) {
+          try {
+            await transferChatSessionToUser(localChatSessionId);
+            setChatSessionId(localChatSessionId);
+            const messagesResponse = await getChatSessionMessages(localChatSessionId) as any;
+            if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
+              const chatMessages = messagesResponse.data.map((msg: ChatMessage) => ({
+                role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
+                content: msg.content.value || msg.content.content || '',
+                messageId: msg._id
+              }));
+              clear();
+              addMessage({ role: 'ai', content: initialAiMessage });
+              chatMessages.forEach((msg: any) => addMessage(msg));
+              setHasShownInitialMessage(true);
+            }
+          } catch (error) {
+            console.error('세션 소유권 이전 실패:', error);
+          }
+        } else {
+          try {
+            const sessionsResponse = await getChatSessions() as any;
+            if (sessionsResponse && sessionsResponse.statusCode === 200 && sessionsResponse.data && sessionsResponse.data.length > 0) {
+              const latestSession = sessionsResponse.data.sort((a: any, b: any) => 
+                new Date(b.createAt).getTime() - new Date(a.createAt).getTime()
+              )[0];
+              localStorage.setItem('chatSessionId', latestSession._id);
+              setChatSessionId(latestSession._id);
+              const messagesResponse = await getChatSessionMessages(latestSession._id) as any;
+              if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
+                const chatMessages = messagesResponse.data.map((msg: ChatMessage) => ({
+                  role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
+                  content: msg.content.value || msg.content.content || '',
+                  messageId: msg._id
+                }));
+                clear();
+                addMessage({ role: 'ai', content: initialAiMessage });
+                chatMessages.forEach((msg: any) => addMessage(msg));
+                setHasShownInitialMessage(true);
+              }
+            }
+          } catch (error) {
+            console.error('세션 목록 조회 실패:', error);
+          }
+        }
+      } else {
+        if (localChatSessionId) {
+          try {
+            setChatSessionId(localChatSessionId);
+            const messagesResponse = await getChatSessionMessages(localChatSessionId) as any;
+            if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
+              const chatMessages = messagesResponse.data.map((msg: ChatMessage) => ({
+                role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
+                content: msg.content.value || msg.content.content || '',
+                messageId: msg._id
+              }));
+              clear();
+              addMessage({ role: 'ai', content: initialAiMessage });
+              chatMessages.forEach((msg: any) => addMessage(msg));
+              setHasShownInitialMessage(true);
+            }
+          } catch (error) {
+            console.error('세션 메시지 조회 실패:', error);
+          }
+        }
+      }
+    };
+    handleSessionManagement();
+  }, [user, addMessage, clear, initialAiMessage, location.search]);
+
   useEffect(() => {
     if (messages.length === 0 && !hasShownInitialMessage) {
       const timer = setTimeout(() => {
@@ -973,10 +1092,9 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
-    if (endOfMessagesRef.current) {
+    if (endOfMessagesRef.current && messages.length >= 2) {
       endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  // }, [messages.map(m => m.content).join('\n')]);
   }, [messages.length]);
 
   const isEstimateMessage = (content: string) => {
@@ -1059,7 +1177,7 @@ useEffect(() => {
                   content={
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                       <ProfileSpinner src="/ai-estimate/pretty.png" />
-                      <GradientText>어떤 답변이 도움이 될지 고민하는 중...</GradientText>
+                      <GradientText>생각 중...</GradientText>
                     </div>
                   }
                   profileImage={null}

@@ -11,6 +11,7 @@ export const GlobalStyle = createGlobalStyle`
     overflow-y: auto; /* 필요할 때만 스크롤바 표시 */
   }
 
+  
   body {
     font-family: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
       Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
@@ -26,7 +27,7 @@ export const GlobalStyle = createGlobalStyle`
   #root {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    min-height: 100dvh;
     position: relative;
     overflow: hidden;
   }

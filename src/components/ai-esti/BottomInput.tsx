@@ -43,12 +43,13 @@ const generateUUID = () => {
 
 const InputWrapper = styled.div`
   position: fixed;
-  bottom: 0;
+  bottom: 200px;
   left: 0;
   right: 0;
   padding: 12px 16px;
   background-color: ${({ theme }) => theme.body};
   border-top: 1px solid ${({ theme }) => theme.border};
+    // padding-bottom: env(safe-area-inset-bottom);
   z-index: 1000;
   width: 100%;
   @media (min-width: 1024px) {

@@ -121,8 +121,18 @@ export interface ChatMessage {
   content: {
     type: string;
     value: string;
+    content?: string;
   };
   createAt: string;
+}
+
+// 메시지 API 응답 타입
+export interface ChatMessageApiResponse {
+  statusCode: number;
+  message: string;
+  data: ChatMessage[];
+  metadata: null;
+  error: null;
 }
 
 export async function createChatSession(title: string) {
@@ -177,7 +187,7 @@ export async function getChatSession(sessionId: string) {
 
 export async function getChatSessions() {
   return callUserApi<ChatSessionData[]>({
-    title: '채팅 세션 목록 조회',
+    title: '유저별 채팅 세션 목록 조회',
     url: getApiUrl('/company/chat/sessions'),
     method: 'GET',
     isCallPageLoader: true,
@@ -189,6 +199,24 @@ export async function getChatMessages(sessionId: string) {
     title: '채팅 메시지 불러오기 (공유용)',
     url: getApiUrl(`/company/chat/sessions/${sessionId}/messages/share`),
     method: 'GET',
+    isCallPageLoader: true,
+  });
+}
+
+export async function getChatSessionMessages(sessionId: string) {
+  return callUserApi<ChatMessage[]>({
+    title: '채팅 세션 메시지 불러오기',
+    url: getApiUrl(`/company/chat/sessions/${sessionId}/messages`),
+    method: 'GET',
+    isCallPageLoader: true,
+  });
+}
+
+export async function transferChatSessionToUser(sessionId: string) {
+  return callUserApi<ChatSessionData>({
+    title: '채팅 세션 소유권 이전',
+    url: getApiUrl(`/company/chat/sessions/${sessionId}`),
+    method: 'PATCH',
     isCallPageLoader: true,
   });
 }
@@ -338,7 +366,7 @@ export async function requestEstimateConsult(
   chatSession: string,
   user: { id: string; name: string; cellphone: string; email: string }
 ) {
-  return callUserApi<null>({
+  return callUserApi<any>({
     title: '견적 상담 요청',
     url: getApiUrl('/company/estimate-request'),
     method: 'POST',

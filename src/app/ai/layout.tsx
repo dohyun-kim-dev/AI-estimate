@@ -348,6 +348,7 @@ const handleNewChat = () => {
       const messages = parsedData.state?.messages || [];
       if (messages.length >= 2) {
         resetChat();
+        localStorage.removeItem('chatSessionId');
         success('새로운 채팅방이 시작되었습니다');
       } else {
         success('이미 새로운 채팅방입니다');

@@ -159,13 +159,19 @@ const Footer: React.FC<FooterProps> = ({ compact }) => {
           const iconSrc = getIconSrc(item.key, isDarkMode, item.external ? false : isActive);
   
           if (item.external) {
+            // 현재 chatSessionId를 URL 파라미터로 전달
+            const searchParams = new URLSearchParams(window.location.search);
+            const sessionId = searchParams.get('sessionId') || localStorage.getItem('chatSessionId');
+            const fullUrl = sessionId
+              ? `/aiclient/${companyCode}/ai?sessionId=${sessionId}`
+              : `/aiclient/${companyCode}/ai`;
             return (
               <ButtonLike
                 key={idx}
                 $isActive={false}
                 onClick={(e) => {
                   e.preventDefault();
-                  window.open(`/aiclient/${companyCode}/ai`, '_blank', 'noopener,noreferrer');
+                  window.open(fullUrl, '_blank', 'noopener,noreferrer');
                 }}
               >
                 <IconWrapper $isActive={false}>
