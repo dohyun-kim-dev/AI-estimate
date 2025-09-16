@@ -20,7 +20,7 @@
   style.textContent = `
   .aiw-btn{position:fixed;${pos}:10px;bottom:-20px;z-index:2147483645;width:130px;height:130px;border-radius:50%;
     background:transparent;box-shadow:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;border:0;padding:0;transform:scale(1)}
-  @media (max-width: 520px) {
+  @media (max-width: 800px) {
     .aiw-btn {
       width: 100px;
       height: 150px;
@@ -63,14 +63,39 @@
     color: white;
     padding: 12px 12px;
     border-radius: 4px;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 16px;
+    font-weight: 600;
     text-align: center;
     opacity: 1;
     transition: opacity 0.3s ease;
     pointer-events: none;
     z-index: 2147483644;
     white-space: pre-line;
+    animation: aiw-float 2s ease-in-out infinite;
+    -webkit-animation: aiw-float 2s ease-in-out infinite;
+    visibility: visible;
+  }
+  
+  @keyframes aiw-float {
+    0%, 100% {
+      transform: translateY(0px);
+      -webkit-transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-8px);
+      -webkit-transform: translateY(-8px);
+    }
+  }
+  
+  @-webkit-keyframes aiw-float {
+    0%, 100% {
+      transform: translateY(0px);
+      -webkit-transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-8px);
+      -webkit-transform: translateY(-8px);
+    }
   }
   .aiw-tooltip::after {
     content: '';
@@ -81,7 +106,7 @@
     border: 6px solid transparent;
     border-top-color: #746AED;
   }
-  @media (max-width: 520px) {
+  @media (max-width: 800px) {
     .aiw-tooltip {
       bottom: 170px;
       ${pos}: 10px;
@@ -104,7 +129,7 @@
   .aiw-handle:hover{opacity:1}
   .aiw-arrow{width:20px;height:20px;display:block}
   /* 모바일에서는 핸들 숨기고, 높이 90vh 유지 */
-  @media (max-width: 520px){
+  @media (max-width: 800px){
     .aiw-root{ ${pos}:12px; left:12px; right:12px; width:auto; }
     .aiw-handle{ display:none !important; }
     .aiw-root{bottom:170px;z-index:2147483646;display:none;height:calc(100vh - 270px);}
@@ -153,7 +178,8 @@ btn.appendChild(openIcon);
   // 말풍선 툴팁 요소 생성
   const tooltip = document.createElement('div');
   tooltip.className = 'aiw-tooltip';
-  tooltip.textContent = '24시간 맞춤\n견적 상담 AI';
+  tooltip.textContent = '24시간 맞춤 견적 상담 AI';
+  tooltip.setAttribute('data-tooltip', 'true'); // 디버깅용 식별자
 
   const root = document.createElement('div'); root.className='aiw-root';
   const wrap = document.createElement('div'); wrap.className='aiw-wrap';
@@ -234,7 +260,7 @@ const isDarkMode = isColorDark(backgroundColor);
 
   // 높이 적용 함수
    const applyHeights = () => {
-    if (window.innerWidth > 520) {
+    if (window.innerWidth > 800) {
       const h = isExpanded ? expandedVh : desktopVh;
       root.style.height = h + 'vh';
       root.style.maxHeight = '80vh';
@@ -242,23 +268,25 @@ const isDarkMode = isColorDark(backgroundColor);
       if (isExpanded) {
         root.style.width = '30vw';
         root.style.maxWidth = 'calc(100vw - 24px)';
-        root.style.minWidth = W + 'px';
+        root.style.minWidth = '800px';
       } else {
         root.style.width = W + 'px';
         root.style.maxWidth = 'calc(100vw - 24px)';
+        root.style.minWidth = '';
       }
     } else {
       root.style.height = '80vh';
       root.style.maxHeight = '90vh';
       root.style.width = '';
       root.style.maxWidth = '';
+      root.style.minWidth = '';
     }
   };
 
   // 이벤트: 핸들 클릭 시 위젯 높이 토글 (핸들 높이는 고정)
   handle.addEventListener('click', (e)=>{
     e.stopPropagation();
-    if (window.innerWidth <= 520) return; // 모바일은 무시
+    if (window.innerWidth <= 800) return; // 모바일은 무시
     isExpanded = !isExpanded;
     applyHeights();
     postViewport();
@@ -310,7 +338,7 @@ const isDarkMode = isColorDark(backgroundColor);
   window.addEventListener('resize', () => {
     applyHeights(); 
     postViewport(); 
-    if (window.innerWidth <= 520) {
+    if (window.innerWidth <= 800) {
       handle.style.display = 'none';
     } else {
       handle.style.display = 'flex';
@@ -319,16 +347,44 @@ const isDarkMode = isColorDark(backgroundColor);
 
 
   const mount = () => {
-    if (!document.body) return;
-    if (!btn.isConnected) document.body.appendChild(btn);
-    if (!tooltip.isConnected) document.body.appendChild(tooltip);
-    if (!root.isConnected) document.body.appendChild(root);
-    if (window.innerWidth > 520) handle.style.display = 'flex';
+    if (!document.body) {
+      console.warn('[AI-Widget] document.body not available');
+      return;
+    }
+    
+    // 말풍선 툴팁 먼저 추가
+    if (!tooltip.isConnected) {
+      document.body.appendChild(tooltip);
+      console.log('[AI-Widget] Tooltip added to DOM');
+    }
+    
+    if (!btn.isConnected) {
+      document.body.appendChild(btn);
+      console.log('[AI-Widget] Button added to DOM');
+    }
+    
+    if (!root.isConnected) {
+      document.body.appendChild(root);
+      console.log('[AI-Widget] Root added to DOM');
+    }
+    
+    if (window.innerWidth > 800) handle.style.display = 'flex';
     applyHeights();
+    
     // 항상 위젯 열린 상태로 시작
     root.classList.add('open');
     btn.classList.add('open');
-    tooltip.style.opacity = '0'; // 위젯 열린 상태이므로 말풍선 숨김
+    
+    // 말풍선 표시 확인
+    setTimeout(() => {
+      if (tooltip.isConnected) {
+        tooltip.style.opacity = '0'; // 위젯 열린 상태이므로 말풍선 숨김
+        console.log('[AI-Widget] Tooltip opacity set to 0');
+      } else {
+        console.warn('[AI-Widget] Tooltip not connected to DOM');
+      }
+    }, 100);
+    
     postViewport();
   };
 

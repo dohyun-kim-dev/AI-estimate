@@ -266,9 +266,31 @@ const BottomInput: React.FC<BottomInputProps> = ({
 
       checkAndResetCount();
       const intervalId = setInterval(checkAndResetCount, 60 * 60 * 1000);
-      return () => clearInterval(intervalId);
+      
+      // 🔥 localStorage 변경 감지 이벤트 리스너 추가
+      const handleStorageChange = (e: StorageEvent) => {
+        if (e.key === 'remainingCount' && e.newValue) {
+          setRemainingCount(Number(e.newValue));
+        }
+      };
+      
+      window.addEventListener('storage', handleStorageChange);
+      
+      // 🔥 같은 탭에서의 localStorage 변경도 감지 (storage 이벤트는 다른 탭에서만 발생)
+      const pollRemainingCount = setInterval(() => {
+        const currentCount = localStorage.getItem('remainingCount');
+        if (currentCount && Number(currentCount) !== remainingCount) {
+          setRemainingCount(Number(currentCount));
+        }
+      }, 100); // 100ms마다 체크
+      
+      return () => {
+        clearInterval(intervalId);
+        clearInterval(pollRemainingCount);
+        window.removeEventListener('storage', handleStorageChange);
+      };
     }
-  }, [isLoggedIn, maxSubmissions]);
+  }, [isLoggedIn, maxSubmissions, remainingCount]);
 
   useEffect(() => {
     const handleResize = () => {
