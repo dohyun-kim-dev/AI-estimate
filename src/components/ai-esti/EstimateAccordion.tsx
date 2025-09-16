@@ -5,11 +5,38 @@ import EstimateAccordionItem from "./EstimateAccordionItem";
 import { patchChatMessages, uploadEstimatePdf } from "@/lib/api/user/userApi";
 import { buildFullEstimateData } from "@/hooks/estimate";
 import { ChatMessage, useChatStore } from "@/store/chatStore";
+import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
 
 const AccordionWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+`;
+
+const ToggleAllButton = styled.button`
+  background: none;
+  border: none;
+  color: ${({ theme }) => theme.text};
+  cursor: pointer;
+  padding: 8px 12px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+  
+  &:hover {
+    opacity: 1;
+  }
+  
+  svg {
+    width: 14px;
+    height: 14px;
+  }
 `;
 
 interface EstimateAccordionProps {
@@ -118,10 +145,29 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubItem, setSelectedSubItem] = useState<string | null>(null);
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
+  // 전체 접기/펼치기 상태 관리
+  const [allExpanded, setAllExpanded] = useState<boolean>(false);
+  const [accordionStates, setAccordionStates] = useState<{[key: string]: boolean}>({});
 
   const handleSubItemSelect = (categoryName: string, subItemId: string) => {
     setSelectedCategory(categoryName);
     setSelectedSubItem(subItemId);
+  };
+
+  // 모든 아코디언 접기/펼치기 핸들러
+  const handleToggleAll = () => {
+    const newAllExpanded = !allExpanded;
+    setAllExpanded(newAllExpanded);
+    
+    // 모든 카테고리와 서브카테고리의 상태 변경
+    const newStates: {[key: string]: boolean} = {};
+    estimate.categories.forEach((category, categoryIndex) => {
+      newStates[`category-${categoryIndex}`] = newAllExpanded;
+      category.sub_categories.forEach((_, subIndex) => {
+        newStates[`sub-${categoryIndex}-${subIndex}`] = newAllExpanded;
+      });
+    });
+    setAccordionStates(newStates);
   };
 
 useEffect(() => {
@@ -324,6 +370,9 @@ useEffect(() => {
 
   return (
     <AccordionWrapper>
+      {/* 전체 모두 접기/펼치기 버튼 */}
+     
+      
       {estimate.categories.map((category, index) => (
         <div key={index}>
           {/* depth=1 : 섹션 헤더 */}
@@ -331,7 +380,14 @@ useEffect(() => {
             name={category.category_name}
             depth={1}
             isSelected={selectedCategory === category.category_name}
+            isOpen={accordionStates[`category-${index}`] || false}
             onSelect={() => {
+              const currentState = accordionStates[`category-${index}`] || false;
+              setAccordionStates(prev => ({
+                ...prev,
+                [`category-${index}`]: !currentState
+              }));
+              
               if (selectedCategory === category.category_name) {
                 setSelectedCategory(null);
                 setSelectedSubItem(null);
@@ -368,12 +424,19 @@ useEffect(() => {
                 name={subCategory.sub_category_name}
                 depth={2}
                 isSelected={selectedSubItem === `${category.category_name}-${subIndex}`}
-                onSelect={() =>
+                isOpen={accordionStates[`sub-${index}-${subIndex}`] || false}
+                onSelect={() => {
+                  const currentState = accordionStates[`sub-${index}-${subIndex}`] || false;
+                  setAccordionStates(prev => ({
+                    ...prev,
+                    [`sub-${index}-${subIndex}`]: !currentState
+                  }));
+                  
                   handleSubItemSelect(
                     category.category_name,
                     `${category.category_name}-${subIndex}`
-                  )
-                }
+                  );
+                }}
                 items={subCategory.items.map((item) => ({
                   name: item.name,
                   price: String(item.price),
@@ -389,9 +452,23 @@ useEffect(() => {
                 discountRate={typeof (discountRate) === 'number' ? discountRate : 0}
               />
             ))}
+            
           </EstimateAccordionItem>
         </div>
       ))}
+       <ToggleAllButton onClick={handleToggleAll}>
+        {allExpanded ? (
+          <>
+            <IoChevronUp />
+            모두 접기
+          </>
+        ) : (
+          <>
+            <IoChevronDown />
+            모두 펼치기
+          </>
+        )}
+      </ToggleAllButton>
     </AccordionWrapper>
   );
 };

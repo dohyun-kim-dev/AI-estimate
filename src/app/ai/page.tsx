@@ -1113,7 +1113,7 @@ useEffect(() => {
     if (endOfMessagesRef.current && messages.length >= 2) {
       endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages.length]);
+  }, [messages]); // messages 배열 전체를 의존성으로 변경하여 스트리밍 중 내용 변화도 감지
 
   const isEstimateMessage = (content: string) => {
     // console.log('content', content);

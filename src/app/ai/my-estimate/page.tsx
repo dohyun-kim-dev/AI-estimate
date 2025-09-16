@@ -54,38 +54,38 @@ const GroupTitle = styled.h2`
   color: ${({ theme }) => theme.text};
   margin: 32px 0 12px;
 `
-const mockEstimates: ProjectEstimate[] = [
-  {
-    project_name: "AI 기반 쇼핑몰 자동화 시스템",
-    created_at: new Date().toISOString().slice(0, 10), // 오늘
-    estimated_period: "30주",
-    total_price: 120000000,
-  },
-  {
-    project_name: "모바일 헬스케어 플랫폼",
-    created_at: new Date().toISOString().slice(0, 10), // 오늘
-    estimated_period: "20주",
-    total_price: 80000000,
-  },
-  {
-    project_name: "기업용 ERP 통합 솔루션",
-    created_at: new Date(Date.now() - 86400000).toISOString().slice(0, 10), // 어제
-    estimated_period: "40주",
-    total_price: 200000000,
-  },
-  {
-    project_name: "온라인 교육 AI 챗봇",
-    created_at: new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10), // 7일 전
-    estimated_period: "15주",
-    total_price: 50000000,
-  },
-  {
-    project_name: "스마트 물류 관리 시스템",
-    created_at: new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10), // 7일 전
-    estimated_period: "25주",
-    total_price: 95000000,
-  },
-];
+// const mockEstimates: ProjectEstimate[] = [
+//   {
+//     project_name: "AI 기반 쇼핑몰 자동화 시스템",
+//     created_at: new Date().toISOString().slice(0, 10), // 오늘
+//     estimated_period: "30주",
+//     total_price: 120000000,
+//   },
+//   {
+//     project_name: "모바일 헬스케어 플랫폼",
+//     created_at: new Date().toISOString().slice(0, 10), // 오늘
+//     estimated_period: "20주",
+//     total_price: 80000000,
+//   },
+//   {
+//     project_name: "기업용 ERP 통합 솔루션",
+//     created_at: new Date(Date.now() - 86400000).toISOString().slice(0, 10), // 어제
+//     estimated_period: "40주",
+//     total_price: 200000000,
+//   },
+//   {
+//     project_name: "온라인 교육 AI 챗봇",
+//     created_at: new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10), // 7일 전
+//     estimated_period: "15주",
+//     total_price: 50000000,
+//   },
+//   {
+//     project_name: "스마트 물류 관리 시스템",
+//     created_at: new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10), // 7일 전
+//     estimated_period: "25주",
+//     total_price: 95000000,
+//   },
+// ];
 
 
 export default function MyEstimatePage() {

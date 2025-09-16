@@ -28,7 +28,7 @@ const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   display: ${(props) => (props.$isOpen ? 'flex' : 'none')};
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1001;
 `;
 
 const ModalContent = styled.div`

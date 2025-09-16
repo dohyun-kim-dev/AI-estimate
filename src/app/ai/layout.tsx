@@ -306,9 +306,11 @@ export default function AILayout() {
   }
 
   const handleCopy = async () => {
+    const  localChatSessionId = localStorage.getItem('chatSessionId'); // 기존에 저장된 chatSessionId 삭제
+    console.log("localChatSessionId:", localChatSessionId);
     let shareUrl;
-    if (chatSessionId) {
-      shareUrl = `${window.location.origin}/aiclient/${companyCode}/ai/share/${chatSessionId}`;
+    if (localChatSessionId) {
+      shareUrl = `${window.location.origin}/aiclient/${companyCode}/ai/share/${localChatSessionId}`;
     } else {
       shareUrl = window.location.href;
     }

@@ -247,6 +247,7 @@ interface EstimateAccordionItemProps {
   chatRoomId?: string;
   estimateId?: string;
   discountRate?: number; // 0~1, 0.1이면 10% 할인
+  isOpen?: boolean; // 외부에서 제어되는 열림/닫힘 상태
 }
 
 const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
@@ -264,11 +265,15 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
   onItemSelect,
   chatRoomId,
   estimateId,
-  discountRate
+  discountRate,
+  isOpen: externalIsOpen
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
   const hasItems = items.length > 0 || !!children;
   const location = useLocation();
+
+  // 외부에서 제어되는 경우 외부 상태 사용, 아니면 내부 상태 사용
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
 
   const isSharePage = useMemo(() => {
     const url = `${location.pathname}${location.search}${location.hash}`.toLowerCase();
@@ -296,9 +301,16 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
   }, [items, price, safeDiscountRate]);
 
   const handleHeaderClick = () => {
-    setIsOpen(!isOpen);
-    if (onSelect) {
-      onSelect();
+    // 외부에서 제어되는 경우 onSelect만 호출, 내부 상태인 경우 토글
+    if (externalIsOpen !== undefined) {
+      if (onSelect) {
+        onSelect();
+      }
+    } else {
+      setInternalIsOpen(!internalIsOpen);
+      if (onSelect) {
+        onSelect();
+      }
     }
   };
 
@@ -390,7 +402,17 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
       {depth === 1 && (
         <BottomToggleButton 
           $isVisible={isOpen && hasItems}
-          onClick={() => setIsOpen(false)}
+          onClick={() => {
+            if (externalIsOpen !== undefined) {
+              // 외부에서 제어되는 경우 onSelect 호출하여 닫기
+              if (onSelect) {
+                onSelect();
+              }
+            } else {
+              // 내부 상태인 경우 직접 닫기
+              setInternalIsOpen(false);
+            }
+          }}
         >
           <IoChevronDown size={16} />
         </BottomToggleButton>

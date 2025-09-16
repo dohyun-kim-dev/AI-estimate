@@ -447,15 +447,11 @@ const isDarkMode = detectDarkMode();
     if (window.innerWidth > 800) handle.style.display = 'flex';
     applyHeights();
     
-    // 항상 위젯 열린 상태로 시작
-    root.classList.add('open');
-    btn.classList.add('open');
-    
-    // 말풍선 표시 확인
+    // 접힌 상태로 시작 (말풍선 표시)
     setTimeout(() => {
       if (tooltip.isConnected) {
-        tooltip.style.opacity = '0'; // 위젯 열린 상태이므로 말풍선 숨김
-        console.log('[AI-Widget] Tooltip opacity set to 0');
+        tooltip.style.opacity = '1'; // 위젯 접힌 상태이므로 말풍선 표시
+        console.log('[AI-Widget] Tooltip opacity set to 1');
       } else {
         console.warn('[AI-Widget] Tooltip not connected to DOM');
       }
