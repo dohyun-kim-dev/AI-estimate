@@ -192,24 +192,30 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
     if (columnsInfo.length > 0) {
       const initialData: Record<string, any> = {};
       
-      // id 필드 제외하고 초기화
-      columnsInfo
-        .filter(column => column.name !== 'id')
-        .forEach(column => {
-          const value = selectedItem ? selectedItem[column.name] : undefined;
-          
-          // 타입에 따른 초기값 설정
-          switch (column.type) {
-            case 'number':
-              initialData[column.name] = value !== undefined && value !== null ? Number(value) : '';
-              break;
-            case 'boolean':
-              initialData[column.name] = Boolean(value);
-              break;
-            default:
-              initialData[column.name] = value !== undefined && value !== null ? String(value) : '';
-          }
-        });
+      // 수정 모드인지 확인 (selectedItem에 id가 있고 빈 값이 아닌 경우)
+      const isEditMode = selectedItem && selectedItem.id && selectedItem.id !== '';
+      
+      // 수정 모드일 때는 id도 포함
+      columnsInfo.forEach(column => {
+        if (column.name === 'id' && !isEditMode) {
+          // 신규 추가 모드일 때는 id 제외
+          return;
+        }
+        
+        const value = selectedItem ? selectedItem[column.name] : undefined;
+        
+        // 타입에 따른 초기값 설정
+        switch (column.type) {
+          case 'number':
+            initialData[column.name] = value !== undefined && value !== null ? Number(value) : '';
+            break;
+          case 'boolean':
+            initialData[column.name] = Boolean(value);
+            break;
+          default:
+            initialData[column.name] = value !== undefined && value !== null ? String(value) : '';
+        }
+      });
       
       setFormData(initialData);
       setErrors({});
@@ -316,9 +322,16 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
     }
   };
 
-  // 컬럼 정보를 orderNo로 정렬하고 id 필드 제외
+  // 컬럼 정보를 orderNo로 정렬하고 수정 모드가 아닐 때만 id 필드 제외
+  const isEditMode = selectedItem && selectedItem.id && selectedItem.id !== '';
   const sortedColumns = [...columnsInfo]
-    .filter(column => column.name !== 'id') // id 필드 제외
+    .filter(column => {
+      // 신규 추가 모드일 때만 id 필드 제외
+      if (column.name === 'id' && !isEditMode) {
+        return false;
+      }
+      return true;
+    })
     .sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0));
 
   // 동적 필드 렌더링
@@ -345,7 +358,7 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
         return (
           <NumberInput
             type="text"
-            value={String(value)}
+            value={value === '' ? '' : String(value)}
             onChange={(e) => handleFieldChange(name, e.target.value, type)}
             placeholder={`${name}을(를) 입력하세요 (숫자만)`}
             $hasError={hasError}
@@ -373,8 +386,8 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
             <TextField
               value={String(value)}
               onChange={(e) => handleFieldChange(name, e.target.value, type)}
-              placeholder={`${name}을(를) 입력하세요`}
-              $inputBackgroundColor="#ffffff"
+              placeholder={name === 'id' ? 'ID (자동생성)' : `${name}을(를) 입력하세요`}
+              $inputBackgroundColor={name === 'id' ? '#f5f5f5' : '#ffffff'}
               $borderColor={hasError ? AppColors.error : AppColors.border}
               readOnly={name === 'id'} // id 필드는 읽기 전용
             />

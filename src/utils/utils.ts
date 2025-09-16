@@ -3,11 +3,11 @@
 /**
  * "4,000,000" 같은 통화 문자열에서 쉼표를 제거하고 숫자로 변환합니다.
  * @param priceStr - 변환할 가격 문자열
- * @returns 숫자로 변환된 가격
+ * @returns 숫자로 변환된 가격 (소수점 포함)
  */
 export const parsePrice = (priceStr: string): number => {
   if (!priceStr) return 0;
-  return parseInt(priceStr.replace(/,/g, ''), 10);
+  return parseFloat(priceStr.replace(/,/g, ''));
 };
 
 /**
