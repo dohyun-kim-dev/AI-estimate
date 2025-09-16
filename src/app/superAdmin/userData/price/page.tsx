@@ -312,7 +312,7 @@ const validateRequiredFields = (obj: any, columns: any[], rowIndex: number) => {
 
 
 // 엑셀 스타일링 적용 함수
-const applyExcelStyling = (ws: any, sortedColumns: any[]) => {
+const applyExcelStyling = (ws: any, sortedColumns: any[], data?: any[]) => {
   // A1 셀 범위 병합 (A1부터 마지막 컬럼까지)
   const lastCol = String.fromCharCode(65 + sortedColumns.length); // A=65, B=66, ...
   const mergeRange = `A1:${lastCol}1`;
@@ -373,6 +373,28 @@ const applyExcelStyling = (ws: any, sortedColumns: any[]) => {
       ws[cellAddress].s.alignment = { horizontal: 'center' };
     }
   }
+
+  // 숫자 타입 컬럼의 셀 타입 설정 (데이터 행에만 적용)
+  if (data && data.length > 0) {
+    const dataStartRow = 4; // 5번째 행부터 데이터 시작 (0-based index)
+    
+    sortedColumns.forEach((col: any, colIndex: number) => {
+      if (col.type === 'number') {
+        const excelColIndex = colIndex + 1; // B열부터 시작 (A열은 구분자)
+        
+        for (let rowIndex = 0; rowIndex < data.length; rowIndex++) {
+          const excelRowIndex = dataStartRow + rowIndex;
+          const cellAddress = XLSX.utils.encode_cell({ r: excelRowIndex, c: excelColIndex });
+          
+          if (ws[cellAddress] && typeof ws[cellAddress].v === 'number') {
+            // 숫자 셀의 타입을 명시적으로 설정
+            ws[cellAddress].t = 'n'; // number type
+            ws[cellAddress].z = '0.00'; // 숫자 포맷 (소수점 2자리)
+          }
+        }
+      }
+    });
+  }
   
   // 컬럼 너비 조정 (동적으로 설정)
   const colWidths = [{ wch: 15 }]; // A열: 첫 번째 구분자 컬럼
@@ -417,6 +439,7 @@ const PriceListPage: React.FC = () => {
   const [alertType, setAlertType] = useState<'success' | 'error' | 'warning'>('error'); // 알림 타입
   const [uploadSuccessData, setUploadSuccessData] = useState<any[]>([]); // 업로드 성공 데이터 저장
   const [uploadColumns, setUploadColumns] = useState<any[]>([]); // 업로드된 컬럼 정보 저장
+  const [forceUpdateKey, setForceUpdateKey] = useState(0); // 강제 업데이트용 key
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleRowClick = (item: any) => {
@@ -434,15 +457,24 @@ const PriceListPage: React.FC = () => {
     try {
       console.log('=== handleSaveItem START ===');
       console.log('formData:', formData);
+      console.log('selectedItem:', selectedItem);
       console.log('selectedCompanyCode:', selectedCompanyCode);
       console.log('currentColumnsInfo:', currentColumnsInfo);
       
-      // formData 복사 및 id 처리 (생성 시 id 제거, 수정 시 id 유지)
-      const processedFormData = { ...formData };
-      if (!processedFormData.id || processedFormData.id === '') {
-        delete processedFormData.id; // 생성 시 id 필드 제거
+      // 수정 모드인지 확인 (formData에 id가 있고 빈 값이 아닌 경우)
+      const isEditMode = formData.id && formData.id !== '';
+      console.log('isEditMode:', isEditMode, 'id:', formData.id);
+      
+      // API에 전달할 데이터 준비
+      const apiData = { ...formData };
+      
+      // 신규 추가일 때는 id 필드 제거 (서버에서 자동 생성)
+      if (!isEditMode) {
+        delete apiData.id;
+        console.log('신규 추가 모드: id 필드 제거');
+      } else {
+        console.log('수정 모드: id 필드 포함');
       }
-      // 수정 시 id가 있으면 그대로 유지
       
       // 여기서 실제 API 호출을 해야 하지만, 현재는 uploadUnitPrices를 사용
       // updateUnitPrice API가 있다면 그것을 사용해야 함
@@ -454,7 +486,7 @@ const PriceListPage: React.FC = () => {
           required: col.required,
           orderNo: col.orderNo
         })),
-        data: [processedFormData] // 처리된 단일 항목 배열로 감싸기
+        data: [apiData] // 단일 항목 배열로 감싸기
       };
 
       console.log('API payload:', apiPayload);
@@ -471,12 +503,25 @@ const PriceListPage: React.FC = () => {
       console.log('API response details:', apiResponse);
       
       if (apiResponse && (apiResponse.statusCode === 200 || apiResponse.statusCode === "200") && apiResponse.message === 'success') {
-        showToast('데이터가 성공적으로 저장되었습니다.', 'success');
+        showToast(`데이터가 성공적으로 ${isEditMode ? '수정' : '저장'}되었습니다.`, 'success');
         
         console.log('About to refresh table...');
-        // 테이블 새로고침
+        console.log('selectedCompanyCode:', selectedCompanyCode);
+        console.log('selectedCompanyName:', selectedCompanyName);
+        
+        // 테이블 새로고침 (약간의 지연을 두어 API 완료 후 실행)
         if (selectedCompanyCode) {
-          await handleCompanySelect({ id: selectedCompanyCode, name: selectedCompanyName });
+          console.log('Calling handleCompanySelect for refresh...');
+          setTimeout(async () => {
+            try {
+              await handleCompanySelect({ id: selectedCompanyCode, name: selectedCompanyName });
+              console.log('handleCompanySelect completed');
+            } catch (error) {
+              console.error('Error refreshing table:', error);
+            }
+          }, 100);
+        } else {
+          console.log('Warning: selectedCompanyCode is null, cannot refresh table');
         }
         
         console.log('=== handleSaveItem SUCCESS END ===');
@@ -500,7 +545,7 @@ const PriceListPage: React.FC = () => {
     }
   };
 
-  const handleCompanySelect = useCallback(async (company: { id: string; name: string }) => {
+  const handleCompanySelect = async (company: { id: string; name: string }) => {
     console.log('=== Company selected START ===:', company);
     console.log("companyCode:",company.id);
      if (!company.id) {
@@ -526,11 +571,9 @@ const PriceListPage: React.FC = () => {
       
       // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
       const actualResponse = Array.isArray(response) ? response[0] : response;
-      console.log('actualResponse', actualResponse);
       
       // actualResponse.data에서 실제 API 응답을 가져옴
       const apiResponse = (actualResponse as any)?.data;
-      console.log('apiResponse', apiResponse);
       
       if (apiResponse) {
         if ((apiResponse.statusCode === 404 || apiResponse.statusCode === "404") && apiResponse.message === 'not found') {
@@ -559,8 +602,15 @@ const PriceListPage: React.FC = () => {
                 : responseData.columns;
             }
             
-            if ('data' in responseData && Array.isArray(responseData.data)) {
-              apiData = responseData.data;
+            if ('data' in responseData) {
+              // data가 배열이면 그대로, 객체면 배열로 감싸기
+              if (Array.isArray(responseData.data)) {
+                apiData = responseData.data;
+              } else if (responseData.data && typeof responseData.data === 'object') {
+                apiData = [responseData.data]; // 단일 객체를 배열로 감싸기
+              } else {
+                apiData = [];
+              }
             }
           }
         } else {
@@ -629,7 +679,7 @@ const PriceListPage: React.FC = () => {
                 if (col.name === '금액' || col.name.toLowerCase().includes('price')) {
                   columnDef.formatter = (value) => {
                     const numValue = Number(value);
-                    return isNaN(numValue) ? value : numValue.toLocaleString();
+                    return isNaN(numValue) ? value : numValue.toLocaleString('ko-KR');
                   };
                 } else {
                   columnDef.formatter = (value) => {
@@ -672,23 +722,14 @@ const PriceListPage: React.FC = () => {
 
         console.log('Setting all states in batch');
         
-        // 모든 상태를 한 번에 업데이트 (React 18 batch update)
-        console.log("=== Setting states START ===");
-        console.log("company.id",company.id, company)
-        console.log("apiData length:", apiData.length);
-        console.log("transformedData length:", transformedData.length);
-        console.log("allColumnsForTable:", allColumnsForTable);
-        
+        // 모든 상태를 한 번에 업데이트
         setSelectedCompanyCode(company.id);
         setSelectedCompanyName(company.name); // 고객사명도 저장
         setCurrentColumnsInfo(allColumnsForTable);
         setCurrentTableData(apiData);
         setDynamicColumns(columnsWithSelect);
         setTransformedTableData(transformedData);
-        
-        console.log("=== Setting states END ===");
-        
-        console.log('Updated transformedTableData length:', transformedData.length);
+        setForceUpdateKey(prev => prev + 1); // 테이블 강제 업데이트
       }
       
       console.log('=== Company selected END ===');
@@ -698,7 +739,7 @@ const PriceListPage: React.FC = () => {
       // 에러 시에도 회사 코드는 설정
       setSelectedCompanyCode(company.id);
     }
-  }, [showToast]);
+  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -963,6 +1004,7 @@ const PriceListPage: React.FC = () => {
               }
               break;
             case 'number':
+              // 숫자 타입은 실제 숫자로 저장
               sampleValue = col.name === '금액' ? 100000 : 1;
               break;
             case 'boolean':
@@ -977,8 +1019,8 @@ const PriceListPage: React.FC = () => {
 
         const ws = XLSX.utils.aoa_to_sheet(templateData);
 
-        // 스타일링 적용
-        applyExcelStyling(ws, sortedColumns);
+        // 스타일링 적용 (샘플 데이터 1행)
+        applyExcelStyling(ws, sortedColumns, [{}]);
 
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, '단가표_샘플템플릿');
@@ -1040,17 +1082,23 @@ const PriceListPage: React.FC = () => {
         const dataRow = ['데이터 영역']; // A열에는 구분자
         allColumns.forEach((col: any) => {
           const value = item[col.name];
-          dataRow.push(value !== undefined && value !== null ? value : ''); // 값이 없으면 빈 문자열
+          if (value === undefined || value === null) {
+            dataRow.push(''); // 값이 없으면 빈 문자열
+          } else if (col.type === 'number') {
+            // 숫자 타입은 실제 숫자로 저장
+            const numValue = Number(value);
+            dataRow.push(isNaN(numValue) ? value : numValue);
+          } else {
+            dataRow.push(value);
+          }
         });
         templateData.push(dataRow);
       });
 
-      console.log('Template data:', templateData);
-
       const ws = XLSX.utils.aoa_to_sheet(templateData);
 
-      // 스타일링 적용
-      applyExcelStyling(ws, allColumns);
+      // 스타일링 적용 (데이터 포함)
+      applyExcelStyling(ws, allColumns, currentTableData);
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, '단가표_실제데이터');
@@ -1161,7 +1209,7 @@ const PriceListPage: React.FC = () => {
   return (
     <>
       <CmsResponsiveContainer<any>
-        key={`price-list-${selectedCompanyCode || 'no-company'}-${transformedTableData.length}-${Date.now()}`}
+        key={`price-list-${selectedCompanyCode || 'no-company'}-${forceUpdateKey}`}
         title="단가표 관리"
         data={transformedTableData}
         columns={dynamicColumns}

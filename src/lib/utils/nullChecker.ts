@@ -8,7 +8,7 @@ export function callNullCheck(raw: any): any[] {
   
   function cleanValue(value: any): any {
     if (value === null || value === 'null') return '';
-    if (typeof value === 'number') return Number.isInteger(value) ? value.toString() : Math.floor(value).toString();
+    if (typeof value === 'number') return value; // 숫자는 그대로 유지 (소숫점 보존)
     if (Array.isArray(value)) return value.map(v => cleanValue(v));
     if (typeof value === 'object') return cleanObject(value);
     return value;

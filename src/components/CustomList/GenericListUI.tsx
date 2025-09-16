@@ -110,9 +110,6 @@ const PrimaryButton = styled(ActionButton)<{ $themeMode: ThemeMode }>`
   color: ${({ $themeMode }) =>
     $themeMode === 'light' ? '#f8f8f8' : THEME_COLORS.dark.primary};
   border: none;
-  &:hover:not(:disabled) {
-    background-color: ${({ $themeMode }) => ($themeMode === "light" ? "#e8e8e8" : "#555555")};
-  }
 `;
 
 // 삭제, 업로드 버튼 (어두운 톤)
@@ -122,9 +119,6 @@ const SecondaryButton = styled(ActionButton)<{ $themeMode: ThemeMode }>`
   background: ${({ $themeMode }) => ($themeMode === "light" ? "#eeeeee" : "#333333")};
   color: ${({ $themeMode }) => ($themeMode === "light" ? "#333333" : "#eeeeee")};
   border: none;
-  &:hover:not(:disabled) {
-    background-color: ${({ $themeMode }) => ($themeMode === "light" ? "#dddddd" : "#555555")};
-  }
 `;
 
 // 다운로드 버튼 (특정 색)
@@ -134,9 +128,6 @@ const DownloadButton = styled(ActionButton)`
   background: #51815a;
   color: white;
   border: none;
-  &:hover:not(:disabled) {
-    background-color: #3e6b47;
-  }
 `;
 
 
