@@ -194,27 +194,55 @@ btn.appendChild(openIcon);
   toggleIcon.setAttribute('viewBox','0 0 30 30');
   toggleIcon.setAttribute('fill','none');
 
-// body에 적용된 최종 스타일 정보 가져오기
-const body = document.body;
+// 다크모드 감지 함수
+function detectDarkMode() {
+  try {
+    // 1. prefers-color-scheme 미디어 쿼리로 시스템 테마 확인
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      console.log('[AI-Widget] System dark mode detected');
+      return true;
+    }
 
-const style2 = window.getComputedStyle(body);
-
-// 배경색 값(RGB) 가져오기
-const backgroundColor = style2.getPropertyValue('background-color');
-
-// RGB 값을 분석하여 어두운 계열인지 밝은 계열인지 판단
-// (예: RGB 값이 0, 0, 0에 가까우면 어둡다고 판단)
-// 이 부분은 명확한 기준이 없으므로 구현에 따라 달라질 수 있습니다.
-function isColorDark(rgb) {
-  // RGB 문자열에서 숫자만 추출하여 배열로 변환
-  const color = rgb.match(/\d+/g).map(Number);
-  // 간편한 명도 계산 (Y = 0.299*R + 0.587*G + 0.114*B)
-  const luminance = (0.299 * color[0] + 0.587 * color[1] + 0.114 * color[2]) / 255;
-  // 명도가 0.5 미만이면 어두운 색으로 판단 (이 값은 조절 가능)
-  return luminance < 0.5;
+    // 2. body의 배경색으로 확인
+    if (document.body) {
+      const style = window.getComputedStyle(document.body);
+      const bgColor = style.backgroundColor;
+      
+      // RGB 값이 있는 경우
+      if (bgColor.startsWith('rgb')) {
+        const color = bgColor.match(/\d+/g)?.map(Number);
+        if (color && color.length >= 3) {
+          const luminance = (0.299 * color[0] + 0.587 * color[1] + 0.114 * color[2]) / 255;
+          console.log('[AI-Widget] Background luminance:', luminance);
+          return luminance < 0.5;
+        }
+      }
+      
+      // background-color가 transparent인 경우 html 요소 확인
+      if (bgColor === 'rgba(0, 0, 0, 0)' || bgColor === 'transparent') {
+        const htmlStyle = window.getComputedStyle(document.documentElement);
+        const htmlBgColor = htmlStyle.backgroundColor;
+        if (htmlBgColor.startsWith('rgb')) {
+          const color = htmlBgColor.match(/\d+/g)?.map(Number);
+          if (color && color.length >= 3) {
+            const luminance = (0.299 * color[0] + 0.587 * color[1] + 0.114 * color[2]) / 255;
+            console.log('[AI-Widget] HTML background luminance:', luminance);
+            return luminance < 0.5;
+          }
+        }
+      }
+    }
+    
+    // 3. 기본값으로 라이트 모드 반환
+    console.log('[AI-Widget] Defaulting to light mode');
+    return false;
+  } catch (error) {
+    console.warn('[AI-Widget] Error detecting dark mode:', error);
+    return false;
+  }
 }
 
-const isDarkMode = isColorDark(backgroundColor);
+const isDarkMode = detectDarkMode();
 
   if (isDarkMode) {
     // 다크 모드: 검은 동그라미에 흰색 화살표가 보이도록
