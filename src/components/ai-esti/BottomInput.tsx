@@ -172,6 +172,7 @@ const FilePreviewContainer = styled.div`
 interface BottomInputProps {
   placeholder?: string;
   onSubmit?: (value: string, options?: { displayMessage?: string; abortSignal?: AbortSignal }) => Promise<void>;
+  onPaste?: (e: React.ClipboardEvent) => Promise<void>; // 🔥 이미지 붙여넣기 prop 추가
   maxSubmissions?: number;
   onFileInput?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isUploading: boolean;
@@ -194,6 +195,7 @@ interface BottomInputProps {
 const BottomInput: React.FC<BottomInputProps> = ({
   placeholder = "서비스 종류와 주요 기능, 예상 기간/예산을 입력! \n예시: '온라인 쇼핑몰, 결제/배송/회원가입",
   onSubmit,
+  onPaste, // 🔥 이미지 붙여넣기 함수
   maxSubmissions = 10,
   onFileInput,
   isUploading,
@@ -286,9 +288,9 @@ const BottomInput: React.FC<BottomInputProps> = ({
   // 스트리밍 시작 시 AbortController 생성, onSubmit에 전달 필요
   const lastInputRef = useRef('');
   const handleSubmit = async () => {
-    if (value.trim() && onSubmit) {
+    if ((value.trim() || uploadedFiles.length > 0) && onSubmit) {
       lastInputRef.current = value;
-      // 전송 버튼 누르자마자 인풋 텍스트 지우기
+      // 전송 버튼 누르자마자 인풋 텍스트와 파일 미리보기 지우기
       setValue('');
       
       // 스트리밍 시작 시 AbortController 새로 생성
@@ -468,6 +470,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyPress}
+            onPaste={onPaste} // 🔥 이미지 붙여넣기 이벤트 연결
             disabled={isUploading || isProcessing}
           />
           {/* isProcessing이 아닐 때만 서밋(엔터) 아이콘 노출 */}

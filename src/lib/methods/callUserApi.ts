@@ -13,12 +13,15 @@ export async function callUserApi<T = any>({
   title: string;
   url: string;
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-  body?: Record<string, any>;
+  body?: Record<string, any> | FormData; // 🔥 FormData 타입 추가
   isCallPageLoader?: boolean;
   reqHeaders?: Record<string, string>;
 }): Promise<T> {
   const token = getToken("user");
   const accessToken = token ?? undefined;
+
+  // 🔥 FormData 여부 감지
+  const isFormData = body instanceof FormData;
 
   const { data, headers } = await callApiPost({
     title,
@@ -28,6 +31,7 @@ export async function callUserApi<T = any>({
     accessToken,
     isCallPageLoader,
     headers: reqHeaders,
+    isFormData, // 🔥 FormData 플래그 전달
   });
 
 

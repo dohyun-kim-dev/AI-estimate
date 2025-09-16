@@ -715,6 +715,7 @@ export default function AiChatPage() {
 
   const {
     handleSubmit: originalHandleSubmit,
+    handlePaste, // 🔥 이미지 붙여넣기 함수 추가
     stopStreaming: originalStopStreaming,
     isProcessing,
     uploadedFiles,
@@ -1136,14 +1137,7 @@ useEffect(() => {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <FilePreviewArea>
-        <FileUploadSection
-          uploadedFiles={uploadedFiles}
-          uploadProgress={uploadProgress}
-          onDeleteFile={removeFile}
-          lang="ko"
-        />
-      </FilePreviewArea>
+      {/* 🔥 파일 미리보기 영역 제거 - 드래그앤드롭만 지원 */}
       <FileUploadArea
         $isDragOver={isDragOver}
       >
@@ -1154,23 +1148,7 @@ useEffect(() => {
           지원 형식: 이미지, PDF, 문서 파일
         </FileUploadSubtext>
         {isUploading && <ProgressBar $progress={uploadProgress} />}
-        {!isUploading && !isProcessing && (
-          <Button
-            onClick={() => document.getElementById('file-input')?.click()}
-            style={{ marginTop: '20px', zIndex: 1001, pointerEvents: 'auto' }}
-          >
-            파일 선택
-          </Button>
-        )}
       </FileUploadArea>
-      <input
-        id="file-input"
-        type="file"
-        multiple
-        style={{ display: 'none' }}
-        onChange={handleFileInput}
-        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.hwp"
-      />
       <ChatBox>
         {messages.map((m, idx) => {
           if (m.role === 'user') {
@@ -1221,6 +1199,7 @@ useEffect(() => {
       <BottomInput
         placeholder="메시지를 입력하세요"
         onSubmit={handleSubmit}
+        onPaste={handlePaste} // 🔥 이미지 붙여넣기 함수 전달
         onFileInput={handleFileInput}
         isUploading={isUploading}
         isProcessing={isProcessing}

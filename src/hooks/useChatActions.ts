@@ -176,6 +176,9 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
   const handleFileUpload = (files: File[]) => {
     if (files.length === 0) return;
     
+    console.log('📁 handleFileUpload 호출됨 - 파일 개수:', files.length);
+    console.log('📁 파일 리스트:', files.map(f => ({ name: f.name, size: f.size, type: f.type })));
+    
     const invalidFiles = files.filter(file => !validateFileType(file));
     if (invalidFiles.length > 0) {
       error(`지원하지 않는 파일 형식입니다: ${invalidFiles.map(f => f.name).join(', ')}`);
@@ -195,8 +198,20 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       size: file.size,
     }));
     
-    setUploadedFiles(prev => [...prev, ...fileDataArray]);
-    setSelectedFiles(prev => [...prev, ...files]);
+    setUploadedFiles(prev => {
+      console.log('📁 이전 uploadedFiles:', prev.length, '개');
+      const newFiles = [...prev, ...fileDataArray];
+      console.log('📁 새로운 uploadedFiles:', newFiles.length, '개');
+      return newFiles;
+    });
+    
+    setSelectedFiles(prev => {
+      console.log('📁 이전 selectedFiles:', prev.length, '개');
+      const newFiles = [...prev, ...files];
+      console.log('📁 새로운 selectedFiles:', newFiles.length, '개');
+      return newFiles;
+    });
+    
     success(`파일 ${files.length}개가 추가되었습니다.`);
   };
 
@@ -241,6 +256,103 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     }
   };
 
+  // 🔥 이미지 붙여넣기 처리 함수
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    const items = Array.from(e.clipboardData?.items || []);
+    const imageFiles: File[] = [];
+    const textContent = e.clipboardData?.getData('text') || '';
+
+    // 클립보드에서 이미지 파일 추출
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          imageFiles.push(file);
+        }
+      }
+    }
+
+    // 이미지가 있으면 파일로 처리
+    if (imageFiles.length > 0) {
+      e.preventDefault(); // 기본 텍스트 붙여넣기 방지
+      await handleFileUpload(imageFiles);
+      // success(`이미지 ${imageFiles.length}개가 붙여넣기로 추가되었습니다.`);
+      return;
+    }
+
+    // Base64 이미지 패턴 감지
+    const base64Pattern = /data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/gi;
+    const base64Images = textContent.match(base64Pattern);
+    
+    if (base64Images && base64Images.length > 0) {
+      e.preventDefault();
+      try {
+        // Base64 이미지를 파일로 변환
+        const base64Promises = base64Images.map(async (base64Data, index) => {
+          try {
+            // Base64 데이터를 Blob으로 변환
+            const response = await fetch(base64Data);
+            const blob = await response.blob();
+            
+            // MIME 타입 추출
+            const mimeMatch = base64Data.match(/data:image\/([^;]+);base64/);
+            const extension = mimeMatch ? mimeMatch[1] : 'png';
+            const fileName = `pasted-base64-image-${Date.now()}-${index}.${extension}`;
+            
+            return new File([blob], fileName, { type: blob.type });
+          } catch (error) {
+            console.warn(`Base64 이미지 변환 실패:`, error);
+            return null;
+          }
+        });
+
+        const imageFiles = (await Promise.all(base64Promises)).filter(Boolean) as File[];
+        
+        if (imageFiles.length > 0) {
+          await handleFileUpload(imageFiles);
+          success(`Base64 이미지 ${imageFiles.length}개가 파일로 변환되어 추가되었습니다.`);
+        }
+      } catch (error) {
+        console.error('Base64 이미지 처리 실패:', error);
+        error('Base64 이미지를 처리하는 중 오류가 발생했습니다.');
+      }
+      return;
+    }
+
+    // 텍스트에 이미지 URL이 포함되어 있는지 확인
+    const imageUrlPattern = /https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?[^\s]*)?/gi;
+    const imageUrls = textContent.match(imageUrlPattern);
+    
+    if (imageUrls && imageUrls.length > 0) {
+      e.preventDefault();
+      try {
+        // 이미지 URL을 파일로 변환
+        const imagePromises = imageUrls.map(async (url, index) => {
+          try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+            
+            const blob = await response.blob();
+            const fileName = `pasted-image-${Date.now()}-${index}.${blob.type.split('/')[1] || 'png'}`;
+            return new File([blob], fileName, { type: blob.type });
+          } catch (error) {
+            console.warn(`이미지 URL 로드 실패: ${url}`, error);
+            return null;
+          }
+        });
+
+        const imageFiles = (await Promise.all(imagePromises)).filter(Boolean) as File[];
+        
+        if (imageFiles.length > 0) {
+          await handleFileUpload(imageFiles);
+          success(`이미지 URL ${imageFiles.length}개가 파일로 변환되어 추가되었습니다.`);
+        }
+      } catch (error) {
+        console.error('이미지 URL 처리 실패:', error);
+        error('이미지 URL을 처리하는 중 오류가 발생했습니다.');
+      }
+    }
+  };
 
   const handleSubmit = async (input: string, options?: { displayMessage?: string; abortSignal?: AbortSignal }) => {
     const displayMessage = options?.displayMessage || input;
@@ -249,7 +361,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
     setIsProcessing(true);
 
-    // 🔥 URL 감지 및 처리 (분리된 모듈 사용)
+    // 🔥 URL 감지 및 처리 (분리된 모듈 사용) - 성능 개선
     const detectedUrls = detectUrls(displayMessage);
     let urlAnalysisForAI = ''; // AI용 분석 결과
     let hasPartialResults = false;
@@ -259,30 +371,33 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       const shortUrls = detectedUrls.map(shortenUrl);
       success(`🔍 ${detectedUrls.length}개의 웹사이트 분석 시작: ${shortUrls.join(', ')}`);
 
-      try {
-        // analyzeUrls 함수를 사용하여 URL 분석 수행
-        const analysisResult = await analyzeUrls(detectedUrls, (progress) => {
-          // 진행 상황 로깅 (필요시 UI 업데이트 가능)
-          console.log(`URL 분석 진행: ${progress.completed}/${progress.total}`);
-        });
+      // 🔥 URL 분석을 비동기로 처리하여 메시지 전송과 병렬 진행
+      const urlAnalysisPromise = detectedUrls.length > 0 
+        ? analyzeUrls(detectedUrls, (progress) => {
+            console.log(`URL 분석 진행: ${progress.completed}/${progress.total}`);
+          }).then(analysisResult => {
+            const successfulCount = analysisResult.results.filter(r => r.success).length;
+            if (successfulCount > 0) {
+              success(`✅ ${successfulCount}개 웹사이트 분석 완료! 추가 정보가 반영되었습니다.`);
+              // 🚀 URL 분석 완료 후 추가 메시지로 보완 정보 제공
+              if (analysisResult.summary) {
+                // 분석 결과를 사용자에게 보여주기 위한 별도 메시지 추가
+                addMessage({ 
+                  role: 'ai', 
+                  content: `📊 웹사이트 분석 결과:\n${analysisResult.summary.substring(0, 500)}${analysisResult.summary.length > 500 ? '...' : ''}` 
+                });
+              }
+            }
+            return analysisResult;
+          }).catch(error => {
+            console.error('URL 콘텐츠 분석 실패:', error);
+            success('⚠️ 웹사이트 분석이 지연되어 기본 답변을 제공합니다.');
+            return null;
+          })
+        : Promise.resolve(null);
 
-        urlAnalysisForAI = analysisResult.summary;
-        hasPartialResults = analysisResult.hasPartialResults;
-
-        // 사용자에게 결과 알림
-        const successfulCount = analysisResult.results.filter(r => r.success).length;
-        if (successfulCount > 0) {
-          success(`✅ ${successfulCount}개 웹사이트 분석 완료! AI가 이를 참고하여 답변을 생성합니다.`);
-        } else {
-          success('⚠️ 웹사이트 분석에 시간이 걸려 기본 답변을 제공합니다.');
-          urlAnalysisForAI = '';
-        }
-
-      } catch (error) {
-        console.error('URL 콘텐츠 분석 실패:', error);
-        success('⚠️ 웹사이트 분석에 시간이 걸려 기본 답변을 제공합니다.');
-        urlAnalysisForAI = '';
-      }
+      // 🚀 URL 분석을 기다리지 않고 일단 메시지 전송 시작
+      // URL 분석이 완료되면 나중에 추가 정보를 반영
     }
 
     // 사용자 메시지 생성 (URL을 짧게 표시)
@@ -305,6 +420,9 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     // ai 메시지는 isLoading: true로 추가 (실시간 업데이트용)
     addMessage({ role: 'ai', content: '', isLoading: true });
     console.log('사용자 메시지 및 빈 AI 메시지 추가 완료', { userMessageContent }, { role: 'ai', content: '', isLoading: true });
+
+    // 🔥 UI 미리보기만 즉시 제거 (실제 파일은 업로드 후 제거)
+    setUploadedFiles([]);
 
     let currentSessionId = getEffectiveSessionId();
     let userId = null;
@@ -348,11 +466,25 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     try {
       let uploadedFileNames = [];
       let filesForGemini = [];
+      
+      // 🔍 파일 업로드 직전 디버깅
+      console.log('🔍 파일 업로드 시작 - selectedFiles 상태:', selectedFiles);
+      console.log('🔍 selectedFiles.length:', selectedFiles.length);
+      console.log('🔍 각 파일 정보:', selectedFiles.map(file => ({
+        name: file.name,
+        size: file.size,
+        type: file.type
+      })));
+      
       if (selectedFiles.length > 0) {
+        console.log('📤 서버로 파일 업로드 시작...');
         const uploadResponse = await uploadFiles(selectedFiles);
-        // uploadFiles가 string[] 반환 시
-        if (Array.isArray(uploadResponse) && uploadResponse.length > 0) {
-          uploadedFileNames = uploadResponse;
+        console.log('📥 서버 업로드 응답:', uploadResponse);
+        
+        // 🔥 API 응답 구조 수정: { statusCode: 200, data: [...] } 형태
+        if (uploadResponse && uploadResponse.statusCode === 200 && Array.isArray(uploadResponse.data) && uploadResponse.data.length > 0) {
+          console.log('✅ 파일 업로드 성공 - 파일명들:', uploadResponse.data);
+          uploadedFileNames = uploadResponse.data;
           filesForGemini = await Promise.all(
             uploadedFileNames.map(async (fileName, index) => {
               const file = selectedFiles[index];
@@ -367,9 +499,16 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
             })
           );
           await new Promise(resolve => setTimeout(resolve, 1000));
+          // 🔥 파일 업로드 완료 후 selectedFiles 초기화
+          setSelectedFiles([]);
         } else {
-          throw new Error('파일 업로드에 실패했습니다.');
+          console.error('❌ 파일 업로드 실패 - 응답이 비어있거나 잘못됨:', uploadResponse);
+          console.error('❌ statusCode:', uploadResponse?.statusCode);
+          console.error('❌ data 길이:', uploadResponse?.data?.length);
+          throw new Error(`파일 업로드에 실패했습니다. 상태코드: ${uploadResponse?.statusCode || 'unknown'}`);
         }
+      } else {
+        console.log('📝 파일 없이 텍스트만 전송');
       }
 
       const messageContent = {
@@ -386,11 +525,8 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
       const combinedPrompt = await combinePrompts(selectedPromptId, input);
 
-      // 🔥 URL 분석 결과가 있으면 AI 프롬프트에 추가 (사용자에게는 보이지 않음)
-      let finalPrompt = combinedPrompt;
-      if (urlAnalysisForAI) {
-        finalPrompt = `${combinedPrompt}\n\n[웹사이트 분석 정보 - AI 참고용]\n${urlAnalysisForAI}`;
-      }
+      // 🔥 URL 분석 결과는 별도 메시지로 처리하므로 기본 프롬프트만 사용
+      const finalPrompt = combinedPrompt;
 
       // 🔥 스토어에서 현재 메시지 히스토리 가져와서 AI에게 전달
       const currentMessages = useChatStore.getState().messages;
@@ -520,9 +656,6 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         isLoading: false,
       });
 
-      setUploadedFiles([]);
-      setSelectedFiles([]);
-
     } catch (e) {
       error(`메시지 전송 실패: ${(e as Error).message}`);
     } finally {
@@ -540,6 +673,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
   return {
     handleSubmit,
+    handlePaste, // 🔥 이미지 붙여넣기 함수 추가
     stopStreaming,
     isProcessing,
     uploadedFiles,

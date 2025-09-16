@@ -312,12 +312,28 @@ export async function getDownloadEstimateUrlWithUserInfo(
 }
 
 export async function uploadFiles(files: File[]) {
+  console.log('📤 uploadFiles 함수 호출 - 파일 개수:', files.length);
+  console.log('📤 파일 리스트:', files.map(f => ({ name: f.name, size: f.size, type: f.type })));
+  
   const formData = new FormData();
-  files.forEach(file => {
+  files.forEach((file, index) => {
+    console.log(`📤 FormData에 파일 추가 [${index}]:`, file.name);
     formData.append('files', file);
   });
 
-  return callUserApi<string[]>({
+  // FormData 내용 확인
+  console.log('📤 생성된 FormData:', formData);
+  for (const [key, value] of formData.entries()) {
+    console.log(`📤 FormData 엔트리 - ${key}:`, value);
+  }
+
+  return callUserApi<{
+    statusCode: number;
+    message: string;
+    data: string[];
+    metadata: any;
+    error: any;
+  }>({
     title: '파일 업로드',
     url: getApiUrl('/file/upload'),
     method: 'POST',
