@@ -174,6 +174,16 @@ export async function getChatSession(sessionId: string) {
   });
 }
 
+
+export async function getChatSessions() {
+  return callUserApi<ChatSessionData[]>({
+    title: '채팅 세션 목록 조회',
+    url: getApiUrl('/company/chat/sessions'),
+    method: 'GET',
+    isCallPageLoader: true,
+  });
+}
+
 export async function getChatMessages(sessionId: string) {
   return callUserApi<ChatMessage[]>({
     title: '채팅 메시지 불러오기 (공유용)',

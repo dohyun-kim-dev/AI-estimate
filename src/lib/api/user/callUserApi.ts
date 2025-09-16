@@ -96,12 +96,32 @@ export async function callUserApi<T>({
     
     try {
       if (method === 'GET') {
-        response = await callApiGet({
-          title,
-          url,
-          isCallPageLoader,
-          headers, 
+        // GET 요청을 직접 fetch로 처리
+        const fullUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_HOST}${url}`;
+        const directResponse = await fetch(fullUrl, {
+          method: 'GET',
+          credentials: 'include',
+          mode: 'cors',
+          headers,
         });
+        const responseText = await directResponse.text();
+        try {
+          const parsedData = JSON.parse(responseText);
+          response = {
+            statusCode: directResponse.status,
+            data: parsedData,
+            headers: directResponse.headers,
+            message: 'Success'
+          };
+        } catch (e) {
+          // JSON 파싱 실패 시 텍스트 그대로 반환 (HTML 응답 등)
+          response = {
+            statusCode: directResponse.status,
+            data: responseText,
+            headers: directResponse.headers,
+            message: 'Success'
+          };
+        }
       } else if (method === 'PUT') {
         // FormData인 경우 직접 fetch 사용
         if (isFormData && body instanceof FormData) {

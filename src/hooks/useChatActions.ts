@@ -1,5 +1,3 @@
-// src/hooks/useChatActions.ts
-
 import { useState } from 'react';
 import useAI from './useAI';
 import { useToast } from '@/components/common/ToastProvider';
@@ -314,6 +312,10 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           currentSessionId = createResponse.data[0]._id;
           setChatSessionId(currentSessionId);
           sessionStorage.setItem('chatSessionId', currentSessionId);
+          localStorage.setItem('chatSessionId', currentSessionId);
+          // URL 파라미터로 sessionId 추가 (추출 편의성 향상)
+          // const newUrl = `${window.location.pathname}?sessionId=${currentSessionId}`;
+          // window.history.pushState(null, '', newUrl);
         } else {
           throw new Error(createResponse.error?.message || '채팅방 생성에 실패했습니다.');
         }
@@ -385,7 +387,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       // ⭐️ 실시간 스트리밍 반영: onStream에서 마지막 ai 메시지 content 누적 업데이트
       let aiReply = '';
       let firstChunkReceived = false;
-      const reply = await sendChat(finalPrompt, filesForAI, {
+      const chatResult = await sendChat(finalPrompt, filesForAI, {
         streaming: true,
         onStream: (chunk) => {
           const wasEmpty = aiReply.length === 0;
@@ -399,6 +401,18 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         },
         abortSignal,
       });
+
+      const reply = chatResult.text;
+
+      // 실제 토큰 사용량으로 로그 출력
+      if (chatResult.tokenUsage) {
+        console.log(`🤖 Gemini 2.5 Flash 실제 토큰 사용량:`);
+        console.log(`   📥 입력 토큰: ${chatResult.tokenUsage.promptTokens.toLocaleString()}`);
+        console.log(`   📤 출력 토큰: ${chatResult.tokenUsage.completionTokens.toLocaleString()}`);
+        console.log(`   🔢 총 토큰: ${chatResult.tokenUsage.totalTokens.toLocaleString()}`);
+        console.log(`   💰 비용: ₩${chatResult.tokenUsage.costKRW.toFixed(2)}`);
+        console.log(`   📊 토큰 효율성: ${(chatResult.tokenUsage.completionTokens / chatResult.tokenUsage.promptTokens * 100).toFixed(1)}% (출력/입력 비율)`);
+      }
 
       // 스트리밍이 끝나면 마지막 ai 메시지의 isLoading을 false로 변경
       updateLastMessage({
@@ -416,7 +430,8 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           ensureEstimateUuid(estimateData);
           console.log('견적 데이터 저장 시작', estimateData);
           const estimateId = estimateData.uuid;
-          const dataStr = buildFullEstimateData(reply);
+          const dataStr = buildFullEstimateData(reply,estimateId);
+          console.log('견적 데이터 조립 완료, 업로드 시작', { estimateId, dataStr });
           const uploadResponse = await uploadEstimatePdf(
             currentSessionId,
             invoiceTitle,

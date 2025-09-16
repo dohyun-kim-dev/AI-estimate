@@ -71,7 +71,8 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         // 로컬 토큰 삭제
         clearAllTokens();
-        
+        localStorage.removeItem('chatSessionId');
+
         // 로컬 상태 초기화
         set({
           user: null,

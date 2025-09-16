@@ -1,4 +1,27 @@
-"use client";
+
+import useAI from '@/hooks/useAI';
+import { useToast } from '@/components/common/ToastProvider';
+import { useChatStore } from '@/store/chatStore';
+import BottomInput from '@/components/ai-esti/BottomInput';
+import AiResponseMessage from '@/components/ai-esti/AiResponseMessage';
+import EstimateCard from '@/components/ai-esti/EstimateCard';
+import EstimateAccordion from '@/components/ai-esti/EstimateAccordion';
+import DetailModal from '@/components/ai-esti/DetailModal';
+import EstimateActionButtons from '@/components/ai-esti/EstimateActionButtons';
+import PeriodSlider from '@/components/ai-esti/PeriodSlider';
+import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
+import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
+import type { EstimateItem } from '@/app/ai-estimate/types';
+import { uploadFiles, FileUploadData } from '@/firebase.functions';
+import { auth } from '@/firebaseConfig';
+import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import FileUploadSection from '@/components/ai-esti/FileUploadSection';
+import { devLog } from '../../utils/devLogger';
+import { useChatActions } from '@/hooks/useChatActions';
+import { getAllUnitPrices, requestEstimateConsult, getAiPrompts } from '@/lib/api/user/userApi';
+import { getEstimateIdFromContent } from '@/hooks/estimate';
+import { v4 as uuidv4 } from 'uuid';
+import { usePromptStore } from '@/store/promptStore';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import styled, { keyframes } from 'styled-components';
@@ -89,30 +112,6 @@ function ProfileSpinner({ src }: { src: string }) {
     </SpinnerWrapper>
   );
 }
-import useAI from '@/hooks/useAI';
-import { useToast } from '@/components/common/ToastProvider';
-import { useChatStore } from '@/store/chatStore';
-import BottomInput from '@/components/ai-esti/BottomInput';
-import AiResponseMessage from '@/components/ai-esti/AiResponseMessage';
-import EstimateCard from '@/components/ai-esti/EstimateCard';
-import EstimateAccordion from '@/components/ai-esti/EstimateAccordion';
-import DetailModal from '@/components/ai-esti/DetailModal';
-import EstimateActionButtons from '@/components/ai-esti/EstimateActionButtons';
-import PeriodSlider from '@/components/ai-esti/PeriodSlider';
-import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
-import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
-import type { EstimateItem } from '@/app/ai-estimate/types';
-import { uploadFiles, FileUploadData } from '@/firebase.functions';
-import { auth } from '@/firebaseConfig';
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
-import FileUploadSection from '@/components/ai-esti/FileUploadSection';
-import { devLog } from '../../utils/devLogger';
-import { useChatActions } from '@/hooks/useChatActions';
-import { getAllUnitPrices, requestEstimateConsult, getAiPrompts } from '@/lib/api/user/userApi';
-import { getEstimateIdFromContent } from '@/hooks/estimate';
-import { v4 as uuidv4 } from 'uuid';
-import { usePromptStore } from '@/store/promptStore';
-
 
 const Container = styled.div`
   max-width: 960px;
@@ -341,7 +340,7 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
     console.log('match', match);
     const jsonStr = match[1];
     const data = JSON.parse(jsonStr);
-    console.log('파싱된 견적 데이터:', data);
+    // console.log('파싱된 견적 데이터:', data);
 
     if (!data || typeof data !== 'object' || !Array.isArray(data.categories)) {
       console.error('Invalid estimate data structure:', data);
@@ -641,7 +640,6 @@ const userId = getUserId() || '';
                     <EstimateAccordion
                       data={estimateData}
                       onItemClick={handleItemClick}
-                      chatSessionId={effectiveChatSessionId}
                       estimateId={estimateId}
                       userId={userId}
                       title={estimateData?.project_name || '견적서'}
@@ -744,22 +742,17 @@ export default function AiChatPage() {
 useEffect(() => {
   (async () => {
     try {
-      // AI 프롬프트 데이터 불러오기
       const aiPromptsResponse = await getAiPrompts();
       console.log('AI 프롬프트 API 응답:', aiPromptsResponse);
 
-      if (aiPromptsResponse && aiPromptsResponse.statusCode === 200 && aiPromptsResponse.data.length > 0  ) {
+      if (aiPromptsResponse && aiPromptsResponse.statusCode === 200 && aiPromptsResponse.data.length > 0) {
         const promptsData = aiPromptsResponse.data as any[];
-        console.log('AI 프롬프트 데이터:', promptsData);
-        
-        // GREETING 분리
         const greetingItem = promptsData.find(item => item.name === 'GREETING');
         if (greetingItem && greetingItem.content) {
           usePromptStore.getState().setGreeting(greetingItem.content);
           setInitialAiMessage(greetingItem.content);
         }
         
-        // INSTRUCTION을 맨 위에, 나머지 프롬프트 연결
         const instructionItem = promptsData.find(item => item.name === 'INSTRUCTION');
         const otherPrompts = promptsData.filter(item => item.name !== 'GREETING' && item.name !== 'INSTRUCTION' && item.content);
         const aiPromptsContent = [
@@ -767,30 +760,37 @@ useEffect(() => {
           ...otherPrompts.map(item => item.content)
         ].join('\n\n');
         
-        console.log('AI 프롬프트 content 연결 완료, 길이:', aiPromptsContent.length);
-        
         usePromptStore.getState().setAiPrompts(aiPromptsContent);
-        console.log('AI 프롬프트 저장 완료', aiPromptsContent);
       } else {
-        console.warn('AI 프롬프트 데이터를 불러오는데 실패했습니다:', aiPromptsResponse.data[0]);
+        console.warn('AI 프롬프트 데이터를 불러오는데 실패했습니다.');
       }
 
       const res = await getAllUnitPrices();
       console.log('단가표 API 응답:', res);
+
       if (res && res.statusCode === 200 && res.data && Array.isArray(res.data.data)) {
         const priceList = res.data.data;
+        const columns = res.data.columns || []; // ⭐️ columns 정보 추가
         usePromptStore.getState().setPriceList(priceList);
-        // 마크다운 변환 및 저장
-        const convertPriceListToMarkdown = (priceList: any[]): string => {
+
+        const convertPriceListToMarkdown = (priceList: any[], columns: any[]): string => {
           if (!priceList || priceList.length === 0) {
             return '단가표 데이터를 불러오는데 실패했습니다.';
           }
-
+          
           let markdown = '# 단가표 정보\n\n';
           markdown += '다음은 프로젝트 견적 산출에 사용되는 단가표 정보입니다.\n\n';
 
+          // ⭐️ 동적 컬럼 생성 로직
+          const activeColumns = (columns || [])
+            .filter(colName => colName !== 'id' && colName !== '메모') // 불필요한 컬럼 제외
+            .map(colName => ({
+              name: colName,
+              type: ['금액', '기간'].some(key => colName.includes(key)) ? 'number' : 'string'
+            }));
+
           const categories = priceList.reduce((acc, item) => {
-            const category = item.category || item.category_name || '기타';
+            const category = item.분류 || item.카테고리 || item.category || item.category_name || '기타';
             if (!acc[category]) {
               acc[category] = [];
             }
@@ -800,22 +800,23 @@ useEffect(() => {
 
           Object.entries(categories).forEach(([categoryName, items]) => {
             markdown += `## ${categoryName}\n\n`;
-            markdown += '| 항목명 | 단가 | 단위 | 설명 |\n';
-            markdown += '|--------|------|------|------|\n';
+            
+            const headers = activeColumns.map(col => col.name);
+            markdown += `| ${headers.join(' | ')} |\n`;
+            markdown += `|${headers.map(() => '--------').join('|')}|\n`;
 
             (items as any[]).forEach((item) => {
-              const name = item.name || item.item_name || item.title || 'N/A';
-              const price = item.price || item.unit_price || item.cost || 'N/A';
-              const unit = item.unit || item.unit_type || '원';
-              const description = item.description || item.desc || '설명 없음';
-
-              const formattedPrice = typeof price === 'number'
-                ? price.toLocaleString('ko-KR')
-                : price;
-
-              markdown += `| ${name} | ${formattedPrice} | ${unit} | ${description} |\n`;
+              const rowData: string[] = [];
+              activeColumns.forEach((column) => {
+                const value = item[column.name] !== undefined && item[column.name] !== null ? item[column.name] : '-';
+                rowData.push(
+                  column.type === 'number' && !isNaN(Number(value))
+                    ? Number(value).toLocaleString('ko-KR')
+                    : String(value)
+                );
+              });
+              markdown += `| ${rowData.join(' | ')} |\n`;
             });
-
             markdown += '\n';
           });
 
@@ -824,18 +825,21 @@ useEffect(() => {
           markdown += '- 위 단가는 기본 단가이며, 프로젝트 복잡도에 따라 조정될 수 있습니다.\n';
           markdown += '- 실제 견적은 상세 요구사항 분석 후 산출됩니다.\n';
           markdown += '- 단가는 VAT 별도 금액입니다.\n';
+          markdown += '- 기간은 프론트엔드(FE)와 백엔드(BE) 개발 기간을 합산한 기준입니다.\n';
 
           return markdown;
         };
-
-        const markdown = convertPriceListToMarkdown(priceList);
+        
+        // ⭐️ 수정된 함수에 columns 정보 전달
+        const markdown = convertPriceListToMarkdown(priceList, columns); 
         usePromptStore.getState().setPriceListMarkdown(markdown);
         usePromptStore.getState().setPriceDataReady(true);
-        console.log('단가표 불러오기 및 마크다운 변환 성공');
+      } else {
+        console.warn('단가표 데이터를 불러오는데 실패했습니다.');
+        usePromptStore.getState().setPriceDataReady(true);
       }
     } catch (e) {
-      console.error('단가표 또는 AI 프롬프트 불러오기 실패', e);
-      // 실패 시에도 준비 완료 표시 (무한 로딩 방지)
+      console.error('API 호출 실패', e);
       usePromptStore.getState().setPriceDataReady(true);
     }
   })();
@@ -1097,4 +1101,4 @@ useEffect(() => {
       />
     </Container>
   );
-}
+} 

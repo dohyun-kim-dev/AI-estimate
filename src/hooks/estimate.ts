@@ -32,11 +32,11 @@ export function extractIntroFromReply(reply: string) {
 }
 
 /** 인트로 + 스크립트(JSON) 문자열 조립 */
-export function buildFullEstimateData(input: any) {
+export function buildFullEstimateData(input: any, estimateId?: string) {
   if (typeof input === 'string') {
     // content인 경우
     const intro = extractIntroFromReply(input);
-    const estimate = extractEstimateData(input);
+    const estimate = extractEstimateData(input,estimateId); //uuid 있음?
     console.log("buildFullEstimateData extracted estimate:", estimate);
     if (!estimate) return input; // 견적서가 없으면 원본 반환
     console.log("buildFullEstimateData input (string):", input);
@@ -84,7 +84,7 @@ export function extractInvoiceJSON(html: string) {
 
 
 /** 메시지 content에서 invoiceData JSON을 파싱해서 객체로 반환 */
-export function extractEstimateData<T = any>(content: string): T | null {
+export function extractEstimateData<T = any>(content: string, estimateId?: string): T | null {
   try {
     const m = content.match(
       /<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/
@@ -92,6 +92,10 @@ export function extractEstimateData<T = any>(content: string): T | null {
     if (!m) return null;
     const data = JSON.parse(m[1]);
     if (!data || typeof data !== 'object') return null;
+    console.log("extractEstimateData data:", data);
+    if (estimateId) {
+      data.uuid = estimateId;
+    }
     return data as T;
   } catch {
     return null;

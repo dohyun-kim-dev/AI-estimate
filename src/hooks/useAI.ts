@@ -91,6 +91,16 @@ function logUsageAndCost(where: string, modelName: string, anyResponse: unknown)
   const outputCostKRW = outputCostUSD * usdKrw
   const totalCostKRW = totalCostUSD * usdKrw
 
+  // 실제 토큰 수 계산 결과 로깅
+  console.log(`🔢 [${modelName}] 실제 토큰 계산 결과:`)
+  console.log(`   입력 토큰: ${promptT.toLocaleString()} tokens`)
+  console.log(`   출력 토큰: ${candidatesT.toLocaleString()} tokens`)
+  console.log(`   캐시 토큰: ${cachedT.toLocaleString()} tokens`)
+  console.log(`   사고 토큰: ${thoughtsT.toLocaleString()} tokens`)
+  console.log(`   총 토큰: ${totalT.toLocaleString()} tokens`)
+  console.log(`💰 비용 (KRW): ₩${totalCostKRW.toFixed(2)} (입력: ₩${inputCostKRW.toFixed(2)}, 출력: ₩${outputCostKRW.toFixed(2)})`)
+  console.log(`💱 환율: ${usdKrw.toLocaleString()} KRW/USD`)
+
   devLog(
     `[useAI] ${where} tokens → input(prompt): ${promptT}, output(candidates): ${candidatesT}, cached: ${cachedT}, thoughts: ${thoughtsT}, total: ${totalT}`
   )
@@ -115,6 +125,13 @@ export interface SendChatOptions {
   onEstimateJson?: (json: any) => void;
   onLoading?: (loading: boolean) => void;
   abortSignal?: AbortSignal; // 스트리밍 중단용
+}
+
+export interface TokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  costKRW: number;
 }
 
 export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
@@ -194,13 +211,13 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
    * @param message - 프롬프트 텍스트
    * @param files - 첨부 파일 배열
    * @param options - SendChatOptions (streaming: true면 실시간, false면 전체 응답만)
-   * @returns string (전체 응답)
+   * @returns { text: string, tokenUsage?: TokenUsage } (전체 응답과 토큰 사용량)
    */
   const sendChat = useCallback(async (
     message: string,
     files: FileUploadData[] = [],
     options?: SendChatOptions,
-  ): Promise<string> => {
+  ): Promise<{ text: string, tokenUsage?: TokenUsage }> => {
     const model = ensureModel();
 
     // ✅ 첫 메시지부터 thinkingBudget 반영되도록 세션 생성 시 config 주입
@@ -263,7 +280,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     }
   }
 }
-    if (parts.length === 0) return ''
+    if (parts.length === 0) return { text: '' }
 
     // 로딩 시작
     options?.onLoading?.(true)
@@ -298,16 +315,62 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
               }
             }
           }
-          // ✅ 스트리밍 후 최종 response로 usage 로깅
+          // ✅ 스트리밍 후 최종 response로 usage 로깅 및 토큰 정보 추출
           const finalResp = await streamResult.response
           logUsageAndCost('sendChat(streaming)', String(modelName), finalResp)
-          return result
+          
+          // 토큰 정보 추출
+          const usage = (finalResp as any)?.response?.usageMetadata || (finalResp as any)?.usageMetadata
+          let tokenUsage: TokenUsage | undefined
+          if (usage) {
+            const promptT = pickNumber(usage.promptTokenCount, usage.inputTokenCount, usage.inputTokens)
+            const candidatesT = pickNumber(usage.candidatesTokenCount, usage.outputTokenCount, usage.outputTokens)
+            const totalT = pickNumber(usage.totalTokenCount, usage.totalTokens, promptT + candidatesT)
+            
+            const rate = getPricingForModel(modelName)
+            const usdKrw = getUsdKrwRate()
+            const inputCostUSD = (promptT / 1_000_000) * rate.input
+            const outputCostUSD = (candidatesT / 1_000_000) * rate.output
+            const totalCostKRW = (inputCostUSD + outputCostUSD) * usdKrw
+            
+            tokenUsage = {
+              promptTokens: promptT,
+              completionTokens: candidatesT,
+              totalTokens: totalT,
+              costKRW: totalCostKRW
+            }
+          }
+          
+          return { text: result, tokenUsage }
         } else {
           // fallback: 일반 sendMessage
           const res = await chatRef.current!.sendMessage(parts)
           const text = res.response.text()
           console.log('[useAI] streaming fallback text:', text)
           logUsageAndCost('sendChat(streaming-fallback)', String(modelName), res)
+          
+          // 토큰 정보 추출
+          const usage = (res as any)?.response?.usageMetadata || (res as any)?.usageMetadata
+          let tokenUsage: TokenUsage | undefined
+          if (usage) {
+            const promptT = pickNumber(usage.promptTokenCount, usage.inputTokenCount, usage.inputTokens)
+            const candidatesT = pickNumber(usage.candidatesTokenCount, usage.outputTokenCount, usage.outputTokens)
+            const totalT = pickNumber(usage.totalTokenCount, usage.totalTokens, promptT + candidatesT)
+            
+            const rate = getPricingForModel(modelName)
+            const usdKrw = getUsdKrwRate()
+            const inputCostUSD = (promptT / 1_000_000) * rate.input
+            const outputCostUSD = (candidatesT / 1_000_000) * rate.output
+            const totalCostKRW = (inputCostUSD + outputCostUSD) * usdKrw
+            
+            tokenUsage = {
+              promptTokens: promptT,
+              completionTokens: candidatesT,
+              totalTokens: totalT,
+              costKRW: totalCostKRW
+            }
+          }
+          
           const trimmed = text.trim()
           if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
             try {
@@ -315,7 +378,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
               options?.onEstimateJson?.(json)
             } catch {}
           }
-          return text
+          return { text, tokenUsage }
         }
       } else {
         // 비-스트리밍(일반) 모드
@@ -323,6 +386,29 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
         logUsageAndCost('sendChat', String(modelName), res)
         const text = res.response.text()
         console.log('[useAI] non-streaming text:', text)
+        
+        // 토큰 정보 추출
+        const usage = (res as any)?.response?.usageMetadata || (res as any)?.usageMetadata
+        let tokenUsage: TokenUsage | undefined
+        if (usage) {
+          const promptT = pickNumber(usage.promptTokenCount, usage.inputTokenCount, usage.inputTokens)
+          const candidatesT = pickNumber(usage.candidatesTokenCount, usage.outputTokenCount, usage.outputTokens)
+          const totalT = pickNumber(usage.totalTokenCount, usage.totalTokens, promptT + candidatesT)
+          
+          const rate = getPricingForModel(modelName)
+          const usdKrw = getUsdKrwRate()
+          const inputCostUSD = (promptT / 1_000_000) * rate.input
+          const outputCostUSD = (candidatesT / 1_000_000) * rate.output
+          const totalCostKRW = (inputCostUSD + outputCostUSD) * usdKrw
+          
+          tokenUsage = {
+            promptTokens: promptT,
+            completionTokens: candidatesT,
+            totalTokens: totalT,
+            costKRW: totalCostKRW
+          }
+        }
+        
         const trimmed = text.trim()
         if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
           try {
@@ -330,7 +416,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
             options?.onEstimateJson?.(json)
           } catch {}
         }
-        return text
+        return { text, tokenUsage }
       }
     } catch (error) {
       console.error('Failed to send multi-modal message:', error)

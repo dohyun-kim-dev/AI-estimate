@@ -283,7 +283,7 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
               <Title>여기닷에게 상담하기</Title>
             </Flex>
             <Description>
-              해당 견적이 마음에 든다면, <br/>공급사와 최종 견적 상담을 진행해 보세요
+              해당 견적이 마음에 든다면, <br/>공급사와 최종 견적 상담을 <br/>진행해 보세요
             </Description>
           </TextContent>
         </LeftContent>

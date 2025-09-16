@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import { ProjectEstimate } from "@/app/ai-estimate/types/projectEstimate";
 import EstimateAccordionItem from "./EstimateAccordionItem";
@@ -96,7 +96,6 @@ function findMessageIdForEstimate(estimateId?: string | null) {
 const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
   data,
   onItemClick,
-  chatSessionId,
   estimateId,
   userId,
   title,
@@ -108,11 +107,31 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
   const [estimate, setEstimate] = useState<ProjectEstimate>(data);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubItem, setSelectedSubItem] = useState<string | null>(null);
+  const [chatSessionId, setChatSessionId] = useState<string | null>(null);
 
   const handleSubItemSelect = (categoryName: string, subItemId: string) => {
     setSelectedCategory(categoryName);
     setSelectedSubItem(subItemId);
   };
+
+useEffect(() => {
+  // ⭐️ URL에서 sessionId 가져오기
+  const urlParams = new URLSearchParams(window.location.search);
+  const sessionIdFromUrl = urlParams.get('sessionId');
+
+  // ⭐️ 로컬 스토리지 또는 URL에서 sessionId 설정
+  if (sessionIdFromUrl) {
+    setChatSessionId(sessionIdFromUrl);
+    // 필요하다면 로컬 스토리지에 저장
+    localStorage.setItem('chatSessionId', sessionIdFromUrl);
+  } else {
+    // URL에 sessionId가 없는 경우 로컬 스토리지에서 가져옴
+    const storedChatSessionId = localStorage.getItem('chatSessionId');
+    if (storedChatSessionId) {
+      setChatSessionId(storedChatSessionId);
+    }
+  }
+}, []);
 
   // 서버 저장 (디바운스) — 바깥에서 최신 est를 직접 넘겨 받음
   const saveToServer = useMemo(

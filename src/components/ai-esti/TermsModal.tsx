@@ -8,7 +8,7 @@ const TermsContent = styled.div`
   white-space: pre-wrap;
   line-height: 1.6;
   color: #000 !important;
-  font-size: 14px;
+  font-size: 12px;
   max-height: 60vh;
   overflow-y: auto;
   padding: 16px;
@@ -100,7 +100,13 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
         setIsLoading(true);
         try {
           const termsResponse = await termsGetList();
+          console.log('Terms API Response:', termsResponse);
+          console.log('Terms data type:', typeof termsResponse?.data);
+          console.log('Terms data:', termsResponse?.data);
+          
           const termsList = Array.isArray(termsResponse?.data) ? termsResponse.data : [];
+          console.log('Terms list:', termsList);
+          
           if (termsList.length > 0) {
             const sortedList = termsList.sort((a: any, b: any) => a._id - b._id);
             setAllTermsData(sortedList);
