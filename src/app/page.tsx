@@ -261,10 +261,10 @@ const TestimonialSection = styled.div`
 const ConsultButton = styled.button`
   position: fixed;
   bottom: 94px;
-  left: 50%;
+  left: 50.7%;
   transform: translateX(-50%);
-  width: 90%;
-  max-width: 400px;
+  width: calc(100% - 40px);
+  // max-width: 400px;
   border-radius: 12px;
   border: 0 solid #e5e7eb;
   background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);

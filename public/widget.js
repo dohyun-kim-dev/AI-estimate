@@ -61,19 +61,55 @@
     ${pos}: 30px;
     background: #746AED;
     color: white;
-    padding: 12px 12px;
+    padding: 20px 12px 20px 12px;
     border-radius: 4px;
-    font-size: 16px;
+    font-size: 16px;  
     font-weight: 600;
     text-align: center;
     opacity: 1;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
+    transition: all 0.3s ease;
+    pointer-events: auto;
     z-index: 2147483644;
     white-space: pre-line;
     animation: aiw-float 2s ease-in-out infinite;
     -webkit-animation: aiw-float 2s ease-in-out infinite;
-    visibility: visible;
+    display: block;
+  }
+  
+  .aiw-tooltip-close {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .aiw-tooltip-close:hover {
+    opacity: 1;
+  }
+
+  .aiw-tooltip-close::before,
+  .aiw-tooltip-close::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 1px;
+    background-color: white;
+    transform-origin: center;
+  }
+
+  .aiw-tooltip-close::before {
+    transform: rotate(45deg);
+  }
+
+  .aiw-tooltip-close::after {
+    transform: rotate(-45deg);
   }
   
   @keyframes aiw-float {
@@ -180,6 +216,18 @@ btn.appendChild(openIcon);
   tooltip.className = 'aiw-tooltip';
   tooltip.textContent = '24시간 맞춤 견적 상담 AI';
   tooltip.setAttribute('data-tooltip', 'true'); // 디버깅용 식별자
+
+  // 닫기 버튼 생성
+  const closeButton = document.createElement('div');
+  closeButton.className = 'aiw-tooltip-close';
+  tooltip.appendChild(closeButton);
+
+  // 닫기 버튼 클릭 이벤트
+  closeButton.addEventListener('click', (e) => {
+    e.stopPropagation();
+    tooltip.style.opacity = '0';
+    tooltip.style.display = 'none';
+  });
 
   const root = document.createElement('div'); root.className='aiw-root';
   const wrap = document.createElement('div'); wrap.className='aiw-wrap';
