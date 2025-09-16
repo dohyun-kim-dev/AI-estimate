@@ -55,7 +55,11 @@ function toNumberLike(n: string | number): number {
 function findMessageIdForEstimate(estimateId?: string | null) {
   if (!estimateId) return null;
   try {
-    const raw = sessionStorage.getItem("ai-chat-storage");
+    // 로컬스토리지에서 먼저 찾고, 없으면 세션스토리지 확인
+    let raw = localStorage.getItem("ai-chat-storage");
+    if (!raw) {
+      raw = sessionStorage.getItem("ai-chat-storage");
+    }
     if (!raw) return null;
     
     // JSON.parse의 결과를 ChatState 타입으로 지정합니다.
@@ -63,11 +67,17 @@ function findMessageIdForEstimate(estimateId?: string | null) {
     const messages = storageState.state.messages;
     
     console.log("Parsed messages array:", messages);
+    console.log("Looking for estimateId:", estimateId);
     
     if (!Array.isArray(messages)) return null;
     
     // 배열을 순회하며 estimateId가 일치하는 메시지 객체를 찾습니다.
-    const hit = messages.find((it: ChatMessage) => String(it?.estimateId) === String(estimateId));
+    const hit = messages.find((it: ChatMessage) => {
+      console.log("Checking message:", it?.messageId, "estimateId:", it?.estimateId);
+      return String(it?.estimateId) === String(estimateId);
+    });
+    
+    console.log("Found message with estimateId:", hit?.messageId);
     
     // 찾은 메시지 객체에서 messageId를 반환합니다.
     return hit?.messageId ?? null;
@@ -136,17 +146,30 @@ useEffect(() => {
   // 서버 저장 (디바운스) — 바깥에서 최신 est를 직접 넘겨 받음
   const saveToServer = useMemo(
     () =>
-      debounce(async (est,effectiveEstimateId) => {
+      debounce(async (est, effectiveEstimateId) => {
         try {
+          console.log("saveToServer 시작:", {
+            estimateId: effectiveEstimateId,
+            chatSessionId,
+            userId,
+            estUuid: est.uuid
+          });
+          
           // 💡 id 없으면 업데이트 못 하므로 여기서 바로 가드
-          console.log("estimateId , chatSessionId, userId", estimateId, chatSessionId, userId);
           if (!effectiveEstimateId) {
             console.warn("[save] estimateId 없음 — 업데이트 생략");
             return;
           }
 
-          // 항상 최신 messageId를 세션스토리지에서 조회 (동시에 여러 탭에서 변경될 수 있어서)
+          // 항상 최신 messageId를 스토리지에서 조회 (동시에 여러 탭에서 변경될 수 있어서)
           const messageId = findMessageIdForEstimate(effectiveEstimateId);
+          
+          console.log("messageId 조회 결과:", {
+            effectiveEstimateId,
+            messageId,
+            chatSessionId,
+            userId
+          });
 
           if (!chatSessionId || !userId || !messageId) {
             console.warn("[save] 필수값 누락:", { chatSessionId, effectiveEstimateId, userId, messageId });
@@ -154,6 +177,8 @@ useEffect(() => {
           }
 
           const dataStr = buildFullEstimateData(est);
+          console.log("견적서 데이터 빌드 완료, 업로드 시작...");
+          
           const uploadResponse = await uploadEstimatePdf(
             chatSessionId,
             title || est.project_name || "견적서",
@@ -163,6 +188,8 @@ useEffect(() => {
           );
 
           if (uploadResponse?.statusCode === 200) {
+            console.log("견적서 업로드 성공, 채팅 메시지 업데이트 시작...");
+            
             // 견적서 업로드 성공 시, 채팅 메시지도 함께 수정
             const updatedReply = `<script type="application/json" id="invoiceData">${JSON.stringify(est)}</script>`;
             await patchChatMessages(messageId, {
@@ -170,12 +197,17 @@ useEffect(() => {
               value: updatedReply,
             });
 
+            console.log("채팅 메시지 업데이트 완료");
+
             // 로컬 스토어에도 반영하여 UI가 즉시 갱신되도록 함
             try {
               useChatStore.getState().updateMessageById(messageId, { content: updatedReply });
+              console.log("로컬 스토어 업데이트 완료");
             } catch (e) {
               console.warn("local updateMessageById failed", e);
             }
+          } else {
+            console.error("견적서 업로드 실패:", uploadResponse);
           }
         } catch (e) {
           console.error("[save] 견적 업데이트 실패:", e);
@@ -191,6 +223,12 @@ useEffect(() => {
     (target: { item_id?: string; name: string }, to: boolean, passedEstimateId?: string) => {
       setEstimate((prev) => {
         const next = deepClone(prev);
+        
+        // ✅ UUID 보존 - 이전 값이 있으면 반드시 유지
+        if (prev.uuid && !next.uuid) {
+          next.uuid = prev.uuid;
+        }
+        
         next.categories.forEach((cat) => {
           cat.sub_categories.forEach((sub) => {
             sub.items.forEach((it) => {
@@ -201,11 +239,68 @@ useEffect(() => {
             });
           });
         });
-        // uuid가 없으면 prev.uuid를 복원
-        if (!next.uuid && prev.uuid) next.uuid = prev.uuid;
-        const effectiveEstimateId = passedEstimateId || estimateId || estimate.uuid || data.uuid;
-        console.log("toggleDeletedFlag", target, to, next, "effectiveEstimateId", effectiveEstimateId);
-        saveToServer(next,effectiveEstimateId);
+        
+        // ✅ 견적서 ID 찾기 - 우선순위:
+        // 1. 전달받은 estimateId
+        // 2. props의 estimateId
+        // 3. 현재 견적서 데이터의 uuid (next, prev 순)
+        // 4. 초기 데이터의 uuid
+        // 5. 최후 수단: 스토어에서 estimateId 추출
+        let effectiveEstimateId = 
+          passedEstimateId || 
+          estimateId || 
+          next.uuid || 
+          prev.uuid || 
+          data.uuid;
+        
+        // ✅ 스토어에서 estimateId 찾기 (최후 수단)
+        if (!effectiveEstimateId) {
+          try {
+            const messages = useChatStore.getState().messages;
+            // 마지막 AI 메시지에서 견적서 찾기
+            for (let i = messages.length - 1; i >= 0; i--) {
+              const msg = messages[i];
+              if (msg.role === 'ai' && msg.content && msg.estimateId) {
+                effectiveEstimateId = msg.estimateId;
+                break;
+              }
+              // 또는 content에서 직접 추출
+              if (msg.role === 'ai' && msg.content) {
+                const match = msg.content.match(/"uuid"\s*:\s*"([^"]+)"/);
+                if (match && match[1]) {
+                  effectiveEstimateId = match[1];
+                  break;
+                }
+              }
+            }
+          } catch (e) {
+            console.warn("스토어에서 estimateId 추출 실패:", e);
+          }
+        }
+        
+        console.log("toggleDeletedFlag - 견적서 ID 추적:", {
+          target: target.name,
+          action: to ? '삭제' : '복구',
+          passedEstimateId,
+          propEstimateId: estimateId,
+          nextUuid: next.uuid,
+          prevUuid: prev.uuid,
+          dataUuid: data.uuid,
+          effectiveEstimateId,
+          foundFromStore: !passedEstimateId && !estimateId && !next.uuid && !prev.uuid && !data.uuid && effectiveEstimateId
+        });
+        
+        if (!effectiveEstimateId) {
+          console.error("견적서 ID를 찾을 수 없습니다!");
+          return prev; // 변경사항 취소
+        }
+        
+        // ✅ 찾은 ID를 next에도 설정하여 다음번에 쉽게 찾을 수 있도록
+        if (!next.uuid && effectiveEstimateId) {
+          next.uuid = effectiveEstimateId;
+        }
+        
+        saveToServer(next, effectiveEstimateId);
         return next;
       });
     },

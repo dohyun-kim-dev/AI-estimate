@@ -10,9 +10,18 @@ export function ensureEstimateUuid(est: any) {
 
 /** 견적 객체 정규화: uuid 보장, is_deleted 기본값, item_id 기본값 부여 */
 export function normalizeEstimate<T extends Record<string, any>>(est: T): T {
-console.log("normalizeEstimate called with:", est);
+  console.log("normalizeEstimate called with:", est);
+  
+  // ✅ 기존 UUID가 있으면 보존, 없으면 생성
+  const existingUuid = est.uuid;
   ensureEstimateUuid(est);
-  console.log("normalizeEstimate:", est);
+  
+  console.log("normalizeEstimate UUID 처리:", {
+    existingUuid,
+    finalUuid: est.uuid,
+    preserved: existingUuid === est.uuid
+  });
+
   est?.categories?.forEach((c: any, ci: number) =>
     c?.sub_categories?.forEach((sc: any, si: number) =>
       sc?.items?.forEach((it: any, ii: number) => {
@@ -21,6 +30,8 @@ console.log("normalizeEstimate called with:", est);
       })
     )
   );
+  
+  console.log("normalizeEstimate 결과:", est);
   return est;
 }
 

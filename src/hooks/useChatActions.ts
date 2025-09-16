@@ -146,6 +146,25 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
   }));
   const { isAuthenticated } = useAuthStore();
 
+  // 항상 최신 세션ID를 가져오는 함수
+  const getEffectiveSessionId = () => {
+    // 1. URL 파라미터
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const urlSessionId = searchParams.get('sessionId');
+      if (urlSessionId) return urlSessionId;
+    } catch {}
+    // 2. Zustand 스토어
+    if (chatSessionId) return chatSessionId;
+    // 3. localStorage
+    const localSessionId = localStorage.getItem('chatSessionId');
+    if (localSessionId) return localSessionId;
+    // 4. sessionStorage
+    const sessionSessionId = sessionStorage.getItem('chatSessionId');
+    if (sessionSessionId) return sessionSessionId;
+    return null;
+  };
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<FileUploadData[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -234,22 +253,22 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     const detectedUrls = detectUrls(displayMessage);
     let urlAnalysisForAI = ''; // AI용 분석 결과
     let hasPartialResults = false;
-    
+
     if (detectedUrls.length > 0) {
       // 사용자에게 즉시 알림 (분석 시작)
       const shortUrls = detectedUrls.map(shortenUrl);
       success(`🔍 ${detectedUrls.length}개의 웹사이트 분석 시작: ${shortUrls.join(', ')}`);
-      
+
       try {
         // analyzeUrls 함수를 사용하여 URL 분석 수행
         const analysisResult = await analyzeUrls(detectedUrls, (progress) => {
           // 진행 상황 로깅 (필요시 UI 업데이트 가능)
           console.log(`URL 분석 진행: ${progress.completed}/${progress.total}`);
         });
-        
+
         urlAnalysisForAI = analysisResult.summary;
         hasPartialResults = analysisResult.hasPartialResults;
-        
+
         // 사용자에게 결과 알림
         const successfulCount = analysisResult.results.filter(r => r.success).length;
         if (successfulCount > 0) {
@@ -258,7 +277,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           success('⚠️ 웹사이트 분석에 시간이 걸려 기본 답변을 제공합니다.');
           urlAnalysisForAI = '';
         }
-        
+
       } catch (error) {
         console.error('URL 콘텐츠 분석 실패:', error);
         success('⚠️ 웹사이트 분석에 시간이 걸려 기본 답변을 제공합니다.');
@@ -272,7 +291,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       const fileInfo = uploadedFiles.map((file) => `[첨부파일: ${file.name}]`).join('\n');
       userMessageContent = `${displayMessage}\n\n${fileInfo}`;
     }
-    
+
     // URL이 감지되면 짧게 표시 (displayMessage에서)
     if (detectedUrls.length > 0) {
       detectedUrls.forEach(url => {
@@ -285,9 +304,9 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     addMessage({ role: 'user', content: userMessageContent });
     // ai 메시지는 isLoading: true로 추가 (실시간 업데이트용)
     addMessage({ role: 'ai', content: '', isLoading: true });
-  console.log('사용자 메시지 및 빈 AI 메시지 추가 완료', { userMessageContent }, { role: 'ai', content: '', isLoading: true });
+    console.log('사용자 메시지 및 빈 AI 메시지 추가 완료', { userMessageContent }, { role: 'ai', content: '', isLoading: true });
 
-    let currentSessionId = chatSessionId;
+    let currentSessionId = getEffectiveSessionId();
     let userId = null;
 
     if (isAuthenticated()) {
@@ -331,8 +350,9 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       let filesForGemini = [];
       if (selectedFiles.length > 0) {
         const uploadResponse = await uploadFiles(selectedFiles);
-        if (uploadResponse && uploadResponse.statusCode === 200 && uploadResponse.data) {
-          uploadedFileNames = uploadResponse.data;
+        // uploadFiles가 string[] 반환 시
+        if (Array.isArray(uploadResponse) && uploadResponse.length > 0) {
+          uploadedFileNames = uploadResponse;
           filesForGemini = await Promise.all(
             uploadedFileNames.map(async (fileName, index) => {
               const file = selectedFiles[index];
@@ -348,7 +368,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           );
           await new Promise(resolve => setTimeout(resolve, 1000));
         } else {
-          throw new Error(uploadResponse?.error?.message || '파일 업로드에 실패했습니다.');
+          throw new Error('파일 업로드에 실패했습니다.');
         }
       }
 
@@ -356,18 +376,6 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         content: input,
         file: uploadedFileNames.length > 0 ? uploadedFileNames[0] : undefined
       };
-
-      // 사용자 메시지 전송 API 호출 및 응답에서 messageId 추출
-      const userMessageResponse = await sendChatMessage(currentSessionId, {
-        role: 'USER',
-        content: messageContent,
-        uid: userId
-      });
-      // Zustand 스토어에서 마지막 메시지(임시로 추가한 사용자 메시지)를 업데이트하여 messageId 추가
-      updateLastMessage({
-        content: userMessageContent,
-        // 기존 속성들도 함께 전달해야 함
-      });
 
       const filesForAI = filesForGemini.map(file => ({
         name: file.name,
@@ -384,11 +392,35 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         finalPrompt = `${combinedPrompt}\n\n[웹사이트 분석 정보 - AI 참고용]\n${urlAnalysisForAI}`;
       }
 
-      // ⭐️ 실시간 스트리밍 반영: onStream에서 마지막 ai 메시지 content 누적 업데이트
+      // 🔥 스토어에서 현재 메시지 히스토리 가져와서 AI에게 전달
+      const currentMessages = useChatStore.getState().messages;
+      let chatHistory = currentMessages
+        .filter(msg => msg.role === 'user' || msg.role === 'ai')
+        .filter(msg => !msg.isLoading) // 로딩 중인 메시지 제외
+        .slice(0, -2) // 방금 추가한 사용자 메시지와 빈 AI 메시지 제외
+        .map(msg => ({
+          role: msg.role === 'user' ? 'user' as const : 'model' as const,
+          content: msg.content
+        }));
+
+      // 첫 번째 메시지가 AI(model) 역할이면 제외 (초기 인사말 제거)
+      if (chatHistory.length > 0 && chatHistory[0].role === 'model') {
+        chatHistory = chatHistory.slice(1);
+      }
+
+      // 첫 번째 메시지가 user가 아니면 빈 배열로 시작 (안전장치)
+      if (chatHistory.length > 0 && chatHistory[0].role !== 'user') {
+        chatHistory = [];
+      }
+
+      console.log('[useChatActions] AI에게 전달할 채팅 히스토리:', chatHistory.length, '개 메시지');
+
+      // ⭐️ 먼저 AI 응답을 받고 성공하면 DB에 저장하는 방식으로 변경
       let aiReply = '';
       let firstChunkReceived = false;
       const chatResult = await sendChat(finalPrompt, filesForAI, {
         streaming: true,
+        chatHistory, // 🔥 과거 대화 이력 전달
         onStream: (chunk) => {
           const wasEmpty = aiReply.length === 0;
           aiReply += chunk;
@@ -403,6 +435,25 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       });
 
       const reply = chatResult.text;
+
+      // AI 응답이 성공했으므로 이제 DB에 사용자 메시지 저장
+      const userMessageResponse = await sendChatMessage(currentSessionId, {
+        role: 'USER',
+        content: messageContent,
+        uid: userId
+      });
+      
+      // Zustand 스토어에서 마지막 사용자 메시지를 업데이트하여 messageId 추가
+      // 현재 messages 배열에서 뒤에서 두 번째가 사용자 메시지
+      const currentMessagesForUpdate = useChatStore.getState().messages;
+      if (currentMessagesForUpdate.length >= 2) {
+        const userMessageIndex = currentMessagesForUpdate.length - 2; // 뒤에서 두 번째
+        if (currentMessagesForUpdate[userMessageIndex].role === 'user') {
+          // updateMessageById 대신 직접 스토어 업데이트 (인덱스 기반)
+          // 여기서는 단순히 로그만 남기고 실제 messageId 업데이트는 나중에 필요시 구현
+          console.log('사용자 메시지 DB 저장 완료:', userMessageResponse);
+        }
+      }
 
       // 실제 토큰 사용량으로 로그 출력
       if (chatResult.tokenUsage) {
@@ -423,14 +474,18 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       // 견적 JSON 감지 및 저장 로직은 reply 전체가 온 뒤 기존대로 처리
       const estimateData = extractEstimateData(reply);
       console.log('extractEstimateData 직후 추출된 견적 데이터:', estimateData); 
+      
+      let finalReply = reply;
+      let estimateId = null;
+      
       if (estimateData) {
         try {
           const invoiceTitle = estimateData.project_name || '새로운 견적서';
           if (!userId) throw new Error('사용자 ID를 가져올 수 없습니다.');
           ensureEstimateUuid(estimateData);
           console.log('견적 데이터 저장 시작', estimateData);
-          const estimateId = estimateData.uuid;
-          const dataStr = buildFullEstimateData(reply,estimateId);
+          estimateId = estimateData.uuid;
+          const dataStr = buildFullEstimateData(reply, estimateId);
           console.log('견적 데이터 조립 완료, 업로드 시작', { estimateId, dataStr });
           const uploadResponse = await uploadEstimatePdf(
             currentSessionId,
@@ -442,46 +497,28 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           if (uploadResponse?.statusCode !== 200) {
             throw new Error(uploadResponse?.error?.message || '견적 저장 실패');
           }
-          const updatedReply = dataStr;
-          const aiMessageResponse: ChatMessageResponseData = await sendChatMessage(currentSessionId, {
-            role: 'AI',
-            content: { type: 'text', value: updatedReply, estimateId },
-            uid: userId
-          });
-          const aiMessageId = aiMessageResponse?.data?._id;
-          updateLastMessage({
-            content: updatedReply,
-            messageId: aiMessageId,
-            estimateId: estimateId,
-            isLoading: false,
-          });
+          finalReply = dataStr;
         } catch (pdfError) {
           error(`견적 저장 실패: ${(pdfError as Error).message}`);
-          const aiMessageResponse: ChatMessageResponseData = await sendChatMessage(currentSessionId, {
-            role: 'AI',
-            content: { type: 'text', value: reply },
-            uid: userId
-          });
-          const aiMessageId = aiMessageResponse?.data?._id;
-          updateLastMessage({
-            content: reply,
-            messageId: aiMessageId,
-            isLoading: false,
-          });
+          // 견적 저장 실패해도 일반 응답으로 처리
         }
-      } else {
-        const aiMessageResponse: ChatMessageResponseData = await sendChatMessage(currentSessionId, {
-          role: 'AI',
-          content: { type: 'text', value: reply },
-          uid: userId
-        });
-        const aiMessageId = aiMessageResponse?.data?._id;
-        updateLastMessage({
-          content: reply,
-          messageId: aiMessageId,
-          isLoading: false,
-        });
       }
+
+      // AI 응답 메시지를 DB에 저장
+      const aiMessageResponse: ChatMessageResponseData = await sendChatMessage(currentSessionId, {
+        role: 'AI',
+        content: { type: 'text', value: finalReply, ...(estimateId && { estimateId }) },
+        uid: userId
+      });
+      const aiMessageId = aiMessageResponse?.data?._id;
+      
+      // 스토어의 마지막 AI 메시지 업데이트 (messageId와 estimateId 추가)
+      updateLastMessage({
+        content: finalReply,
+        messageId: aiMessageId,
+        ...(estimateId && { estimateId }),
+        isLoading: false,
+      });
 
       setUploadedFiles([]);
       setSelectedFiles([]);

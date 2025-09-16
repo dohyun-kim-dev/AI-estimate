@@ -142,11 +142,29 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
 
   const modelRef = useRef<GenerativeModel | null>(null)
   const chatRef = useRef<ChatSession | null>(null)
+  const initialized = useRef(false)
 
   // thinkingBudget 또는 systemInstruction이 바뀌면 다음 전송 시 새 세션으로 시작되도록 리셋
   useEffect(() => {
     chatRef.current = null
   }, [thinkingBudget, systemInstruction, modelName])
+
+  // 초기화 시 한 번만 시스템 프롬프트 설정
+  useEffect(() => {
+    if (!initialized.current) {
+      (async () => {
+        try {
+          const { combineSystemPrompts } = await import('@/ai/prompts');
+          const systemPrompt = await combineSystemPrompts();
+          console.log('[useAI] 시스템 프롬프트 초기화 완료, 길이:', systemPrompt.length);
+          setSystemInstruction(systemPrompt);
+        } catch (error) {
+          console.error('[useAI] 시스템 프롬프트 초기화 실패:', error);
+        }
+      })();
+      initialized.current = true;
+    }
+  }, []);
 
   const ensureModel = useCallback(() => {
     if (!app) throw new Error('Firebase app not initialized')
@@ -211,22 +229,34 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
    * @param message - 프롬프트 텍스트
    * @param files - 첨부 파일 배열
    * @param options - SendChatOptions (streaming: true면 실시간, false면 전체 응답만)
+   * @param chatHistory - 과거 대화 이력 (세션 복원 시 사용)
    * @returns { text: string, tokenUsage?: TokenUsage } (전체 응답과 토큰 사용량)
    */
   const sendChat = useCallback(async (
     message: string,
     files: FileUploadData[] = [],
-    options?: SendChatOptions,
+    options?: SendChatOptions & { chatHistory?: Array<{ role: 'user' | 'model'; content: string }> },
   ): Promise<{ text: string, tokenUsage?: TokenUsage }> => {
     const model = ensureModel();
 
     // ✅ 첫 메시지부터 thinkingBudget 반영되도록 세션 생성 시 config 주입
     if (!chatRef.current) {
+      // 과거 대화 이력이 있으면 history와 함께 세션 시작
+      const history = options?.chatHistory?.map(msg => ({
+        role: msg.role,
+        parts: [{ text: msg.content }]
+      })) || [];
+
       chatRef.current = model.startChat({
+        history,
         generationConfig: {
           thinkingConfig: { thinking_budget: thinkingBudget } as any,
         },
       } as any)
+      
+      if (history.length > 0) {
+        console.log('[useAI] 과거 대화 이력과 함께 세션 시작:', history.length, '개 메시지');
+      }
     }
 
     // Part 배열 생성
@@ -435,6 +465,12 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     chatRef.current = null // 시스템 변경 시 세션 재시작
   }, [])
 
+  // 과거 대화 이력과 함께 새 채팅 세션 시작
+  const startChatWithHistory = useCallback((history: Array<{ role: 'user' | 'model'; content: string }>) => {
+    chatRef.current = null; // 기존 세션 리셋
+    console.log('[useAI] startChatWithHistory 호출됨, 이력 개수:', history.length);
+  }, [])
+
   const testModel = useCallback(async (): Promise<{ ok: boolean; message: string }> => {
     try {
       const model = ensureModel()
@@ -457,6 +493,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
    * sendChat 사용법:
    * sendChat('메시지', [], { streaming: true, onStream: (chunk) => ... })
    * sendChat('메시지', [], { streaming: false })
+   * sendChat('메시지', [], { chatHistory: [...] }) // 세션 복원 시
    * 기본값은 streaming: true (실시간)
    */
   return {
@@ -467,6 +504,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     generate,
     sendChat,
     resetChat,
+    startChatWithHistory,
     testModel,
     setSystemInstruction: setSystem,
   }

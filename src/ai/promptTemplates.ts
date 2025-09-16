@@ -35,9 +35,10 @@ export const combinePrompts = async (templateId: string, userInput: string): Pro
 
   let templateContent = template.content;
 
-  // 기본 템플릿의 경우 동적으로 시스템 프롬프트 생성
+  // 기본 템플릿의 경우 이제 systemInstruction에서 처리되므로 사용자 입력만 반환
   if (templateId === 'default' && template.content === 'SYSTEM_PROMPT_PLACEHOLDER') {
-    templateContent = await combineSystemPrompts();
+    // 시스템 프롬프트는 useAI에서 systemInstruction으로 설정되므로 사용자 입력만 반환
+    return userInput;
   }
 
   const combinedPrompt = `${templateContent}\n\n사용자 입력: ${userInput}`;

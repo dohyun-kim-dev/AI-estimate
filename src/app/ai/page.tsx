@@ -701,7 +701,7 @@ const userId = getUserId() || '';
 };
 
 export default function AiChatPage() {
-  const { modelName, setModelName, generate, sendChat, resetChat, testModel } = useAI('gemini-2.5-flash');
+  const { modelName, setModelName, generate, sendChat, resetChat, startChatWithHistory, testModel } = useAI('gemini-2.5-flash');
   const { success, error } = useToast();
   const messages = useChatStore((s) => s.messages);
   const addMessage = useChatStore((s) => s.addMessage);
@@ -960,6 +960,14 @@ useEffect(() => {
               content: msg.content.value || msg.content.content || '',
               messageId: msg._id
             }));
+            
+            // AI 세션에 과거 대화 이력 전달
+            const chatHistory = chatMessages.map((msg: any) => ({
+              role: msg.role === 'user' ? 'user' as const : 'model' as const,
+              content: msg.content
+            }));
+            startChatWithHistory(chatHistory);
+            
             clear();
             addMessage({ role: 'ai', content: initialAiMessage });
             chatMessages.forEach((msg: any) => addMessage(msg));
@@ -975,6 +983,7 @@ useEffect(() => {
         if (localChatSessionId) {
           try {
             await transferChatSessionToUser(localChatSessionId);
+            console.log("방 소유권 이전 성공, 세션 ID:", localChatSessionId);
             setChatSessionId(localChatSessionId);
             const messagesResponse = await getChatSessionMessages(localChatSessionId) as any;
             if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
@@ -983,6 +992,14 @@ useEffect(() => {
                 content: msg.content.value || msg.content.content || '',
                 messageId: msg._id
               }));
+              
+              // AI 세션에 과거 대화 이력 전달
+              const chatHistory = chatMessages.map((msg: any) => ({
+                role: msg.role === 'user' ? 'user' as const : 'model' as const,
+                content: msg.content
+              }));
+              startChatWithHistory(chatHistory);
+              
               clear();
               addMessage({ role: 'ai', content: initialAiMessage });
               chatMessages.forEach((msg: any) => addMessage(msg));
