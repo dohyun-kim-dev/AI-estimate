@@ -417,6 +417,16 @@ const isDarkMode = detectDarkMode();
               e.preventDefault();
             }
           }, false);
+          
+          // iframe 위에서 스크롤 막기 (더 강력한 방법)
+          const wheelPreventHandler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          };
+          root._wheelPreventHandler = wheelPreventHandler;
+          root.addEventListener('wheel', wheelPreventHandler, { passive: false });
+          
         }, 50); // 50ms 디바운싱
       };
       
@@ -428,6 +438,10 @@ const isDarkMode = detectDarkMode();
           document.removeEventListener('wheel', preventScroll);
           document.removeEventListener('touchmove', preventScroll);
           document.removeEventListener('keydown', preventKeyScroll);
+          
+          // iframe 위의 wheel 이벤트 리스너도 제거
+          root.removeEventListener('wheel', root._wheelPreventHandler);
+          
         }, 100); // 100ms 디바운싱 (나갈 때는 좀 더 여유있게)
       };
       
@@ -440,6 +454,40 @@ const isDarkMode = detectDarkMode();
         isMouseInside = false;
         enableScroll();
       };
+
+      // iframe 내부 스크롤 이벤트 감지하여 바깥 스크롤 방지
+      const handleIframeScroll = (e) => {
+        // iframe 내에서 wheel 이벤트 발생 시 바깥 스크롤 방지
+        if (isMouseInside) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      };
+
+      // iframe에 직접 이벤트 리스너 추가 시도
+      try {
+        if (iframe.contentWindow) {
+          iframe.contentWindow.addEventListener('wheel', (e) => {
+            // iframe 내부에서 스크롤이 더 이상 불가능한 경우에만 바깥 스크롤 방지
+            const target = e.target;
+            const scrollableElement = target.closest('[data-scroll-container]') || target.scrollingElement || target.documentElement || target.body;
+            
+            if (scrollableElement) {
+              const isAtTop = scrollableElement.scrollTop <= 0;
+              const isAtBottom = scrollableElement.scrollTop + scrollableElement.clientHeight >= scrollableElement.scrollHeight;
+              
+              if ((e.deltaY < 0 && isAtTop) || (e.deltaY > 0 && isAtBottom)) {
+                // 스크롤이 더 이상 불가능한 경우 바깥 스크롤 방지
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }
+          }, { passive: false });
+        }
+      } catch (err) {
+        console.log('[AI-Widget] Could not add iframe scroll listener:', err);
+      }
       
       // 이미 등록된 리스너 제거(중복 방지)
       root.removeEventListener('mouseenter', root._disableScroll);
@@ -459,6 +507,11 @@ const isDarkMode = detectDarkMode();
         document.removeEventListener('wheel', root._preventScroll);
         document.removeEventListener('touchmove', root._preventScroll);
         document.removeEventListener('keydown', root._preventKeyScroll);
+      }
+      // iframe wheel 이벤트 리스너도 제거
+      if (root._wheelPreventHandler) {
+        root.removeEventListener('wheel', root._wheelPreventHandler);
+        delete root._wheelPreventHandler;
       }
       // 리스너 제거
       if (root._disableScroll) {
@@ -483,6 +536,11 @@ const isDarkMode = detectDarkMode();
         document.removeEventListener('wheel', root._preventScroll);
         document.removeEventListener('touchmove', root._preventScroll);
         document.removeEventListener('keydown', root._preventKeyScroll);
+      }
+      // iframe wheel 이벤트 리스너도 제거
+      if (root._wheelPreventHandler) {
+        root.removeEventListener('wheel', root._wheelPreventHandler);
+        delete root._wheelPreventHandler;
       }
       // 리스너 제거
       if (root._disableScroll) {

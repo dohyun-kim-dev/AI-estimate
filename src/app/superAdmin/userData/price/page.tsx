@@ -545,6 +545,125 @@ const PriceListPage: React.FC = () => {
     }
   };
 
+  // 단일 항목 삭제 핸들러 (테이블 새로고침용)
+  const handleDeleteItem = async (id: string) => {
+    try {
+      console.log('=== handleDeleteItem - 테이블 새로고침 START ===', { id });
+      
+      // 테이블 새로고침을 위해 같은 회사 다시 선택
+      if (selectedCompanyCode) {
+        setTimeout(async () => {
+          try {
+            await handleCompanySelect({ id: selectedCompanyCode, name: selectedCompanyName });
+            console.log('Table refresh completed after delete');
+          } catch (error) {
+            console.error('Error refreshing table after delete:', error);
+          }
+        }, 100);
+      }
+      
+      console.log('=== handleDeleteItem SUCCESS ===');
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Delete item refresh error:', error);
+      return Promise.reject(error);
+    }
+  };
+
+  // 검색 키워드와 함께 데이터를 조회하는 함수
+  const fetchUnitPricesData = async (params: FetchParams) => {
+    console.log('=== fetchUnitPricesData START ===', params);
+    
+    if (!selectedCompanyCode) {
+      console.log('No company selected, returning current data');
+      return {
+        data: transformedTableData,
+        totalItems: transformedTableData.length,
+        allItems: transformedTableData.length,
+      };
+    }
+    
+    try {
+      console.log('Fetching data with params:', {
+        companyCode: selectedCompanyCode,
+        keyword: params.keyword,
+        fromDate: params.fromDate,
+        toDate: params.toDate,
+      });
+      
+      const response = await getAllUnitPrices({
+        companyCode: selectedCompanyCode,
+        keyword: params.keyword,
+        fromDate: params.fromDate,
+        toDate: params.toDate,
+      });
+
+      console.log('API response received');
+
+      // API 응답 처리 로직
+      let columnsInfo: any[] = [];
+      let apiData: any[] = [];
+      
+      // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+      const actualResponse = Array.isArray(response) ? response[0] : response;
+      
+      // actualResponse.data에서 실제 API 응답을 가져옴
+      const apiResponse = (actualResponse as any)?.data;
+      
+      if (apiResponse) {
+        if ((apiResponse.statusCode === 404 || apiResponse.statusCode === "404") && apiResponse.message === 'not found') {
+          // 404 에러 응답 처리 - 빈 데이터 반환
+          apiData = [];
+        } else if ((apiResponse.statusCode === 200 || apiResponse.statusCode === "200") && apiResponse.message === 'success') {
+          // 성공 응답 처리
+          if (apiResponse.data && typeof apiResponse.data === 'object') {
+            const responseData = apiResponse.data;
+            
+            if ('data' in responseData) {
+              // data가 배열이면 그대로, 객체면 배열로 감싸기
+              if (Array.isArray(responseData.data)) {
+                apiData = responseData.data;
+              } else if (responseData.data && typeof responseData.data === 'object') {
+                apiData = [responseData.data]; // 단일 객체를 배열로 감싸기
+              } else {
+                apiData = [];
+              }
+            }
+          }
+        } else {
+          console.error('API Error:', apiResponse);
+          apiData = [];
+        }
+      } else {
+        console.error('No API response data');
+        apiData = [];
+      }
+
+      // 데이터에 서버에서 전달받은 no 필드 사용 (없으면 index + 1로 폴백)
+      const transformedData = apiData.map((item: any, index: number) => ({
+        ...item,
+        select: false,
+        no: (item.no !== undefined ? item.no : index + 1),
+      }));
+
+      console.log('Transformed data:', transformedData);
+      
+      return {
+        data: transformedData,
+        totalItems: transformedData.length,
+        allItems: transformedData.length,
+      };
+      
+    } catch (error) {
+      console.error('Error fetching unit prices data:', error);
+      return {
+        data: [],
+        totalItems: 0,
+        allItems: 0,
+      };
+    }
+  };
+
   const handleCompanySelect = async (company: { id: string; name: string }) => {
     console.log('=== Company selected START ===:', company);
     console.log("companyCode:",company.id);
@@ -1220,6 +1339,7 @@ const PriceListPage: React.FC = () => {
         selectedCompanyName={selectedCompanyName}
         onRowClick={handleRowClick}
         themeMode="light"
+        fetchData={fetchUnitPricesData}
         onAdd={() => {
           if (!selectedCompanyCode) {
             showToast('먼저 고객사를 선택해주세요.', 'error');
@@ -1230,6 +1350,7 @@ const PriceListPage: React.FC = () => {
           setSelectedItem({});
           setIsPopupOpen(true);
         }}
+        addButtonLabel="단가표 등록"
         isShowExcelTemplate={true}
         excelUploadBtnCallBack={handleExcelUpload}
         excelTemplateBtnCallBack={handleExcelTemplateDownload}
@@ -1247,8 +1368,10 @@ const PriceListPage: React.FC = () => {
         isOpen={isPopupOpen}
         onClose={closePopup}
         onSave={handleSaveItem}
+        onDelete={handleDeleteItem}
         selectedItem={selectedItem}
         columnsInfo={currentColumnsInfo}
+        selectedCompanyCode={selectedCompanyCode}
       />
 
       {/* 알림 팝업 */}

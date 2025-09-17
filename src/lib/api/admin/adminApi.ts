@@ -376,3 +376,17 @@ export async function uploadUnitPrices(
     isWithToken: true, // 토큰 필요
   });
 }
+
+// 단가표 개별 삭제 API
+export async function deleteUnitPrice(id: string, companyCode: string) {
+  const queryParams = new URLSearchParams();
+  queryParams.append('companyCode', companyCode);
+
+  return callAdminApi({
+    title: '단가표 삭제',
+    url: `${BASE_URL}/cms/unit-prices/${id}?${queryParams.toString()}`,
+    method: 'DELETE',
+    isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
+  });
+}

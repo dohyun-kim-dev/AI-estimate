@@ -454,18 +454,21 @@ const GenericListUIInner = <T extends BaseRecord>(
 
         <EventControls>
   <LeftControls>
-    {deleteBtnCallBack && (
-      <SecondaryButton $themeMode={themeMode} onClick={deleteBtnCallBack}>삭제</SecondaryButton>
-    )}
-  </LeftControls>
-
-  <RightControls>
 
   {onAdd && (
       <PrimaryButton $themeMode={themeMode} onClick={onAdd}>
         {addButtonLabel}
       </PrimaryButton>
     )}
+    
+    {deleteBtnCallBack && (
+      <SecondaryButton $themeMode={themeMode} onClick={deleteBtnCallBack}>삭제</SecondaryButton>
+    )}
+
+  </LeftControls>
+
+  <RightControls>
+
     {isShowExcelTemplate && (
       <PrimaryButton $themeMode={themeMode} onClick={excelTemplateBtnCallBack}>
         엑셀 템플릿

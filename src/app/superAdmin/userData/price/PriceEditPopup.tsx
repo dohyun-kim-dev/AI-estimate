@@ -3,9 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import CmsPopup from '@/components/CmsPopup';
+import Modal from '@/components/common/Modal';
 import { TextField } from '@/components/TextField';
 import { AppColors } from '@/styles/colors';
 import { useToast } from '@/components/common/ToastProvider';
+import { deleteUnitPrice } from '@/lib/api/admin/adminApi';
 
 const FormContainer = styled.div`
   display: flex;
@@ -42,29 +44,55 @@ const PopupFooter = styled.div`
   gap: 12px;
 `;
 
+const LeftButtons = styled.div`
+  display: flex;
+  gap: 12px;
+`;
+
+const RightButtons = styled.div`
+  display: flex;
+  gap: 12px;
+`;
+
 const FooterButton = styled.button`
   width: 120px;
   height: 48px;
-  border-radius: 6px;
+  border-radius: 4px;
   font-weight: bold;
   font-size: 16px;
   cursor: pointer;
   border: none;
+  
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+`;
+
+const DeleteButton = styled(FooterButton)`
+  background-color: #202055;
+  color: #ffffff;
+  
+  &:hover:not(:disabled) {
+    background-color: #1a1a45;
+  }
 `;
 
 const CancelButton = styled(FooterButton)`
   background-color: #ffffff;
   color: ${AppColors.onSurface};
   border: 1px solid ${AppColors.border};
+  &:hover:not(:disabled) {
+    background-color: #f5f5f5;
+  }
 `;
 
 const SaveButton = styled(FooterButton)`
-  background-color: ${AppColors.primary};
+  background-color: #202055;
   color: #ffffff;
   
-  &:disabled {
-    background-color: ${AppColors.disabled};
-    cursor: not-allowed;
+  &:hover:not(:disabled) {
+    background-color: #1a1a45;
   }
 `;
 
@@ -167,25 +195,84 @@ const ErrorMessage = styled.span`
   margin-top: 4px;
 `;
 
+// 삭제 확인 모달 스타일
+const DeleteModalContent = styled.div`
+  text-align: center;
+  padding: 10px 0 0 0;
+`;
+
+const DeleteModalDescription = styled.p`
+  font-size: 14px;
+  color: ${AppColors.onSurfaceVariant};
+  margin: 0px 0 32px 0;
+  line-height: 1.5;
+    width: 100%;
+`;
+
+const DeleteModalButtons = styled.div`
+  width: 100%;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+`;
+
+const DeleteModalButton = styled.button<{ $isDelete?: boolean }>`
+  width: 100%;
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  min-width: 80px;
+  
+  ${({ $isDelete }) => $isDelete ? `
+    background-color: #202055;
+    color: white;
+    
+    &:hover:not(:disabled) {
+      background-color: #1a1a45;
+    }
+  ` : `
+    background-color: white;
+    color: ${AppColors.onSurface};
+    border: 1px solid ${AppColors.border};
+    
+    &:hover:not(:disabled) {
+      background-color: #f5f5f5;
+    }
+  `}
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
 interface PriceEditPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: any) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>; // 삭제 콜백 추가
   selectedItem: any;
   columnsInfo: any[];
+  selectedCompanyCode?: string; // 회사 코드 추가
 }
 
 const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
   isOpen,
   onClose,
   onSave,
+  onDelete,
   selectedItem,
-  columnsInfo
+  columnsInfo,
+  selectedCompanyCode
 }) => {
   const { show: showToast } = useToast();
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false); // 삭제 확인 모달 상태
 
   // 폼 데이터 초기화
   useEffect(() => {
@@ -327,6 +414,65 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
     }
   };
 
+  // 삭제 핸들러
+  const handleDelete = async () => {
+    if (!selectedItem?.id || !selectedCompanyCode) {
+      showToast('삭제할 수 없는 항목입니다.', 'error');
+      return;
+    }
+
+    // 삭제 확인 모달 열기
+    setShowDeleteModal(true);
+  };
+
+  // 실제 삭제 실행
+  const handleConfirmDelete = async () => {
+    if (!selectedItem?.id || !selectedCompanyCode) {
+      showToast('삭제할 수 없는 항목입니다.', 'error');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log('=== 삭제 API 호출 START ===', { id: selectedItem.id, companyCode: selectedCompanyCode });
+      
+      const response = await deleteUnitPrice(selectedItem.id, selectedCompanyCode);
+      
+      // API 응답 처리
+      const actualResponse = Array.isArray(response) ? response[0] : response;
+      const apiResponse = (actualResponse as any)?.data;
+      
+      console.log('삭제 API 응답:', apiResponse);
+      
+      if (apiResponse && (apiResponse.statusCode === 200 || apiResponse.statusCode === "200") && apiResponse.message === 'success') {
+        showToast('삭제되었습니다.', 'success');
+        
+        // 부모 컴포넌트의 삭제 콜백 호출 (테이블 새로고침용)
+        if (onDelete) {
+          await onDelete(selectedItem.id);
+        }
+        
+        setShowDeleteModal(false);
+        setTimeout(() => {
+          onClose();
+        }, 100);
+      } else {
+        throw new Error(apiResponse?.error?.customMessage || '삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      const err = error as Error | { customMessage?: string };
+      const errorMessage = 'customMessage' in err 
+        ? err.customMessage 
+        : err instanceof Error 
+          ? err.message 
+          : '삭제에 실패했습니다.';
+      showToast(errorMessage, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // 컬럼 정보를 orderNo로 정렬하고 수정 모드가 아닐 때만 id 필드 제외
   const isEditMode = selectedItem && selectedItem.id && selectedItem.id !== '';
   const sortedColumns = [...columnsInfo]
@@ -338,6 +484,27 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
       return true;
     })
     .sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0));
+
+  // Footer 버튼 렌더링
+  const renderFooter = () => (
+    <PopupFooter>
+      <LeftButtons>
+        {isEditMode && (
+          <DeleteButton onClick={handleDelete} disabled={isLoading}>
+            {isLoading ? '삭제 중...' : '삭제'}
+          </DeleteButton>
+        )}
+      </LeftButtons>
+      <RightButtons>
+        <CancelButton onClick={onClose} disabled={isLoading}>
+          취소
+        </CancelButton>
+        <SaveButton onClick={handleSave} disabled={isLoading}>
+          {isLoading ? '저장 중...' : '저장'}
+        </SaveButton>
+      </RightButtons>
+    </PopupFooter>
+  );
 
   // 동적 필드 렌더링
   const renderField = (column: any) => {
@@ -402,44 +569,68 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
   };
 
   return (
-    <CmsPopup
-      title="단가표 항목 편집"
-      isOpen={isOpen}
-      onClose={onClose}
-      backgroundColor="#ffffff"
-      showRequiredMark={true}
-      bottomFloating={
-        <PopupFooter>
-          <CancelButton onClick={onClose} disabled={isLoading}>
-            취소
-          </CancelButton>
-          <SaveButton onClick={handleSave} disabled={isLoading}>
-            {isLoading ? '저장 중...' : '저장'}
-          </SaveButton>
-        </PopupFooter>
-      }
-    >
-      <FormContainer>
-        {sortedColumns.map((column) => (
-          <FormRow key={column.name}>
-            <FieldLabel $required={column.required}>
-              {column.name}
-              {column.type !== 'string' && (
-                <span style={{ color: AppColors.onSurfaceVariant, fontSize: '12px', marginLeft: '8px' }}>
-                  ({column.type === 'number' ? '숫자' : 
-                    column.type === 'boolean' ? '참/거짓' : 
-                    column.type})
-                </span>
+    <>
+      <CmsPopup
+        title="단가표 항목 편집"
+        isOpen={isOpen}
+        onClose={onClose}
+        backgroundColor="#ffffff"
+        showRequiredMark={true}
+        bottomFloating={renderFooter()}
+      >
+        <FormContainer>
+          {sortedColumns.map((column) => (
+            <FormRow key={column.name}>
+              <FieldLabel $required={column.required}>
+                {column.name}
+                {column.type !== 'string' && (
+                  <span style={{ color: AppColors.onSurfaceVariant, fontSize: '12px', marginLeft: '8px' }}>
+                    ({column.type === 'number' ? '숫자' : 
+                      column.type === 'boolean' ? '참/거짓' : 
+                      column.type})
+                  </span>
+                )}
+              </FieldLabel>
+              {renderField(column)}
+              {errors[column.name] && (
+                <ErrorMessage>{errors[column.name]}</ErrorMessage>
               )}
-            </FieldLabel>
-            {renderField(column)}
-            {errors[column.name] && (
-              <ErrorMessage>{errors[column.name]}</ErrorMessage>
-            )}
-          </FormRow>
-        ))}
-      </FormContainer>
-    </CmsPopup>
+            </FormRow>
+          ))}
+        </FormContainer>
+      </CmsPopup>
+
+      {/* 삭제 확인 모달 */}
+      <Modal
+        open={showDeleteModal}
+        title="단가표 정보를 삭제하시겠습니까?"
+        onClose={() => setShowDeleteModal(false)}
+        width={400}
+        centerTitle={true}
+      >
+        <DeleteModalContent>
+          <DeleteModalDescription>
+            삭제한 단가표는 복구할 수 없습니다.<br />
+            계속 진행하시려면 '삭제' 버튼을 눌러주세요.
+          </DeleteModalDescription>
+          <DeleteModalButtons>
+            <DeleteModalButton 
+              onClick={() => setShowDeleteModal(false)}
+              disabled={isLoading}
+            >
+              취소
+            </DeleteModalButton>
+            <DeleteModalButton 
+              $isDelete={true}
+              onClick={handleConfirmDelete}
+              disabled={isLoading}
+            >
+              {isLoading ? '삭제 중...' : '삭제'}
+            </DeleteModalButton>
+          </DeleteModalButtons>
+        </DeleteModalContent>
+      </Modal>
+    </>
   );
 };
 

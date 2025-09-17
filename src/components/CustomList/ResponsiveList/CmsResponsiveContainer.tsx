@@ -39,6 +39,7 @@ interface CmsResponsiveContainerProps<T extends BaseRecord> {
   isShowExcelTemplate?: boolean;
   excelUploadBtnCallBack?: () => void;
   excelTemplateBtnCallBack?: () => void;
+  deleteBtnCallBack?: () => void;
 }
 
 export default function CmsResponsiveContainer<T extends BaseRecord>({
@@ -62,6 +63,7 @@ export default function CmsResponsiveContainer<T extends BaseRecord>({
   isShowExcelTemplate,
   excelUploadBtnCallBack,
   excelTemplateBtnCallBack,
+  deleteBtnCallBack,
 }: CmsResponsiveContainerProps<T>) {
   
   // 공통 props
@@ -85,6 +87,7 @@ export default function CmsResponsiveContainer<T extends BaseRecord>({
     isShowExcelTemplate,
     excelUploadBtnCallBack,
     excelTemplateBtnCallBack,
+    deleteBtnCallBack
   };
 
   return (
