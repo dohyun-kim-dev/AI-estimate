@@ -495,7 +495,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                       window.location.href = intentUrl;
                     }
                   } else if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
-                    if (window.confirm('현재 iOS 기기에서는 새 창에서 소셜 로그인이 진행됩니다. 로그인 후 다시 돌아와 주세요.')) {
+                    if (window.confirm('현재 iOS 기기에서는 새 창에서 소셜 로그인이 진행됩니다.')) {
                       handleGoogleLogin();
                     }
                   } else {
