@@ -657,7 +657,8 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       });
 
     } catch (e) {
-      error(`메시지 전송 실패: ${(e as Error).message}`);
+      // error(`메시지 전송 실패: ${(e as Error).message}`);
+    console.log('❗ 메시지 전송 중 오류 발생:', e);
     } finally {
       setIsProcessing(false);
     }

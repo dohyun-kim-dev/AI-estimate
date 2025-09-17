@@ -105,20 +105,92 @@ const PDFPreview: React.FC = () => {
 
   // 인앱 브라우저 감지 및 처리
   useEffect(() => {
-    const isInAppBrowser = () => {
+    const getInAppBrowserInfo = () => {
       const userAgent = navigator.userAgent.toLowerCase();
-      return userAgent.includes('kakaotalk') || 
-             (userAgent.includes('mobile') && !(window as any).navigator.standalone && userAgent.includes('safari'));
+      const isIOS = /iphone|ipad|ipod/.test(userAgent);
+      const isAndroid = /android/.test(userAgent);
+      
+      return {
+        isKakaoTalk: userAgent.includes('kakaotalk'),
+        isNaverApp: userAgent.includes('naver'),
+        isInstagram: userAgent.includes('instagram'),
+        isFacebook: userAgent.includes('fbav') || userAgent.includes('fb_iab'),
+        isLineApp: userAgent.includes('line'),
+        isWebView: userAgent.includes('wv') || userAgent.includes('webview'),
+        isIOS,
+        isAndroid,
+        isMobile: isIOS || isAndroid || /mobile/.test(userAgent)
+      };
     };
 
-    if (isInAppBrowser() && pdfBlobUrl) {
-      const confirmed = window.confirm('카카오톡이나 인앱 브라우저에서 PDF가 제대로 표시되지 않을 수 있습니다. 새 브라우저 창으로 열어 PDF를 확인하시겠습니까?');
-      if (confirmed) {
-        // 아이폰 등 모바일에서는 새 탭으로 PDF 열기
-        window.open(pdfBlobUrl, '_blank');
+    const handleInAppBrowser = (browserInfo: ReturnType<typeof getInAppBrowserInfo>) => {
+      if (!pdfBlobUrl) return;
+
+      const isInApp = browserInfo.isKakaoTalk || browserInfo.isNaverApp || 
+                     browserInfo.isInstagram || browserInfo.isFacebook || 
+                     browserInfo.isLineApp || browserInfo.isWebView;
+
+      // iOS에서는 PDF가 잘 작동하므로 알림을 표시하지 않음
+      if (!isInApp || browserInfo.isIOS) return;
+
+      let message = 'PDF가 제대로 표시되지 않을 수 있습니다.';
+      let actionText = '외부 브라우저로 열기';
+
+      if (browserInfo.isKakaoTalk) {
+        message = '카카오톡에서 PDF가 제대로 표시되지 않을 수 있습니다.';
+        actionText = 'Chrome으로 열기'; // Android only
+      } else if (browserInfo.isNaverApp) {
+        message = '네이버 앱에서 PDF가 제대로 표시되지 않을 수 있습니다.';
+      } else if (browserInfo.isInstagram || browserInfo.isFacebook) {
+        message = 'SNS 앱에서 PDF가 제대로 표시되지 않을 수 있습니다.';
       }
+
+      const confirmed = window.confirm(`${message} ${actionText}하시겠습니까?`);
+      
+      if (confirmed) {
+        // 현재 페이지 URL을 외부 브라우저로 열기
+        const currentUrl = window.location.href;
+        
+        // Android에서만 외부 브라우저 강제 열기
+        try {
+          // Chrome으로 열기 시도
+          const chromeUrl = `googlechrome://${currentUrl.replace(/^https?:\/\//, '')}`;
+          window.location.href = chromeUrl;
+          
+          setTimeout(() => {
+            // Chrome이 없을 경우 기본 브라우저로
+            window.location.href = `intent://${currentUrl.replace(/^https?:\/\//, '')}#Intent;scheme=http;package=com.android.chrome;end`;
+            
+            setTimeout(() => {
+              // 모든 방법이 실패할 경우 PDF 다운로드
+              const link = document.createElement('a');
+              link.href = pdfBlobUrl;
+              link.download = `견적서_${uuid || 'estimate'}.pdf`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }, 1000);
+          }, 1000);
+        } catch (e) {
+          // 실패 시 PDF 다운로드
+          const link = document.createElement('a');
+          link.href = pdfBlobUrl;
+          link.download = `견적서_${uuid || 'estimate'}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      }
+    };
+
+    const browserInfo = getInAppBrowserInfo();
+    setIsMobile(browserInfo.isMobile);
+    
+    // PDF가 로드된 후 인앱 브라우저 처리
+    if (pdfBlobUrl) {
+      setTimeout(() => handleInAppBrowser(browserInfo), 1000);
     }
-  }, [pdfBlobUrl, uuid]);
+  }, [pdfBlobUrl]);
 
   
   useEffect(() => {
@@ -137,12 +209,12 @@ const PDFPreview: React.FC = () => {
       }
 
       // 서버가 내려준 원본(표시용)
-      setEstimateMeta(res.data.data); // 메타데이터 저장
-console.log("res값",res)
-console.log("res.data 타입:", typeof res.data)
-console.log("res.data.data 타입:", typeof res.data.data)
+      setEstimateMeta(res.data); // 메타데이터 저장
+      console.log("res값",res)
+      console.log("res.data 타입:", typeof res.data)
+      console.log("res.data.data 타입:", typeof res.data.data)
       // 2) 미리보기 PDF 생성 (응답의 data(HTML) 기반)
-      const htmlContent = typeof res.data.data === 'string' ? res.data.data : res.data.data?.data || '';
+      const htmlContent = res.data.data || '';
       const { blobUrl,pdfBlob } = await previewPdfFromServerData(htmlContent);
       console.log('PDF blobUrl:', blobUrl);
       console.log('PDF pdfBlob:', pdfBlob);
@@ -213,9 +285,9 @@ console.log("res.data.data 타입:", typeof res.data.data)
     <PreviewContainer>
       <Header>
         <Title>견적서 미리보기</Title>
-        <DownloadButton onClick={handleDownload}>
+        {/* <DownloadButton onClick={handleDownload}>
           다운로드
-        </DownloadButton>
+        </DownloadButton> */}
       </Header>
       
       {loading && <LoadingMessage>PDF를 불러오는 중...</LoadingMessage>}

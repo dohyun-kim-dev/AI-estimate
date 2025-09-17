@@ -381,22 +381,94 @@ const isDarkMode = detectDarkMode();
     }
     root.classList.toggle('open');
     btn.classList.toggle('open'); // 버튼에도 'open' 클래스 토글
+    
     // 위젯 열릴 때: 마우스가 위젯(플로팅) 위에 있을 때만 바깥 스크롤 막기
     if (root.classList.contains('open')) {
-      // 최초엔 허용, 실제 마우스 진입 시에만 막음
-      document.body.style.overflow = '';
-      // mouseenter/mouseleave로 제어
-      const blockScroll = () => { document.body.style.overflow = 'hidden'; };
-      const allowScroll = () => { document.body.style.overflow = ''; };
+      let scrollTimeout = null;
+      let isMouseInside = false;
+      
+      // 스크롤 이벤트 방지 함수들
+      const preventScroll = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      };
+      
+      const preventKeyScroll = (e) => {
+        // 스크롤 관련 키들 막기
+        const scrollKeys = [32, 33, 34, 35, 36, 37, 38, 39, 40]; // space, pageup, pagedown, end, home, arrows
+        if (scrollKeys.includes(e.keyCode)) {
+          e.preventDefault();
+          return false;
+        }
+      };
+      
+      const disableScroll = () => { 
+        if (scrollTimeout) clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          if (!isMouseInside) return;
+          // 스크롤바는 유지하고 기능만 비활성화
+          document.addEventListener('wheel', preventScroll, { passive: false });
+          document.addEventListener('touchmove', preventScroll, { passive: false });
+          document.addEventListener('keydown', preventKeyScroll, false);
+          // 드래그 스크롤도 방지
+          document.addEventListener('mousedown', (e) => {
+            if (e.target === document.body || e.target === document.documentElement) {
+              e.preventDefault();
+            }
+          }, false);
+        }, 50); // 50ms 디바운싱
+      };
+      
+      const enableScroll = () => { 
+        if (scrollTimeout) clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          if (isMouseInside) return;
+          // 스크롤 기능 복원
+          document.removeEventListener('wheel', preventScroll);
+          document.removeEventListener('touchmove', preventScroll);
+          document.removeEventListener('keydown', preventKeyScroll);
+        }, 100); // 100ms 디바운싱 (나갈 때는 좀 더 여유있게)
+      };
+      
+      const handleMouseEnter = () => {
+        isMouseInside = true;
+        disableScroll();
+      };
+      
+      const handleMouseLeave = () => {
+        isMouseInside = false;
+        enableScroll();
+      };
+      
       // 이미 등록된 리스너 제거(중복 방지)
-      root.removeEventListener('mouseenter', blockScroll);
-      root.removeEventListener('mouseleave', allowScroll);
-      root.addEventListener('mouseenter', blockScroll);
-      root.addEventListener('mouseleave', allowScroll);
+      root.removeEventListener('mouseenter', root._disableScroll);
+      root.removeEventListener('mouseleave', root._enableScroll);
+      
+      // 함수 참조 저장 (나중에 제거하기 위해)
+      root._disableScroll = handleMouseEnter;
+      root._enableScroll = handleMouseLeave;
+      root._preventScroll = preventScroll;
+      root._preventKeyScroll = preventKeyScroll;
+      
+      root.addEventListener('mouseenter', handleMouseEnter);
+      root.addEventListener('mouseleave', handleMouseLeave);
     } else {
-      document.body.style.overflow = '';
-      root.removeEventListener('mouseenter', ()=>{});
-      root.removeEventListener('mouseleave', ()=>{});
+      // 스크롤 기능 완전 복원
+      if (root._preventScroll) {
+        document.removeEventListener('wheel', root._preventScroll);
+        document.removeEventListener('touchmove', root._preventScroll);
+        document.removeEventListener('keydown', root._preventKeyScroll);
+      }
+      // 리스너 제거
+      if (root._disableScroll) {
+        root.removeEventListener('mouseenter', root._disableScroll);
+        root.removeEventListener('mouseleave', root._enableScroll);
+        delete root._disableScroll;
+        delete root._enableScroll;
+        delete root._preventScroll;
+        delete root._preventKeyScroll;
+      }
     }
     postViewport();
   };
@@ -405,7 +477,22 @@ const isDarkMode = detectDarkMode();
       root.classList.remove('open'); 
       btn.classList.remove('open'); // 버튼에서 'open' 클래스 제거
       tooltip.style.opacity = '1'; // 말풍선 다시 표시
-      document.body.style.overflow = ''; // 바깥 페이지 스크롤 복원
+      
+      // 스크롤 기능 완전 복원
+      if (root._preventScroll) {
+        document.removeEventListener('wheel', root._preventScroll);
+        document.removeEventListener('touchmove', root._preventScroll);
+        document.removeEventListener('keydown', root._preventKeyScroll);
+      }
+      // 리스너 제거
+      if (root._disableScroll) {
+        root.removeEventListener('mouseenter', root._disableScroll);
+        root.removeEventListener('mouseleave', root._enableScroll);
+        delete root._disableScroll;
+        delete root._enableScroll;
+        delete root._preventScroll;
+        delete root._preventKeyScroll;
+      }
     }
   });
   window.addEventListener('resize', ()=>{ applyHeights(); postViewport(); });

@@ -65,8 +65,10 @@ export async function generatePDF(
     document.body.appendChild(tempDiv);
 
     const root = document.createElement('div');
-    root.style.width = '780px';
+    root.style.width = '210mm'; // A4 너비
     root.style.backgroundColor = 'white';
+    root.style.padding = '20mm 10mm'; // 상하 20mm, 좌우 10mm 패딩
+    root.style.boxSizing = 'border-box';
     tempDiv.appendChild(root);
 
   const { createRoot } = await import('react-dom/client');
@@ -85,33 +87,46 @@ export async function generatePDF(
     }
   }
   
-  reactRoot.render(<PrintableInvoice estimate={estimate} />);    await new Promise((r) => setTimeout(r, 100));
+  reactRoot.render(<PrintableInvoice estimate={estimate} />);    await new Promise((r) => setTimeout(r, 500)); // 더 충분한 렌더링 시간
 
     const html2canvas = (await import('html2canvas')).default;
     const { jsPDF } = await import('jspdf');
 
-    const canvas = await html2canvas(root, { scale: 1.5, useCORS: true, logging: false, imageTimeout: 0, backgroundColor: null });
+    // 페이지별로 분할하여 캡처
+    const pageHeight = 257; // A4 높이에서 패딩 제외 (297mm - 40mm)
+    const totalHeight = root.scrollHeight;
+    const scale = 2; // 고해상도를 위한 스케일
 
-    const imgWidth = 210;
-    const pageHeight = 297;
-    const marginBottom = 0;
-    const effectivePageHeight = pageHeight - marginBottom;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    let currentY = 0;
+    let pageNumber = 0;
 
-    const pdf = new jsPDF('p', 'mm');
-    let heightLeft = imgHeight;
-    let position = 0;
-    let pageNumber = 1;
+    while (currentY < totalHeight) {
+      if (pageNumber > 0) {
+        pdf.addPage();
+      }
 
-    const imageData = canvas.toDataURL('image/jpeg', 0.7);
-    pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);
-    heightLeft -= effectivePageHeight;
+      // 현재 페이지 영역만 캡처
+      const canvas = await html2canvas(root, {
+        scale: scale,
+        useCORS: true,
+        logging: false,
+        imageTimeout: 0,
+        backgroundColor: 'white',
+        y: currentY,
+        height: Math.min(pageHeight * (96 / 25.4), totalHeight - currentY), // mm를 px로 변환
+        scrollX: 0,
+        scrollY: currentY
+      });
 
-    while (heightLeft >= 0) {
-      position = -(effectivePageHeight * pageNumber);
-      pdf.addPage();
-      pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);
-      heightLeft -= effectivePageHeight;
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      const imgWidth = 190; // 좌우 10mm 패딩 적용 (210mm - 20mm)
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // 10mm 패딩을 적용하여 가운데 배치
+      pdf.addImage(imgData, 'JPEG', 10, 20, imgWidth, imgHeight);
+
+      currentY += pageHeight * (96 / 25.4); // 다음 페이지 시작점
       pageNumber++;
     }
 
@@ -141,8 +156,10 @@ export async function previewPdfFromServerData(html: string) {
   document.body.appendChild(tempDiv);
 
   const root = document.createElement('div');
-  root.style.width = '780px';
+  root.style.width = '210mm'; // A4 너비
   root.style.backgroundColor = 'white';
+  root.style.padding = '20mm 10mm'; // 상하 20mm, 좌우 10mm 패딩
+  root.style.boxSizing = 'border-box';
   tempDiv.appendChild(root);
 
   const { createRoot } = await import('react-dom/client');
@@ -164,40 +181,44 @@ export async function previewPdfFromServerData(html: string) {
   // PrintableInvoice가 estimate 형태를 받는다고 가정
   reactRoot.render(<PrintableInvoice estimate={estimateJson} />);
 
-  await new Promise((r) => setTimeout(r, 100));
+  await new Promise((r) => setTimeout(r, 500)); // 더 충분한 렌더링 시간
 
   const html2canvas = (await import('html2canvas')).default;
   const { jsPDF } = await import('jspdf');
 
-  const canvas = await html2canvas(root, {
-    scale: 1.5,
-    useCORS: true,
-    logging: false,
-    imageTimeout: 0,
-    backgroundColor: null,
-  });
+  // 페이지별로 분할하여 캡처
+  const pageHeight = 257; // A4 높이에서 패딩 제외 (297mm - 40mm)
+  const totalHeight = root.scrollHeight;
+  const scale = 2; // 고해상도를 위한 스케일
 
-  const imgWidth = 210;
-  const pageHeight = 297;
-  const marginTop = 15; // 위쪽 여백
-  const marginBottom = 30; // 아래쪽 여백
-  const effectivePageHeight = pageHeight - marginTop - marginBottom;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  let currentY = 0;
+  let pageNumber = 0;
 
-  const pdf = new jsPDF('p', 'mm');
-  let heightLeft = imgHeight;
-  let position = marginTop; // 위쪽 여백부터 시작
-  let pageNumber = 1;
+  while (currentY < totalHeight) {
+    if (pageNumber > 0) {
+      pdf.addPage();
+    }
 
-  const imageData = canvas.toDataURL('image/jpeg', 0.7);
-  pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);
-  heightLeft -= effectivePageHeight;
+    // 현재 페이지 영역만 캡처
+    const canvas = await html2canvas(root, {
+      scale: scale,
+      useCORS: true,
+      logging: false,
+      imageTimeout: 0,
+      backgroundColor: 'white',
+      y: currentY,
+      height: Math.min(pageHeight * (96 / 25.4), totalHeight - currentY), // mm를 px로 변환
+      scrollX: 0,
+      scrollY: currentY
+    });
 
-  while (heightLeft >= 0) {
-    position = marginTop - (effectivePageHeight * pageNumber); // 각 페이지 위쪽 여백 유지
-    pdf.addPage();
-    pdf.addImage(imageData, 'JPEG', 0, position, imgWidth, imgHeight);
-    heightLeft -= effectivePageHeight;
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      const imgWidth = 190; // 좌우 10mm 패딩 적용 (210mm - 20mm)
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // 10mm 패딩을 적용하여 가운데 배치
+      pdf.addImage(imgData, 'JPEG', 10, 20, imgWidth, imgHeight);    currentY += pageHeight * (96 / 25.4); // 다음 페이지 시작점
     pageNumber++;
   }
 

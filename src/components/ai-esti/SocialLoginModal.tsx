@@ -244,15 +244,15 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
               cellphone: ''  // 추가 정보 모달에서 입력 받을 예정
             });
 
-            // API 에러 처리
-            const { data, headers } = updateResponse as unknown as { data: any; headers: Headers };
-            if (data && data.statusCode !== 200) {
-              const errorMessage = data.error?.customMessage || data.error?.message || '회원가입 중 오류가 발생했습니다.';
+            // API 에러 처리 - updateResponse는 API 응답 데이터 + headers가 합쳐진 객체
+            const updateResponseData = updateResponse as any; // 타입 단언
+            if (updateResponseData.statusCode !== 200) {
+              const errorMessage = updateResponseData.error?.customMessage || updateResponseData.error?.message || '회원가입 중 오류가 발생했습니다.';
               throw new Error(errorMessage);
             }
 
             // 신규 유저: updateResponse 헤더에서 user_token 추출해 저장
-            const updateToken = headers?.get ? headers.get('user_token') : null;
+            const updateToken = updateResponseData?.headers?.get ? updateResponseData.headers.get('user_token') : null;
             if (updateToken) {
               setToken('user', updateToken);
               console.log('[신규유저] user_access_token 저장:', updateToken);

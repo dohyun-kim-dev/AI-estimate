@@ -48,6 +48,23 @@ export default function RootLayout() {
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();
     const targetUrl = window.location.href;
+    const currentDomain = window.location.hostname;
+
+    // 특정 도메인들에서는 알럿을 표시하지 않음
+    const exemptDomains = [
+      'aigopartners.com',
+      'heredotcorp.com',
+      'localhost',
+      '127.0.0.1'
+    ];
+    
+    const isExemptDomain = exemptDomains.some(domain => 
+      currentDomain === domain || currentDomain.endsWith('.' + domain)
+    );
+    
+    if (isExemptDomain) {
+      return;
+    }
 
     if (userAgent.match(/kakaotalk/i)) {
       if (window.confirm('카카오톡 인앱 브라우저에서는 외부 브라우저로 이동해야 합니다. 이동하시겠습니까?')) {

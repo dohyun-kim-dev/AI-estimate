@@ -219,35 +219,77 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
     }
   }, [isAuthenticated, checkAndResetIfNewDay]);
 
-  // 상담 버튼 클릭
+  // 상담 버튼 클릭 - 사용횟수 차감 없음
   const handleConsultClick = async () => {
     onConsult?.();
     if (isAuthenticated()) {
-      // 회원은 바로 API 호출
+      // 회원은 바로 API 호출 (횟수 차감 없음)
       await handleSubmit();
     } else {
-      // ✅ 수정: 비회원일 때 소셜 로그인 모달 띄움
+      // 비회원일 때 소셜 로그인 모달 띄움 (횟수 차감 없음)
       setSocialLoginPurpose('consult');
       setIsSocialLoginModalOpen(true);
     }
   };
 
-  // 소셜 로그인 모달에서 기본 버튼 클릭 → 발행자 정보 입력 모달 오픈
-  const handlePrimaryButtonClick = () => {
+  // 소셜 로그인 모달의 기본 버튼 클릭 처리
+  const handleSocialLoginPrimaryClick = () => {
     setIsSocialLoginModalOpen(false);
-    setIsInfoModalOpen(true);
+    
+    if (socialLoginPurpose === 'consult') {
+      // 상담하기인 경우: 바로 발행자 정보 입력 모달 오픈 (횟수 차감 없음)
+      setIsInfoModalOpen(true);
+      return;
+    }
+    
+    // AI 기능인 경우: 횟수 체크 후 처리
+    if (pendingAIAction) {
+      if (!hasUsedExtraCount) {
+        // 10회 추가하고 대기 중인 AI 기능 실행
+        addExtraCount();
+        decreaseCount(); // 추가된 횟수에서 1회 차감
+        onSubmit?.(pendingAIAction);
+        setPendingAIAction(null); // 대기 액션 초기화
+      } else {
+        // 정보 입력 모달 오픈
+        setIsInfoModalOpen(true);
+      }
+    }
   };
 
-  // 소셜 로그인 성공 시 바로 문의 API 호출
+  // AI 기능 전용 모달 기본 버튼 처리
+  const handleAIFeaturePrimaryClick = () => {
+    setIsSocialLoginModalOpen(false);
+    if (!hasUsedExtraCount && pendingAIAction) {
+      // 10회 추가하고 대기 중인 AI 기능 실행
+      addExtraCount();
+      decreaseCount(); // 추가된 횟수에서 1회 차감
+      onSubmit?.(pendingAIAction);
+      setPendingAIAction(null); // 대기 액션 초기화
+    } else {
+      // 정보 입력 모달 오픈
+      setIsInfoModalOpen(true);
+    }
+  };
+
+  // 소셜 로그인 성공 시 처리
   const handleSocialLoginSuccess = async () => {
     setIsSocialLoginModalOpen(false);
-    await handleSubmit(); // ✅ 소셜 로그인 성공 시 바로 문의 API 호출
+    
+    if (socialLoginPurpose === 'consult') {
+      // 상담하기인 경우: 바로 문의 API 호출 (횟수 차감 없음)
+      await handleSubmit();
+    } else if (pendingAIAction) {
+      // AI 기능인 경우: 바로 실행 (로그인했으므로 횟수 제한 없음)
+      onSubmit?.(pendingAIAction);
+      setPendingAIAction(null);
+    }
   };
 
   // AI 기능 사용 전 횟수 체크 및 차감
   const handleAIFeatureClick = (action: "AI 예산 줄이기" | "AI 맞춤 추천") => {
     if (isAuthenticated()) {
-      // 회원은 바로 실행
+      // 회원은 바로 실행 (횟수 차감 없음)
       onSubmit?.(action);
       return;
     }
@@ -260,6 +302,7 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
     } else {
       // 횟수 부족 시 - 어떤 액션인지 저장하고 모달 표시
       setPendingAIAction(action);
+      setSocialLoginPurpose(null); // AI 기능은 상담이 아님
       
       if (hasUsedExtraCount) {
         // 이미 10회 추가를 사용한 경우 - limitExceeded 모달
@@ -268,21 +311,6 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
         // 아직 10회 추가를 사용하지 않은 경우 - limitReached 모달 (10회 추가 기회)
         setIsSocialLoginModalOpen(true);
       }
-    }
-  };
-
-  // 소셜 로그인 모달의 기본 버튼 클릭 (10회 추가 또는 정보 입력)
-  const handleAIFeaturePrimaryClick = () => {
-    setIsSocialLoginModalOpen(false);
-    if (!hasUsedExtraCount && pendingAIAction) {
-      // 10회 추가하고 대기 중인 AI 기능 실행
-      addExtraCount();
-      decreaseCount(); // 추가된 횟수에서 1회 차감
-      onSubmit?.(pendingAIAction);
-      setPendingAIAction(null); // 대기 액션 초기화
-    } else {
-      // 정보 입력 모달 오픈
-      setIsInfoModalOpen(true);
     }
   };
 
@@ -419,9 +447,10 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
         onClose={() => {
           setIsSocialLoginModalOpen(false);
           setPendingAIAction(null); // 모달 닫을 때 대기 액션도 초기화
+          setSocialLoginPurpose(null); // 목적도 초기화
         }}
         purpose={hasUsedExtraCount ? 'limitExceeded' : 'limitReached'}
-        onPrimaryButtonClick={pendingAIAction ? handleAIFeaturePrimaryClick : handlePrimaryButtonClick}
+        onPrimaryButtonClick={pendingAIAction ? handleAIFeaturePrimaryClick : handleSocialLoginPrimaryClick}
         onGoogleLoginSuccess={handleSocialLoginSuccess}
         onIssuerInfoSubmit={handleSubmit}
       />

@@ -285,20 +285,44 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
   // discountRate가 undefined일 경우 0으로 처리
   const safeDiscountRate = typeof discountRate === 'number' ? discountRate : 0;
   const getDiscountedPrice = (item: EstimateItem) => {
-    if (NON_DISCOUNT_ITEMS.includes(item.name)) return parsePrice(item.price);
+    const originalPrice = parsePrice(item.price);
+    const isExcluded = NON_DISCOUNT_ITEMS.includes(item.name);
+    
+    console.log(`Item: ${item.name}, Original: ${originalPrice}, Excluded: ${isExcluded}, Rate: ${safeDiscountRate}`);
+    
+    if (isExcluded) return originalPrice;
     if (safeDiscountRate > 0) {
-      return Math.round(parsePrice(item.price) * (1 - safeDiscountRate));
+      const discounted = Math.round(originalPrice * (1 - safeDiscountRate));
+      console.log(`Discounted: ${originalPrice} -> ${discounted}`);
+      return discounted;
     }
-    return parsePrice(item.price);
+    return originalPrice;
   };
 
   const totalAmount = useMemo(() => {
     if (!items.length) {
       return price || "0";
     }
+    
+    // 1뎁스: 하위에서 이미 할인이 적용된 가격을 받으므로 그대로 합산
+    // 2뎁스, 3뎁스: 개별 항목에 할인 적용
     const currentItems = items.filter((item) => !item.is_deleted);
-    return formatPrice(currentItems.reduce((sum, item) => sum + getDiscountedPrice(item), 0));
-  }, [items, price, safeDiscountRate]);
+    const total = currentItems.reduce((sum, item) => {
+      if (depth === 1) {
+        // 1뎁스는 하위에서 이미 할인이 적용된 가격이므로 그대로 사용
+        const itemPrice = parsePrice(item.price);
+        console.log(`1뎁스 - Adding ${item.name}: ${itemPrice} (already discounted) to total: ${sum}`);
+        return sum + itemPrice;
+      } else {
+        // 2뎁스, 3뎁스는 개별 항목에 할인 적용
+        const itemPrice = getDiscountedPrice(item);
+        console.log(`${depth}뎁스 - Adding ${item.name}: ${itemPrice} (discount applied) to total: ${sum}`);
+        return sum + itemPrice;
+      }
+    }, 0);
+    console.log(`Final total (depth ${depth}): ${total}, formatted: ${formatPrice(total)}`);
+    return formatPrice(total);
+  }, [items, price, safeDiscountRate, depth]);
 
   const handleHeaderClick = () => {
     // 외부에서 제어되는 경우 onSelect만 호출, 내부 상태인 경우 토글

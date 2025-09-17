@@ -206,6 +206,23 @@ export default function AILayout() {
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();
     const targetUrl = window.location.href;
+    const currentDomain = window.location.hostname;
+
+    // 특정 도메인들에서는 알럿을 표시하지 않음
+    const exemptDomains = [
+      'aigopartners.com',
+      'heredotcorp.com',
+      'localhost',
+      '127.0.0.1'
+    ];
+    
+    const isExemptDomain = exemptDomains.some(domain => 
+      currentDomain === domain || currentDomain.endsWith('.' + domain)
+    );
+    
+    if (isExemptDomain) {
+      return;
+    }
 
     if (userAgent.match(/kakaotalk/i)) {
       if (window.confirm('카카오톡 인앱 브라우저에서는 외부 브라우저로 이동해야 합니다. 이동하시겠습니까?')) {
@@ -306,8 +323,21 @@ export default function AILayout() {
   }
 
   const handleCopy = async () => {
-    const  localChatSessionId = localStorage.getItem('chatSessionId'); // 기존에 저장된 chatSessionId 삭제
-    console.log("localChatSessionId:", localChatSessionId);
+    const currentShareUrl = getCurrentShareUrl();
+    
+    try {
+      await navigator.clipboard.writeText(currentShareUrl);
+      success('링크가 복사되었습니다.');
+      handleCloseShare();
+    } catch {
+      console.error('Failed to copy');
+      error('링크 복사에 실패했습니다.');
+    }
+  };
+
+  // 실제 복사될 전체 텍스트를 생성하는 함수
+  const getFullShareText = () => {
+    const localChatSessionId = localStorage.getItem('chatSessionId');
     let shareUrl;
     if (localChatSessionId) {
       shareUrl = `${window.location.origin}/aiclient/${companyCode}/ai/share/${localChatSessionId}`;
@@ -315,8 +345,7 @@ export default function AILayout() {
       shareUrl = window.location.href;
     }
     
-    // 추가할 문구
-     const textToCopy = `${shareUrl}
+    return `${shareUrl}
 
 
 ⏫위 링크 클릭 시 에이고가 발급한 견적서로 이동합니다
@@ -332,15 +361,15 @@ https://heredotcorp.com
 홈페이지에서도 조회할 수 있습니다
  
  `;
-    
-    try {
-      // 수정: `shareUrl` 대신 `textToCopy`를 클립보드에 복사
-      await navigator.clipboard.writeText(textToCopy);
-      success('링크가 복사되었습니다.');
-      handleCloseShare();
-    } catch {
-      console.error('Failed to copy');
-      error('링크 복사에 실패했습니다.');
+  };
+
+  // 동적으로 shareUrl을 계산하는 함수
+  const getCurrentShareUrl = () => {
+    const localChatSessionId = localStorage.getItem('chatSessionId');
+    if (localChatSessionId) {
+      return `${window.location.origin}/aiclient/${companyCode}/ai/share/${localChatSessionId}`;
+    } else {
+      return window.location.href;
     }
   };
 const handleNewChat = () => {
@@ -381,10 +410,6 @@ const handleNewChat = () => {
     }
   };
 
-  const shareUrl = chatSessionId 
-    ? `${window.location.origin}/aiclient/${companyCode}/ai/share/${chatSessionId}`
-    : window.location.href;
-  
   const isAiHome = location.pathname === `/aiclient/${companyCode}/ai`;
   const isPC = typeof window !== 'undefined' && window.innerWidth >= 1024;
   const shouldShowBackButton = !isAiHome || !isPC;
@@ -491,7 +516,7 @@ const handleNewChat = () => {
       <Modal open={shareChatModal} title="페이지 공유" onClose={handleCloseShare} width={520}>
         <div style={{ color: '#A1A1AA', fontSize: 14, marginBottom: 32 }}>공유받은 사용자는 현재 페이지의 내용을 확인할 수 있습니다.</div>
         <ShareInput>
-          <input readOnly value={shareUrl} placeholder="https://aigocorp.com/id..." />
+          <input readOnly value={getCurrentShareUrl()} placeholder="https://aigocorp.com/id..." />
           <button onClick={handleCopy}>링크복사</button>
         </ShareInput>
       </Modal>

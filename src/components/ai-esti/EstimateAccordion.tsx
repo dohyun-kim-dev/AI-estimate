@@ -402,10 +402,13 @@ useEffect(() => {
               // (실제 구조상 sub.items의 price가 이미 할인/제외 적용된 값이어야 함)
               return {
                 name: sub.sub_category_name,
-                // sub.items의 price를 모두 더함 (이미 할인/제외 적용된 값)
+                // sub.items의 각 항목에 할인을 적용한 후 합산
                 price: sub.items
                   .filter((i) => !i.is_deleted)
-                  .reduce((sum, item) => sum + toNumberLike(item.price), 0)
+                  .reduce((sum, item) => {
+                    const discountedPrice = getDiscountedPrice(item, typeof discountRate === 'number' ? discountRate : 0);
+                    return sum + discountedPrice;
+                  }, 0)
                   .toLocaleString(),
                 description: "",
                 is_deleted: false,

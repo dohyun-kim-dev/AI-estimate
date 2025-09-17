@@ -300,7 +300,15 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
 
   const handleCopy = async () => {
     try {
-       const textToCopy = `${shareUrl}
+      // shareUrl이 비어있는지 확인
+      if (!shareUrl) {
+        error('공유할 링크가 없습니다.');
+        return;
+      }
+
+      console.log('복사하려는 shareUrl:', shareUrl); // 디버깅용
+
+      const textToCopy = `${shareUrl}
 
 
 ⏫위 링크 클릭 시 에이고가 발급한 견적서로 이동합니다
@@ -316,11 +324,60 @@ https://heredotcorp.com
 홈페이지에서도 조회할 수 있습니다
  
  `;
-      await navigator.clipboard.writeText(textToCopy);
-      success('링크가 복사되었습니다.');
-      setOpenShare(false);
-    } catch {
-      error('링크 복사에 실패했습니다.');
+
+      console.log('복사하려는 텍스트:', textToCopy); // 디버깅용
+
+      // fallback 방법을 먼저 시도 (더 안정적)
+      const copyWithFallback = () => {
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          const successful = document.execCommand('copy');
+          document.body.removeChild(textArea);
+          return successful;
+        } catch (err) {
+          document.body.removeChild(textArea);
+          throw err;
+        }
+      };
+
+      // 먼저 fallback 방법 시도
+      try {
+        const fallbackSuccess = copyWithFallback();
+        if (fallbackSuccess) {
+          success('링크가 복사되었습니다.');
+          setOpenShare(false);
+          return;
+        }
+      } catch (fallbackErr) {
+        console.log('Fallback 복사 실패, Clipboard API 시도:', fallbackErr);
+      }
+
+      // fallback이 실패하면 Clipboard API 시도
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(textToCopy);
+          success('링크가 복사되었습니다.');
+          setOpenShare(false);
+          return;
+        } catch (clipboardErr) {
+          console.log('Clipboard API 실패:', clipboardErr);
+        }
+      }
+
+      throw new Error('모든 복사 방법이 실패했습니다.');
+
+    } catch (err) {
+      console.error('링크 복사 실패:', err);
+      error(`링크 복사에 실패했습니다. 수동으로 링크를 복사해주세요.`);
     }
   };
 
