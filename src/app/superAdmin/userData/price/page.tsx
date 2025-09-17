@@ -389,7 +389,10 @@ const applyExcelStyling = (ws: any, sortedColumns: any[], data?: any[]) => {
           if (ws[cellAddress] && typeof ws[cellAddress].v === 'number') {
             // 숫자 셀의 타입을 명시적으로 설정
             ws[cellAddress].t = 'n'; // number type
-            ws[cellAddress].z = '0.00'; // 숫자 포맷 (소수점 2자리)
+            // 정수인 경우와 소수인 경우를 구분하여 포맷 설정
+            const numValue = ws[cellAddress].v;
+            if (Number.isInteger(numValue)) ws[cellAddress].z = '0'; // 정수는 소수점 없이 표시
+            
           }
         }
       }
