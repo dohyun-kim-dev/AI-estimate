@@ -6,6 +6,7 @@ import LanguageSelector from '@/components/common/LanguageSelector'
 import { useAuthStore } from '@/store/authStore'
 import { useNavigate, useParams } from "react-router-dom";
 import TermsModal from '@/components/ai-esti/TermsModal'     
+import { EditProfileModal } from '@/components/ai-esti/EditProfileModal'
 
 const Container = styled.div`
   // min-height: 100vh;
@@ -97,6 +98,7 @@ export default function SettingsPage() {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false); // 👈 모달 상태 추가
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false); // 👈 프로필 수정 모달 상태 추가
   const { companyCode } = useParams();  
 
   const handleLogout = () => {
@@ -109,9 +111,13 @@ export default function SettingsPage() {
     setIsModalOpen(true); // 👈 모달 열기 함수
   };
 
+  const handleEditProfile = () => {
+    setIsEditProfileModalOpen(true); // 👈 프로필 수정 모달 열기 함수
+  };
+
   return (
     <Container>
-      <ProfileSection>
+      <ProfileSection onClick={handleEditProfile}>
        <ProfileImage>
                   <img 
                     src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} 
@@ -129,8 +135,8 @@ export default function SettingsPage() {
         <ProfileInfo>
           <Flex>
           <ProfileName>{user?.name || '사용자'}</ProfileName>
-          <div style={{width: '24px', height: '24px', display: 'flex', marginBottom: '8px'}}>
-          {/* <ChevronIcon />           */}
+          <div style={{width: '24px', height: '24px', display: 'flex', marginBottom: '2px'}}>
+          <ChevronIcon />          
           </div>
           </Flex>
 
@@ -161,6 +167,12 @@ export default function SettingsPage() {
       <TermsModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
+      />
+      
+      {/* 👈 EditProfileModal 컴포넌트 렌더링 */}
+      <EditProfileModal 
+        isOpen={isEditProfileModalOpen} 
+        onClose={() => setIsEditProfileModalOpen(false)} 
       />
     </Container>
   )

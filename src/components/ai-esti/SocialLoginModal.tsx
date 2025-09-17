@@ -1,3 +1,5 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 import { AppColors } from '@/styles/colors';
 import { AppTextStyles } from '@/styles/textStyles';
@@ -28,7 +30,7 @@ const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   display: ${(props) => (props.$isOpen ? 'flex' : 'none')};
   align-items: center;
   justify-content: center;
-  z-index: 1001;
+  z-index: 9999;
 `;
 
 const ModalContent = styled.div`
@@ -466,7 +468,8 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
     return null;
   }
 
-  return (
+  // Portal을 사용하여 body에 직접 렌더링
+  const modalContent = (
     <>
       <ModalOverlay
         $isOpen={$isOpen}
@@ -613,4 +616,11 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
       />
     </>
   );
+
+  // 브라우저 환경에서만 Portal 사용
+  if (typeof window !== 'undefined') {
+    return ReactDOM.createPortal(modalContent, document.body);
+  }
+
+  return modalContent;
 };

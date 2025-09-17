@@ -44,20 +44,27 @@ const generateUUID = () => {
 
 const InputWrapper = styled.div`
   position: fixed;
-  bottom: 200px;
+  bottom: 0;
   left: 0;
   right: 0;
   padding: 12px 16px;
   background-color: ${({ theme }) => theme.body};
   border-top: 1px solid ${({ theme }) => theme.border};
-    // padding-bottom: env(safe-area-inset-bottom);
   z-index: 1000;
   width: 100%;
+  transition: bottom 0.3s ease;
+  
   @media (min-width: 1024px) {
     padding: 16px;
     max-width: 100vw;
     left: 50%;
     transform: translateX(-50%);
+  }
+
+  /* iOS 전용 스타일 */
+  @supports (-webkit-touch-callout: none) {
+    /* iOS에서만 적용되는 스타일 */
+    -webkit-overflow-scrolling: touch;
   }
 `;
 
@@ -110,12 +117,20 @@ const AutoSizeInput = styled(TextareaAutosize)`
   padding-bottom: 0;
   line-height: 1.5;
   font-family: inherit;
+  
   &::placeholder {
     color: ${({ theme }) => theme.subtleText};
   }
   &:disabled {
     cursor: not-allowed;
     color: ${({ theme }) => theme.subtleText};
+  }
+
+  /* iOS Safari 전용 최적화 */
+  @supports (-webkit-touch-callout: none) {
+    -webkit-user-select: text;
+    -webkit-appearance: none;
+    transform: translateZ(0); /* 하드웨어 가속 활성화 */
   }
 
   /* 스크롤바 스타일링 */
@@ -247,18 +262,79 @@ const BottomInput: React.FC<BottomInputProps> = ({
   }, [isLoggedIn, checkAndResetIfNewDay]);
 
   useEffect(() => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
     const handleResize = () => {
       if (document.activeElement === inputRef.current) {
-        const visualViewport = window.visualViewport;
-        if (visualViewport) {
-          const isKeyboard = visualViewport.height < window.innerHeight;
+        if (isIOS) {
+          // iOS 전용 처리: viewport height 변화와 keyboard 상태 체크
+          const visualViewport = window.visualViewport;
+          const currentHeight = visualViewport ? visualViewport.height : window.innerHeight;
+          const standardHeight = window.innerHeight;
+          const isKeyboard = currentHeight < standardHeight * 0.75; // 75% 이하면 키보드로 판단
           setIsKeyboardVisible(isKeyboard);
+          
+          // iOS에서 키보드가 올라올 때 스크롤 방지
+          if (isKeyboard) {
+            document.body.style.position = 'fixed';
+            document.body.style.width = '100%';
+            document.body.style.top = `-${window.scrollY}px`;
+          } else {
+            const scrollY = document.body.style.top;
+            document.body.style.position = '';
+            document.body.style.width = '';
+            document.body.style.top = '';
+            if (scrollY) {
+              window.scrollTo(0, parseInt(scrollY || '0') * -1);
+            }
+          }
+        } else {
+          // 안드로이드/데스크톱 처리
+          const visualViewport = window.visualViewport;
+          if (visualViewport) {
+            const isKeyboard = visualViewport.height < window.innerHeight;
+            setIsKeyboardVisible(isKeyboard);
+          }
         }
       }
     };
 
-    window.visualViewport?.addEventListener('resize', handleResize);
-    return () => window.visualViewport?.removeEventListener('resize', handleResize);
+    const handleFocusIn = () => {
+      if (isIOS) {
+        setTimeout(handleResize, 300); // iOS 키보드 애니메이션 대기
+      }
+    };
+
+    const handleFocusOut = () => {
+      if (isIOS) {
+        setIsKeyboardVisible(false);
+        document.body.style.position = '';
+        document.body.style.width = '';
+        document.body.style.top = '';
+      }
+    };
+
+    if (isIOS) {
+      window.addEventListener('resize', handleResize);
+      inputRef.current?.addEventListener('focusin', handleFocusIn);
+      inputRef.current?.addEventListener('focusout', handleFocusOut);
+    } else {
+      window.visualViewport?.addEventListener('resize', handleResize);
+    }
+
+    return () => {
+      if (isIOS) {
+        window.removeEventListener('resize', handleResize);
+        inputRef.current?.removeEventListener('focusin', handleFocusIn);
+        inputRef.current?.removeEventListener('focusout', handleFocusOut);
+        // 정리 시 스타일 복원
+        document.body.style.position = '';
+        document.body.style.width = '';
+        document.body.style.top = '';
+      } else {
+        window.visualViewport?.removeEventListener('resize', handleResize);
+      }
+    };
   }, []);
 
   // 스트리밍 시작 시 AbortController 생성, onSubmit에 전달 필요
@@ -421,11 +497,36 @@ const BottomInput: React.FC<BottomInputProps> = ({
     }
   }, [onUsageCheck]);
 
+  // iOS 감지
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  
+  // 동적 스타일 계산
+  const getInputWrapperStyle = () => {
+    if (isIOS) {
+      // iOS에서는 키보드가 올라올 때 키보드 바로 위에 붙도록 조정
+      if (isKeyboardVisible && window.visualViewport) {
+        const keyboardHeight = window.innerHeight - window.visualViewport.height;
+        return {
+          bottom: `${keyboardHeight - 20}px` // 키보드 높이에서 약간의 여백 제거
+        };
+      }
+      return {
+        bottom: '0px'
+      };
+    } else {
+      // 안드로이드/데스크톱에서는 visualViewport 사용
+      const offset = isKeyboardVisible && window.visualViewport 
+        ? window.visualViewport.height - window.innerHeight 
+        : 0;
+      return {
+        bottom: offset === 0 ? '0px' : `${Math.abs(offset)}px`
+      };
+    }
+  };
+
   return (
     <>
-      <InputWrapper style={{ 
-        bottom: isKeyboardVisible ? window.visualViewport?.height - window.innerHeight : 0 
-      }}>
+      <InputWrapper style={getInputWrapperStyle()}>
         {uploadedFiles.length > 0 && (
           <FilePreviewContainer>
             <FileUploadSection
