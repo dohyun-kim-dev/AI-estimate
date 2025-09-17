@@ -67,7 +67,7 @@ export async function generatePDF(
     const root = document.createElement('div');
     root.style.width = '210mm'; // A4 너비
     root.style.backgroundColor = 'white';
-    root.style.padding = '20mm 10mm'; // 상하 20mm, 좌우 10mm 패딩
+    root.style.padding = '10mm 10mm'; // 상하 10mm(원래 20mm에서 줄임), 좌우 10mm 패딩
     root.style.boxSizing = 'border-box';
     tempDiv.appendChild(root);
 
@@ -93,7 +93,7 @@ export async function generatePDF(
     const { jsPDF } = await import('jspdf');
 
     // 페이지별로 분할하여 캡처
-    const pageHeight = 257; // A4 높이에서 패딩 제외 (297mm - 40mm)
+    const pageHeight = 277; // A4 높이에서 패딩 제외 (297mm - 20mm, 원래 257에서 증가)
     const totalHeight = root.scrollHeight;
     const scale = 2; // 고해상도를 위한 스케일
 
@@ -123,8 +123,8 @@ export async function generatePDF(
       const imgWidth = 190; // 좌우 10mm 패딩 적용 (210mm - 20mm)
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      // 10mm 패딩을 적용하여 가운데 배치
-      pdf.addImage(imgData, 'JPEG', 10, 20, imgWidth, imgHeight);
+      // 5mm 패딩을 적용하여 왼쪽으로 5px 이동, 위쪽 패딩도 줄임
+      pdf.addImage(imgData, 'JPEG', 5, 10, imgWidth, imgHeight);
 
       currentY += pageHeight * (96 / 25.4); // 다음 페이지 시작점
       pageNumber++;
@@ -158,7 +158,7 @@ export async function previewPdfFromServerData(html: string) {
   const root = document.createElement('div');
   root.style.width = '210mm'; // A4 너비
   root.style.backgroundColor = 'white';
-  root.style.padding = '20mm 10mm'; // 상하 20mm, 좌우 10mm 패딩
+  root.style.padding = '10mm 10mm'; // 상하 10mm(원래 20mm에서 줄임), 좌우 10mm 패딩
   root.style.boxSizing = 'border-box';
   tempDiv.appendChild(root);
 
@@ -187,7 +187,7 @@ export async function previewPdfFromServerData(html: string) {
   const { jsPDF } = await import('jspdf');
 
   // 페이지별로 분할하여 캡처
-  const pageHeight = 257; // A4 높이에서 패딩 제외 (297mm - 40mm)
+  const pageHeight = 277; // A4 높이에서 패딩 제외 (297mm - 20mm, 원래 257에서 증가)
   const totalHeight = root.scrollHeight;
   const scale = 2; // 고해상도를 위한 스케일
 
@@ -217,8 +217,8 @@ export async function previewPdfFromServerData(html: string) {
       const imgWidth = 190; // 좌우 10mm 패딩 적용 (210mm - 20mm)
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      // 10mm 패딩을 적용하여 가운데 배치
-      pdf.addImage(imgData, 'JPEG', 10, 20, imgWidth, imgHeight);    currentY += pageHeight * (96 / 25.4); // 다음 페이지 시작점
+      // 5mm 패딩을 적용하여 왼쪽으로 5px 이동, 위쪽 패딩도 줄임
+      pdf.addImage(imgData, 'JPEG', 5, 10, imgWidth, imgHeight);    currentY += pageHeight * (96 / 25.4); // 다음 페이지 시작점
     pageNumber++;
   }
 

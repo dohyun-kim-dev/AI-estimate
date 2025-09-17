@@ -13,10 +13,15 @@ const AccordionWrapper = styled.div`
   gap: 12px;
 `;
 
+const DetailsToggleIcon = styled.div`
+  margin-top: 4px;
+  margin-left: 10px;
+`;
+
 const ToggleAllButton = styled.button`
   background: none;
   border: none;
-  color: ${({ theme }) => theme.text};
+  color: ${({ theme }) => theme.subtleText};
   cursor: pointer;
   padding: 8px 12px;
   margin: 0;
@@ -24,8 +29,8 @@ const ToggleAllButton = styled.button`
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
   opacity: 0.8;
   transition: opacity 0.2s ease;
   
@@ -34,8 +39,8 @@ const ToggleAllButton = styled.button`
   }
   
   svg {
-    width: 14px;
-    height: 14px;
+    width: 24px;
+    height: 24px;
   }
 `;
 
@@ -492,13 +497,13 @@ useEffect(() => {
        <ToggleAllButton onClick={handleToggleAll}>
         {allExpanded ? (
           <>
-            <IoChevronUp />
             모두 접기
+                  <DetailsToggleIcon><IoChevronUp size={24} /></DetailsToggleIcon>
           </>
         ) : (
           <>
-            <IoChevronDown />
             모두 펼치기
+                  <DetailsToggleIcon><IoChevronDown size={24} /></DetailsToggleIcon>
           </>
         )}
       </ToggleAllButton>

@@ -159,6 +159,7 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
   const [name, setName] = useState('');   // 로그인 사용자 프리필 용
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+const [isMobile, setIsMobile] = useState(false);
 
   const { success, error } = useToast();
   const { isAuthenticated } = useAuthStore();
@@ -199,6 +200,18 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
     const url = `${location.pathname}${location.search}${location.hash}`.toLowerCase();
     return url.includes('share');
   }, [location]);
+
+
+useEffect(() => {
+  const handleResize = () => {
+    setIsMobile(window.innerWidth < 1024);
+  };
+  
+  handleResize(); // 컴포넌트 마운트 시 초기 실행
+  window.addEventListener('resize', handleResize);
+  
+  return () => window.removeEventListener('resize', handleResize);
+}, []);
 
   // 로그인 시 로컬스토리지에서 사용자 정보 프리필
   useEffect(() => {
@@ -388,7 +401,15 @@ const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
               <Title>여기닷에게 상담하기</Title>
             </Flex>
             <Description>
-              해당 견적이 마음에 든다면, <br/>공급사와 최종 견적 상담을 <br/>진행해 보세요
+              {isMobile ? (
+                <>
+                  해당 견적이 마음에 든다면, <br/>공급사와 최종 견적 상담을 진행해 보세요
+                </>
+              ) : (
+                <>
+                  해당 견적이 마음에 든다면, <br/>공급사와 최종 견적 상담을 <br/>진행해 보세요
+                </>
+              )}
             </Description>
           </TextContent>
         </LeftContent>

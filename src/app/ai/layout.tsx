@@ -122,7 +122,7 @@ const ProfileIconWrapper = styled.div`
 
 const Main = styled.main` 
   width: 100vw;
-  padding: 100px 0 80px;
+  padding: 60px 0 80px;
   min-height: auto;
   
 `;
@@ -323,10 +323,10 @@ export default function AILayout() {
   }
 
   const handleCopy = async () => {
-    const currentShareUrl = getCurrentShareUrl();
+    const fullShareText = getFullShareText();
     
     try {
-      await navigator.clipboard.writeText(currentShareUrl);
+      await navigator.clipboard.writeText(fullShareText);
       success('링크가 복사되었습니다.');
       handleCloseShare();
     } catch {
