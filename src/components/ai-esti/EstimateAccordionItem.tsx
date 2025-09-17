@@ -288,12 +288,12 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
     const originalPrice = parsePrice(item.price);
     const isExcluded = NON_DISCOUNT_ITEMS.includes(item.name);
     
-    console.log(`Item: ${item.name}, Original: ${originalPrice}, Excluded: ${isExcluded}, Rate: ${safeDiscountRate}`);
+    // console.log(`Item: ${item.name}, Original: ${originalPrice}, Excluded: ${isExcluded}, Rate: ${safeDiscountRate}`);
     
     if (isExcluded) return originalPrice;
     if (safeDiscountRate > 0) {
       const discounted = Math.round(originalPrice * (1 - safeDiscountRate));
-      console.log(`Discounted: ${originalPrice} -> ${discounted}`);
+      // console.log(`Discounted: ${originalPrice} -> ${discounted}`);
       return discounted;
     }
     return originalPrice;
@@ -311,16 +311,16 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
       if (depth === 1) {
         // 1뎁스는 하위에서 이미 할인이 적용된 가격이므로 그대로 사용
         const itemPrice = parsePrice(item.price);
-        console.log(`1뎁스 - Adding ${item.name}: ${itemPrice} (already discounted) to total: ${sum}`);
+        // console.log(`1뎁스 - Adding ${item.name}: ${itemPrice} (already discounted) to total: ${sum}`);
         return sum + itemPrice;
       } else {
         // 2뎁스, 3뎁스는 개별 항목에 할인 적용
         const itemPrice = getDiscountedPrice(item);
-        console.log(`${depth}뎁스 - Adding ${item.name}: ${itemPrice} (discount applied) to total: ${sum}`);
+        // console.log(`${depth}뎁스 - Adding ${item.name}: ${itemPrice} (discount applied) to total: ${sum}`);
         return sum + itemPrice;
       }
     }, 0);
-    console.log(`Final total (depth ${depth}): ${total}, formatted: ${formatPrice(total)}`);
+    // console.log(`Final total (depth ${depth}): ${total}, formatted: ${formatPrice(total)}`);
     return formatPrice(total);
   }, [items, price, safeDiscountRate, depth]);
 

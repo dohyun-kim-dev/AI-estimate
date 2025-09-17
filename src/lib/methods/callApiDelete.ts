@@ -6,11 +6,13 @@ export async function callApiDelete<T = unknown>({
   url,
   isCallPageLoader = false,
   headers = {},
+  loadingMessage,
 }: {
   title: string;
   url: string;
   isCallPageLoader?: boolean;
   headers?: Record<string, string>;
+  loadingMessage?: string;
 }): Promise<{ data: any, headers: Headers }> {
   let fullUrl = url;
 
@@ -20,7 +22,7 @@ export async function callApiDelete<T = unknown>({
   }
 
   devLog(`📱 [${title}]`, fullUrl);
-  if (isCallPageLoader) pageLoaderController.open();
+  if (isCallPageLoader) pageLoaderController.open(loadingMessage);
 
   let returnValue = '';
 

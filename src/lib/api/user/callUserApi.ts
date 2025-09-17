@@ -15,12 +15,14 @@ export async function callUserApi<T>({
   method = 'POST',
   body,
   isCallPageLoader = false,
+  loadingMessage,
 }: {
   title: string;
   url: string;
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   body?: Record<string, unknown> | FormData; 
   isCallPageLoader?: boolean;
+  loadingMessage?: string;
 }): Promise<ApiResponse<T>> {
   try {
     const user = useAuthStore.getState().user;
@@ -152,6 +154,7 @@ export async function callUserApi<T>({
             url,
             body: body as Record<string, unknown>,
             isCallPageLoader,
+            loadingMessage,
             headers, 
           });
         }
@@ -185,6 +188,7 @@ export async function callUserApi<T>({
             url,
             body: body as Record<string, unknown>,
             isCallPageLoader,
+            loadingMessage,
             headers, 
           });
         }
@@ -193,6 +197,7 @@ export async function callUserApi<T>({
           title,
           url,
           isCallPageLoader,
+          loadingMessage,
           headers, 
         });
       } else {
@@ -203,6 +208,7 @@ export async function callUserApi<T>({
           url,
           body: body as Record<string, unknown> | FormData,
           isCallPageLoader,
+          loadingMessage,
           headers,
           isFormData, // isFormData 플래그 전달
         });

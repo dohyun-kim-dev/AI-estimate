@@ -7,12 +7,14 @@ export async function callApiPatch<T = unknown>({
   body = {},
   isCallPageLoader = false,
   headers = {},
+  loadingMessage,
 }: {
   title: string;
   url: string;
   body?: Record<string, unknown>;
   isCallPageLoader?: boolean;
   headers?: Record<string, string>;
+  loadingMessage?: string;
 }): Promise<{ data: any, headers: Headers }> {
   let fullUrl = url;
 
@@ -22,7 +24,7 @@ export async function callApiPatch<T = unknown>({
   }
 
   devLog(`📱 [${title}]`, fullUrl, body);
-  if (isCallPageLoader) pageLoaderController.open();
+  if (isCallPageLoader) pageLoaderController.open(loadingMessage);
 
   let returnValue = '';
   let response: Response | null = null;

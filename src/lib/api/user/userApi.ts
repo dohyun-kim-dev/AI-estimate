@@ -280,7 +280,7 @@ console.log("uploadEstimatePdf payload:", payload);
     url: getApiUrl('/users/company/estimate/upload'),
     method: 'POST',
     body: payload, // callUserApi가 JSON.stringify + Content-Type 자동 셋업
-    isCallPageLoader: true,
+    isCallPageLoader: false,
   });
 }
 

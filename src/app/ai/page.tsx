@@ -1111,9 +1111,16 @@ useEffect(() => {
 
   useEffect(() => {
     if (endOfMessagesRef.current && messages.length >= 2) {
-      endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
+      // 마지막 메시지가 견적서인지 확인
+      const lastMessage = messages[messages.length - 1];
+      const isLastMessageEstimate = lastMessage && isEstimateMessage(lastMessage.content);
+      
+      // 견적서가 아닌 메시지의 변경에만 스크롤 적용
+      if (!isLastMessageEstimate) {
+        endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
     }
-  }, [messages]); // messages 배열 전체를 의존성으로 변경하여 스트리밍 중 내용 변화도 감지
+  }, [messages]); // messages 배열 전체를 의존성으로 변경하여 스트리밍 중 내용 변화도 감지 (견적서 제외)
 
   const isEstimateMessage = (content: string) => {
     // console.log('content', content);

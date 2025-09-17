@@ -7,6 +7,7 @@ interface CallApiPutParams {
   body?: Record<string, unknown>;
   isCallPageLoader?: boolean;
   headers?: Record<string, string>;
+  loadingMessage?: string;
 }
 
 export async function callApiPut<T = unknown>({
@@ -15,6 +16,7 @@ export async function callApiPut<T = unknown>({
   body = {},
   isCallPageLoader = false,
   headers = {},
+  loadingMessage,
 }: CallApiPutParams): Promise<{ data: any, headers: Headers }> {
   let fullUrl = url;
 
@@ -24,7 +26,7 @@ export async function callApiPut<T = unknown>({
   }
 
   devLog(`� [${title}]`, fullUrl, body);
-  if (isCallPageLoader) pageLoaderController.open();
+  if (isCallPageLoader) pageLoaderController.open(loadingMessage);
 
   let returnValue = '';
 

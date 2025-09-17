@@ -101,7 +101,37 @@ function findMessageIdForEstimate(estimateId?: string | null) {
     // 배열을 순회하며 estimateId가 일치하는 메시지 객체를 찾습니다.
     const hit = messages.find((it: ChatMessage) => {
       console.log("Checking message:", it?.messageId, "estimateId:", it?.estimateId);
-      return String(it?.estimateId) === String(estimateId);
+      
+      // 1. 먼저 기존 방식으로 estimateId 필드 확인
+      if (it?.estimateId && String(it.estimateId) === String(estimateId)) {
+        return true;
+      }
+      
+      // 2. content에서 JSON 문자열의 uuid 확인
+      if (it?.content && typeof it.content === 'string') {
+        try {
+          // <script> 태그에서 JSON 추출
+          const scriptMatch = it.content.match(/<script[^>]*id="invoiceData"[^>]*>([\s\S]*?)<\/script>/);
+          if (scriptMatch && scriptMatch[1]) {
+            const jsonData = JSON.parse(scriptMatch[1]);
+            if (jsonData.uuid && String(jsonData.uuid) === String(estimateId)) {
+              console.log("Found matching uuid in content:", jsonData.uuid);
+              return true;
+            }
+          }
+          
+          // 직접 JSON 파싱 시도 (스크립트 태그 없는 경우)
+          const jsonMatch = it.content.match(/"uuid"\s*:\s*"([^"]+)"/);
+          if (jsonMatch && jsonMatch[1] && String(jsonMatch[1]) === String(estimateId)) {
+            console.log("Found matching uuid in content (regex):", jsonMatch[1]);
+            return true;
+          }
+        } catch (e) {
+          // JSON 파싱 실패는 무시하고 계속 진행
+        }
+      }
+      
+      return false;
     });
     
     console.log("Found message with estimateId:", hit?.messageId);

@@ -7,6 +7,7 @@ interface CallApiPostParams {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   body?: Record<string, unknown> | FormData;
   isCallPageLoader?: boolean;
+  loadingMessage?: string; // 추가: 로딩 메시지 커스터마이징
   headers?: Record<string, string>;
   isFormData?: boolean;
   accessToken?: string; // 추가
@@ -18,6 +19,7 @@ export async function callApiPost<T = unknown>({
   method = 'POST',
   body = {},
   isCallPageLoader = false,
+  loadingMessage = 'Loading...',
   headers = {},
   isFormData = false,
   accessToken, // 추가
@@ -32,7 +34,7 @@ export async function callApiPost<T = unknown>({
   }
 
   devLog(`📱 [${title}]`, fullUrl, body);
-  if (isCallPageLoader) pageLoaderController.open();
+  if (isCallPageLoader) pageLoaderController.open(loadingMessage);
 
   let returnValue = '';
 
