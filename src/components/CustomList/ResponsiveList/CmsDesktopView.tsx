@@ -33,6 +33,9 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   isShowExcelTemplate?: boolean;
   excelUploadBtnCallBack?: () => void;
   excelTemplateBtnCallBack?: () => void;
+  deleteBtnCallBack?: () => void;
+  // 중간 영역 커스텀 컨텐츠 prop 추가
+  renderMiddleContent?: () => React.ReactNode;
 }
 
 export default function CmsDesktopView<T extends BaseRecord>({
@@ -54,6 +57,8 @@ export default function CmsDesktopView<T extends BaseRecord>({
   isShowExcelTemplate,
   excelUploadBtnCallBack,
   excelTemplateBtnCallBack,
+  deleteBtnCallBack,
+  renderMiddleContent,
 }: CmsDesktopViewProps<T>) {
   const listRef = useRef<{ refetch: () => void } | null>(null);
 
@@ -88,6 +93,8 @@ export default function CmsDesktopView<T extends BaseRecord>({
       isShowExcelTemplate={isShowExcelTemplate}
       excelUploadBtnCallBack={excelUploadBtnCallBack}
       excelTemplateBtnCallBack={excelTemplateBtnCallBack}
+      deleteBtnCallBack={deleteBtnCallBack}
+      renderMiddleContent={renderMiddleContent}
     />
   );
 }

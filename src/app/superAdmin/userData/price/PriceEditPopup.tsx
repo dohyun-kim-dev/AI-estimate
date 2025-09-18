@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import CmsPopup from '@/components/CmsPopup';
 import Modal from '@/components/common/Modal';
-import { TextField } from '@/components/TextField';
+import TextField from '@/components/common/TextField';
 import { AppColors } from '@/styles/colors';
 import { useToast } from '@/components/common/ToastProvider';
 import { deleteUnitPrice } from '@/lib/api/admin/adminApi';
@@ -21,19 +21,6 @@ const FormRow = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
-`;
-
-const FieldLabel = styled.label<{ $required?: boolean }>`
-  font-size: 14px;
-  font-weight: 500;
-  color: ${AppColors.onSurface};
-  
-  ${({ $required }) => $required && `
-    &::after {
-      content: ' *';
-      color: ${AppColors.error};
-    }
-  `}
 `;
 
 const PopupFooter = styled.div`
@@ -70,7 +57,7 @@ const FooterButton = styled.button`
 `;
 
 const DeleteButton = styled(FooterButton)`
-  background-color: #202055;
+  background-color: #393C53;
   color: #ffffff;
   
   &:hover:not(:disabled) {
@@ -81,14 +68,14 @@ const DeleteButton = styled(FooterButton)`
 const CancelButton = styled(FooterButton)`
   background-color: #ffffff;
   color: ${AppColors.onSurface};
-  border: 1px solid ${AppColors.border};
+  border: 1px solid #393C53;
   &:hover:not(:disabled) {
     background-color: #f5f5f5;
   }
 `;
 
 const SaveButton = styled(FooterButton)`
-  background-color: #202055;
+  background-color: #393C53;
   color: #ffffff;
   
   &:hover:not(:disabled) {
@@ -96,46 +83,16 @@ const SaveButton = styled(FooterButton)`
   }
 `;
 
-const SelectField = styled.select<{ $hasError?: boolean }>`
-  width: 100%;
-  height: 48px;
-  padding: 12px 16px;
-  border: 1px solid ${({ $hasError }) => $hasError ? AppColors.error : AppColors.border};
-  border-radius: 6px;
-  font-size: 14px;
-  background-color: #ffffff;
-  color: ${AppColors.onSurface};
-  
-  &:focus {
-    outline: none;
-    border-color: ${AppColors.primary};
-  }
-  
-  &:disabled {
-    background-color: ${AppColors.disabled};
-    color: ${AppColors.onSurfaceVariant};
-    cursor: not-allowed;
-  }
-`;
-
-const CheckboxField = styled.input`
-  width: 20px;
-  height: 20px;
-  margin-right: 8px;
-`;
-
-const CheckboxLabel = styled.label`
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  font-size: 14px;
-  color: ${AppColors.onSurface};
-`;
-
 const SwitchContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
+  height: 56px;
+  padding: 0 14px;
+  border: 1px solid ${AppColors.border};
+  border-radius: 4px;
+  background-color: #ffffff;
 `;
 
 const SwitchButton = styled.div<{ $isOn: boolean }>`
@@ -161,38 +118,27 @@ const SwitchButton = styled.div<{ $isOn: boolean }>`
   }
 `;
 
+const SwitchFieldContainer = styled.div`
+  position: relative;
+  width: 100%;
+`;
+
+const SwitchFloatingLabel = styled.label`
+  position: absolute;
+  top: -10px;
+  left: 12px;
+  margin-top: 3px;
+  padding: 0 4px;
+  font-size: 12px;
+  color: #666666;
+  background: #ffffff;
+  z-index: 1;
+`;
+
 const SwitchLabel = styled.span<{ $isOn: boolean }>`
   font-size: 14px;
   color: ${({ $isOn }) => $isOn ? AppColors.primary : AppColors.onSurfaceVariant};
   font-weight: ${({ $isOn }) => $isOn ? 'bold' : 'normal'};
-`;
-
-const NumberInput = styled.input<{ $hasError?: boolean }>`
-  width: 100%;
-  height: 48px;
-  padding: 12px 16px;
-  border: 1px solid ${({ $hasError }) => $hasError ? AppColors.error : AppColors.border};
-  border-radius: 6px;
-  font-size: 14px;
-  background-color: #ffffff;
-  color: ${AppColors.onSurface};
-  
-  &:focus {
-    outline: none;
-    border-color: ${AppColors.primary};
-  }
-  
-  &:disabled {
-    background-color: ${AppColors.disabled};
-    color: ${AppColors.onSurfaceVariant};
-    cursor: not-allowed;
-  }
-`;
-
-const ErrorMessage = styled.span`
-  color: ${AppColors.error};
-  font-size: 12px;
-  margin-top: 4px;
 `;
 
 // 삭제 확인 모달 스타일
@@ -219,7 +165,7 @@ const DeleteModalButtons = styled.div`
 const DeleteModalButton = styled.button<{ $isDelete?: boolean }>`
   width: 100%;
   padding: 12px 24px;
-  border-radius: 4px;
+  border-radius: 2px;
   font-weight: 500;
   font-size: 14px;
   cursor: pointer;
@@ -496,12 +442,13 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
         )}
       </LeftButtons>
       <RightButtons>
-        <CancelButton onClick={onClose} disabled={isLoading}>
-          취소
-        </CancelButton>
+
         <SaveButton onClick={handleSave} disabled={isLoading}>
           {isLoading ? '저장 중...' : '저장'}
         </SaveButton>
+        <CancelButton onClick={onClose} disabled={isLoading}>
+          닫기
+        </CancelButton>
       </RightButtons>
     </PopupFooter>
   );
@@ -515,27 +462,39 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
     switch (type) {
       case 'boolean':
         return (
-          <SwitchContainer>
-            <SwitchButton
-              $isOn={Boolean(value)}
-              onClick={() => handleFieldChange(name, !Boolean(value), type)}
-            />
-            <SwitchLabel $isOn={Boolean(value)}>
-              {Boolean(value) ? '예' : '아니오'}
-            </SwitchLabel>
-          </SwitchContainer>
+          <SwitchFieldContainer>
+            <SwitchFloatingLabel>{name}</SwitchFloatingLabel>
+            <SwitchContainer style={{ borderColor: hasError ? AppColors.error : AppColors.border }}>
+              <SwitchButton
+                $isOn={Boolean(value)}
+                onClick={() => handleFieldChange(name, !Boolean(value), type)}
+              />
+              <SwitchLabel $isOn={Boolean(value)}>
+                {Boolean(value) ? '예' : '아니오'}
+              </SwitchLabel>
+              {hasError && (
+                <span style={{ color: AppColors.error, fontSize: '12px', marginLeft: 'auto' }}>
+                  {errors[name]}
+                </span>
+              )}
+            </SwitchContainer>
+          </SwitchFieldContainer>
         );
         
       case 'number':
         return (
-          <NumberInput
+          <TextField
+            id={`field-${name}`}
+            label={name}
             type="text"
             value={value === '' ? '' : String(value)}
             onChange={(e) => handleFieldChange(name, e.target.value, type)}
             placeholder={`${name}을(를) 입력하세요 (숫자만)`}
-            $hasError={hasError}
+            $inputBackgroundColor="#ffffff"
+            $borderColor={hasError ? AppColors.error : AppColors.border}
             inputMode="decimal"
             pattern="[0-9]*"
+            errorMessage={errors[name]}
           />
         );
         
@@ -543,25 +502,31 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
         if (name === '설명' || name === '메모' || name.includes('description')) {
           return (
             <TextField
+              id={`field-${name}`}
+              label={name}
               value={String(value)}
               onChange={(e) => handleFieldChange(name, e.target.value, type)}
               placeholder={`${name}을(를) 입력하세요`}
               multiline
-              minLines={3}
-              maxLines={6}
+              minLines={6}
+              maxLines={10}
               $inputBackgroundColor="#ffffff"
               $borderColor={hasError ? AppColors.error : AppColors.border}
+              errorMessage={errors[name]}
             />
           );
         } else {
           return (
             <TextField
+              id={`field-${name}`}
+              label={name}
               value={String(value)}
               onChange={(e) => handleFieldChange(name, e.target.value, type)}
               placeholder={name === 'id' ? 'ID (자동생성)' : `${name}을(를) 입력하세요`}
               $inputBackgroundColor={name === 'id' ? '#f5f5f5' : '#ffffff'}
               $borderColor={hasError ? AppColors.error : AppColors.border}
               readOnly={name === 'id'} // id 필드는 읽기 전용
+              errorMessage={errors[name]}
             />
           );
         }
@@ -581,20 +546,7 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
         <FormContainer>
           {sortedColumns.map((column) => (
             <FormRow key={column.name}>
-              <FieldLabel $required={column.required}>
-                {column.name}
-                {column.type !== 'string' && (
-                  <span style={{ color: AppColors.onSurfaceVariant, fontSize: '12px', marginLeft: '8px' }}>
-                    ({column.type === 'number' ? '숫자' : 
-                      column.type === 'boolean' ? '참/거짓' : 
-                      column.type})
-                  </span>
-                )}
-              </FieldLabel>
               {renderField(column)}
-              {errors[column.name] && (
-                <ErrorMessage>{errors[column.name]}</ErrorMessage>
-              )}
             </FormRow>
           ))}
         </FormContainer>

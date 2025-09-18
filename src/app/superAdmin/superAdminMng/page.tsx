@@ -1,5 +1,7 @@
 'use client';
 import React, { useCallback, useMemo, useRef, useState } from 'react'; // useRef 추가
+import { useThemeStore } from '@store/themeStore';
+import { ThemeMode } from '@/styles/theme_colors';
 
 import GenericListUI, {
   FetchParams,
@@ -19,6 +21,20 @@ import { devLog } from '@/lib/utils/devLogger';
 import PasswordPopup from './PasswordPopup';
 import CmsResponsiveContainer from '@components/CustomList/ResponsiveList/CmsResponsiveContainer';
 import AdminFormPopup from './AdminFormPopup';
+
+
+const PrimaryButton = styled(ActionButton)<{ $themeMode: ThemeMode }>`
+  width: 110px;
+  height: 40px;
+  background: ${({ $themeMode }) =>
+    $themeMode === 'light'
+      ? THEME_COLORS.light.primary
+      : THEME_COLORS.dark.buttonText};
+  color: ${({ $themeMode }) =>
+    $themeMode === 'light' ? '#f8f8f8' : THEME_COLORS.dark.primary};
+  border: none;
+`;
+
 
 // API 응답 타입 정의
 interface ApiResponse<T> {
@@ -422,12 +438,19 @@ const AdminMngPage: React.FC = () => {
     };
   }}
   onRowClick={handleRowClick}
-  onAdd={handleHeaderButtonClick} // "추가" 버튼 클릭시 동작
+  // onAdd={handleHeaderButtonClick} // "추가" 버튼 클릭시 동작
   addButtonLabel='관리자 등록'
   themeMode="light"
   compactFieldCount={3} // 모바일 compact 모드에서 보여줄 필드 수
   defaultViewMode="detail" // 모바일 기본 보기 모드
   enableDateFilter={false}
+  renderMiddleContent={() => (
+    <div style={{ flex: 1, textAlign: 'end', fontWeight: 'bold' }}>
+    <PrimaryButton $themeMode="light" onClick={handleHeaderButtonClick}>
+      관리자 등록
+    </PrimaryButton>
+    </div>
+  )}
 />
 
 <AdminFormPopup

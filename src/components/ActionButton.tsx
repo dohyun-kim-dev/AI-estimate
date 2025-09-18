@@ -14,9 +14,9 @@ const ActionButton = styled.button<{ $themeMode: ThemeMode }>`
   white-space: nowrap;
   transition: background-color 0.2s, border-color 0.2s;
 
-  &:hover:not(:disabled) {
-    background-color: ${({ $themeMode }) => ($themeMode === "light" ? "#f0f0f0" : "#424451")};
-  }
+  // &:hover:not(:disabled) {
+  //   background-color: ${({ $themeMode }) => ($themeMode === "light" ? "#f0f0f0" : "#424451")};
+  // }
 
   &:disabled {
     opacity: 0.6;

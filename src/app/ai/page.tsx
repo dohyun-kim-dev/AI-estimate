@@ -444,6 +444,7 @@ const parseMessageContent = (content: string) => {
 export const AiMessageContent: React.FC<{ content: string; chatSessionId?: string; estimateDataForConsult?: ProjectEstimate }> = ({ content, chatSessionId, estimateDataForConsult }) => {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
+  const [loadingStep, setLoadingStep] = useState(0); // 0: 생각 중, 1: 깊게 생각 중, 2: 더 좋은 답변 고민 중
   const estimateData = useMemo(() => estimateDataForConsult || extractEstimateData(content), [content, estimateDataForConsult]);
   const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash', selectedPromptId: 'default' });
   const estimateId = estimateData?.uuid;
@@ -535,6 +536,20 @@ const userId = getUserId() || '';
   const [projectPeriod, setProjectPeriod] = useState(basePeriod);
   const [discountedPrice, setDiscountedPrice] = useState(basePrice);
 
+  // 로딩 텍스트 가져오기 함수 (메모이제이션)
+  const getLoadingText = useCallback(() => {
+    switch (loadingStep) {
+      case 0:
+        return '생각 중...';
+      case 1:
+        return '깊게 생각 중...';
+      case 2:
+        return '더 좋은 답변 고민 중...';
+      default:
+        return '생각 중...';
+    }
+  }, [loadingStep]);
+
   useEffect(() => {
     if (basePeriod > 0) {
       setProjectPeriod(basePeriod);
@@ -621,13 +636,38 @@ const userId = getUserId() || '';
   // <script id="invoiceData"> 태그를 찾아서 텍스트와 분리
   const scriptMatch = content.match(/<script[^>]*id="invoiceData"[^>]*>[\s\S]*?<\/script>/);
   let textContent = content;
+  let hasIncompleteJson = false;
+  
   if (scriptMatch) {
     textContent = content.replace(scriptMatch[0], '').replace(/\\n/g, '<br/>').trim();
   } else {
-    textContent = content.replace(/\\n/g, '<br/>').trim();
+    // script 태그가 없지만 JSON 구조가 시작되었는지 확인
+    const jsonStartPattern = /<script[^>]*id="invoiceData"[^>]*>/;
+    if (jsonStartPattern.test(content) && !content.includes('</script>')) {
+      hasIncompleteJson = true;
+      // 불완전한 JSON 부분을 제거하고 텍스트만 추출
+      textContent = content.replace(/<script[^>]*id="invoiceData"[^>]*>[\s\S]*$/, '').replace(/\\n/g, '<br/>').trim();
+    } else {
+      textContent = content.replace(/\\n/g, '<br/>').trim();
+    }
   }
   
   const hasEstimate = estimateData && estimateData.categories;
+
+  // 불완전한 JSON이 있을 때 로딩 단계 타이머 설정
+  useEffect(() => {
+    if (hasIncompleteJson) {
+      const timer1 = setTimeout(() => setLoadingStep(1), 10000); // 10초 후
+      const timer2 = setTimeout(() => setLoadingStep(2), 20000); // 20초 후
+      
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
+    } else {
+      setLoadingStep(0); // 완료되면 초기화
+    }
+  }, [hasIncompleteJson]);
   
   return (
     <div>
@@ -635,12 +675,19 @@ const userId = getUserId() || '';
       {textContent && (
         <StyledDiv 
           style={{ 
-            marginBottom: hasEstimate ? '24px' : '0',
+            marginBottom: hasEstimate || hasIncompleteJson ? '24px' : '0',
             fontSize: '18px',
             lineHeight: '1.6'
           }}
           dangerouslySetInnerHTML={{ __html: textContent }} 
         />
+      )}
+
+      {/* 불완전한 JSON이 있는 경우 로딩 텍스트 표시 */}
+      {hasIncompleteJson && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '16px' }}>
+          <GradientText>{getLoadingText()}</GradientText>
+        </div>
       )}
 
       {/* 견적서가 있는 경우 표시 */}
@@ -764,7 +811,22 @@ export default function AiChatPage() {
   const { isDarkMode } = useThemeStore(); // 테마 상태 가져오기
 
   const [isFirebaseChecking, setIsFirebaseChecking] = useState(true);
+  const [globalLoadingStep, setGlobalLoadingStep] = useState(0); // 글로벌 로딩 단계
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
+  
+  // 글로벌 로딩 텍스트 가져오기 함수
+  const getGlobalLoadingText = () => {
+    switch (globalLoadingStep) {
+      case 0:
+        return '생각 중...';
+      case 1:
+        return '깊게 생각 중...';
+      case 2:
+        return '더 좋은 답변 고민 중...';
+      default:
+        return '생각 중...';
+    }
+  };
   
   // 스크롤 버튼 관련 상태
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -797,6 +859,45 @@ export default function AiChatPage() {
     // 정지 버튼 시 파일 미리보기 사라지게 하기
     uploadedFiles.forEach(file => removeFile(file.fileUri));
   };
+
+  // 로딩 컴포넌트 메모이제이션
+  const LoadingComponent = useMemo(() => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <ProfileSpinner src="/ai-estimate/pretty.png" />
+      <GradientText>{getGlobalLoadingText()}</GradientText>
+    </div>
+  ), [getGlobalLoadingText]);
+
+  // 로딩 상태 감지 및 타이머 설정 (최적화)
+  const hasLoadingMessage = useMemo(() => messages.some(m => m.isLoading), [messages]);
+  const timerRef = useRef<{ timer1?: NodeJS.Timeout; timer2?: NodeJS.Timeout }>({});
+  
+  useEffect(() => {
+    if (hasLoadingMessage) {
+      // 이미 타이머가 설정되어 있다면 중복 설정 방지
+      if (!timerRef.current.timer1) {
+        setGlobalLoadingStep(0); // 초기화
+        timerRef.current.timer1 = setTimeout(() => setGlobalLoadingStep(1), 10000); // 10초 후
+        timerRef.current.timer2 = setTimeout(() => setGlobalLoadingStep(2), 20000); // 20초 후
+      }
+    } else {
+      // 로딩이 끝나면 타이머 정리 및 초기화
+      if (timerRef.current.timer1) {
+        clearTimeout(timerRef.current.timer1);
+        clearTimeout(timerRef.current.timer2);
+        timerRef.current = {};
+      }
+      setGlobalLoadingStep(0);
+    }
+    
+    return () => {
+      // 컴포넌트 언마운트 시 타이머 정리
+      if (timerRef.current.timer1) {
+        clearTimeout(timerRef.current.timer1);
+        clearTimeout(timerRef.current.timer2);
+      }
+    };
+  }, [hasLoadingMessage]); // messages 대신 hasLoadingMessage만 의존성으로 사용
 
   // 인풋 복원용 state
   const [restoreInput, setRestoreInput] = useState<string | null>(null);
@@ -1191,18 +1292,32 @@ useEffect(() => {
     return () => unsubscribe();
   }, []);
 
+  // 스크롤을 위한 별도 ref
+  const prevMessagesLengthRef = useRef(messages.length);
+  const prevLastMessageContentRef = useRef('');
+  
   useEffect(() => {
-    if (endOfMessagesRef.current && messages.length >= 2) {
-      // 마지막 메시지가 견적서인지 확인
-      const lastMessage = messages[messages.length - 1];
-      const isLastMessageEstimate = lastMessage && isEstimateMessage(lastMessage.content);
-      
-      // 견적서가 아닌 메시지의 변경에만 스크롤 적용
-      if (!isLastMessageEstimate) {
-        endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
-      }
+    const lastMessage = messages[messages.length - 1];
+    const isLastMessageEstimate = lastMessage && isEstimateMessage(lastMessage.content);
+    const lastMessageContent = lastMessage?.content || '';
+    
+    // 스크롤 조건: 
+    // 1. 새 메시지가 추가된 경우 (길이 변경)
+    // 2. 마지막 메시지 내용이 변경된 경우 (스트리밍)
+    // 단, 견적서 메시지는 제외
+    const shouldScroll = endOfMessagesRef.current && 
+      !isLastMessageEstimate && 
+      (messages.length !== prevMessagesLengthRef.current || 
+       lastMessageContent !== prevLastMessageContentRef.current);
+    
+    if (shouldScroll) {
+      endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]); // messages 배열 전체를 의존성으로 변경하여 스트리밍 중 내용 변화도 감지 (견적서 제외)
+    
+    // 이전 값들 업데이트
+    prevMessagesLengthRef.current = messages.length;
+    prevLastMessageContentRef.current = lastMessageContent;
+  }, [messages]); // messages 전체를 의존성으로 사용해서 내용 변화도 감지
 
   const isEstimateMessage = (content: string) => {
     // console.log('content', content);
@@ -1258,12 +1373,7 @@ useEffect(() => {
               return (
                 <StyledAiMessage
                   key={idx}
-                  content={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                      <ProfileSpinner src="/ai-estimate/pretty.png" />
-                      <GradientText>생각 중...</GradientText>
-                    </div>
-                  }
+                  content={LoadingComponent}
                   profileImage={null}
                   name="강유하"
                   isFullWidth={false}

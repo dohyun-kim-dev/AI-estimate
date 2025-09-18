@@ -17,6 +17,7 @@ import PriceEditPopup from './PriceEditPopup';
 import { getAllUnitPrices, uploadUnitPrices } from '@/lib/api/admin/adminApi';
 import { useToast } from '@/components/common/ToastProvider';
 import { priceApiResponseToMarkdownTable } from '../../../../ai/prompts/priceDataToJson';
+import { ToastContainer } from 'react-toastify';
 
 
 // 필수 여부를 한글로 변환하는 함수
@@ -1346,6 +1347,19 @@ const PriceListPage: React.FC = () => {
 
   return (
     <>
+        <ToastContainer
+            position="top-center"
+            autoClose={3000}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+            style={{ zIndex: 10000 }}
+          ></ToastContainer>
+          
       <GenericListUI<any>
         ref={genericListRef}
         key={`price-list-${selectedCompanyCode || 'no-company'}-${forceUpdateKey}`}

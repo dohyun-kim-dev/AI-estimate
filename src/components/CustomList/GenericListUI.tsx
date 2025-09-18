@@ -97,6 +97,8 @@ interface GenericListUIProps<T extends BaseRecord> {
   themeMode?: ThemeMode;
   onRowClick?: (item: T, rowIndex: number) => void;
   renderTabs?: () => React.ReactNode;
+  // 중간 영역 커스텀 컨텐츠 prop 추가
+  renderMiddleContent?: () => React.ReactNode;
 }
 
 // 등록, 템플릿 버튼 (밝은 톤)
@@ -156,7 +158,8 @@ const GenericListUIInner = <T extends BaseRecord>(
     enableCompanySearch,
     onCompanySelect,
     selectedCompanyCode: externalSelectedCompanyCode,
-    selectedCompanyName: externalSelectedCompanyName
+    selectedCompanyName: externalSelectedCompanyName,
+    renderMiddleContent // 중간 영역 커스텀 컨텐츠 prop
   }: GenericListUIProps<T>,
   ref: React.Ref<{ refetch: () => void }>
 ) => {
@@ -520,6 +523,12 @@ const GenericListUIInner = <T extends BaseRecord>(
 
   </LeftControls>
 
+  {renderMiddleContent && (
+    <MiddleControls>
+      {renderMiddleContent()}
+    </MiddleControls>
+  )}
+
   <RightControls>
 
     {isShowExcelTemplate && (
@@ -537,11 +546,22 @@ const GenericListUIInner = <T extends BaseRecord>(
     </DownloadButton>
 
     <PaginationControls>
+      전체 {displayTotalItems}건 중 {displayAllItems}건
+      <ItemsPage>
       <NavButton
         onClick={() => handlePageNumChange(currentPage - 1)}
         disabled={currentPage <= 1 || isLoading}
         $themeMode={themeMode}>
-        &lt;
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="25" viewBox="0 0 24 25" fill="none" style={{ transform: 'rotate(180deg)' }}>
+          <g clipPath="url(#clip0_1131_2271_left)">
+            <path fillRule="evenodd" clipRule="evenodd" d="M15.7064 11.7931C15.8938 11.9806 15.9992 12.2349 15.9992 12.5001C15.9992 12.7652 15.8938 13.0195 15.7064 13.2071L10.0494 18.8641C9.95712 18.9596 9.84678 19.0358 9.72477 19.0882C9.60277 19.1406 9.47155 19.1682 9.33877 19.1693C9.20599 19.1705 9.07431 19.1452 8.95141 19.0949C8.82852 19.0446 8.71686 18.9703 8.62297 18.8765C8.52908 18.7826 8.45483 18.6709 8.40454 18.548C8.35426 18.4251 8.32896 18.2934 8.33012 18.1607C8.33127 18.0279 8.35886 17.8967 8.41126 17.7747C8.46367 17.6526 8.53986 17.5423 8.63537 17.4501L13.5854 12.5001L8.63537 7.55006C8.45321 7.36146 8.35241 7.10885 8.35469 6.84666C8.35697 6.58446 8.46214 6.33365 8.64755 6.14824C8.83296 5.96283 9.08377 5.85766 9.34597 5.85538C9.60816 5.85311 9.86076 5.9539 10.0494 6.13606L15.7064 11.7931Z" fill="currentColor"/>
+          </g>
+          <defs>
+            <clipPath id="clip0_1131_2271_left">
+              <rect width="24" height="24" fill="white" transform="translate(0 0.5)"/>
+            </clipPath>
+          </defs>
+        </svg>
       </NavButton>
       <PageBox $themeMode={themeMode}>
         {currentPage} / {totalPages > 0 ? totalPages : 1}
@@ -550,8 +570,18 @@ const GenericListUIInner = <T extends BaseRecord>(
         onClick={() => handlePageNumChange(currentPage + 1)}
         disabled={currentPage >= totalPages || isLoading}
         $themeMode={themeMode}>
-        &gt;
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="25" viewBox="0 0 24 25" fill="none">
+          <g clipPath="url(#clip0_1131_2271_right)">
+            <path fillRule="evenodd" clipRule="evenodd" d="M15.7064 11.7931C15.8938 11.9806 15.9992 12.2349 15.9992 12.5001C15.9992 12.7652 15.8938 13.0195 15.7064 13.2071L10.0494 18.8641C9.95712 18.9596 9.84678 19.0358 9.72477 19.0882C9.60277 19.1406 9.47155 19.1682 9.33877 19.1693C9.20599 19.1705 9.07431 19.1452 8.95141 19.0949C8.82852 19.0446 8.71686 18.9703 8.62297 18.8765C8.52908 18.7826 8.45483 18.6709 8.40454 18.548C8.35426 18.4251 8.32896 18.2934 8.33012 18.1607C8.33127 18.0279 8.35886 17.8967 8.41126 17.7747C8.46367 17.6526 8.53986 17.5423 8.63537 17.4501L13.5854 12.5001L8.63537 7.55006C8.45321 7.36146 8.35241 7.10885 8.35469 6.84666C8.35697 6.58446 8.46214 6.33365 8.64755 6.14824C8.83296 5.96283 9.08377 5.85766 9.34597 5.85538C9.60816 5.85311 9.86076 5.9539 10.0494 6.13606L15.7064 11.7931Z" fill="currentColor"/>
+          </g>
+          <defs>
+            <clipPath id="clip0_1131_2271_right">
+              <rect width="24" height="24" fill="white" transform="translate(0 0.5)"/>
+            </clipPath>
+          </defs>
+        </svg>
       </NavButton>
+      </ItemsPage>
       <DropdownCustom
         value={itemsPerPage}
         onChange={handleItemsPerPageChange}
@@ -651,6 +681,15 @@ const LeftControls = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
+`;
+
+const MiddleControls = styled.div`
+  display: flex;
+  width: 100%;
+  // align-items: space-between;
+  gap: 10px;
+  flex: 1;
+  justify-content: center;
 `;
 
 const RightControls = styled.div`
@@ -765,6 +804,7 @@ const PaginationControls = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  color: #555555;
 `;
 
 const Cnt = styled.div<{ $themeMode: ThemeMode }>`
@@ -867,22 +907,31 @@ const CMSTitle = styled.h1<{ $themeMode: ThemeMode }>`
   color: ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.titleColor : THEME_COLORS.dark.titleColor)};
 `;
 
+const ItemsPage = styled.div`
+  display: flex;
+  margin: 0 16px;
+  gap: 8px;
+`;
+
 const NavButton = styled.button<{ $themeMode: ThemeMode }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   cursor: pointer;
   border: 1px solid
     ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.borderColor : THEME_COLORS.dark.borderColor)};
   background-color: ${({ $themeMode }) => ($themeMode === "light" ? "#FFFFFF" : THEME_COLORS.dark.secondary)};
   color: ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.text : THEME_COLORS.dark.text)};
   border-radius: 4px;
-  font-size: 16px;
-  font-weight: bold;
-  line-height: 1;
+  padding: 0;
   transition: background-color 0.2s, border-color 0.2s;
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
 
   &:hover:not(:disabled) {
     opacity: 0.8;

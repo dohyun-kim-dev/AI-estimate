@@ -40,6 +40,8 @@ interface CmsResponsiveContainerProps<T extends BaseRecord> {
   excelUploadBtnCallBack?: () => void;
   excelTemplateBtnCallBack?: () => void;
   deleteBtnCallBack?: () => void;
+  // 중간 영역 커스텀 컨텐츠 prop 추가
+  renderMiddleContent?: () => React.ReactNode;
 }
 
 export default function CmsResponsiveContainer<T extends BaseRecord>({
@@ -64,6 +66,7 @@ export default function CmsResponsiveContainer<T extends BaseRecord>({
   excelUploadBtnCallBack,
   excelTemplateBtnCallBack,
   deleteBtnCallBack,
+  renderMiddleContent,
 }: CmsResponsiveContainerProps<T>) {
   
   // 공통 props
@@ -87,7 +90,8 @@ export default function CmsResponsiveContainer<T extends BaseRecord>({
     isShowExcelTemplate,
     excelUploadBtnCallBack,
     excelTemplateBtnCallBack,
-    deleteBtnCallBack
+    deleteBtnCallBack,
+    renderMiddleContent
   };
 
   return (

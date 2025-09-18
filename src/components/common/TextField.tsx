@@ -15,6 +15,13 @@ interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   normalizePhoneToDigits?: boolean; // 전화번호 입력 시 숫자만 부모에 전달할지 여부
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   value?: string | number;
+  multiline?: boolean; // textarea 지원 추가
+  minLines?: number; // 최소 라인 수
+  maxLines?: number; // 최대 라인 수
+  $inputBackgroundColor?: string; // 배경색 커스터마이징
+  $borderColor?: string; // 테두리 색 커스터마이징
+  selectOptions?: Array<{ value: string | number; label: string }>; // select 옵션
+  isSelect?: boolean; // select 필드 여부
 }
 
 const Field = styled.div`
@@ -39,12 +46,17 @@ const InputWrapper = styled.div`
   width: 100%;
 `;
 
-const StyledInput = styled.input<{ $hasSuffix?: boolean; $height?: string }>`
+const StyledInput = styled.input<{ 
+  $hasSuffix?: boolean; 
+  $height?: string; 
+  $inputBackgroundColor?: string; 
+  $borderColor?: string; 
+}>`
   height: ${props => props.$height || '56px'};
   width: 100%;
   border-radius: 4px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
+  border: 1px solid ${props => props.$borderColor || '#e5e7eb'};
+  background: ${props => props.$inputBackgroundColor || '#ffffff'};
   color: #111827;
   padding: 0 14px;
   padding-right: ${props => props.$hasSuffix ? '40px' : '14px'};
@@ -55,6 +67,69 @@ const StyledInput = styled.input<{ $hasSuffix?: boolean; $height?: string }>`
     color: #666666;
     opacity: 0.6;
   }
+
+  &:focus {
+    outline: none;
+    border-color: #3391FF;
+    box-shadow: 0 0 0 2px rgba(51, 145, 255, 0.12);
+  }
+
+  &:disabled {
+    background: #f3f4f6;
+    cursor: not-allowed;
+  }
+`;
+
+const StyledTextarea = styled.textarea<{ 
+  $inputBackgroundColor?: string; 
+  $borderColor?: string; 
+  $minLines?: number;
+  $maxLines?: number;
+}>`
+  width: 100%;
+  min-height: ${props => (props.$minLines || 3) * 1.5}em;
+  max-height: ${props => (props.$maxLines || 6) * 1.5}em;
+  border-radius: 4px;
+  border: 1px solid ${props => props.$borderColor || '#e5e7eb'};
+  background: ${props => props.$inputBackgroundColor || '#ffffff'};
+  color: #111827;
+  padding: 14px;
+  font-size: 14px;
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &::placeholder {
+    color: #666666;
+    opacity: 0.6;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #3391FF;
+    box-shadow: 0 0 0 2px rgba(51, 145, 255, 0.12);
+  }
+
+  &:disabled {
+    background: #f3f4f6;
+    cursor: not-allowed;
+  }
+`;
+
+const StyledSelect = styled.select<{ 
+  $height?: string; 
+  $inputBackgroundColor?: string; 
+  $borderColor?: string; 
+}>`
+  height: ${props => props.$height || '56px'};
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid ${props => props.$borderColor || '#e5e7eb'};
+  background: ${props => props.$inputBackgroundColor || '#ffffff'};
+  color: #111827;
+  padding: 0 14px;
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
   &:focus {
     outline: none;
@@ -102,6 +177,13 @@ export default function TextField({
   onChange,
   value,
   normalizePhoneToDigits = false,
+  multiline = false,
+  minLines = 3,
+  maxLines = 6,
+  $inputBackgroundColor,
+  $borderColor,
+  selectOptions,
+  isSelect = false,
   ...props 
 }: TextFieldProps) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -156,18 +238,50 @@ export default function TextField({
     <Field className={className}>
       <FloatingLabel htmlFor={id}>{label}</FloatingLabel>
       <InputWrapper>
-        <StyledInput
-          id={id}
-          type={inputType}
-          $hasSuffix={showSuffixIcon && isPasswordField}
-          $height={height}
-          autoComplete={autoComplete}
-          onChange={handleChange}
-          value={displayValue}
-          maxLength={(inputType === 'tel' || inputType === 'phone') ? 13 : props.maxLength}
-          {...props}
-        />
-        {showSuffixIcon && isPasswordField && (
+        {isSelect ? (
+          <StyledSelect
+            id={id}
+            $height={height}
+            $inputBackgroundColor={$inputBackgroundColor}
+            $borderColor={$borderColor}
+            onChange={onChange as any}
+            value={value}
+            {...(props as any)}
+          >
+            <option value="">선택하세요</option>
+            {selectOptions?.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </StyledSelect>
+        ) : multiline ? (
+          <StyledTextarea
+            id={id}
+            $inputBackgroundColor={$inputBackgroundColor}
+            $borderColor={$borderColor}
+            $minLines={minLines}
+            $maxLines={maxLines}
+            onChange={onChange as any}
+            value={displayValue}
+            {...(props as any)}
+          />
+        ) : (
+          <StyledInput
+            id={id}
+            type={inputType}
+            $hasSuffix={showSuffixIcon && isPasswordField}
+            $height={height}
+            $inputBackgroundColor={$inputBackgroundColor}
+            $borderColor={$borderColor}
+            autoComplete={autoComplete}
+            onChange={handleChange}
+            value={displayValue}
+            maxLength={(inputType === 'tel' || inputType === 'phone') ? 13 : props.maxLength}
+            {...props}
+          />
+        )}
+        {showSuffixIcon && isPasswordField && !multiline && !isSelect && (
           <SuffixIconWrapper
             onClick={() => setIsPasswordVisible(v => !v)}
             $isPasswordVisible={isPasswordVisible}
