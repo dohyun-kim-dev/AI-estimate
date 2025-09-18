@@ -276,7 +276,13 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
     try {
       const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
       const previewUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
-      window.open(previewUrl, '_blank');
+      const newWindow = window.open(previewUrl, '_blank');
+      // iOS Safari 등에서 팝업 차단 또는 새탭이 안 열릴 경우 fallback
+      setTimeout(() => {
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          window.location.href = previewUrl;
+        }
+      }, 100);
       console.log("estimate:", estimate);
       success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
     } catch (err) {

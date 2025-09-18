@@ -147,10 +147,12 @@ const UserMessage = styled.div`
   padding: 10px 12px;
   border-radius: 12px;
   max-width: 80%;
-  white-space: pre-wrap;
+  white-space: pre-line;
+  word-break: break-word;
   font-size: 18px;
   line-height: 2.0;
 `;
+
 
 const FileUploadArea = styled.div<{ $isDragOver: boolean }>`
   position: absolute;
@@ -175,7 +177,7 @@ const FileUploadText = styled.div`
   color: ${({ theme }) => theme.subtleText};
   font-size: 24px;
   font-weight: bold;
-  margin-bottom: 12px;
+  margin-bottom: 12px;;
 `;
 
 const FileUploadSubtext = styled.div`

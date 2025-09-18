@@ -131,6 +131,8 @@ export default function MyEstimatePage() {
   };
 
   useEffect(() => {
+    // 페이지 진입 시 스크롤을 맨 위로 이동
+    window.scrollTo(0, 0);
     fetchEstimates();
   }, []); // 빈 의존성 배열을 사용하여 컴포넌트가 처음 마운트될 때만 실행
 

@@ -214,7 +214,13 @@ btn.appendChild(openIcon);
   // 말풍선 툴팁 요소 생성
   const tooltip = document.createElement('div');
   tooltip.className = 'aiw-tooltip';
-  tooltip.textContent = '24시간 맞춤 견적 상담 AI';
+  // 모바일일 때만 줄바꿈, 데스크톱은 한 줄
+  function setTooltipText() {
+    const isMobile = window.innerWidth <= 800 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    tooltip.textContent = isMobile ? '24시간 맞춤\n견적 상담 AI' : '24시간 맞춤 견적 상담 AI';
+  }
+  setTooltipText();
+  window.addEventListener('resize', setTooltipText);
   tooltip.setAttribute('data-tooltip', 'true'); // 디버깅용 식별자
 
   // 닫기 버튼 생성
@@ -371,6 +377,37 @@ const isDarkMode = detectDarkMode();
   // 말풍선 호버 이벤트 제거 (항상 표시)
 
   btn.onclick = ()=> {
+    // 모바일 디바이스 감지 (아이폰 포함)
+    const isMobile = window.innerWidth <= 800 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    console.log('[AI-Widget] Device check - innerWidth:', window.innerWidth, 'userAgent:', navigator.userAgent, 'isMobile:', isMobile, 'isIOS:', isIOS);
+    
+    if (isMobile) {
+      // 모바일에서는 새 탭으로 열기
+      console.log('[AI-Widget] Opening in new tab for mobile device');
+      const u = new URL(targetUrl, widgetSrc);
+      if(!u.searchParams.get('embed')) u.searchParams.set('embed','1');
+      u.searchParams.set('src','widget-mobile');
+      console.log('[AI-Widget] Opening URL:', u.toString());
+
+      // 새 탭으로 열기 시도
+      const newWindow = window.open(u.toString(), '_blank');
+      
+      // 팝업이 차단되었는지 확인 (100ms 후)
+      setTimeout(() => {
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          console.log('[AI-Widget] Popup blocked, redirecting in current window');
+          window.location.href = u.toString();
+        } else {
+          console.log('[AI-Widget] New tab opened successfully');
+        }
+      }, 100);
+      
+      return;
+    }
+    
+    console.log('[AI-Widget] Opening iframe for desktop');
+    // 데스크톱에서는 기존 iframe 방식
     // 말풍선 숨기기 또는 표시
     if (root.classList.contains('open')) {
       // 닫힐 예정이므로 말풍선 표시

@@ -235,13 +235,20 @@ const PDFPreview: React.FC = () => {
   
   const handleDownload = () => {
     if (companyCode && uuid) {
-      const downloadUrl = `${apiUrl}/users/company/estimate/${companyCode}/${uuid}.pdf`;
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = `견적서_${uuid}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const downloadUrl = `${apiUrl}/users/company/estimate/${companyCode}/${uuid}`;
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth <= 800;
+      if (isMobile) {
+        // 모바일: 새 탭에서 PDF 미리보기
+        window.open(downloadUrl, '_blank');
+      } else {
+        // 데스크톱: 다운로드
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `견적서_${uuid}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
     }
   };
   

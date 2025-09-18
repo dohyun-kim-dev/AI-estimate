@@ -381,7 +381,7 @@ const handleNewChat = () => {
       if (messages.length >= 2) {
         resetChat();
         localStorage.removeItem('chatSessionId');
-        success('새로운 채팅방이 시작되었습니다');
+        success('새로운 견적 상담 시작됨');
       } else {
         success('이미 새로운 채팅방입니다');
       }

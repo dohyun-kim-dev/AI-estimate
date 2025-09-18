@@ -26,6 +26,7 @@ const fadeIn = keyframes`
 
 // 스타일드 컴포넌트 정의
 const PageContainer = styled.div<{ $bgTheme: 'loading' | 'success' | 'error' }>`
+    width: 100vw;
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -233,6 +234,17 @@ const CompletedPage: React.FC = () => {
   const handleGoHome = () => {
     navigate('/');
   };
+
+//라우트 경로 파라미터 포함해서 보여줘
+const routeParams = {
+  estimateId: searchParams.get('estimateId'),
+  title: searchParams.get('title'),
+  chatSession: searchParams.get('chatSession'),
+  userId: searchParams.get('userId'),
+  userName: searchParams.get('userName'),
+  userEmail: searchParams.get('userEmail'),
+  userCellphone: searchParams.get('userCellphone'),
+};
 
   if (isLoading) {
     return (

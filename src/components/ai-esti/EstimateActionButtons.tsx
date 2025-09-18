@@ -344,15 +344,22 @@ useEffect(() => {
 
     // 필수 정보 구성
     const authed = isAuthenticated();
-    const userId = authed
-      ? (localStorage.getItem('auth-storage')
-          ? JSON.parse(localStorage.getItem('auth-storage') as string).state?.user?._id
-          : null)
-      : localStorage.getItem('guest-uuid');
-
-    const userName  = authed ? name  : info?.name;
-    const userEmail = authed ? email : info?.email;
-    const userPhone = authed ? phone : info?.cellphone;
+    let userId = null, userName = '', userEmail = '', userPhone = '';
+    if (authed) {
+      const authStorage = localStorage.getItem('auth-storage');
+      if (authStorage) {
+        const userObj = JSON.parse(authStorage).state?.user || {};
+        userId = userObj._id || userObj.id || '';
+        userName = userObj.name || name || '';
+        userEmail = userObj.email || email || '';
+        userPhone = userObj.cellphone || phone || '';
+      }
+    } else {
+      userId = localStorage.getItem('guest-uuid');
+      userName = info?.name || '';
+      userEmail = info?.email || '';
+      userPhone = info?.cellphone || '';
+    }
     const chatSessionId = getEffectiveSessionId();
 
     if (!userId || !userName || !userEmail || !userPhone || !chatSessionId) {
