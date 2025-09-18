@@ -254,6 +254,47 @@ const BackButton = styled.button`
   }
 `;
 
+// 스크롤 다운 버튼 스타일
+const ScrollDownButton = styled.button<{ $isVisible: boolean }>`
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  display: flex;
+  padding: 6px;
+  align-items: center;
+  gap: 10px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  
+  opacity: ${({ $isVisible }) => ($isVisible ? 1 : 0)};
+  transform: ${({ $isVisible }) => ($isVisible ? 'translateY(0)' : 'translateY(20px)')};
+  pointer-events: ${({ $isVisible }) => ($isVisible ? 'auto' : 'none')};
+  
+  /* 다크모드 스타일 */
+  background: ${({ theme }) => (theme.body === '#FFFFFF' ? '#FFF' : '#343435')};
+  box-shadow: ${({ theme }) => 
+    theme.body === '#FFFFFF' 
+      ? '-2px -2px 10px 0 rgba(144, 144, 144, 0.25), 2px 2px 10px 0 rgba(144, 144, 144, 0.25)'
+      : '-2px -2px 10px 0 rgba(60, 60, 60, 0.25), 2px 2px 10px 0 rgba(60, 60, 60, 0.25)'
+  };
+`;
+
+const ScrollDownIcon = styled.div<{ $isDark: boolean }>`
+  width: 24px;
+  height: 24px;
+  aspect-ratio: 1/1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  svg path {
+    fill: ${({ $isDark }) => $isDark ? '#E4E4E4' : '#6C6C6C'};
+  }
+`;
+
 const SharePage: React.FC = () => {
   // useSearchParams는 컴포넌트 최상단에서 한 번만 선언
   const { sessionId, companyCode } = useParams<{ sessionId: string; companyCode: string }>();
@@ -281,6 +322,10 @@ const SharePage: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // 스크롤 버튼 관련 상태
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   // 메시지에서 파일 정보를 파싱하는 함수
   // 유저 메시지에서 ai 프롬프트(견적 정보 등) 제거
@@ -385,6 +430,29 @@ const SharePage: React.FC = () => {
   const handleBack = () => {
     navigate(`/aiclient/${companyCode}/ai`);
   };
+
+  // 스크롤 버튼 관련 함수
+  const scrollToBottom = () => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  };
+
+  // 스크롤 감지 useEffect
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      // 현재 스크롤 위치가 문서 높이에서 2페이지(2 * windowHeight) 이상 위에 있으면 버튼 표시
+      const showButton = (documentHeight - currentScrollY - windowHeight) > (2 * windowHeight);
+      
+      setShowScrollButton(showButton);
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
 
 
@@ -538,6 +606,30 @@ const SharePage: React.FC = () => {
             }
           })}
         </ChatBox>
+        
+        {/* 스크롤 다운 버튼 */}
+        <ScrollDownButton 
+          $isVisible={showScrollButton}
+          onClick={scrollToBottom}
+          aria-label="맨 아래로 스크롤"
+        >
+          <ScrollDownIcon $isDark={isDarkMode}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <g clipPath="url(#clip0_scroll_down)">
+                <path 
+                  fillRule="evenodd" 
+                  clipRule="evenodd" 
+                  d="M12.707 15.7073C12.5194 15.8948 12.2651 16.0001 12 16.0001C11.7348 16.0001 11.4805 15.8948 11.293 15.7073L5.63598 10.0503C5.54047 9.9581 5.46428 9.84775 5.41188 9.72575C5.35947 9.60374 5.33188 9.47252 5.33073 9.33974C5.32957 9.20697 5.35487 9.07529 5.40516 8.95239C5.45544 8.82949 5.52969 8.71784 5.62358 8.62395C5.71747 8.53006 5.82913 8.4558 5.95202 8.40552C6.07492 8.35524 6.2066 8.32994 6.33938 8.33109C6.47216 8.33225 6.60338 8.35983 6.72538 8.41224C6.84739 8.46465 6.95773 8.54083 7.04998 8.63634L12 13.5863L16.95 8.63634C17.1386 8.45418 17.3912 8.35339 17.6534 8.35567C17.9156 8.35795 18.1664 8.46312 18.3518 8.64852C18.5372 8.83393 18.6424 9.08474 18.6447 9.34694C18.6469 9.60914 18.5461 9.86174 18.364 10.0503L12.707 15.7073Z"
+                />
+              </g>
+              <defs>
+                <clipPath id="clip0_scroll_down">
+                  <rect width="24" height="24" fill="white"/>
+                </clipPath>
+              </defs>
+            </svg>
+          </ScrollDownIcon>
+        </ScrollDownButton>
       </Container>
 
 

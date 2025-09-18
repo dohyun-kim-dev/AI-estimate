@@ -421,7 +421,7 @@ export default function Home() {
         </CustomInput>
 
         <FeatureSection>
-          <SectionTitle>견적 AI 서비스 핵심 기능</SectionTitle>
+          <SectionTitle>견적 AI서비스 핵심 기능</SectionTitle>
           <FeatureCard>
             <FeatureContent>
               <FeatureIconWrapper>

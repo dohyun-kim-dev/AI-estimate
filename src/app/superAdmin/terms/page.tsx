@@ -79,7 +79,7 @@ export default function TermsPage() {
       devLog("📱 [약관 목록] 응답", res);
 
       // API 응답에서 data 배열 추출
-      const rawList = res?.data || [];
+      const rawList = res[0]?.data.data || [];
       devLog("📱 [약관 목록] 원본 데이터", rawList);
 
       // rawList의 순서와 상관없이 각 탭의 language와 index에 맞는 데이터 매핑
