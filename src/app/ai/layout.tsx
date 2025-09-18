@@ -326,12 +326,65 @@ export default function AILayout() {
     const fullShareText = getFullShareText();
     
     try {
-      await navigator.clipboard.writeText(fullShareText);
-      success('링크가 복사되었습니다.');
-      handleCloseShare();
-    } catch {
-      console.error('Failed to copy');
-      error('링크 복사에 실패했습니다.');
+      // shareText가 비어있는지 확인
+      if (!fullShareText) {
+        error('공유할 링크가 없습니다.');
+        return;
+      }
+
+      console.log('복사하려는 텍스트:', fullShareText); // 디버깅용
+
+      // fallback 방법을 먼저 시도 (더 안정적)
+      const copyWithFallback = () => {
+        const textArea = document.createElement('textarea');
+        textArea.value = fullShareText;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          const successful = document.execCommand('copy');
+          document.body.removeChild(textArea);
+          return successful;
+        } catch (err) {
+          document.body.removeChild(textArea);
+          throw err;
+        }
+      };
+
+      // 먼저 fallback 방법 시도
+      try {
+        const fallbackSuccess = copyWithFallback();
+        if (fallbackSuccess) {
+          success('링크가 복사되었습니다.');
+          handleCloseShare();
+          return;
+        }
+      } catch (fallbackErr) {
+        console.log('Fallback 복사 실패, Clipboard API 시도:', fallbackErr);
+      }
+
+      // fallback이 실패하면 Clipboard API 시도
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(fullShareText);
+          success('링크가 복사되었습니다.');
+          handleCloseShare();
+          return;
+        } catch (clipboardErr) {
+          console.log('Clipboard API 실패:', clipboardErr);
+        }
+      }
+
+      throw new Error('모든 복사 방법이 실패했습니다.');
+
+    } catch (err) {
+      console.error('링크 복사 실패:', err);
+      error(`링크 복사에 실패했습니다. 수동으로 링크를 복사해주세요.`);
     }
   };
 

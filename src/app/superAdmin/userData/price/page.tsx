@@ -12,7 +12,6 @@ import GenericListUI, {
 } from '@/components/CustomList/GenericListUI';
 import { ColumnDefinition } from '@/components/CustomList/GenericDataTable';
 import CmsPopup from '@/components/CmsPopup';
-import CmsResponsiveContainer from '@/components/CustomList/ResponsiveList/CmsResponsiveContainer';
 import UploadResultPopup from './UploadResultPopup';
 import PriceEditPopup from './PriceEditPopup';
 import { getAllUnitPrices, uploadUnitPrices } from '@/lib/api/admin/adminApi';
@@ -443,7 +442,13 @@ const PriceListPage: React.FC = () => {
   const [uploadSuccessData, setUploadSuccessData] = useState<any[]>([]); // 업로드 성공 데이터 저장
   const [uploadColumns, setUploadColumns] = useState<any[]>([]); // 업로드된 컬럼 정보 저장
   const [forceUpdateKey, setForceUpdateKey] = useState(0); // 강제 업데이트용 key
+  const [currentSearchParams, setCurrentSearchParams] = useState<{
+    keyword?: string;
+    fromDate?: string;
+    toDate?: string;
+  }>({}); // 현재 검색 조건 저장
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const genericListRef = useRef<{ refetch: () => void }>(null); // GenericListUI ref 추가
 
   const handleRowClick = (item: any) => {
     setSelectedItem(item);
@@ -514,11 +519,11 @@ const PriceListPage: React.FC = () => {
         
         // 테이블 새로고침 (약간의 지연을 두어 API 완료 후 실행)
         if (selectedCompanyCode) {
-          console.log('Calling handleCompanySelect for refresh...');
-          setTimeout(async () => {
+          console.log('Calling GenericListUI refetch for refresh...');
+          setTimeout(() => {
             try {
-              await handleCompanySelect({ id: selectedCompanyCode, name: selectedCompanyName });
-              console.log('handleCompanySelect completed');
+              genericListRef.current?.refetch(); // GenericListUI의 refetch 호출 (현재 검색 조건 유지)
+              console.log('GenericListUI refetch completed');
             } catch (error) {
               console.error('Error refreshing table:', error);
             }
@@ -555,9 +560,9 @@ const PriceListPage: React.FC = () => {
       
       // 테이블 새로고침을 위해 같은 회사 다시 선택
       if (selectedCompanyCode) {
-        setTimeout(async () => {
+        setTimeout(() => {
           try {
-            await handleCompanySelect({ id: selectedCompanyCode, name: selectedCompanyName });
+            genericListRef.current?.refetch(); // GenericListUI의 refetch 호출 (현재 검색 조건 유지)
             console.log('Table refresh completed after delete');
           } catch (error) {
             console.error('Error refreshing table after delete:', error);
@@ -576,6 +581,13 @@ const PriceListPage: React.FC = () => {
   // 검색 키워드와 함께 데이터를 조회하는 함수
   const fetchUnitPricesData = async (params: FetchParams) => {
     console.log('=== fetchUnitPricesData START ===', params);
+    
+    // 검색 조건 저장
+    setCurrentSearchParams({
+      keyword: params.keyword,
+      fromDate: params.fromDate,
+      toDate: params.toDate,
+    });
     
     if (!selectedCompanyCode) {
       console.log('No company selected, returning current data');
@@ -667,9 +679,13 @@ const PriceListPage: React.FC = () => {
     }
   };
 
-  const handleCompanySelect = async (company: { id: string; name: string }) => {
+  const handleCompanySelect = async (
+    company: { id: string; name: string }, 
+    searchParams?: { keyword?: string; fromDate?: string; toDate?: string }
+  ) => {
     console.log('=== Company selected START ===:', company);
     console.log("companyCode:",company.id);
+    console.log("searchParams:", searchParams);
      if (!company.id) {
     showToast('회사 코드가 없습니다. 고객사를 다시 선택해주세요.', 'error');
     return;
@@ -680,9 +696,9 @@ const PriceListPage: React.FC = () => {
       
       const response = await getAllUnitPrices({
         companyCode: company.id,
-        keyword: undefined,
-        fromDate: undefined,
-        toDate: undefined,
+        keyword: searchParams?.keyword,
+        fromDate: searchParams?.fromDate,
+        toDate: searchParams?.toDate,
       });
 
       console.log('API response received');
@@ -1295,7 +1311,7 @@ const PriceListPage: React.FC = () => {
 
       // 업로드 성공 후 테이블 새로고침
       if (selectedCompanyCode) {
-        await handleCompanySelect({ id: selectedCompanyCode, name: selectedCompanyName });
+        genericListRef.current?.refetch(); // GenericListUI의 refetch 호출 (현재 검색 조건 유지)
       }
 
       // 팝업 닫기
@@ -1330,10 +1346,10 @@ const PriceListPage: React.FC = () => {
 
   return (
     <>
-      <CmsResponsiveContainer<any>
+      <GenericListUI<any>
+        ref={genericListRef}
         key={`price-list-${selectedCompanyCode || 'no-company'}-${forceUpdateKey}`}
         title="단가표 관리"
-        data={transformedTableData}
         columns={dynamicColumns}
         enableDateFilter={false}
         enableCompanySearch={true}

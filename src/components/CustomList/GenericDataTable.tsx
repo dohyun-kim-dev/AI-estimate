@@ -109,7 +109,30 @@ const GenericDataTable = <T extends object>({
           <tr>
             <TdNoData colSpan={columns.length} $themeMode={themeMode}>
               <NoDataWrapper>
-                <p>데이터가 없습니다.</p>
+                <NoDataIcon>
+                  <img src="/cms/cms_nodata.png" alt="No Data" width="69" />
+                    <rect 
+                      x="0.5" 
+                      y="0.5" 
+                      width="68" 
+                      height="71" 
+                      fill="rgba(255, 255, 255, 0.30)" 
+                      stroke="#BABABA" 
+                      strokeWidth="0.979"
+                    />
+                    <path 
+                      d="M34.5 20L44.5 30L34.5 40M24.5 30H44.5" 
+                      stroke="#BABABA" 
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                      fill="none"
+                    />
+                </NoDataIcon>
+                <NoDataText>
+                  데이터가 없습니다.<br />
+                  다시 한번 조회해 주세요
+                </NoDataText>
               </NoDataWrapper>
             </TdNoData>
           </tr>
@@ -205,12 +228,31 @@ const Td = styled.td<{ $isEven: boolean; $themeMode: ThemeMode }>`
 `;
 
 const TdNoData = styled.td<{ $themeMode: ThemeMode }>`
-  padding: 40px;
+  padding: 300px;
   color: #aaa;
   background-color: ${({ $themeMode }) => THEME_COLORS[$themeMode].tableBackground};
 `;
 
 const NoDataWrapper = styled.div`
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   width: 100%;
+`;
+
+const NoDataIcon = styled.div`
+  width: 68.999px;
+  height: 72.225px;
+  flex-shrink: 0;
+  margin-bottom: 30px;
+`;
+
+const NoDataText = styled.p`
+  margin: 0;
+  color: #aaa;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: center;
 `;

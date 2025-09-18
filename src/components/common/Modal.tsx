@@ -40,9 +40,9 @@ const Dialog = styled.div<{ $width?: number, $height?: string | number }>`
   z-index: 99999;
 `
 
-const Header = styled.div`
+const Header = styled.div<{ $centerTitle?: boolean }>`
   display: grid;
-  grid-template-columns: 32px 1fr 32px;
+  grid-template-columns: ${({ $centerTitle }) => ($centerTitle ? '32px 1fr 32px' : '0px 1fr 32px')};
   align-items: center;
   padding: 16px 20px 0 20px;
 `
@@ -83,7 +83,7 @@ export default function Modal({ open, title, onClose, children, width, height, c
   return (
     <Overlay onClick={handleOverlayClick}>
       <Dialog $width={width} $height={height} onClick={(e) => e.stopPropagation()}>
-        <Header>
+        <Header $centerTitle={centerTitle}>
           <CloseButton aria-label="close" onClick={onClose}>
             {/* <IoClose size={20} /> */}
           </CloseButton>
