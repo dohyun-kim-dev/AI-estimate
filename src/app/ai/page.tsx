@@ -536,8 +536,8 @@ const userId = getUserId() || '';
   const [projectPeriod, setProjectPeriod] = useState(basePeriod);
   const [discountedPrice, setDiscountedPrice] = useState(basePrice);
 
-  // 로딩 텍스트 가져오기 함수 (메모이제이션)
-  const getLoadingText = useCallback(() => {
+  // 로딩 텍스트 가져오기 함수
+  const getLoadingText = () => {
     switch (loadingStep) {
       case 0:
         return '생각 중...';
@@ -548,7 +548,7 @@ const userId = getUserId() || '';
       default:
         return '생각 중...';
     }
-  }, [loadingStep]);
+  };
 
   useEffect(() => {
     if (basePeriod > 0) {
@@ -860,44 +860,23 @@ export default function AiChatPage() {
     uploadedFiles.forEach(file => removeFile(file.fileUri));
   };
 
-  // 로딩 컴포넌트 메모이제이션
-  const LoadingComponent = useMemo(() => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-      <ProfileSpinner src="/ai-estimate/pretty.png" />
-      <GradientText>{getGlobalLoadingText()}</GradientText>
-    </div>
-  ), [getGlobalLoadingText]);
-
-  // 로딩 상태 감지 및 타이머 설정 (최적화)
-  const hasLoadingMessage = useMemo(() => messages.some(m => m.isLoading), [messages]);
-  const timerRef = useRef<{ timer1?: NodeJS.Timeout; timer2?: NodeJS.Timeout }>({});
-  
+  // 로딩 상태 감지 및 타이머 설정
   useEffect(() => {
-    if (hasLoadingMessage) {
-      // 이미 타이머가 설정되어 있다면 중복 설정 방지
-      if (!timerRef.current.timer1) {
-        setGlobalLoadingStep(0); // 초기화
-        timerRef.current.timer1 = setTimeout(() => setGlobalLoadingStep(1), 10000); // 10초 후
-        timerRef.current.timer2 = setTimeout(() => setGlobalLoadingStep(2), 20000); // 20초 후
-      }
-    } else {
-      // 로딩이 끝나면 타이머 정리 및 초기화
-      if (timerRef.current.timer1) {
-        clearTimeout(timerRef.current.timer1);
-        clearTimeout(timerRef.current.timer2);
-        timerRef.current = {};
-      }
-      setGlobalLoadingStep(0);
-    }
+    const hasLoadingMessage = messages.some(m => m.isLoading);
     
-    return () => {
-      // 컴포넌트 언마운트 시 타이머 정리
-      if (timerRef.current.timer1) {
-        clearTimeout(timerRef.current.timer1);
-        clearTimeout(timerRef.current.timer2);
-      }
-    };
-  }, [hasLoadingMessage]); // messages 대신 hasLoadingMessage만 의존성으로 사용
+    if (hasLoadingMessage) {
+      setGlobalLoadingStep(0); // 초기화
+      const timer1 = setTimeout(() => setGlobalLoadingStep(1), 10000); // 10초 후
+      const timer2 = setTimeout(() => setGlobalLoadingStep(2), 20000); // 20초 후
+      
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
+    } else {
+      setGlobalLoadingStep(0); // 로딩이 끝나면 초기화
+    }
+  }, [messages]);
 
   // 인풋 복원용 state
   const [restoreInput, setRestoreInput] = useState<string | null>(null);
@@ -1292,32 +1271,18 @@ useEffect(() => {
     return () => unsubscribe();
   }, []);
 
-  // 스크롤을 위한 별도 ref
-  const prevMessagesLengthRef = useRef(messages.length);
-  const prevLastMessageContentRef = useRef('');
-  
   useEffect(() => {
-    const lastMessage = messages[messages.length - 1];
-    const isLastMessageEstimate = lastMessage && isEstimateMessage(lastMessage.content);
-    const lastMessageContent = lastMessage?.content || '';
-    
-    // 스크롤 조건: 
-    // 1. 새 메시지가 추가된 경우 (길이 변경)
-    // 2. 마지막 메시지 내용이 변경된 경우 (스트리밍)
-    // 단, 견적서 메시지는 제외
-    const shouldScroll = endOfMessagesRef.current && 
-      !isLastMessageEstimate && 
-      (messages.length !== prevMessagesLengthRef.current || 
-       lastMessageContent !== prevLastMessageContentRef.current);
-    
-    if (shouldScroll) {
-      endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (endOfMessagesRef.current && messages.length >= 2) {
+      // 마지막 메시지가 견적서인지 확인
+      const lastMessage = messages[messages.length - 1];
+      const isLastMessageEstimate = lastMessage && isEstimateMessage(lastMessage.content);
+      
+      // 견적서가 아닌 메시지의 변경에만 스크롤 적용
+      if (!isLastMessageEstimate) {
+        endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
     }
-    
-    // 이전 값들 업데이트
-    prevMessagesLengthRef.current = messages.length;
-    prevLastMessageContentRef.current = lastMessageContent;
-  }, [messages]); // messages 전체를 의존성으로 사용해서 내용 변화도 감지
+  }, [messages]); // messages 배열 전체를 의존성으로 변경하여 스트리밍 중 내용 변화도 감지 (견적서 제외)
 
   const isEstimateMessage = (content: string) => {
     // console.log('content', content);
@@ -1373,7 +1338,12 @@ useEffect(() => {
               return (
                 <StyledAiMessage
                   key={idx}
-                  content={LoadingComponent}
+                  content={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <ProfileSpinner src="/ai-estimate/pretty.png" />
+                      <GradientText>{getGlobalLoadingText()}</GradientText>
+                    </div>
+                  }
                   profileImage={null}
                   name="강유하"
                   isFullWidth={false}
