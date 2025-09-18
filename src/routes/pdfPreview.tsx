@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { fetchEstimateById } from '../lib/api/user/userApi';
-import { previewPdfFromServerData } from '../hooks/pdfUtils';
+import { previewPdfFromServerData, downloadPdfFromServerData } from '../hooks/pdfUtils';
 
 const PreviewContainer = styled.div`
   width: 100vw;
@@ -233,15 +233,23 @@ const PDFPreview: React.FC = () => {
 
 
   
-  const handleDownload = () => {
-    if (companyCode && uuid) {
-      const downloadUrl = `${apiUrl}/users/company/estimate/${companyCode}/${uuid}`;
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth <= 800;
-      if (isMobile) {
-        // 모바일: 새 탭에서 PDF 미리보기
-        window.open(downloadUrl, '_blank');
-      } else {
-        // 데스크톱: 다운로드
+  const handleDownload = async () => {
+    if (!estimateMeta?.data) {
+      console.error('다운로드할 데이터가 없습니다.');
+      return;
+    }
+    
+    try {
+      // 서버 응답 데이터로 PDF 생성 후 바로 다운로드
+      await downloadPdfFromServerData(
+        estimateMeta.data, 
+        estimateMeta.title || '견적서'
+      );
+    } catch (error) {
+      console.error('PDF 다운로드 실패:', error);
+      // fallback: 기존 API 방식
+      if (companyCode && uuid) {
+        const downloadUrl = `${apiUrl}/users/company/estimate/${companyCode}/${uuid}`;
         const link = document.createElement('a');
         link.href = downloadUrl;
         link.download = `견적서_${uuid}.pdf`;
@@ -292,9 +300,9 @@ const PDFPreview: React.FC = () => {
     <PreviewContainer>
       <Header>
         <Title>견적서 미리보기</Title>
-        {/* <DownloadButton onClick={handleDownload}>
+        <DownloadButton onClick={handleDownload}>
           다운로드
-        </DownloadButton> */}
+        </DownloadButton>
       </Header>
       
       {loading && <LoadingMessage>PDF를 불러오는 중...</LoadingMessage>}

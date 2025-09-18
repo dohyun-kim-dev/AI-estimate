@@ -23,6 +23,7 @@ import { getEstimateIdFromContent } from '@/hooks/estimate';
 import { v4 as uuidv4 } from 'uuid';
 import { usePromptStore } from '@/store/promptStore';
 import { useAuthStore } from '@/store/authStore';
+import { useThemeStore } from '@/store/themeStore';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -327,6 +328,47 @@ const StyledDiv = styled.div`
   color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333333' : '#dddddd')};
 `;
 
+// 스크롤 다운 버튼 스타일
+const ScrollDownButton = styled.button<{ $isVisible: boolean }>`
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  display: flex;
+  padding: 6px;
+  align-items: center;
+  gap: 10px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  
+  opacity: ${({ $isVisible }) => ($isVisible ? 1 : 0)};
+  transform: ${({ $isVisible }) => ($isVisible ? 'translateY(0)' : 'translateY(20px)')};
+  pointer-events: ${({ $isVisible }) => ($isVisible ? 'auto' : 'none')};
+  
+  /* 다크모드 스타일 */
+  background: ${({ theme }) => (theme.body === '#FFFFFF' ? '#FFF' : '#343435')};
+  box-shadow: ${({ theme }) => 
+    theme.body === '#FFFFFF' 
+      ? '-2px -2px 10px 0 rgba(144, 144, 144, 0.25), 2px 2px 10px 0 rgba(144, 144, 144, 0.25)'
+      : '-2px -2px 10px 0 rgba(60, 60, 60, 0.25), 2px 2px 10px 0 rgba(60, 60, 60, 0.25)'
+  };
+`;
+
+const ScrollDownIcon = styled.div<{ $isDark: boolean }>`
+  width: 24px;
+  height: 24px;
+  aspect-ratio: 1/1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  svg path {
+    fill: ${({ $isDark }) => $isDark ? '#E4E4E4' : '#6C6C6C'};
+  }
+`;
+
 type ModelName = 'gemini-2.5-flash' | 'gemini-2.5-flash-lite' | 'gemini-2.0-flash';
 
 
@@ -370,6 +412,14 @@ const parseMessageContent = (content: string) => {
     };
   }
   
+  // AI 프롬프트와 명령어 제거
+  const stripAiPrompt = (text: string) => {
+    // [현재 견적 정보] ~ 위 견적을 기반으로 ... 패턴만 제거
+    let cleanedText = text.replace(/\[현재 견적 정보][\s\S]*?위 견적을 기반으로 [^\n]*를 진행해주세요\./g, '').trim();
+    
+    return cleanedText;
+  };
+  
   const fileMatch = content.match(/\[첨부파일: (.+?)\]/);
   if (fileMatch) {
     const fileName = fileMatch[1];
@@ -377,14 +427,14 @@ const parseMessageContent = (content: string) => {
     const imageUrl = `/file/${fileName}`;
     const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
     return {
-      text: textContent,
+      text: stripAiPrompt(textContent),
       fileName,
       imageUrl,
       isImage
     };
   }
   return {
-    text: content,
+    text: stripAiPrompt(content),
     fileName: null,
     imageUrl: null,
     isImage: false
@@ -682,7 +732,7 @@ const userId = getUserId() || '';
                   
                   // 사용자 메시지는 간단하게 표시
                   const displayMessage = estimateData 
-                    ? `${estimateData.project_name} - ${action}`
+                    ? `${estimateData.project_name}${action.includes('예산') ? ' (예산 절감)' : action.includes('맞춤') ? ' (맞춤 추천)' : ` - ${action}`}`
                     : action;
                   
                   handleSubmit(aiPrompt, { displayMessage });
@@ -711,9 +761,14 @@ export default function AiChatPage() {
   const [selectedPromptId, setSelectedPromptId] = useState('default');
   const updateLastMessage = useChatStore((s) => s.updateLastMessage);
   const { isAuthenticated, user } = useAuthStore(); // user 상태도 가져오기
+  const { isDarkMode } = useThemeStore(); // 테마 상태 가져오기
 
   const [isFirebaseChecking, setIsFirebaseChecking] = useState(true);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
+  
+  // 스크롤 버튼 관련 상태
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   const {
     handleSubmit: originalHandleSubmit,
@@ -751,6 +806,31 @@ export default function AiChatPage() {
     setRestoreInput(input);
     stopStreaming();
   };
+  
+  // 스크롤 버튼 관련 함수
+  const scrollToBottom = () => {
+    if (endOfMessagesRef.current) {
+      endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // 스크롤 감지 useEffect
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      // 현재 스크롤 위치가 문서 높이에서 2페이지(2 * windowHeight) 이상 위에 있으면 버튼 표시
+      const showButton = (documentHeight - currentScrollY - windowHeight) > (2 * windowHeight);
+      
+      setShowScrollButton(showButton);
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   
   const [estimateDataForConsult, setEstimateDataForConsult] = useState<ProjectEstimate | null>(null);
   const [chatSessionId, setChatSessionId] = useState('');
@@ -1205,6 +1285,31 @@ useEffect(() => {
         })}
         <div ref={endOfMessagesRef} />
       </ChatBox>
+      
+      {/* 스크롤 다운 버튼 */}
+      <ScrollDownButton 
+        $isVisible={showScrollButton}
+        onClick={scrollToBottom}
+        aria-label="맨 아래로 스크롤"
+      >
+        <ScrollDownIcon $isDark={isDarkMode}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <g clipPath="url(#clip0_scroll_down)">
+              <path 
+                fillRule="evenodd" 
+                clipRule="evenodd" 
+                d="M12.707 15.7073C12.5194 15.8948 12.2651 16.0001 12 16.0001C11.7348 16.0001 11.4805 15.8948 11.293 15.7073L5.63598 10.0503C5.54047 9.9581 5.46428 9.84775 5.41188 9.72575C5.35947 9.60374 5.33188 9.47252 5.33073 9.33974C5.32957 9.20697 5.35487 9.07529 5.40516 8.95239C5.45544 8.82949 5.52969 8.71784 5.62358 8.62395C5.71747 8.53006 5.82913 8.4558 5.95202 8.40552C6.07492 8.35524 6.2066 8.32994 6.33938 8.33109C6.47216 8.33225 6.60338 8.35983 6.72538 8.41224C6.84739 8.46465 6.95773 8.54083 7.04998 8.63634L12 13.5863L16.95 8.63634C17.1386 8.45418 17.3912 8.35339 17.6534 8.35567C17.9156 8.35795 18.1664 8.46312 18.3518 8.64852C18.5372 8.83393 18.6424 9.08474 18.6447 9.34694C18.6469 9.60914 18.5461 9.86174 18.364 10.0503L12.707 15.7073Z"
+              />
+            </g>
+            <defs>
+              <clipPath id="clip0_scroll_down">
+                <rect width="24" height="24" fill="white"/>
+              </clipPath>
+            </defs>
+          </svg>
+        </ScrollDownIcon>
+      </ScrollDownButton>
+      
       <BottomInput
         placeholder="메시지를 입력하세요"
         onSubmit={handleSubmit}

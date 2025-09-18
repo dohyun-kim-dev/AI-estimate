@@ -399,7 +399,7 @@ export default function Home() {
     <Container>
       <MainContent>
         <Header>
-          <Logo>AIGO, 견적 새로고침하다</Logo>
+          <Logo>여기닷의 공식 견적 서비스</Logo>
           <SubHeader>
             견적 AI서비스로 3분만에 견적받기
           </SubHeader>
@@ -421,7 +421,7 @@ export default function Home() {
         </CustomInput>
 
         <FeatureSection>
-          <SectionTitle>AIGO만의 핵심 기능</SectionTitle>
+          <SectionTitle>견적 AI 서비스 핵심 기능</SectionTitle>
           <FeatureCard>
             <FeatureContent>
               <FeatureIconWrapper>

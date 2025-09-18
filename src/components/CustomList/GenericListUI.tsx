@@ -281,7 +281,33 @@ const GenericListUIInner = <T extends BaseRecord>(
   const handleDateChangeInternal = (newFrom: string, newTo: string) => {
     setFromDate(newFrom);
     setToDate(newTo);
-    fetchDataCallback(); // 날짜 변경 시 API 재호출
+    
+    // 새로운 날짜로 즉시 API 호출
+    setIsLoading(true);
+    setError(null);
+    const params: FetchParams = {
+      keyword: searchKeyword || undefined,
+      companyCode: selectedCompanyCode || undefined,
+    };
+    if (enableDateFilter) {
+      params.fromDate = newFrom;
+      params.toDate = newTo;
+    }
+    
+    fetchData(params).then(result => {
+      setAllData(result.data);
+      setTotalItems(result.totalItems);
+      setAllItems(result.allItems);
+      setCurrentPage(1);
+    }).catch(err => {
+      console.error("Error fetching data:", err);
+      setError(err.message || "데이터를 불러오는 중 오류가 발생했습니다.");
+      setAllData([]);
+      setTotalItems(0);
+      setAllItems(undefined);
+    }).finally(() => {
+      setIsLoading(false);
+    });
   };
 
   // 검색어 입력: 입력 상태만 업데이트 (API 호출 없음)
@@ -290,8 +316,35 @@ const GenericListUIInner = <T extends BaseRecord>(
   };
   // 조회 버튼 클릭: 적용된 검색어 업데이트 + API 호출
   const handleImmediateSearch = () => {
-    setSearchKeyword(searchTermInput.trim());
-    fetchDataCallback(); // 조회 버튼 클릭 시 API 재호출
+    const newKeyword = searchTermInput.trim();
+    setSearchKeyword(newKeyword);
+    
+    // 새로운 키워드로 즉시 API 호출
+    setIsLoading(true);
+    setError(null);
+    const params: FetchParams = {
+      keyword: newKeyword || undefined,
+      companyCode: selectedCompanyCode || undefined,
+    };
+    if (enableDateFilter) {
+      params.fromDate = fromDate;
+      params.toDate = toDate;
+    }
+    
+    fetchData(params).then(result => {
+      setAllData(result.data);
+      setTotalItems(result.totalItems);
+      setAllItems(result.allItems);
+      setCurrentPage(1);
+    }).catch(err => {
+      console.error("Error fetching data:", err);
+      setError(err.message || "데이터를 불러오는 중 오류가 발생했습니다.");
+      setAllData([]);
+      setTotalItems(0);
+      setAllItems(undefined);
+    }).finally(() => {
+      setIsLoading(false);
+    });
   };
 
 

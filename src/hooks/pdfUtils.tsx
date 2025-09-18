@@ -231,6 +231,115 @@ export async function previewPdfFromServerData(html: string) {
   return { blobUrl, pdfBlob };
 }
 
+// 서버 응답 데이터로 PDF 생성 후 바로 다운로드
+export async function downloadPdfFromServerData(html: string, filename: string = '견적서') {
+  try {
+    console.log("다운로드용 PDF 생성 시작", html);
+    const estimateJson = extractInvoiceJSON(html);
+    if (!estimateJson) throw new Error('invoiceData가 없습니다.');
+
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    document.body.appendChild(tempDiv);
+
+    const root = document.createElement('div');
+    root.style.width = '210mm'; // A4 너비
+    root.style.backgroundColor = 'white';
+    root.style.padding = '10mm 10mm'; // 상하 10mm, 좌우 10mm 패딩
+    root.style.boxSizing = 'border-box';
+    tempDiv.appendChild(root);
+
+    const { createRoot } = await import('react-dom/client');
+    const reactRoot = createRoot(root);
+    const { PrintableInvoice } = await import('@/components/ai-esti/PrintableInvoice');
+
+    // 비회원 정보가 있다면 estimateJson에 반영
+    const guestInfo = sessionStorage.getItem('guestInfo');
+    if (guestInfo) {
+      const { name, email } = JSON.parse(guestInfo);
+      if (estimateJson.customer) {
+        estimateJson.customer.name = name || estimateJson.customer.name;
+        estimateJson.customer.email = email || estimateJson.customer.email;
+      } else {
+        estimateJson.customer = { name, email };
+      }
+    }
+    
+    reactRoot.render(<PrintableInvoice estimate={estimateJson} />);
+    await new Promise((r) => setTimeout(r, 500)); // 렌더링 대기
+
+    const html2canvas = (await import('html2canvas')).default;
+    const { jsPDF } = await import('jspdf');
+
+    // 페이지별로 분할하여 캡처
+    const pageHeight = 277; // A4 높이에서 패딩 제외
+    const totalHeight = root.scrollHeight;
+    const scale = 2; // 고해상도를 위한 스케일
+
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    let currentY = 0;
+    let pageNumber = 0;
+
+    while (currentY < totalHeight) {
+      if (pageNumber > 0) {
+        pdf.addPage();
+      }
+
+      // 현재 페이지 영역만 캡처
+      const canvas = await html2canvas(root, {
+        scale: scale,
+        useCORS: true,
+        logging: false,
+        imageTimeout: 0,
+        backgroundColor: 'white',
+        y: currentY,
+        height: Math.min(pageHeight * (96 / 25.4), totalHeight - currentY), // mm를 px로 변환
+        scrollX: 0,
+        scrollY: currentY
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      const imgWidth = 190; // 좌우 10mm 패딩 적용 (210mm - 20mm)
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      // 5mm 패딩을 적용하여 왼쪽으로 5px 이동, 위쪽 패딩도 줄임
+      pdf.addImage(imgData, 'JPEG', 5, 10, imgWidth, imgHeight);
+      
+      currentY += pageHeight * (96 / 25.4); // 다음 페이지 시작점
+      pageNumber++;
+    }
+
+    // PDF 다운로드
+    const pdfBlob = pdf.output('blob');
+    
+    // 모든 환경에서 파일 다운로드로 통일
+    const link = document.createElement('a');
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    link.href = blobUrl;
+    link.download = `${filename}.pdf`;
+    
+    // 임시로 DOM에 추가 후 클릭
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // 메모리 정리
+    setTimeout(() => {
+      URL.revokeObjectURL(blobUrl);
+    }, 1000);
+
+    reactRoot.unmount();
+    document.body.removeChild(tempDiv);
+
+    console.log("PDF 다운로드 완료");
+    return true;
+  } catch (error) {
+    console.error('PDF 다운로드 실패:', error);
+    throw error;
+  }
+}
+
 
 // 하위호환: 업로드(서버 저장) 용도로 호출
 export async function generateAndUploadPdf(

@@ -75,26 +75,23 @@ export default function TermsPage() {
   // 1. API 호출 및 데이터 매핑
   useEffect(() => {
     const fetchTerms = async () => {
-      const res = await termGetList();
+      const res = await termGetList() as any;
       devLog("📱 [약관 목록] 응답", res);
-  
-      // ✨ 이 부분을 수정합니다.
-      const rawList = res?.[0]?.data || [];
-      devLog("📱 [약관 목록] 원본 데이터", rawList);
-  
-      if (rawList.length > 0) {
-        rawList.sort((a: any, b: any) => a._id - b._id);
-      }
-      devLog("📱 [약관 목록] 정렬된 데이터", rawList);
 
+      // API 응답에서 data 배열 추출
+      const rawList = res?.data || [];
+      devLog("📱 [약관 목록] 원본 데이터", rawList);
+
+      // rawList의 순서와 상관없이 각 탭의 language와 index에 맞는 데이터 매핑
       const map: ContentMap = {};
-  
-      tabs.forEach((tab, index) => {
-        const matched = rawList[index];
+      tabs.forEach((tab) => {
+        const matched = rawList.find(
+          (item: any) => item.language === tab.language && item._id === tab.index
+        );
         map[tab.key] = {
-          index: matched?.["_id"],
+          index: matched?._id,
           language: tab.language,
-          content: matched?.["content"] ?? "",
+          content: matched?.content ?? "",
           termsType: "user",
         };
       });
@@ -149,7 +146,7 @@ export default function TermsPage() {
     };
   
     try {
-      const response = await termUpdate(current.index, params);
+      const response = await termUpdate(current.index, params) as any;
       console.log("📦 저장 응답:", response);
   
       const result = response?.[0] || response;

@@ -285,8 +285,10 @@ const SharePage: React.FC = () => {
   // 메시지에서 파일 정보를 파싱하는 함수
   // 유저 메시지에서 ai 프롬프트(견적 정보 등) 제거
   const stripAiPrompt = (text: string) => {
-    // [현재 견적 정보] ~ 위 견적을 기반으로 ... 패턴 제거
-    return text.replace(/\[현재 견적 정보][\s\S]*?위 견적을 기반으로 [^\n]*를 진행해주세요\./g, '').trim();
+    // [현재 견적 정보] ~ 위 견적을 기반으로 ... 패턴만 제거
+    let cleanedText = text.replace(/\[현재 견적 정보][\s\S]*?위 견적을 기반으로 [^\n]*를 진행해주세요\./g, '').trim();
+    
+    return cleanedText;
   };
 
   const parseMessageContent = (content: string) => {
