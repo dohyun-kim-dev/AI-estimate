@@ -31,6 +31,7 @@ import InquiryPage from '../app/superAdmin/userData/inquiry/page';
 import PriceListPage from '../app/superAdmin/userData/price/page';
 import ProposalDownloadPage from '../app/superAdmin/userData/proposal/page';
 import PDFPreview from './pdfPreview';
+import CompletedPage from '@app/completed/page';
 
 export default function AppRoutes() {
   const location = useLocation();
@@ -62,6 +63,7 @@ export default function AppRoutes() {
         </Route>
 
         <Route path="pdf-preview" element={<PDFPreview />} />
+        <Route path="completed" element={<CompletedPage />} />
 
         <Route element={<CMSLayout />}>
           <Route path="cms" element={<CMS />} />

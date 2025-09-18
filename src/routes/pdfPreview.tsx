@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
-import { fetchEstimateById, getDownloadEstimateUrl } from '../lib/api/user/userApi';
+import { fetchEstimateById } from '../lib/api/user/userApi';
 import { previewPdfFromServerData } from '../hooks/pdfUtils';
 
 const PreviewContainer = styled.div`
@@ -235,7 +235,7 @@ const PDFPreview: React.FC = () => {
   
   const handleDownload = () => {
     if (companyCode && uuid) {
-      const downloadUrl = getDownloadEstimateUrl(companyCode, uuid);
+      const downloadUrl = `${apiUrl}/users/company/estimate/${companyCode}/${uuid}.pdf`;
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = `견적서_${uuid}.pdf`;
