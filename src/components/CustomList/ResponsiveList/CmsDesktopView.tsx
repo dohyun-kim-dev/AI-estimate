@@ -12,6 +12,7 @@ interface BaseRecord {
 }
 
 interface CmsDesktopViewProps<T extends BaseRecord> {
+  ref?: React.Ref<any>;
   title: string;
   data: T[];
   columns: ColumnDefinition<T>[];
@@ -39,6 +40,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
 }
 
 export default function CmsDesktopView<T extends BaseRecord>({
+  ref,
   title,
   data,
   columns,

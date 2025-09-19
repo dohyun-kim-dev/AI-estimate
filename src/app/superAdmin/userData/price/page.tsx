@@ -6,7 +6,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import styled from 'styled-components';
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
-import GenericListUI, {
+import CmsResponsiveContainer from '@/components/CustomList/ResponsiveList/CmsResponsiveContainer';
+import {
   FetchParams,
   FetchResult,
 } from '@/components/CustomList/GenericListUI';
@@ -1360,10 +1361,11 @@ const PriceListPage: React.FC = () => {
             style={{ zIndex: 10000 }}
           ></ToastContainer>
           
-      <GenericListUI<any>
+      <CmsResponsiveContainer<any>
         ref={genericListRef}
         key={`price-list-${selectedCompanyCode || 'no-company'}-${forceUpdateKey}`}
         title="단가표 관리"
+        data={transformedTableData}
         columns={dynamicColumns}
         enableDateFilter={false}
         enableCompanySearch={true}

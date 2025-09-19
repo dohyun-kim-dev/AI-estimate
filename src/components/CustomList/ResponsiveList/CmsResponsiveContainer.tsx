@@ -18,6 +18,7 @@ interface BaseRecord {
 type ViewMode = 'detail' | 'compact' | 'large';
 
 interface CmsResponsiveContainerProps<T extends BaseRecord> {
+  ref?: React.Ref<any>;
   title: string;
   data: T[];
   columns: ColumnDefinition<T>[];
@@ -45,6 +46,7 @@ interface CmsResponsiveContainerProps<T extends BaseRecord> {
 }
 
 export default function CmsResponsiveContainer<T extends BaseRecord>({
+  ref,
   title,
   data,
   columns,
@@ -71,6 +73,7 @@ export default function CmsResponsiveContainer<T extends BaseRecord>({
   
   // 공통 props
   const commonProps = {
+    ref,
     title,
     data,
     columns,

@@ -222,7 +222,8 @@ const MenuList = styled.ul<{ $isCollapsed: boolean }>`
 `;
 
 const MenuItem = styled.li<{ $active?: boolean; $isCollapsed: boolean }>`
-  height: 60px;
+  // height: 60px;
+  padding: 24px 20px;
   display: flex;
   justify-content: ${({ $isCollapsed }) =>
     $isCollapsed ? 'center' : 'flex-start'};

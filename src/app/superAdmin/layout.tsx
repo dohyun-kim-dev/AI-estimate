@@ -246,7 +246,7 @@ const MainContent = styled.div<{
 `;
 
 const Container = styled.div`
-  padding: 0px 20px 20px 20px;
+  padding: 0px;
   margin: 0 auto;
   max-width: none;
   background-color: #e6e7e9;

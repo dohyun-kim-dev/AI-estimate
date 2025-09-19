@@ -1230,6 +1230,10 @@ useEffect(() => {
       }, 1000);
       return () => clearTimeout(timer);
     }
+    // 메시지가 없고 이전에 인사말을 표시했던 경우 (새로운 채팅 시작)
+    if (messages.length === 0 && hasShownInitialMessage) {
+      setHasShownInitialMessage(false);
+    }
   }, [messages, hasShownInitialMessage, addMessage, initialAiMessage]);
 
   useEffect(() => {

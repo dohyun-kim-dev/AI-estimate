@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { THEME_COLORS, ThemeMode } from "@/styles/theme_colors";
 import { getCompanyList } from '@/lib/api/admin/adminApi';
+import CmsPopup from '@/components/CmsPopup';
 
 interface Company {
   _id: string;
@@ -142,25 +143,26 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <ModalOverlay onClick={onClose}>
-      <ModalContent onClick={e => e.stopPropagation()} $themeMode={themeMode}>
-        <ModalHeader $themeMode={themeMode}>
-          <h2>고객사 검색</h2>
-          <CloseButton onClick={onClose} $themeMode={themeMode}>&times;</CloseButton>
-        </ModalHeader>
-        
-                  <Flex>
-                    <CompanySearchInput
-                      type="text"
-                      placeholder="고객사명을 입력하세요"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      $themeMode={themeMode}
-                    />
-                    <SearchButton onClick={handleSearch} $themeMode={themeMode}>
-                      조회
-                    </SearchButton>
-                  </Flex>
+    <CmsPopup
+      title="고객사 검색"
+      isOpen={isOpen}
+      onClose={onClose}
+      height="auto"
+      backgroundColor={themeMode === 'light' ? '#ffffff' : THEME_COLORS.dark.background}
+    >
+      <SearchContainer>
+        <Flex>
+          <CompanySearchInput
+            type="text"
+            placeholder="고객사명을 입력하세요"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            $themeMode={themeMode}
+          />
+          <SearchButton onClick={handleSearch} $themeMode={themeMode}>
+            조회
+          </SearchButton>
+        </Flex>
 
         <TableContainer $themeMode={themeMode}>
           <Table>
@@ -207,81 +209,17 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
             </TableBody>
           </Table>
         </TableContainer>
-      </ModalContent>
-    </ModalOverlay>
+      </SearchContainer>
+    </CmsPopup>
   );
 };
 
 export default CompanySearchModal;
 
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.8);
+const SearchContainer = styled.div`
   display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-`;
-
-const ModalContent = styled.div<{ $themeMode: ThemeMode }>`
-  width: 500px;
-  max-height: 600px;
-  background-color: ${({ $themeMode }) =>
-    $themeMode === 'light' ? '#ffffff' : THEME_COLORS.dark.background};
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-`;
-
-const ModalHeader = styled.div<{ $themeMode: ThemeMode }>`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  
-  h2 {
-    margin: 0;
-    color: ${({ $themeMode }) =>
-      $themeMode === 'light' ? '#333333' : THEME_COLORS.dark.text};
-    font-size: 20px;
-  }
-`;
-
-const CloseButton = styled.button<{ $themeMode: ThemeMode }>`
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: ${({ $themeMode }) =>
-    $themeMode === 'light' ? '#666666' : THEME_COLORS.dark.text};
-  
-  &:hover {
-    color: ${({ $themeMode }) =>
-      $themeMode === 'light' ? '#333333' : THEME_COLORS.dark.accent};
-  }
-`;
-
-const SearchInput = styled.input<{ $themeMode: ThemeMode }>`
-  width: 100%;
-  padding: 10px 15px;
-  border: 1px solid ${({ $themeMode }) =>
-    $themeMode === 'light' ? '#dddddd' : THEME_COLORS.dark.borderColor};
-  border-radius: 4px;
-  margin-bottom: 15px;
-  background-color: ${({ $themeMode }) =>
-    $themeMode === 'light' ? '#ffffff' : THEME_COLORS.dark.inputBackground};
-  color: ${({ $themeMode }) =>
-    $themeMode === 'light' ? '#333333' : THEME_COLORS.dark.text};
-
-  &:focus {
-    outline: none;
-    border-color: ${({ $themeMode }) =>
-      $themeMode === 'light' ? THEME_COLORS.light.primary : THEME_COLORS.dark.accent};
-  }
+  flex-direction: column;
+  gap: 16px;
 `;
 
 const TableContainer = styled.div<{ $themeMode: ThemeMode }>`
@@ -310,6 +248,7 @@ const TableHeader = styled.thead<{ $themeMode: ThemeMode }>`
       $themeMode === 'light' ? '#333333' : THEME_COLORS.dark.text};
     border-bottom: 1px solid ${({ $themeMode }) =>
       $themeMode === 'light' ? '#dddddd' : THEME_COLORS.dark.borderColor};
+    border-right: 1px solid #E6E7E9;
   }
 `;
 
@@ -326,8 +265,7 @@ const TableRow = styled.tr<{ $themeMode: ThemeMode }>`
     padding: 12px;
     color: ${({ $themeMode }) =>
       $themeMode === 'light' ? '#333333' : THEME_COLORS.dark.text};
-    border-bottom: 1px solid ${({ $themeMode }) =>
-      $themeMode === 'light' ? '#eeeeee' : THEME_COLORS.dark.borderColor};
+    border-right: 1px solid #E6E7E9;
   }
 
   &:hover {
@@ -351,13 +289,30 @@ const NoResults = styled.div<{ $themeMode: ThemeMode }>`
 `;
 
 
-const CompanySearchInput = styled(SearchInput)`
+const CompanySearchInput = styled.input<{ $themeMode: ThemeMode }>`
+  width: 100%;
+  height: 48px;
+  padding: 10px 15px;
+  border: 1px solid ${({ $themeMode }) =>
+    $themeMode === 'light' ? '#dddddd' : THEME_COLORS.dark.borderColor};
+  border-radius: 4px;
+  background-color: ${({ $themeMode }) =>
+    $themeMode === 'light' ? '#ffffff' : THEME_COLORS.dark.inputBackground};
+  color: ${({ $themeMode }) =>
+    $themeMode === 'light' ? '#333333' : THEME_COLORS.dark.text};
   cursor: pointer;
   background-image: url("/icon_search.png");
   background-repeat: no-repeat;
   background-position: right 10px center;
   background-size: 16px 16px;
   margin: 0px;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ $themeMode }) =>
+      $themeMode === 'light' ? THEME_COLORS.light.primary : THEME_COLORS.dark.accent};
+  }
+
   &:hover {
     background-color: ${({ $themeMode }) =>
       $themeMode === "light" ? "#f5f5f5" : THEME_COLORS.dark.background};
@@ -365,16 +320,15 @@ const CompanySearchInput = styled(SearchInput)`
 `;
 
 const SearchButton = styled.button<{ $themeMode: ThemeMode }>`
-  width: 80px;
-  height: 40px;
+  width: 86px;
+  height: 48px;
   margin-left: 10px;
-  background: ${({ $themeMode }) =>
-    $themeMode === "light" ? THEME_COLORS.light.primary : THEME_COLORS.dark.buttonBackground};
+  background: #2C2E3C;
   color: ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.buttonText : THEME_COLORS.dark.buttonText)};
   border: 1px solid
     ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.borderColor : THEME_COLORS.dark.borderColor)};
   border-left: none;
-  border-radius: 0;
+  border-radius: 4px;
   font-weight: 500;
   font-size: 14px;
   cursor: pointer;

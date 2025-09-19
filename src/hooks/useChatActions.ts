@@ -361,58 +361,32 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
     setIsProcessing(true);
 
-    // 🔥 URL 감지 및 처리 (분리된 모듈 사용) - 성능 개선
+    // URL 감지 및 동기 처리
     const detectedUrls = detectUrls(displayMessage);
-    let urlAnalysisForAI = ''; // AI용 분석 결과
-    let hasPartialResults = false;
+    let urlAnalysisForAI = '';
 
     if (detectedUrls.length > 0) {
-      // 사용자에게 즉시 알림 (분석 시작)
-      const shortUrls = detectedUrls.map(shortenUrl);
-      success(`🔍 ${detectedUrls.length}개의 웹사이트 분석 시작: ${shortUrls.join(', ')}`);
-
-      // 🔥 URL 분석을 비동기로 처리하여 메시지 전송과 병렬 진행
-      const urlAnalysisPromise = detectedUrls.length > 0 
-        ? analyzeUrls(detectedUrls, (progress) => {
-            console.log(`URL 분석 진행: ${progress.completed}/${progress.total}`);
-          }).then(analysisResult => {
-            const successfulCount = analysisResult.results.filter(r => r.success).length;
-            if (successfulCount > 0) {
-              success(`✅ ${successfulCount}개 웹사이트 분석 완료! 추가 정보가 반영되었습니다.`);
-              // 🚀 URL 분석 완료 후 추가 메시지로 보완 정보 제공
-              if (analysisResult.summary) {
-                // 분석 결과를 사용자에게 보여주기 위한 별도 메시지 추가
-                addMessage({ 
-                  role: 'ai', 
-                  content: `📊 웹사이트 분석 결과:\n${analysisResult.summary.substring(0, 500)}${analysisResult.summary.length > 500 ? '...' : ''}` 
-                });
-              }
-            }
-            return analysisResult;
-          }).catch(error => {
-            console.error('URL 콘텐츠 분석 실패:', error);
-            success('⚠️ 웹사이트 분석이 지연되어 기본 답변을 제공합니다.');
-            return null;
-          })
-        : Promise.resolve(null);
-
-      // 🚀 URL 분석을 기다리지 않고 일단 메시지 전송 시작
-      // URL 분석이 완료되면 나중에 추가 정보를 반영
+      try {
+        // URL 분석을 동기적으로 처리 (메시지 전송 전에 완료)
+        const analysisResult = await analyzeUrls(detectedUrls, (progress) => {
+          console.log(`URL 분석 진행: ${progress.completed}/${progress.total}`);
+        });
+        
+        if (analysisResult && analysisResult.summary) {
+          urlAnalysisForAI = analysisResult.summary;
+          console.log('URL 분석 완료, AI에게 전달할 내용 준비됨');
+        }
+      } catch (error) {
+        console.error('URL 분석 실패:', error);
+        // 분석 실패해도 원본 메시지로 진행
+      }
     }
 
-    // 사용자 메시지 생성 (URL을 짧게 표시)
+    // 사용자 메시지 생성
     let userMessageContent = displayMessage;
     if (uploadedFiles.length > 0) {
       const fileInfo = uploadedFiles.map((file) => `[첨부파일: ${file.name}]`).join('\n');
       userMessageContent = `${displayMessage}\n\n${fileInfo}`;
-    }
-
-    // URL이 감지되면 짧게 표시 (displayMessage에서)
-    if (detectedUrls.length > 0) {
-      detectedUrls.forEach(url => {
-        const shortUrl = shortenUrl(url);
-        userMessageContent = userMessageContent.replace(url, shortUrl);
-      });
     }
 
     // 사용자 메시지 임시 추가 (깔끔한 버전)
@@ -525,8 +499,12 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
       const combinedPrompt = await combinePrompts(selectedPromptId, input);
 
-      // 🔥 URL 분석 결과는 별도 메시지로 처리하므로 기본 프롬프트만 사용
-      const finalPrompt = combinedPrompt;
+      // URL 분석 결과가 있으면 프롬프트에 추가
+      let finalPrompt = combinedPrompt;
+      if (urlAnalysisForAI) {
+        finalPrompt = `${combinedPrompt}\n\n[추가 참고 정보 - 웹사이트 분석 결과]\n${urlAnalysisForAI}`;
+        console.log('URL 분석 결과가 AI 프롬프트에 포함됨');
+      }
 
       // 🔥 스토어에서 현재 메시지 히스토리 가져와서 AI에게 전달
       const currentMessages = useChatStore.getState().messages;

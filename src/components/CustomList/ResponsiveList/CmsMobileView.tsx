@@ -83,31 +83,34 @@ export default function CmsMobileView<T extends BaseRecord>({
   const [searchKeyword, setSearchKeyword] = useState<string>("");
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   
-  // 외부에서 관리되는 고객사 정보 사용
-  const selectedCompany = selectedCompanyCode && selectedCompanyName 
-    ? { id: selectedCompanyCode, name: selectedCompanyName }
-    : null;
+  // 외부에서 관리되는 고객사 정보 사용 (메모이제이션으로 불필요한 재생성 방지)
+  const selectedCompany = React.useMemo(() => {
+    return selectedCompanyCode && selectedCompanyName 
+      ? { id: selectedCompanyCode, name: selectedCompanyName }
+      : null;
+  }, [selectedCompanyCode, selectedCompanyName]);
 
   // Fetching state (aligns with GenericListUI behavior)
-  const [allData, setAllData] = useState<T[]>(data ?? []);
-  const [totalItemsMeta, setTotalItemsMeta] = useState<number>(data ? data.length : 0);
-  const [allItemsMeta, setAllItemsMeta] = useState<number | undefined>(data ? data.length : undefined); // kept for parity
+  const [allData, setAllData] = useState<T[]>([]);
+  const [totalItemsMeta, setTotalItemsMeta] = useState<number>(0);
+  const [allItemsMeta, setAllItemsMeta] = useState<number | undefined>(undefined);
   const [isLoadingLocal, setIsLoadingLocal] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null); // reserved for future display
-
+  const [error, setError] = useState<string | null>(null);
 
   // Keep allData in sync when static data prop changes (no fetcher)
   useEffect(() => {
-    if (!fetchData) {
+    if (!fetchData && data) {
       const list = Array.isArray(data) ? data : [];
       setAllData(list);
       setTotalItemsMeta(list.length);
       setAllItemsMeta(list.length);
-      setCurrentPage(1);
+      if (currentPage > 1) {
+        setCurrentPage(1);
+      }
     }
-  }, [data, fetchData]);
+  }, [data, fetchData]); // currentPage 의존성 제거
 
-  // Server fetching similar to GenericListUI
+  // Server fetching similar to GenericListUI (의존성 최적화)
   const fetchDataCallback = useCallback(async () => {
     if (!fetchData) return;
     setIsLoadingLocal(true);
@@ -137,12 +140,21 @@ export default function CmsMobileView<T extends BaseRecord>({
     } finally {
       setIsLoadingLocal(false);
     }
-  }, [fetchData, searchKeyword, fromDate, toDate, enableDateFilter, selectedCompanyCode]);
+  }, [fetchData, searchKeyword, selectedCompanyCode, enableDateFilter, fromDate, toDate]);
 
-  // Initial load and when dependencies change
+  // Initial load when component mounts (fetchData가 있을 때만)
   useEffect(() => {
-    fetchDataCallback();
-  }, [fetchDataCallback]);
+    if (fetchData) {
+      fetchDataCallback();
+    }
+  }, []); // 빈 의존성 배열로 초기 로드만
+
+  // 검색 조건이 변경될 때만 다시 fetch
+  useEffect(() => {
+    if (fetchData) {
+      fetchDataCallback();
+    }
+  }, [searchKeyword, selectedCompanyCode, fromDate, toDate]); // fetchDataCallback 의존성 제거
 
   // 중첩 키 접근 유틸
   const getPropertyValue = (obj: unknown, path: string): unknown => {
@@ -174,9 +186,14 @@ export default function CmsMobileView<T extends BaseRecord>({
     return unique;
   };
 
-  // 필터링 및 페이지네이션 데이터 생성
+  // 필터링 및 페이지네이션 데이터 생성 (의존성 최적화)
   const filteredData = React.useMemo(() => {
-    // 데이터가 배열이 아닌 경우 빈 배열 반환
+    // fetchData가 있으면 서버에서 필터링하므로 클라이언트 필터링 안함
+    if (fetchData) {
+      return Array.isArray(allData) ? allData : [];
+    }
+
+    // fetchData가 없으면 클라이언트 필터링 수행
     if (!Array.isArray(allData)) {
       console.warn('Data is not an array:', allData);
       return [];
@@ -219,7 +236,7 @@ export default function CmsMobileView<T extends BaseRecord>({
       console.error('Error filtering data:', error);
       return [];
     }
-  }, [allData, enableDateFilter, fromDate, toDate, searchKeyword, columns]);
+  }, [allData, fetchData, enableDateFilter, fromDate, toDate, searchKeyword, columns]);
 
   const derivedTotalItems = fetchData ? totalItemsMeta : filteredData.length;
   const totalPages = Math.max(1, Math.ceil(derivedTotalItems / itemsPerPage));

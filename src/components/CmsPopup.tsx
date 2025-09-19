@@ -16,6 +16,7 @@ type CmsPopupProps = {
   onClose: () => void;
   isWide?: boolean;
   showRequiredMark?: boolean;
+  requiredText?: string; // ✅ 필수 항목 텍스트 커스터마이징
   bottomFloating?: React.ReactNode;
   height?: string | null; // ✅ 팝업 높이 지정
   backgroundColor?: string; // ✅ 팝업 배경 색상 지정
@@ -39,6 +40,14 @@ const Overlay = styled.div<{ $scrollX: number }>`
   justify-content: center;
   align-items: center;
   transform: translateX(${({ $scrollX }) => -$scrollX}px);
+
+  @media (max-width: 768px) {
+    min-width: 100vw;
+    padding: 0;
+    align-items: center;
+    overflow-x: hidden;
+    transform: none;
+  }
 `;
 
 const PopupContainer = styled.div<{
@@ -52,7 +61,7 @@ const PopupContainer = styled.div<{
   min-width: ${({ $isWide }) => ($isWide ? '1200px' : '800px')};
   height: ${({ $customHeight }) => $customHeight ?? '85vh'};
   background: ${({ $backgroundColor }) => $backgroundColor ?? '#2c2e3c'}; // ✅ 배경색
-  border-radius: 8px;
+  border-radius: 4px;
   padding-bottom: ${({ $hasBottomFloating }) => ($hasBottomFloating ? '100px' : '0')};
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   display: flex;
@@ -61,10 +70,13 @@ const PopupContainer = styled.div<{
   flex-shrink: 0;
 
   @media (max-width: 768px) {
-    width: 95vw !important;
-    min-width: 95vw !important;
-    height: 90vh !important;
-    margin: 0 10px;
+    width: 90vw !important;
+    min-width: 90vw !important;
+    height: 80vh !important;
+    max-height: 80vh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    padding-bottom: ${({ $hasBottomFloating }) => ($hasBottomFloating ? '80px' : '0')};
   }
 `;
 
@@ -74,29 +86,69 @@ const HeaderRow = styled.div<{ $backgroundColor?: string }>`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px;
+  padding: 8px 14px;
   font-size: 20px;
-  font-weight: 600;
-  color: #000;
-  background-color: ${({ $backgroundColor }) => $backgroundColor ?? '#f5f5f5'};
+  font-weight: 500;
+  color: #fff;
+  background-color: #2C2E3C;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 8px 12px;
+    font-size: 16px;
+  }
 `;
 
 const RequiredMark = styled.span`
   font-size: 14px;
   font-weight: 500;
-  color: ${AppColors.error};
+  color: #A8ABC3;
+
+  @media (max-width: 768px) {
+    font-size: 12px;
+  }
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px;
+  margin-left: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 18px;
+    padding: 4px;
+    margin-left: 8px;
+  }
 `;
 
 const PopupContent = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
-  padding-top: 0;
+  padding: 20px 38px ;
+  min-height: 0; /* Flexbox에서 올바른 스크롤을 위해 필요 */
 
   scrollbar-width: none;
   -ms-overflow-style: none;
   &::-webkit-scrollbar {
     display: none;
+  }
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    padding-top: 0;
   }
 `;
 
@@ -113,6 +165,12 @@ const BottomFloatingWrapper = styled.div<{ $backgroundColor?: string }>`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 8px 12px;
+    gap: 6px;
+  }
 `;
 
 const CmsPopup: React.FC<CmsPopupProps> = ({
@@ -122,8 +180,10 @@ const CmsPopup: React.FC<CmsPopupProps> = ({
   onClose,
   isWide,
   showRequiredMark = false,
+  requiredText = '필수 항목 *', // ✅ 기본값으로 기존 텍스트 사용
   bottomFloating,
   height,
+  width,
   backgroundColor,
   
 }) => {
@@ -141,13 +201,37 @@ const CmsPopup: React.FC<CmsPopupProps> = ({
   }, []);
 
   useEffect(() => {
+    if (isOpen) {
+      // 모바일에서 배경 스크롤 방지
+      if (isMobile) {
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
+      }
+    }
+
+    return () => {
+      if (isMobile) {
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.width = '';
+      }
+    };
+  }, [isOpen, isMobile]);
+
+  useEffect(() => {
     const handleScroll = () => {
-      setScrollX(window.scrollX || window.pageXOffset);
+      if (!isMobile) {
+        setScrollX(window.scrollX || window.pageXOffset);
+      }
     };
     handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    
+    if (!isMobile) {
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      return () => window.removeEventListener('scroll', handleScroll);
+    }
+  }, [isMobile]);
 
   if (!isOpen) return null;
 
@@ -162,7 +246,10 @@ const CmsPopup: React.FC<CmsPopupProps> = ({
 
         <HeaderRow $backgroundColor={backgroundColor}>
           <span>{title}</span>
-          {showRequiredMark && <RequiredMark>*필수값</RequiredMark>}
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            {showRequiredMark && <RequiredMark>{requiredText}</RequiredMark>}
+            <CloseButton onClick={onClose}>×</CloseButton>
+          </div>
         </HeaderRow>
         <PopupContent>{children}</PopupContent>
         {bottomFloating && (

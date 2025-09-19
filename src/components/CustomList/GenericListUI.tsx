@@ -439,6 +439,21 @@ const GenericListUIInner = <T extends BaseRecord>(
           )}
         </TitleContainer>
         {renderTabs && <TabsWrapper>{renderTabs()}</TabsWrapper>}
+          {enableCompanySearch && (
+                  <Flex>
+                    <CompanySearchInput
+                      type="text"
+                      placeholder="고객사를 선택하세요"
+                      value={selectedCompanyName || ''}
+                      readOnly
+                      onClick={() => setIsCompanyModalOpen(true)}
+                      $themeMode={themeMode}
+                    />
+                    <SearchButton onClick={() => setIsCompanyModalOpen(true)} $themeMode={themeMode}>
+                      검색
+                    </SearchButton>
+                  </Flex>
+                )}
       </TopHeader>
 
       <ControlHeader>
@@ -455,21 +470,7 @@ const GenericListUIInner = <T extends BaseRecord>(
           )}{
             (enableCompanySearch || enableSearch) && (
               <SearchContainer>
-                {enableCompanySearch && (
-                  <Flex>
-                    <CompanySearchInput
-                      type="text"
-                      placeholder="고객사를 선택하세요"
-                      value={selectedCompanyName || ''}
-                      readOnly
-                      onClick={() => setIsCompanyModalOpen(true)}
-                      $themeMode={themeMode}
-                    />
-                    <SearchButton onClick={() => setIsCompanyModalOpen(true)} $themeMode={themeMode}>
-                      검색
-                    </SearchButton>
-                  </Flex>
-                )}
+              
                 {enableSearch && (
                   <Flex>
                     <SearchInput
@@ -630,7 +631,7 @@ const Container = styled.div<{ $themeMode: ThemeMode }>`
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  padding: 80px 30px;
+  padding: 30px 85px 50px 85px;
   background-color: ${({ $themeMode }) =>
     $themeMode === "light" ? THEME_COLORS.light.background : THEME_COLORS.dark.background};
   color: ${({ $themeMode }) =>
@@ -643,7 +644,8 @@ const Container = styled.div<{ $themeMode: ThemeMode }>`
 
 const TopHeader = styled.div`
   display: flex;
-  flex-direction: column;
+  // flex-direction: column;
+  justify-content: space-between;
   margin-bottom: 20px;
   gap: 15px;
 `;
@@ -695,7 +697,7 @@ const MiddleControls = styled.div`
 const RightControls = styled.div`
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 10px;
 `;
 
 const Flex = styled.div`
@@ -803,7 +805,7 @@ const ExcelButton = styled(ActionButton)`
 const PaginationControls = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   color: #555555;
 `;
 
