@@ -331,7 +331,7 @@ const StyledDiv = styled.div`
 // 스크롤 다운 버튼 스타일
 const ScrollDownButton = styled.button<{ $isVisible: boolean }>`
   position: fixed;
-  bottom: 100px;
+  bottom: 120px;
   right: 20px;
   display: flex;
   padding: 6px;
