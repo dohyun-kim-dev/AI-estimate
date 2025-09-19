@@ -138,11 +138,13 @@ interface UseChatActionsProps {
 export function useChatActions({ modelName, selectedPromptId }: UseChatActionsProps) {
   const { sendChat } = useAI(modelName);
   const { success, error } = useToast();
-  const { addMessage, updateLastMessage, chatSessionId, setChatSessionId } = useChatStore((s) => ({
+  const { addMessage, updateLastMessage, chatSessionId, setChatSessionId, isProcessing, setIsProcessing } = useChatStore((s) => ({
     addMessage: s.addMessage,
     updateLastMessage: s.updateLastMessage,
     chatSessionId: s.chatSessionId,
     setChatSessionId: s.setChatSessionId,
+    isProcessing: s.isProcessing, // 추가: store에서 가져오기
+    setIsProcessing: s.setIsProcessing, // 추가: store 설정 함수
   }));
   const { isAuthenticated } = useAuthStore();
 
@@ -165,7 +167,6 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     return null;
   };
 
-  const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<FileUploadData[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);

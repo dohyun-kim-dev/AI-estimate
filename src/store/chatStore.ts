@@ -15,10 +15,12 @@ export type ChatMessage = {
 interface ChatState {
   messages: ChatMessage[];
   chatSessionId: string | null;
+  isProcessing: boolean; // 추가: AI 처리 중 상태
   addMessage: (m: ChatMessage) => void;
   updateLastMessage: (payload: Partial<Omit<ChatMessage, 'role'>>) => void; 
   updateMessageById: (messageId: string, payload: Partial<Omit<ChatMessage, 'role'>>) => void;
   setChatSessionId: (id: string | null) => void;
+  setIsProcessing: (processing: boolean) => void; // 추가: 처리 상태 설정
   clear: () => void;
   removeLastAiLoadingMessage: () => void;
 }
@@ -29,6 +31,7 @@ export const useChatStore = create<ChatState>()(
       (set, get) => ({
         messages: [],
         chatSessionId: null,
+        isProcessing: false, // 추가: 초기값 false
         addMessage: (m) => set((s) => ({ messages: [...s.messages, m] })),
         // 변경됨: 객체를 받아 마지막 메시지를 업데이트하도록 수정
         // Update the last AI message (searching from the end) with the provided payload.
@@ -71,6 +74,7 @@ export const useChatStore = create<ChatState>()(
           });          return { messages };
         }),
         setChatSessionId: (id) => set({ chatSessionId: id }),
+        setIsProcessing: (processing) => set({ isProcessing: processing }), // 추가: 처리 상태 설정
         clear: () => set({ messages: [], chatSessionId: null }),
         removeLastAiLoadingMessage: () => set((s) => {
           const messages = [...s.messages];

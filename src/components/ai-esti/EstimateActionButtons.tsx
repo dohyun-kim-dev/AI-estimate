@@ -12,6 +12,7 @@ import { requestEstimateConsult } from '@/lib/api/user/userApi';
 import { useLocation } from 'react-router-dom';
 import IssuerInfoModal, { IssuerInfo } from '@/components/ai-esti/IssuerInfoModal';
 import { SocialLoginModal } from '@/components/ai-esti/SocialLoginModal';
+import { ProjectEstimate } from '../../app/ai-estimate/types/projectEstimate';
 
 const ButtonsContainer = styled.div`
   display: flex;
@@ -43,8 +44,14 @@ const ActionButton = styled.button<{ $isPrimary?: boolean }>`
     flex-direction: column;
   }
 
-  &:hover {
+  &:hover:not(:disabled) {
     background-color: ${({ theme }) => theme.pick};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
   }
 `;
 
@@ -144,11 +151,13 @@ const ActionButtonBottom = styled.div<{ $isSecondary?: boolean }>`
 `;
 
 interface EstimateActionButtonsProps {
+  estimate?: ProjectEstimate; // 견적서 데이터 객체
   onConsult?: () => void;
   onSubmit?: (action: "AI 예산 줄이기" | "AI 맞춤 추천") => void;
 }
 
 const EstimateActionButtons: React.FC<EstimateActionButtonsProps> = ({
+  estimate,
   onConsult,
   onSubmit,
 }) => {
@@ -163,6 +172,7 @@ const [isMobile, setIsMobile] = useState(false);
 
   const { success, error } = useToast();
   const { isAuthenticated } = useAuthStore();
+  const { isProcessing } = useChatStore(); // 추가: store에서 isProcessing 가져오기
   const { 
     remainingCount, 
     hasUsedExtraCount, 
@@ -173,6 +183,8 @@ const [isMobile, setIsMobile] = useState(false);
   const { messages } = useChatStore();
   const location = useLocation();
 
+
+  // console.log('EstimateActionButtons estimate', estimate);
   // 세션 ID를 로컬스토리지에서 가져오는 함수 (useChatActions.ts와 동일한 로직)
   const getEffectiveSessionId = (): string | null => {
     // URL 파라미터에서 sessionId 확인
@@ -330,14 +342,17 @@ useEffect(() => {
   // 상담 요청 공통 처리: 로그인/비로그인 모두 지원
   const handleSubmit = async (info?: IssuerInfo) => {
     // 최종 견적서 데이터 추출
-    const lastMessage = messages[messages.length - 1];
-    const match = lastMessage?.content?.match(
-      /<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/
-    );
-    const estimateData = match ? JSON.parse(match[1]) : null;
+    // const lastMessage = messages[messages.length - 1];
+    // const match = lastMessage?.content?.match(
+    //   /<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/
+    // );
+    // const estimateData = match ? JSON.parse(match[1]) : null;
 
-    if (!estimateData) {
+    console.log("액션버튼 아이디: ", estimate.uuid);
+
+    if (!estimate.uuid) {
       error('견적서 정보를 찾을 수 없습니다.');
+      console.log('❗ 견적서 데이터 누락:', { "estimateData": estimate.uuid, "lastMessage": estimate.uuid });
       setIsInfoModalOpen(false);
       return;
     }
@@ -369,9 +384,9 @@ useEffect(() => {
       return;
     }
 
-    const title = estimateData.project_name || '새로운 견적서';
+    const title = estimate.project_name || '새로운 견적서';
     // 서버에서 pdf 생성 규칙이 uuid.pdf라면 다음과 같이 사용
-    const estimateFile = `${estimateData.uuid}.pdf`;
+    const estimateFile = `${estimate.uuid}.pdf`;
     const user = {
       id: userId,
       name: userName,
@@ -380,7 +395,7 @@ useEffect(() => {
     };
 
     try {
-      const response = await requestEstimateConsult(estimateData.uuid, title, chatSessionId, user);
+      const response = await requestEstimateConsult(estimate.uuid, title, chatSessionId, user);
       if (response.statusCode === 200) {
         success('정상 접수 되었습니다');
       } else {
@@ -424,7 +439,10 @@ useEffect(() => {
         <ActionButtonBottom>상담 요청 하기</ActionButtonBottom>
       </ActionButton>
      
-          <ActionButton onClick={() => handleAIFeatureClick("AI 예산 줄이기")}>
+          <ActionButton 
+            onClick={() => handleAIFeatureClick("AI 예산 줄이기")}
+            disabled={isProcessing}
+          >
             <LeftContent>
               <TextContent>
                 <Flex>
@@ -442,7 +460,10 @@ useEffect(() => {
             <ActionButtonBottom $isSecondary>AI 예산 줄이기</ActionButtonBottom>
           </ActionButton>
 
-          <ActionButton onClick={() => handleAIFeatureClick("AI 맞춤 추천")}>
+          <ActionButton 
+            onClick={() => handleAIFeatureClick("AI 맞춤 추천")}
+            disabled={isProcessing}
+          >
             <LeftContent>
               <TextContent>
                 <Flex>
@@ -477,7 +498,13 @@ useEffect(() => {
           setPendingAIAction(null); // 모달 닫을 때 대기 액션도 초기화
           setSocialLoginPurpose(null); // 목적도 초기화
         }}
-        purpose={hasUsedExtraCount ? 'limitExceeded' : 'limitReached'}
+        purpose={
+          socialLoginPurpose === 'consult' 
+            ? 'consult' 
+            : hasUsedExtraCount 
+              ? 'limitExceeded' 
+              : 'limitReached'
+        }
         onPrimaryButtonClick={pendingAIAction ? handleAIFeaturePrimaryClick : handleSocialLoginPrimaryClick}
         onGoogleLoginSuccess={handleSocialLoginSuccess}
         onIssuerInfoSubmit={handleSubmit}

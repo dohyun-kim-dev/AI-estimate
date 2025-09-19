@@ -172,7 +172,7 @@ export async function adminUpdate(params: AdminUpdateParams) {
 
   return callAdminApi({
     title: '관리자 수정',
-    url: `${BASE_URL}/cms/admins/${params.targetAdminId}`, // URL에 :id 부분 추가
+    url: `${BASE_URL}/cms/admins/${params._id}`, // URL에 :id 부분 추가
     method: 'PATCH', // PUT 메서드로 변경
     body: requestBody,
     isCallPageLoader: true,
@@ -186,9 +186,24 @@ export async function adminPasswordUpdate(
     title: '관리자 비밀번호 수정',
     url: `${BASE_URL}/cms/admin/password/update`,
     body: {
-      targetAdminId: params.targetAdminId,
+      targetAdminId: params._id,
       password: params.password,
     },
+    isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
+  });
+}
+
+//관리자 삭제 요청바디 옵셔널하게     "companyCode": "" // 옵션
+
+export async function adminDelete(_id: string) {  
+  return callAdminApi({
+    title: '관리자 삭제',
+    url: `${BASE_URL}/cms/admins/${_id}`,
+    body:{
+      // companyCode: companyCode || undefined
+    },
+    method: 'DELETE',
     isCallPageLoader: true,
     isWithToken: true, // 토큰 필요
   });

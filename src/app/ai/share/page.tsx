@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { useShareChatStore } from '@/store/shareChatStore';
@@ -322,6 +322,7 @@ const SharePage: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const hasLoadedMessages = useRef(false); // 중복 로딩 방지용
   
   // 스크롤 버튼 관련 상태
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -362,9 +363,6 @@ const SharePage: React.FC = () => {
 
 
   useEffect(() => {
-    // 페이지 로드 시 기존 메시지 클리어
-    clearMessages();
-    console.log('messages', messages);
     const loadSharedMessages = async () => {
       if (!sessionId) {
         setErrorMessage('세션 ID가 없습니다.');
@@ -374,6 +372,9 @@ const SharePage: React.FC = () => {
 
       try {
         console.log('공유 세션 메시지 로딩 중:', sessionId);
+        
+        // 페이지 로드 시 기존 메시지 클리어
+        clearMessages();
         
         // 세션 ID를 공유 채팅 스토어에 설정
         setSessionId(sessionId);
@@ -419,7 +420,7 @@ const SharePage: React.FC = () => {
     };
 
     loadSharedMessages();
-  }, [sessionId, companyCode, setSessionId, addMessage, success, clearMessages]);
+  }, [sessionId, companyCode, setSessionId, addMessage, clearMessages]); // messages 제거
 
   const handleRetry = () => {
     setLoading(true);

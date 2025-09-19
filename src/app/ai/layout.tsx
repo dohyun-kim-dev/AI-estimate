@@ -273,10 +273,7 @@ export default function AILayout() {
 
   // '공유' 버튼을 눌렀을 때 실행될 함수 (AILayout에서 호출됨)
   const handleOpenShare = () => {
-  if (!isAuthenticated()) {
-    openLoginModal('shareChat');
-    return;
-  }
+ 
 
   const storedData = sessionStorage.getItem('ai-chat-storage');
   if (storedData) {
@@ -284,7 +281,14 @@ export default function AILayout() {
       const parsedData = JSON.parse(storedData);
       const messages = parsedData.state?.messages || [];
       if (messages.length >= 2) {
+
+         if (!isAuthenticated()) {
+          openLoginModal('shareChat');
+          return;
+        }
         openShareChatModal();
+
+        
       } else {
         error('공유할 대화내역이 없습니다');
       }
@@ -390,13 +394,9 @@ export default function AILayout() {
 
   // 실제 복사될 전체 텍스트를 생성하는 함수
   const getFullShareText = () => {
-    const localChatSessionId = localStorage.getItem('chatSessionId');
-    let shareUrl;
-    if (localChatSessionId) {
-      shareUrl = `${window.location.origin}/aiclient/${companyCode}/ai/share/${localChatSessionId}`;
-    } else {
-      shareUrl = window.location.href;
-    }
+
+      const shareUrl = getCurrentShareUrl();
+
     
     return `${shareUrl}
 
@@ -416,15 +416,27 @@ https://heredotcorp.com
  `;
   };
 
-  // 동적으로 shareUrl을 계산하는 함수
-  const getCurrentShareUrl = () => {
-    const localChatSessionId = localStorage.getItem('chatSessionId');
-    if (localChatSessionId) {
-      return `${window.location.origin}/aiclient/${companyCode}/ai/share/${localChatSessionId}`;
-    } else {
-      return window.location.href;
-    }
-  };
+const getCurrentShareUrl = () => {
+  // 로컬스토리지 먼저 확인
+  const localChatSessionId = localStorage.getItem('chatSessionId');
+  
+  // localChatSessionId가 있으면 해당 URL 반환
+  if (localChatSessionId) {
+    return `${window.location.origin}/aiclient/${companyCode}/ai/share/${localChatSessionId}`;
+  }
+  
+  // localChatSessionId가 없으면 sessionStorage 확인
+  const sessionChatSessionId = sessionStorage.getItem('chatSessionId');
+  
+  if (sessionChatSessionId) {
+    return `${window.location.origin}/aiclient/${companyCode}/ai/share/${sessionChatSessionId}`;
+  }
+  
+  // 둘 다 없으면 현재 URL 반환
+  return window.location.href;
+};
+
+
 const handleNewChat = () => {
   const storedData = sessionStorage.getItem('ai-chat-storage');
   if (storedData) {
@@ -434,6 +446,7 @@ const handleNewChat = () => {
       if (messages.length >= 2) {
         resetChat();
         localStorage.removeItem('chatSessionId');
+        sessionStorage.removeItem('chatSessionId');
         success('새로운 견적 상담 시작됨');
       } else {
         success('이미 새로운 채팅방입니다');

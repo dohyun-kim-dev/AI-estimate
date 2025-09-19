@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { forwardRef } from "react";
 import ResponsiveView from "@/layout/ResponsiveView";
 import { ColumnDefinition } from "@/components/CustomList/GenericDataTable";
 import { FetchParams, FetchResult } from "@/components/CustomList/GenericListUI";
@@ -18,7 +18,6 @@ interface BaseRecord {
 type ViewMode = 'detail' | 'compact' | 'large';
 
 interface CmsResponsiveContainerProps<T extends BaseRecord> {
-  ref?: React.Ref<any>;
   title: string;
   data: T[];
   columns: ColumnDefinition<T>[];
@@ -45,31 +44,34 @@ interface CmsResponsiveContainerProps<T extends BaseRecord> {
   renderMiddleContent?: () => React.ReactNode;
 }
 
-export default function CmsResponsiveContainer<T extends BaseRecord>({
-  ref,
-  title,
-  data,
-  columns,
-  onRowClick,
-  onAdd,
-  addButtonLabel,
-  onExport,
-  isLoading = false,
-  fetchData,
-  themeMode = "light",
-  compactFieldCount = 3,
-  defaultViewMode = 'detail',
-  enableDateFilter,
-  onCompanySelect,
-  enableCompanySearch,
-  selectedCompanyCode,
-  selectedCompanyName,
-  isShowExcelTemplate,
-  excelUploadBtnCallBack,
-  excelTemplateBtnCallBack,
-  deleteBtnCallBack,
-  renderMiddleContent,
-}: CmsResponsiveContainerProps<T>) {
+const CmsResponsiveContainer = <T extends BaseRecord>(
+  props: CmsResponsiveContainerProps<T> & { ref?: React.Ref<{ refetch: () => void }> }
+) => {
+  const {
+    title,
+    data,
+    columns,
+    onRowClick,
+    onAdd,
+    addButtonLabel,
+    onExport,
+    isLoading = false,
+    fetchData,
+    themeMode = "light",
+    compactFieldCount = 3,
+    defaultViewMode = 'detail',
+    enableDateFilter,
+    onCompanySelect,
+    enableCompanySearch,
+    selectedCompanyCode,
+    selectedCompanyName,
+    isShowExcelTemplate,
+    excelUploadBtnCallBack,
+    excelTemplateBtnCallBack,
+    deleteBtnCallBack,
+    renderMiddleContent,
+    ref,
+  } = props;
   
   // 공통 props
   const commonProps = {
@@ -100,7 +102,9 @@ export default function CmsResponsiveContainer<T extends BaseRecord>({
   return (
     <ResponsiveView
       mobileView={<CmsMobileView {...commonProps} />}
-      desktopView={<CmsDesktopView {...commonProps} addButtonLabel={addButtonLabel} />}
+      desktopView={<CmsDesktopView {...commonProps} addButtonLabel={addButtonLabel} ref={ref} />}
     />
   );
-}
+};
+
+export default CmsResponsiveContainer;

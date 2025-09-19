@@ -27,6 +27,7 @@ interface GenericDataTableProps<T> {
   sortOrder?: "asc" | "desc";
   keyExtractor: (item: T, index: number) => string | number;
   themeMode?: ThemeMode;
+  fixedLayout?: boolean; // 테이블 레이아웃을 fixed로 설정할지 여부
 }
 
 // 중첩 키 처리
@@ -48,6 +49,7 @@ const GenericDataTable = <T extends object>({
   sortOrder,
   keyExtractor,
   themeMode = "dark",
+  fixedLayout = false,
 }: GenericDataTableProps<T>) => {
   const totalFlex = columns.reduce((sum, col) => sum + (col.flex ?? 0), 0);
   const displayData = maxLength ? data.slice(0, maxLength) : data;
@@ -73,7 +75,7 @@ const GenericDataTable = <T extends object>({
   }, [columns, totalFlex]);
 
   return (
-    <Table $themeMode={themeMode} ref={tableRef}>
+    <Table $themeMode={themeMode} $fixedLayout={fixedLayout} ref={tableRef}>
       {totalFlex > 0 && (
         <colgroup>
           {columns.map((col, i) => (
@@ -96,9 +98,23 @@ const GenericDataTable = <T extends object>({
                 style={{ ...col.headerStyle, cursor: sortable ? "pointer" : "default" }}
                 $isSortable={!!sortable}
                 $themeMode={themeMode}
+                $fixedLayout={fixedLayout}
               >
                 {col.header}
-                {isSorted && <SortIcon $themeMode={themeMode}>{sortOrder === "asc" ? " ▲" : " ▼"}</SortIcon>}
+                {isSorted && (
+                  <SortIcon $themeMode={themeMode} $sortOrder={sortOrder}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="13" viewBox="0 0 14 13" fill="none">
+                      <g clipPath="url(#clip0_1058_17546)">
+                        <path fillRule="evenodd" clipRule="evenodd" d="M7.35213 8.59407C7.25496 8.69121 7.12318 8.74578 6.98579 8.74578C6.84839 8.74578 6.71662 8.69121 6.61945 8.59407L3.68822 5.66284C3.63873 5.61504 3.59925 5.55786 3.5721 5.49465C3.54494 5.43143 3.53065 5.36344 3.53005 5.29463C3.52945 5.22583 3.54256 5.1576 3.56861 5.09392C3.59467 5.03024 3.63314 4.97239 3.68179 4.92374C3.73045 4.87509 3.7883 4.83661 3.85198 4.81056C3.91566 4.7845 3.98389 4.77139 4.05269 4.77199C4.12149 4.77259 4.18949 4.78688 4.2527 4.81404C4.31592 4.8412 4.3731 4.88067 4.4209 4.93016L6.98579 7.49505L9.55068 4.93016C9.6484 4.83577 9.77929 4.78355 9.91515 4.78473C10.051 4.78591 10.181 4.8404 10.277 4.93647C10.3731 5.03254 10.4276 5.1625 10.4288 5.29836C10.43 5.43422 10.3777 5.56511 10.2834 5.66284L7.35213 8.59407Z" fill="#888888"/>
+                      </g>
+                      <defs>
+                        <clipPath id="clip0_1058_17546">
+                          <rect width="12.4358" height="12.4358" fill="white" transform="translate(0.768097 0.455566)"/>
+                        </clipPath>
+                      </defs>
+                    </svg>
+                  </SortIcon>
+                )}
               </Th>
             );
           })}
@@ -158,6 +174,7 @@ const GenericDataTable = <T extends object>({
                     }}
                     $isEven={rowIdx % 2 === 0}
                     $themeMode={themeMode}
+                    $fixedLayout={fixedLayout}
                     onClick={() => {
                       if (!col.noPopup && onRowClick) onRowClick(item, rowIdx);
                     }}
@@ -178,53 +195,82 @@ export default GenericDataTable;
 
 // --- Styles ---
 
-const Table = styled.table<{ $themeMode: ThemeMode }>`
+const Table = styled.table<{ $themeMode: ThemeMode; $fixedLayout?: boolean }>`
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
   text-align: center;
-  table-layout: auto;
-  table-layout: auto;
+  table-layout: ${({ $fixedLayout }) => $fixedLayout ? 'fixed' : 'auto'};
   background-color: ${({ $themeMode }) =>
     $themeMode === "light" ? THEME_COLORS.light.tableBackground : THEME_COLORS.dark.tableBackground};
 `;
 
-const Th = styled.th<{ $isSortable?: boolean; $themeMode: ThemeMode }>`
-  padding: 12px 8px;
-  border-bottom: 1px solid ${({ $themeMode }) => THEME_COLORS[$themeMode].borderColor};
-  background-color: ${({ $themeMode }) => THEME_COLORS[$themeMode].tableHeaderBackground};
-  color: ${({ $themeMode }) => THEME_COLORS[$themeMode].tableHeaderText};
-  font-weight: bold;
-  white-space: nowrap;
+const Th = styled.th<{ $isSortable?: boolean; $themeMode: ThemeMode; $fixedLayout?: boolean }>`
+  padding: 12px;
+  text-align: center;
+  font-weight: 600;
+  color: ${({ $themeMode }) =>
+    $themeMode === 'light' ? '#333333' : THEME_COLORS.dark.text};
+  border-bottom: 1px solid ${({ $themeMode }) =>
+    $themeMode === 'light' ? '#dddddd' : THEME_COLORS.dark.borderColor};
+  border-right: 1px solid #E6E7E9;
+  background-color: ${({ $themeMode }) =>
+    $themeMode === 'light' ? '#f8f8f8' : THEME_COLORS.dark.secondary};
+  white-space: ${({ $fixedLayout }) => $fixedLayout ? 'normal' : 'nowrap'};
   user-select: none;
   position: sticky;
   top: 0;
   z-index: 1;
+  cursor: ${({ $isSortable }) => ($isSortable ? 'pointer' : 'default')};
+  ${({ $fixedLayout }) => $fixedLayout && `
+    overflow: hidden;
+    text-overflow: ellipsis;
+  `}
 `;
 
-const SortIcon = styled.span<{ $themeMode: ThemeMode }>`
+const SortIcon = styled.span<{ $themeMode: ThemeMode; $sortOrder?: 'asc' | 'desc' }>`
   margin-left: 4px;
-  font-size: 12px;
-  color: ${({ $themeMode }) => THEME_COLORS[$themeMode].tableHeaderText};
-`;
-
-const TableRow = styled.tr<{ $isEven: boolean; $isClickable: boolean; $themeMode: ThemeMode }>`
-  background-color: ${({ $isEven, $themeMode }) =>
-    $isEven ? THEME_COLORS[$themeMode].tableRowEven : THEME_COLORS[$themeMode].tableRowOdd};
-  cursor: ${({ $isClickable }) => ($isClickable ? "pointer" : "default")};
-
-  &:hover {
-    background-color: ${({ $themeMode }) => ($themeMode === "light" ? "#f5f5f5" : "#3d3f4a")};
+  display: inline-block;
+  transform: ${({ $sortOrder }) => $sortOrder === 'asc' ? 'rotate(180deg)' : 'rotate(0deg)'};
+  transition: transform 0.2s ease;
+  
+  svg {
+    width: 14px;
+    height: 13px;
+    vertical-align: middle;
   }
 `;
 
-const Td = styled.td<{ $isEven: boolean; $themeMode: ThemeMode }>`
-  padding: 12px 8px;
-  border-bottom: 1px solid ${({ $themeMode }) => THEME_COLORS[$themeMode].borderColor};
-  background-color: ${({ $isEven, $themeMode }) =>
-    $isEven ? THEME_COLORS[$themeMode].tableRowEven : THEME_COLORS[$themeMode].tableRowOdd};
-  color: ${({ $themeMode }) => THEME_COLORS[$themeMode].tableText};
+const TableRow = styled.tr<{ $isEven: boolean; $isClickable: boolean; $themeMode: ThemeMode }>`
+  cursor: ${({ $isClickable }) => ($isClickable ? "pointer" : "default")};
+
+  &:hover {
+    background-color: ${({ $themeMode }) =>
+      $themeMode === 'light' ? '#f5f5f5' : THEME_COLORS.dark.background};
+  }
+`;
+
+const Td = styled.td<{ $isEven: boolean; $themeMode: ThemeMode; $fixedLayout?: boolean }>`
+  padding: 12px;
+  color: ${({ $themeMode }) =>
+    $themeMode === 'light' ? '#333333' : THEME_COLORS.dark.text};
+  border-right: 1px solid #E6E7E9;
+  border-bottom: 1px solid #E6E7E9;
   text-align: center;
+  background-color: ${({ $isEven, $themeMode }) =>
+    $isEven 
+      ? ($themeMode === 'light' ? '#ffffff' : THEME_COLORS.dark.secondary)
+      : ($themeMode === 'light' ? '#f8f8f8' : THEME_COLORS.dark.tableBackground)
+  };
+  ${({ $fixedLayout }) => $fixedLayout && `
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  `}
+
+  tr:last-child & {
+    border-bottom: none;
+  }
 `;
 
 const TdNoData = styled.td<{ $themeMode: ThemeMode }>`

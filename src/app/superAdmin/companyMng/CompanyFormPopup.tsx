@@ -42,6 +42,62 @@ const SaveButton = styled(FooterButton)`
   border: 1px solid ${AppColors.border};
 `;
 
+const ImageUploadSection = styled.div`
+  margin-top: 24px;
+`;
+
+const ImageUploadTitle = styled.h3`
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0 0 16px 0;
+  color: #333;
+`;
+
+const ImageUploadBox = styled.div`
+  border: 2px dashed #E6E7E9;
+  border-radius: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  background-color: #fafafa;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: #ccc;
+  }
+`;
+
+const ImageUploadText = styled.div`
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+`;
+
+const ImageUploadSubText = styled.div`
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 16px;
+`;
+
+const UploadButton = styled.button`
+  padding: 8px 16px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+
+  &:hover {
+    background-color: #e8e8e8;
+  }
+`;
+
+const HiddenInput = styled.input`
+  display: none;
+`;
+
 type Customer = {
   id: string;
   name: string;
@@ -89,6 +145,10 @@ interface CompanyFormPopupProps {
     setAddress: (value: string) => void;
     setDescription: (value: string) => void;
   };
+  onFileUpload?: {
+    onCiImageUpload: (file: File) => void;
+    onBusinessImageUpload: (file: File) => void;
+  };
 }
 
 const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
@@ -98,6 +158,7 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
   selectedCustomer,
   formData,
   onFormChange,
+  onFileUpload,
 }) => {
   const {
     customerId,
@@ -129,12 +190,31 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
     setDescription,
   } = onFormChange;
 
+  // 등록/수정 모드 구분
+  const isEditMode = !!selectedCustomer;
+  const popupTitle = isEditMode ? "고객사 수정" : "고객사 등록";
+
+  // 파일 업로드 핸들러
+  const handleCiImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && onFileUpload?.onCiImageUpload) {
+      onFileUpload.onCiImageUpload(file);
+    }
+  };
+
+  const handleBusinessImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && onFileUpload?.onBusinessImageUpload) {
+      onFileUpload.onBusinessImageUpload(file);
+    }
+  };
+
   return (
     <CmsPopup
-      title="고객사 등록/수정"
+      title={popupTitle}
       isOpen={isOpen}
       onClose={onClose}
-      showRequiredMark
+      backgroundColor="#FFF"
       bottomFloating={
         <PopupFooter>
           <div />
@@ -256,6 +336,53 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
           multiline
           minLines={3}
         />
+
+        {/* 이미지 첨부 섹션 */}
+        <ImageUploadSection>
+          <ImageUploadTitle>이미지 첨부</ImageUploadTitle>
+          
+          {/* 고객사 CI */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#333' }}>
+              * 고객사 CI
+            </div>
+            <ImageUploadBox onClick={() => document.getElementById('ci-upload')?.click()}>
+              <ImageUploadText>파일을 업로드해주세요</ImageUploadText>
+              <ImageUploadSubText>
+                1장의 이미지만 첨부 가능합니다<br />
+                1MB 이내의 Jpg, Jpeg, Png 파일만 등록 가능
+              </ImageUploadSubText>
+              <UploadButton type="button">파일 열기</UploadButton>
+            </ImageUploadBox>
+            <HiddenInput
+              id="ci-upload"
+              type="file"
+              accept="image/jpeg,image/jpg,image/png"
+              onChange={handleCiImageUpload}
+            />
+          </div>
+
+          {/* 사업자등록증 */}
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#333' }}>
+              * 사업자등록증
+            </div>
+            <ImageUploadBox onClick={() => document.getElementById('business-upload')?.click()}>
+              <ImageUploadText>파일을 업로드해주세요</ImageUploadText>
+              <ImageUploadSubText>
+                1장의 이미지만 첨부 가능합니다<br />
+                1MB 이내의 Jpg, Jpeg, Png 파일만 등록 가능
+              </ImageUploadSubText>
+              <UploadButton type="button">파일 열기</UploadButton>
+            </ImageUploadBox>
+            <HiddenInput
+              id="business-upload"
+              type="file"
+              accept="image/jpeg,image/jpg,image/png"
+              onChange={handleBusinessImageUpload}
+            />
+          </div>
+        </ImageUploadSection>
       </FormContainer>
     </CmsPopup>
   );

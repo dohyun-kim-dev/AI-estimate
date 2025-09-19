@@ -11,10 +11,10 @@ type SwitchProps = {
 
 const SwitchWrapper = styled.div<{ checked: boolean; readOnly?: boolean }>`
   display: inline-block;
-  width: 40px;
-  height: 20px;
+  width: 48px;
+  height: 26px;
   background-color: ${({ checked }) =>
-    checked ? AppColors.success : AppColors.disabled};
+    checked ? '#636994': AppColors.disabled};
   border-radius: 20px;
   position: relative;
   cursor: ${({ readOnly }) => (readOnly ? 'default' : 'pointer')};
@@ -23,10 +23,10 @@ const SwitchWrapper = styled.div<{ checked: boolean; readOnly?: boolean }>`
 
 const SwitchThumb = styled.div<{ checked: boolean }>`
   position: absolute;
-  top: 2px;
-  left: ${({ checked }) => (checked ? '20px' : '2px')};
-  width: 16px;
-  height: 16px;
+  top: 3px;
+  left: ${({ checked }) => (checked ? '24px' : '4px')};
+  width: 20px;
+  height: 20px;
   background-color: ${AppColors.surface};
   border-radius: 50%;
   transition: left 0.3s ease;

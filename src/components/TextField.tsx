@@ -114,7 +114,7 @@ export const TextField: React.FC<TextFieldProps> = ({
   $placeholderColor,
   $textColor,
   $borderColor,
-
+backgroundColor,
   autoComplete,
 }) => {
   const device = useDevice();

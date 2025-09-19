@@ -12,7 +12,7 @@ const StyledTextArea = styled.textarea<{ $height?: string }>`
   height: ${props => props.$height || '150px'};
   width: 100%;
   border-radius: 4px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #79747E;
   background: #ffffff;
   color: #111827;
   padding: 14px;

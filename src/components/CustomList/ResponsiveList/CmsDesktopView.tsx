@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, forwardRef } from "react";
 import GenericListUI, { FetchParams, FetchResult } from "@/components/CustomList/GenericListUI";
 import { ColumnDefinition } from "@/components/CustomList/GenericDataTable";
 
@@ -12,7 +12,6 @@ interface BaseRecord {
 }
 
 interface CmsDesktopViewProps<T extends BaseRecord> {
-  ref?: React.Ref<any>;
   title: string;
   data: T[];
   columns: ColumnDefinition<T>[];
@@ -39,8 +38,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   renderMiddleContent?: () => React.ReactNode;
 }
 
-export default function CmsDesktopView<T extends BaseRecord>({
-  ref,
+const CmsDesktopView = forwardRef<{ refetch: () => void }, CmsDesktopViewProps<any>>(function CmsDesktopView<T extends BaseRecord>({
   title,
   data,
   columns,
@@ -61,9 +59,7 @@ export default function CmsDesktopView<T extends BaseRecord>({
   excelTemplateBtnCallBack,
   deleteBtnCallBack,
   renderMiddleContent,
-}: CmsDesktopViewProps<T>) {
-  const listRef = useRef<{ refetch: () => void } | null>(null);
-
+}: CmsDesktopViewProps<T>, ref: React.Ref<{ refetch: () => void }>) {
   const handleFetchData = async (params: FetchParams) => {
     if (fetchData) {
       return await fetchData(params);
@@ -78,7 +74,7 @@ export default function CmsDesktopView<T extends BaseRecord>({
 
   return (
     <GenericListUI<T>
-      ref={listRef}
+      ref={ref}
       title={title}
       excelFileName="데이터 목록"
       columns={columns}
@@ -99,4 +95,6 @@ export default function CmsDesktopView<T extends BaseRecord>({
       renderMiddleContent={renderMiddleContent}
     />
   );
-}
+});
+
+export default CmsDesktopView;

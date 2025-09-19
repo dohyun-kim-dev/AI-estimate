@@ -5,6 +5,7 @@ import styled, { useTheme } from 'styled-components';
 import Icon from './Icon';
 import TextareaAutosize from 'react-textarea-autosize';
 import { useAuthStore } from '@/store/authStore';
+import { useChatStore } from '@/store/chatStore'; // 추가: chatStore import
 import { useUsageStore } from '@/store/usageStore';
 import { SocialLoginModal } from './SocialLoginModal';
 import FileUploadSection from './FileUploadSection';
@@ -79,6 +80,12 @@ const InputContainer = styled.div`
   width: 100%;
   min-height: 46px;
   transition: min-height 0.2s ease-in-out;
+  
+  /* iOS에서 텍스트 선택이 가능하도록 설정 */
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
+  user-select: text;
+  
   @media (min-width: 1024px) {
     max-width: 1024px;
     margin: 0 auto;
@@ -128,9 +135,12 @@ const AutoSizeInput = styled(TextareaAutosize)`
 
   /* iOS Safari 전용 최적화 */
   @supports (-webkit-touch-callout: none) {
-    -webkit-user-select: text;
+    -webkit-user-select: text !important; /* iOS에서 텍스트 선택 활성화 */
+    -webkit-touch-callout: default !important; /* iOS에서 길게 누르기 메뉴 활성화 */
     -webkit-appearance: none;
     transform: translateZ(0); /* 하드웨어 가속 활성화 */
+    user-select: text; /* 표준 속성도 추가 */
+    touch-action: manipulation; /* 터치 동작 최적화 */
   }
 
   /* 스크롤바 스타일링 */
@@ -192,7 +202,7 @@ interface BottomInputProps {
   maxSubmissions?: number;
   onFileInput?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isUploading: boolean;
-  isProcessing: boolean;
+  // isProcessing: boolean; // 제거: store에서 가져올 예정
   uploadedFiles: FileUploadData[];
   uploadProgress: number;
   onDeleteFile: (fileUri: string) => void;
@@ -216,7 +226,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
   maxSubmissions = 10,
   onFileInput,
   isUploading,
-  isProcessing,
+  // isProcessing 제거: store에서 가져올 예정
   uploadedFiles,
   uploadProgress,
   onDeleteFile,
@@ -236,12 +246,13 @@ const BottomInput: React.FC<BottomInputProps> = ({
   const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   const remainingCountRef = useRef(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const theme = useTheme();
   const isLightTheme = theme.body === '#FFFFFF';
   const { isAuthenticated } = useAuthStore();
+  const { isProcessing } = useChatStore(); // 추가: store에서 isProcessing 가져오기
   const { 
     remainingCount, 
     hasUsedExtraCount, 
@@ -555,6 +566,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
             />
           </IconButton>
           <AutoSizeInput
+            ref={inputRef}
             minRows={1}
             maxRows={12}
             placeholder={placeholder}
@@ -563,6 +575,12 @@ const BottomInput: React.FC<BottomInputProps> = ({
             onKeyDown={handleKeyPress}
             onPaste={onPaste} // 🔥 이미지 붙여넣기 이벤트 연결
             disabled={isUploading || isProcessing}
+            style={{
+              // iOS에서 텍스트 선택 강제 활성화
+              WebkitUserSelect: 'text',
+              WebkitTouchCallout: 'default',
+              userSelect: 'text'
+            }}
           />
           {/* isProcessing이 아닐 때만 서밋(엔터) 아이콘 노출 */}
           {!isProcessing && (

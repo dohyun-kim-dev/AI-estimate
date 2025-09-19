@@ -55,7 +55,7 @@ const StyledInput = styled.input<{
   height: ${props => props.$height || '56px'};
   width: 100%;
   border-radius: 4px;
-  border: 1px solid ${props => props.$borderColor || '#e5e7eb'};
+  border: 1px solid #79747E;
   background: ${props => props.$inputBackgroundColor || '#ffffff'};
   color: #111827;
   padding: 0 14px;

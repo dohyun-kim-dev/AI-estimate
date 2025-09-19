@@ -50,7 +50,7 @@ export type AdminLoginParams = {
   };
 
   export type AdminPasswordUpdateParams = {
-    targetAdminId: string; // 로그인 ID
+    _id: string; // 로그인 ID
     password: string;
   };
 

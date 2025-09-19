@@ -149,21 +149,95 @@ function findMessageIdForEstimate(estimateId?: string | null) {
   }
 }
   // 할인 제외 항목명 (2뎁스와 동일하게 유지)
-  const NON_DISCOUNT_ITEMS = [
-    '화면설계', '화면디자인', '화면퍼블리싱', '퍼블리싱', 'UI/UX디자인',
-    '화면 설계', '화면 퍼블리싱', 'UI/UX 디자인'
-  ];
+type EstimateItem = {
+  name: string;
+  price: number | string;
+  category?: string;
+  tags?: string[];
+};
 
-  // 할인 적용 함수 (2뎁스와 동일)
-  const getDiscountedPrice = (item: any, discountRate: number) => {
-    if (NON_DISCOUNT_ITEMS.includes(item.name)) return toNumberLike(item.price);
-    if (discountRate > 0) {
-      return Math.round(toNumberLike(item.price) * (1 - discountRate));
+// 🔧 1) 정규화: 제로폭 문자까지 제거
+const normalize = (s: string) =>
+  (s ?? '')
+    .normalize('NFKC')
+    // 제로폭 문자 제거 (U+200B~U+200D, U+FEFF)
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    // 괄호 안 보조설명 제거
+    .replace(/\(.*?\)/g, '')
+    // 공백/구두점/슬래시류 제거
+    .replace(/[\s\-_./|\\,[\]{}:;'"`~!@#$%^&*+?<>·•]/g, '')
+    // uxui를 uiux로 통일
+    .toLowerCase()
+    .replace(/uxui/g, 'uiux');
+
+// 2) 토큰(동의어/파생어)
+const NON_DISCOUNT_TOKENS = [
+  '화면설계', '화면디자인', '화면퍼블리싱','설계',
+  'uiux디자인', 'uidesign', 'uxdesign', 'guidesign',
+  '스토리보드', '와이어프레임', '프로토타입', '프로토타이핑', '시안',
+  '퍼블리싱', '퍼블', '마크업', 'markup', '정적코딩', 'htmlcss', 'html코딩', 'css코딩',
+  // 기획 파생(안전빵으로 추가)
+  '화면기획', '기획설계',
+];
+
+// 3) 정규식: 공백 대신 제로폭 문자까지 허용
+const zws = '[\\s\\u200B-\\u200D\\uFEFF]*';
+
+const NON_DISCOUNT_REGEX: RegExp[] = [
+  new RegExp(`화면${zws}(설계|디자인|퍼블리싱)`, 'i'),
+  new RegExp(`(ui${zws}\\/?${zws}ux|ux${zws}\\/?${zws}ui|uiux|uxui)${zws}(디자인|design)?`, 'i'),
+  new RegExp(`(스토리보드|와이어${zws}프레임|프로토타입|프로토타이핑|gui${zws}디자인|시안)`, 'i'),
+  new RegExp(`(퍼블리싱|퍼블|마크업|markup|정적${zws}코딩|html${zws}\\/?${zws}css)`, 'i'),
+  // 👉 화면 + 기획 조합도 직접 허용
+  new RegExp(`화면${zws}(기획)`, 'i'),
+];
+
+// 4) 휴리스틱: 화면 + (설계|디자인|퍼블리싱|마크업|기획)
+const heuristicScreenDesign = (raw: string) => {
+  const clean = raw.replace(/[\u200B-\u200D\uFEFF]/g, '');
+  return /화면/i.test(clean) && /(설계|디자인|퍼블리싱|마크업|기획)/i.test(clean);
+};
+
+const isNonDiscountableItem = (item: EstimateItem): boolean => {
+  if (!item?.name) return false;
+
+  const raw = String(item.name);
+  const norm = normalize(raw);
+
+  // 카테고리 기반(있으면 바로 제외)
+  if (item?.category && /(디자인|퍼블리싱|기획|화면)/i.test(item.category)) {
+    return true;
+  }
+
+  // 태그 기반
+  if (Array.isArray(item?.tags) && item.tags.some(Boolean)) {
+    for (const t of item.tags) {
+      const tRaw = String(t ?? '');
+      const tNorm = normalize(tRaw);
+      if (NON_DISCOUNT_REGEX.some((re) => re.test(tRaw))) return true;
+      if (NON_DISCOUNT_TOKENS.some((tok) => tNorm.includes(normalize(tok)))) return true;
     }
-    return toNumberLike(item.price);
-  };
+  }
 
-  // ...기존 유틸 함수들(deepClone, debounce, toNumberLike, findMessageIdForEstimate) 아래에 유지...
+  // 원문 정규식
+  if (NON_DISCOUNT_REGEX.some((re) => re.test(raw))) return true;
+
+  // 정규화 토큰 포함
+  if (NON_DISCOUNT_TOKENS.some((tok) => norm.includes(normalize(tok)))) return true;
+
+  // 휴리스틱
+  if (heuristicScreenDesign(raw)) return true;
+
+  return false;
+};
+
+// ===== 기존 시그니처 유지 =====
+export const getDiscountedPrice = (item: any, discountRate: number) => {
+  const base = toNumberLike(item?.price);
+  if (!item) return base;
+  if (isNonDiscountableItem(item)) return base;
+  return discountRate > 0 ? Math.round(base * (1 - discountRate)) : base;
+};
 
 const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
   data,

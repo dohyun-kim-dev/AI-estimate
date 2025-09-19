@@ -445,7 +445,8 @@ export const AiMessageContent: React.FC<{ content: string; chatSessionId?: strin
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
   const [loadingStep, setLoadingStep] = useState(0); // 0: 생각 중, 1: 깊게 생각 중, 2: 더 좋은 답변 고민 중
-  const estimateData = useMemo(() => estimateDataForConsult || extractEstimateData(content), [content, estimateDataForConsult]);
+  const [isEstimateGenerating, setIsEstimateGenerating] = useState(false); // 견적서 생성 중 상태
+  const estimateData = useMemo(() => extractEstimateData(content), [content]);
   const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash', selectedPromptId: 'default' });
   const estimateId = estimateData?.uuid;
   const effectiveChatSessionId = chatSessionId || localStorage.getItem('chatSessionId') || '';
@@ -657,6 +658,9 @@ const userId = getUserId() || '';
   // 불완전한 JSON이 있을 때 로딩 단계 타이머 설정
   useEffect(() => {
     if (hasIncompleteJson) {
+      // 견적서 생성 중 상태 설정
+      setIsEstimateGenerating(true);
+      
       const timer1 = setTimeout(() => setLoadingStep(1), 10000); // 10초 후
       const timer2 = setTimeout(() => setLoadingStep(2), 20000); // 20초 후
       
@@ -666,6 +670,7 @@ const userId = getUserId() || '';
       };
     } else {
       setLoadingStep(0); // 완료되면 초기화
+      setIsEstimateGenerating(false); // 견적서 생성 완료
     }
   }, [hasIncompleteJson]);
   
@@ -685,8 +690,11 @@ const userId = getUserId() || '';
 
       {/* 불완전한 JSON이 있는 경우 로딩 텍스트 표시 */}
       {hasIncompleteJson && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '16px' }}>
-          <GradientText>{getLoadingText()}</GradientText>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: '16px' }}>
+          <ProfileSpinner src="/ai-estimate/pretty.png" />
+          <GradientText>
+            {isEstimateGenerating ? '견적서 만드는 중...' : getLoadingText()}
+          </GradientText>
         </div>
       )}
 
@@ -764,6 +772,7 @@ const userId = getUserId() || '';
             
             <SideContent>
               <EstimateActionButtons
+              estimate={estimateData}
                 onConsult={() => console.log('문의하기')}
                 onSubmit={(action) => {
                   // 견적 데이터를 포함해서 AI에게 요청
@@ -827,6 +836,26 @@ export default function AiChatPage() {
         return '생각 중...';
     }
   };
+
+  // 견적서 생성 중인지 확인하는 함수
+  const isEstimateGenerationInProgress = () => {
+    // 현재 로딩 중인 메시지가 있는지 확인
+    const loadingMessage = messages.find(m => m.isLoading);
+    if (!loadingMessage) return false;
+    
+    // AI 메시지 중에 불완전한 invoiceData script 태그가 있는지 확인
+    const aiMessages = messages.filter(m => m.role === 'ai' && !m.isLoading);
+    return aiMessages.some(msg => {
+      if (typeof msg.content !== 'string') return false;
+      
+      // script 태그가 시작되었지만 끝나지 않은 경우
+      const scriptStartPattern = /<script[^>]*id="invoiceData"[^>]*>/;
+      const hasScriptStart = scriptStartPattern.test(msg.content);
+      const hasScriptEnd = msg.content.includes('</script>');
+      
+      return hasScriptStart && !hasScriptEnd;
+    });
+  };
   
   // 스크롤 버튼 관련 상태
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -866,6 +895,7 @@ export default function AiChatPage() {
     
     if (hasLoadingMessage) {
       setGlobalLoadingStep(0); // 초기화
+      
       const timer1 = setTimeout(() => setGlobalLoadingStep(1), 10000); // 10초 후
       const timer2 = setTimeout(() => setGlobalLoadingStep(2), 20000); // 20초 후
       
@@ -1277,16 +1307,16 @@ useEffect(() => {
 
   useEffect(() => {
     if (endOfMessagesRef.current && messages.length >= 2) {
-      // 마지막 메시지가 견적서인지 확인
       const lastMessage = messages[messages.length - 1];
       const isLastMessageEstimate = lastMessage && isEstimateMessage(lastMessage.content);
+      const isCurrentlyStreaming = isProcessing || messages.some(m => m.isLoading);
       
-      // 견적서가 아닌 메시지의 변경에만 스크롤 적용
-      if (!isLastMessageEstimate) {
+      // 스트리밍 중이면서 마지막 메시지가 견적서가 아닌 경우에만 스크롤
+      if (isCurrentlyStreaming && !isLastMessageEstimate) {
         endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
       }
     }
-  }, [messages]); // messages 배열 전체를 의존성으로 변경하여 스트리밍 중 내용 변화도 감지 (견적서 제외)
+  }, [messages, isProcessing]); // isProcessing도 의존성에 추가하여 스트리밍 상태 변화 감지
 
   const isEstimateMessage = (content: string) => {
     // console.log('content', content);
@@ -1339,13 +1369,16 @@ useEffect(() => {
           } else {
 
                  if (m.isLoading) {
+              const isEstimateGen = isEstimateGenerationInProgress();
               return (
                 <StyledAiMessage
                   key={idx}
                   content={
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                       <ProfileSpinner src="/ai-estimate/pretty.png" />
-                      <GradientText>{getGlobalLoadingText()}</GradientText>
+                      <GradientText>
+                        {isEstimateGen ? '견적서 만드는 중...' : getGlobalLoadingText()}
+                      </GradientText>
                     </div>
                   }
                   profileImage={null}
@@ -1400,7 +1433,6 @@ useEffect(() => {
         onPaste={handlePaste} // 🔥 이미지 붙여넣기 함수 전달
         onFileInput={handleFileInput}
         isUploading={isUploading}
-        isProcessing={isProcessing}
         uploadedFiles={uploadedFiles}
         uploadProgress={uploadProgress}
         onDeleteFile={removeFile}

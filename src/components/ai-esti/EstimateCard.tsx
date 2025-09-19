@@ -191,7 +191,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
 
       // estimateObj._id가 없을 때: 세션스토리지에서 project_name과 total_price가 일치하는 메시지 중 estimateId가 있는 가장 최근 메시지를 찾아 반환
       let effectiveId = estimateObj.uuid;
-      console.log("estimateObj.estimateId:", estimateObj.estimateId);
+      console.log("estimateObj.estimateId:", estimateObj.uuid);
       //todo 수정
       // let effectiveId = null;
       if (!effectiveId && estimateObj?.project_name) {
@@ -243,6 +243,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
 
 
   const ensureUuidAndGetUrl = async () => {
+    console.log("ensureUuidAndGetUrl 함수 호출 직전 estimate:", estimate);
     const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
     console.log("ensuredUuid:", ensuredUuid); 
     return `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;

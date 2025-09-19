@@ -20,7 +20,7 @@ const Container = styled.div<{
   $device: DeviceType;
   $labelPosition: 'vertical' | 'horizontal';
 }>`
-  display: flex;
+  display: flex-column;
   flex-direction: ${({ $labelPosition }) => ($labelPosition === 'vertical' ? 'column' : 'row')};
   width: 100%;
   padding: ${({ $device }) => InputStyles.containerPadding[$device]};
@@ -28,13 +28,13 @@ const Container = styled.div<{
 `;
 
 const Label = styled.label<{ $labelPosition: 'vertical' | 'horizontal' }>`
-  margin-left: 8px;
   flex: ${({ $labelPosition }) => ($labelPosition === 'horizontal' ? '1' : 'none')};
 `;
 
 const SwitchWrapper = styled.div<{ $labelPosition: 'vertical' | 'horizontal' }>`
   flex: ${({ $labelPosition }) => ($labelPosition === 'horizontal' ? '5' : '1')};
   display: flex;
+    margin-top: 8px;
   flex-direction: column;
   align-items: ${({ $labelPosition }) => ($labelPosition === 'horizontal' ? 'flex-start' : 'stretch')};
 `;
@@ -55,8 +55,8 @@ export const SwitchInput = ({
         <Label
           $labelPosition={$labelPosition}
           style={{
-            fontSize: LabelStyles.fontSize[device],
-            color: labelColor || LabelStyles.color,
+            fontSize: '14px',
+            color: '#79747E',
           }}
         >
           {label}

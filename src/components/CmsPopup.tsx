@@ -20,6 +20,7 @@ type CmsPopupProps = {
   bottomFloating?: React.ReactNode;
   height?: string | null; // ✅ 팝업 높이 지정
   backgroundColor?: string; // ✅ 팝업 배경 색상 지정
+  hideHeader?: boolean; // ✅ 헤더 숨김 여부
 };
 
 
@@ -72,7 +73,7 @@ const PopupContainer = styled.div<{
   @media (max-width: 768px) {
     width: 90vw !important;
     min-width: 90vw !important;
-    height: 80vh !important;
+    height: auto !important;
     max-height: 80vh !important;
     margin: 0 !important;
     border-radius: 0 !important;
@@ -183,9 +184,8 @@ const CmsPopup: React.FC<CmsPopupProps> = ({
   requiredText = '필수 항목 *', // ✅ 기본값으로 기존 텍스트 사용
   bottomFloating,
   height,
-  width,
   backgroundColor,
-  
+  hideHeader = false, // ✅ 기본값으로 헤더 표시
 }) => {
   const [scrollX, setScrollX] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -233,10 +233,31 @@ const CmsPopup: React.FC<CmsPopupProps> = ({
     }
   }, [isMobile]);
 
+  // ESC 키로 팝업 닫기
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen, onClose]);
+
+  // 오버레이 클릭으로 팝업 닫기 (헤더가 없을 때만)
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (hideHeader && e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <Overlay $scrollX={scrollX}>
+    <Overlay $scrollX={scrollX} onClick={handleOverlayClick}>
       <PopupContainer
   $isWide={isWide || isMobile}
   $hasBottomFloating={!!bottomFloating}
@@ -244,13 +265,15 @@ const CmsPopup: React.FC<CmsPopupProps> = ({
   $backgroundColor={backgroundColor}
 >
 
-        <HeaderRow $backgroundColor={backgroundColor}>
-          <span>{title}</span>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            {showRequiredMark && <RequiredMark>{requiredText}</RequiredMark>}
-            <CloseButton onClick={onClose}>×</CloseButton>
-          </div>
-        </HeaderRow>
+        {!hideHeader && (
+          <HeaderRow $backgroundColor={backgroundColor}>
+            <span>{title}</span>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              {showRequiredMark && <RequiredMark>{requiredText}</RequiredMark>}
+              <CloseButton onClick={onClose}>×</CloseButton>
+            </div>
+          </HeaderRow>
+        )}
         <PopupContent>{children}</PopupContent>
         {bottomFloating && (
           <BottomFloatingWrapper $backgroundColor={backgroundColor}>{bottomFloating}</BottomFloatingWrapper>

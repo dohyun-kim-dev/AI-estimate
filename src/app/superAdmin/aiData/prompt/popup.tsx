@@ -8,9 +8,8 @@ import CmsPopup from '@/components/CmsPopup';
 import dayjs from 'dayjs';
 import { promptHistoryGetList, promptUpdate } from '@/lib/api/admin/adminApi';
 import { FetchParams, FetchResult } from '@/components/CustomList/GenericListUI';
-import SimpleGenericList from '@/components/CustomList/\bSimpleGenericList';
+import SimpleGenericList from '@/components/CustomList/SimpleGenericList';
 import { toast } from 'react-toastify';
-import { TextField } from '@/components/TextField';
 
 type PromptHistory = {
   id: number;
@@ -41,7 +40,7 @@ const PromptPopup: React.FC<PromptPopupProps> = ({ index, isOpen, onClose, first
 
   const fetchData = async (_: FetchParams): Promise<FetchResult<PromptHistory>> => {
     const raw = await promptHistoryGetList({ index: Number(index) });
-    const wrapper = raw?.[0];
+    const wrapper = raw?.[0] as any;
     const data = wrapper?.data ?? [];
   
     if (data.length === 0) {
@@ -107,45 +106,58 @@ const PromptPopup: React.FC<PromptPopupProps> = ({ index, isOpen, onClose, first
 
   const columns: ColumnDefinition<PromptHistory>[] = [
     {
-      header: '작성일',
-      accessor: 'createdTime',
-      formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '-'),
-      flex: 1,
+      header: 'No',
+      accessor: 'index',
+      sortable: true,
+      flex: 0.5,
+      formatter: (value) => value,
     },
-    { header: '작성자', accessor: 'createdId' , flex: 1},
+    {
+      header: '수정일시',
+      accessor: 'createdTime',
+      sortable: true,
+      formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '-'),
+      flex: 1.5,
+    },
+    { 
+      header: '작성자', 
+      accessor: 'createdId',
+      sortable: true,
+      flex: 1
+    },
     {
       header: '보기',
       accessor: 'index',
-      flex: 1,
+      sortable: false,
+      flex: 0.8,
       formatter: (value) => <ViewButton onClick={() => handleViewClick(value)}>보기</ViewButton>,
     },
   ];
 
   return (
-    <CmsPopup title="프롬프트 수정 이력" isOpen={isOpen} onClose={closePopup} isWide>
+    <CmsPopup 
+      title="AI 프롬프트 관리" 
+      isOpen={isOpen} 
+      onClose={closePopup} 
+      isWide
+      backgroundColor="#FFF"
+      bottomFloating={
+        <PopupFooter>
+          <SaveButton onClick={handleSave} disabled={!selected}>저장</SaveButton>
+          <CancelButton onClick={closePopup}>닫기</CancelButton>
+        </PopupFooter>
+      }
+    >
       <PopupLayout>
         <LeftSection>
           <LabelTitle>{selected?.label ?? '선택된 항목 없음'}</LabelTitle>
-          <SubTitle>{selected?.description ?? '선택된 항목 없음'}</SubTitle>
+          {/* <SubTitle>{selected?.description ?? '선택된 항목 없음'}</SubTitle> */}
 
-          <TextField
-            radius="0"
-            multiline
-            minLines={4}
-            maxLines={10}
-            height="500px"
+          <CustomTextarea
             value={description}
-            // label="비고"
-            $labelPosition="horizontal"
-            labelColor="black"
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="비고를 입력하세요"
+            placeholder="프롬프트"
           />
-
-          <PopupFooter>
-            <SaveButton onClick={handleSave} disabled={!selected}>저장</SaveButton>
-            <CancelButton onClick={closePopup}>닫기</CancelButton>
-          </PopupFooter>
         </LeftSection>
         <RightSection>
           <SimpleGenericList
@@ -153,6 +165,11 @@ const PromptPopup: React.FC<PromptPopupProps> = ({ index, isOpen, onClose, first
             columns={columns}
             fetchData={fetchData}
             themeMode="light"
+            fixedLayout={true}
+            initialState={{
+              sortKey: 'index',
+              sortOrder: 'desc'
+            }}
           />
         </RightSection>
       </PopupLayout>
@@ -164,6 +181,51 @@ export default PromptPopup;
 
 
 // ------------------------ 스타일 ------------------------
+
+const CustomTextarea = styled.textarea`
+  readonly: true;
+  flex: 1;
+  width: 100%;
+  background-color: #f4f4f4;
+  border: none;
+  border-radius: 0px;
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  
+  &::placeholder {
+    color: #999;
+  }
+  
+  &:focus {
+    background-color: #f0f0f0;
+  }
+  
+  /* 스크롤바 스타일링 */
+  scrollbar-width: thin;
+  scrollbar-color: #ccc transparent;
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #bbb;
+  }
+`;
 
 const PopupLayout = styled.div`
   display: flex;
@@ -190,7 +252,7 @@ const RightSection = styled.div`
 const LabelTitle = styled.h2`
   font-size: 20px;
   font-weight: bold;
-  margin: 0 0 16px 0;
+  margin: 0 0 72px 0;
   color: '#fff';
 `;
 

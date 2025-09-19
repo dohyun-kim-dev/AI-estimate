@@ -2,71 +2,103 @@
 
 import React, { useEffect, useState } from 'react';
 import CmsPopup from '@/components/CmsPopup';
-import { TextField } from '@/components/TextField';
+import CommonTextField from '@/components/common/TextField';
 import { Validators } from '@/lib/utils/validators';
 import { toast } from 'react-toastify';
-import { adminPasswordUpdate } from '@/lib/api/admin';
+import { adminUpdate } from '@/lib/api/admin';
+import { AdminUpdateParams } from '@/lib/api/admin/adminApi.types';
 import styled from 'styled-components';
 import { AppColors } from '@/styles/colors';
 
-interface PasswordPopupProps {
+type AdminUser = {
+  _id: string;
   adminId: string;
+  name: string;
+  email: string;
+  cellphone: string;
+  createAt: string;
+  memo?: string;
+  emailYn?: 'Y' | 'N';
+  smsYn?: 'Y' | 'N';
+  description?: string;
+  companyCode?: string;
+};
+
+interface PasswordPopupProps {
+  selectedUser: Partial<AdminUser> | null;
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-const PasswordPopup: React.FC<PasswordPopupProps> = ({ adminId, isOpen, onClose }) => {
+const PasswordPopup: React.FC<PasswordPopupProps> = ({ selectedUser, isOpen, onClose, onSuccess }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-    const [pwdError, setPwdError] = useState<string | null>(null);
-    const [confirmPwdError, setConfirmPwdError] = useState<string | null>(null);
+  const [pwdError, setPwdError] = useState<string | null>(null);
+  const [confirmPwdError, setConfirmPwdError] = useState<string | null>(null);
 
-
-    useEffect(() => {
-      if (isOpen) {
-        setPassword('');
-        setConfirmPassword('');
-        setPwdError(null);             // ✅ 추가
-        setConfirmPwdError(null);      // ✅ 추가
-      }
-    }, [isOpen]);
-    
-    const handleSubmit = async () => {
-      // ✅ 에러 상태 초기화
+  useEffect(() => {
+    if (isOpen) {
+      setPassword('');
+      setConfirmPassword('');
       setPwdError(null);
       setConfirmPwdError(null);
-    
-      let valid = true;
-    
-      if (!Validators.password(password)) {
-        setPwdError('비밀번호는 숫자, 영문, 특수문자를 포함하여 8자리 이상이어야 합니다.');
-        valid = false;
+    }
+  }, [isOpen]);
+
+  const handleSubmit = async () => {
+    if (!selectedUser || !selectedUser._id) {
+      toast.error('선택된 사용자가 없습니다.');
+      return;
+    }
+
+    // 에러 상태 초기화
+    setPwdError(null);
+    setConfirmPwdError(null);
+
+    let valid = true;
+
+    if (!Validators.password(password)) {
+      setPwdError('비밀번호는 숫자, 영문, 특수문자를 포함하여 8자리 이상이어야 합니다.');
+      valid = false;
+    }
+
+    if (password !== confirmPassword) {
+      setConfirmPwdError('비밀번호가 일치하지 않습니다.');
+      valid = false;
+    }
+
+    if (!valid) return;
+
+    try {
+      // 기존 사용자 정보와 새 비밀번호를 함께 전송
+      const updateData: AdminUpdateParams = {
+        _id: selectedUser._id,
+        targetAdminId: selectedUser.adminId || '', // 로그인 ID
+        name: selectedUser.name || '',
+        email: selectedUser.email || '',
+        cellphone: selectedUser.cellphone || '',
+        description: selectedUser.description || '',
+        password: password, // 새 비밀번호 추가
+        companyCode: selectedUser.companyCode || '', // 고객사 코드 추가
+      };
+
+      const res = await adminUpdate(updateData);
+
+      toast.success('비밀번호가 성공적으로 변경되었습니다.');
+      onClose();
+      
+      // 성공 시 콜백 호출
+      if (onSuccess) {
+        setTimeout(() => {
+          onSuccess();
+        }, 100);
       }
-    
-      if (password !== confirmPassword) {
-        setConfirmPwdError('비밀번호가 일치하지 않습니다.');
-        valid = false;
-      }
-    
-      if (!valid) return;
-    
-      try {
-        const res = await adminPasswordUpdate({
-          targetAdminId: adminId,
-          password,
-        });
-    
-        if (res?.[0]?.message === 'success') {
-          toast.success('비밀번호가 성공적으로 변경되었습니다.');
-          onClose();
-        } else {
-          toast.error(res?.[0]?.error?.customMessage || '비밀번호 변경에 실패했습니다.');
-        }
-      } catch (err: any) {
-        toast.error(err?.message || '비밀번호 변경 중 오류가 발생했습니다.');
-      }
-    };
+    } catch (err: any) {
+      toast.error(err?.message || '비밀번호 변경 중 오류가 발생했습니다.');
+    }
+  };
     
 
   return (
@@ -89,12 +121,12 @@ const PasswordPopup: React.FC<PasswordPopupProps> = ({ adminId, isOpen, onClose 
 
         <InputRow>
           <Label>새 비밀번호</Label>
-          <TextField
-            radius="0"
+          <CommonTextField
+            id="new-password"
+            label=""
             value={password}
             autoComplete="new-password"
-            labelColor="black"
-            showSuffixIcon= {true}
+            showSuffixIcon={true}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="비밀번호 (숫자+영문+특수문자 8자리 이상)"
             isPasswordField
@@ -104,12 +136,12 @@ const PasswordPopup: React.FC<PasswordPopupProps> = ({ adminId, isOpen, onClose 
 
         <InputRow>
           <Label>새 비밀번호 확인</Label>
-          <TextField
-            radius="0"
+          <CommonTextField
+            id="confirm-password"
+            label=""
             value={confirmPassword}
             autoComplete="new-password"
-            labelColor="black"
-            showSuffixIcon= {true}
+            showSuffixIcon={true}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="비밀번호 확인 (비밀번호와 동일하게 작성)"
             isPasswordField
