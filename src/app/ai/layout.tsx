@@ -9,6 +9,7 @@ import Modal from '@components/common/Modal';
 import { useAuthStore } from '@store/authStore';
 import { useModalStore } from '@store/modalStore';
 import { SocialLoginModal } from '../../components/ai-esti/SocialLoginModal';
+import { HeaderProvider } from '@/contexts/HeaderContext';
 import { tr } from 'date-fns/locale';
 
 const LayoutWrapper = styled.div`
@@ -53,7 +54,7 @@ const TopNav = styled.nav`
 `;
 
 const NavTitle = styled.h1`
-  font-size: 24px;
+  font-size: 16px;
   font-style: normal;
   font-weight: 700;
   line-height: normal;
@@ -266,8 +267,54 @@ export default function AILayout() {
 
   const pageTitle = location.pathname.includes('/ai/my-estimate') ? '내 견적서' : location.pathname.includes('/ai/setting') ? '설정' : null;
 
+  // 동적 페이지 제목 생성
+  const getDynamicPageTitle = () => {
+    if (location.pathname.includes('/ai/my-estimate')) {
+      return '내 견적서';
+    }
+    
+    if (location.pathname.includes('/ai/setting')) {
+      const urlParams = new URLSearchParams(location.search);
+      const isProfileEdit = urlParams.get('edit') === 'profile';
+      const currentStep = urlParams.get('step') || 'profile';
+      
+      if (isProfileEdit) {
+        return currentStep === 'phone' ? '휴대전화 변경' : '회원정보 수정';
+      }
+      
+      return '설정';
+    }
+    
+    return null;
+  };
+
+  const dynamicPageTitle = getDynamicPageTitle();
+
+  // 스마트 뒤로가기 핸들러
   const handleBack = () => {
-    navigate(-1);
+    const urlParams = new URLSearchParams(location.search);
+    const isProfileEdit = urlParams.get('edit') === 'profile';
+    const currentStep = urlParams.get('step') || 'profile';
+    
+    // 프로필 수정 페이지에서의 뒤로가기 처리
+    if (location.pathname.includes('/ai/setting') && isProfileEdit) {
+      if (currentStep === 'phone') {
+        // 전화번호 변경 단계에서는 프로필로 돌아가기
+        const newParams = new URLSearchParams();
+        newParams.set('edit', 'profile');
+        newParams.set('step', 'profile');
+        navigate(`${location.pathname}?${newParams.toString()}`, { replace: true });
+      } else {
+        // 프로필 편집에서는 설정 메인으로 돌아가기 (히스토리 교체)
+        navigate(location.pathname, { replace: true });
+      }
+    } else if (location.pathname.includes('/ai/setting')) {
+      // 설정 메인에서는 AI 홈으로 돌아가기
+      navigate(`/aiclient/${companyCode}/ai`);
+    } else {
+      // 일반적인 뒤로가기
+      navigate(-1);
+    }
   };
 
 
@@ -477,21 +524,21 @@ const handleNewChat = () => {
   };
 
   const isAiHome = location.pathname === `/aiclient/${companyCode}/ai`;
-  const isPC = typeof window !== 'undefined' && window.innerWidth >= 1024;
-  const shouldShowBackButton = !isAiHome || !isPC;
+  const shouldShowBackButton = !isAiHome; // AI 홈에서는 뒤로가기 버튼 숨김
 
   return (
-    <LayoutWrapper>
-      <TopNav>
-        <div className="left-icons">
-          {shouldShowBackButton && (
-            <span className="icon" onClick={handleBack}>
-              <Icon src={icons.back} width={24} height={24} />
-            </span>
-          )}
-          {pageTitle && <NavTitle>{pageTitle}</NavTitle>}
-        </div>
-        {!pageTitle && (
+    <HeaderProvider>
+      <LayoutWrapper>
+        <TopNav>
+          <div className="left-icons">
+            {shouldShowBackButton && (
+              <span className="icon" onClick={handleBack}>
+                <Icon src={icons.back} width={24} height={24} />
+              </span>
+            )}
+            {dynamicPageTitle && <NavTitle>{dynamicPageTitle}</NavTitle>}
+          </div>
+        {!dynamicPageTitle && (
           <div className="right-icons">
             <span className="icon" onClick={handleOpenShare}><Icon src={icons.share} width={36} height={36} /></span>
             <span className="icon" onClick={handleNewChat}><Icon src={icons.new} width={36} height={36} /></span>
@@ -587,5 +634,6 @@ const handleNewChat = () => {
         </ShareInput>
       </Modal>
     </LayoutWrapper>
+    </HeaderProvider>
   );
 }

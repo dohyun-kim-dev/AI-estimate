@@ -144,15 +144,47 @@ interface TermsModalProps {
 }
 
 const termsTabs = [
-  { id: 1, key: 'terms', label: '이용\n약관' },
-  { id: 2, key: 'privacy', label: '개인정보\n취급방침' },
-  { id: 3, key: 'company', label: '사업자\n정보' },
+  { id: 1, key: 'terms', label: '이용약관' },
+  { id: 2, key: 'privacy', label: '개인정보 취급방침' },
+  { id: 3, key: 'company', label: '사업자 정보' },
 ];
+
+// 작은 화면(<=386px)에서 줄바꿈된 라벨 반환
+const getResponsiveLabel = (key: string, isNarrow: boolean) => {
+  if (isNarrow) return (
+    {
+      terms: '이용\n약관',
+      privacy: '개인정보\n취급방침',
+      company: '사업자\n정보'
+    } as Record<string, string>
+  )[key];
+
+  return (
+    {
+      terms: '이용약관',
+      privacy: '개인정보 취급방침',
+      company: '사업자 정보'
+    } as Record<string, string>
+  )[key];
+};
 
 const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, initialTab = 'terms' }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [allTermsData, setAllTermsData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isNarrow, setIsNarrow] = useState(false);
+
+  // 화면 폭 감지
+  useEffect(() => {
+    const check = () => {
+      const width = window.innerWidth;
+      const narrow = width <= 386;
+      setIsNarrow(narrow);
+    };
+    check(); // 초기 체크
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -208,7 +240,7 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, initialTab = '
             active={activeTab === tab.key}
             onClick={() => setActiveTab(tab.key as 'terms' | 'privacy' | 'company')}
           >
-            {tab.label}
+            {getResponsiveLabel(tab.key, isNarrow)}
           </TabButton>
         ))}
       </TabsContainer>

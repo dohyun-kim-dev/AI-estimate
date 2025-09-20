@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { ThemeProvider } from "styled-components";
 import { useThemeStore } from "@store/themeStore";
@@ -8,6 +9,7 @@ import Footer from "@components/common/Footer";
 import styled from "styled-components";
 import { ToastProvider } from "@components/common/ToastProvider";
 import { PageLoaderProvider } from "@contexts/PageLoaderContext";
+import { HeaderProvider, useHeader } from "@contexts/HeaderContext";
 import { useLocation } from "react-router-dom";
 import { Outlet } from "react-router-dom";
 import { useModalStore } from "@store/modalStore";
@@ -24,26 +26,33 @@ interface HeaderFooterProps {
   isCompact?: boolean;
 }
 
-const HeaderWrapper = ({ isCompact }: HeaderFooterProps) => (
-  <Header compact={isCompact || false} />
-);
+const HeaderWrapper = ({ isCompact }: HeaderFooterProps) => {
+  const { title } = useHeader();
+  return <Header compact={isCompact || false} title={title} />;
+};
 
 const FooterWrapper = ({ isCompact }: HeaderFooterProps) => (
   <Footer compact={isCompact || false} />
 );
 
-export default function RootLayout() {
-  const { isDarkMode } = useThemeStore();
+function LayoutContent() {
   const { isLoginModalOpen, closeLoginModal } = useModalStore();
   const location = useLocation();
+  const { setTitle } = useHeader();
   const [compact, setCompact] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const searchParams = new URLSearchParams(location.search);
     setCompact(searchParams.get("embed") === "1");
-  }, [location]);
+    
+    // 경로에 따른 헤더 제목 설정
+    const pathname = location.pathname;
+    if (pathname.includes('/setting')) {
+      setTitle('설정');
+    } else {
+      setTitle(undefined);
+    }
+  }, [location, setTitle]);
 
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();
@@ -84,6 +93,32 @@ export default function RootLayout() {
     }
   }, []);
 
+  return (
+    <>
+      <HeaderWrapper isCompact={compact} />
+      <Main>
+        <Outlet />
+      </Main>
+      <FooterWrapper isCompact={compact} />
+      {/* <SocialLoginModal 
+        $isOpen={isLoginModalOpen} 
+        onClose={closeLoginModal}
+        purpose="limitExceeded"
+        onPrimaryButtonClick={() => {}}
+        onGoogleLoginSuccess={() => {}}
+      /> */}
+    </>
+  );
+}
+
+export default function RootLayout() {
+  const { isDarkMode } = useThemeStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const theme = mounted ? (isDarkMode ? darkTheme : lightTheme) : lightTheme;
 
   return (
@@ -91,18 +126,9 @@ export default function RootLayout() {
       <GlobalStyle />
       <PageLoaderProvider>
         <ToastProvider>
-         <HeaderWrapper isCompact={compact} />
-          <Main >
-            <Outlet />
-          </Main>
-          <FooterWrapper isCompact={compact} />
-          {/* <SocialLoginModal 
-            $isOpen={isLoginModalOpen} 
-            onClose={closeLoginModal}
-            purpose="limitExceeded"
-            onPrimaryButtonClick={() => {}}
-            onGoogleLoginSuccess={() => {}}
-          /> */}
+          <HeaderProvider>
+            <LayoutContent />
+          </HeaderProvider>
         </ToastProvider>
       </PageLoaderProvider>
     </ThemeProvider>

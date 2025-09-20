@@ -539,7 +539,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             <ModalTitle>휴대전화 번호 변경</ModalTitle>
             <ScrollableContent className="auth-view-scroll">
               <FormGroup>
-                <Label style={{ marginTop: '16px' }}>
+                <Label style={{ marginTop: '14px' }}>
                   새로운 휴대전화 번호
                 </Label>
                 <InputGroup>

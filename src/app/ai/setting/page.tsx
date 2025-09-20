@@ -1,12 +1,13 @@
-import React, { useState } from 'react' 
+import React, { useState, useEffect } from 'react' 
 import styled from 'styled-components'
 import Icon from '@/components/ai-esti/Icon'
 import { IoChevronForward } from 'react-icons/io5'
 import LanguageSelector from '@/components/common/LanguageSelector'
 import { useAuthStore } from '@/store/authStore'
-import { useNavigate, useParams } from "react-router-dom";
+import { useThemeStore } from '@/store/themeStore'
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import TermsModal from '@/components/ai-esti/TermsModal'     
-import { EditProfileModal } from '@/components/ai-esti/EditProfileModal'
+import ProfileEditPage from './ProfileEditPage'
 
 const Container = styled.div`
   // min-height: 100vh;
@@ -96,10 +97,15 @@ const MenuText = styled.span`
 
 export default function SettingsPage() {
   const { user, logout } = useAuthStore()
+  const { isDarkMode } = useThemeStore()
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isModalOpen, setIsModalOpen] = useState(false); // 👈 모달 상태 추가
-  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false); // 👈 프로필 수정 모달 상태 추가
   const { companyCode } = useParams();  
+
+  // URL 파라미터에서 상태 읽기
+  const showProfileEdit = searchParams.get('edit') === 'profile';
+  const currentStep = searchParams.get('step') || 'profile';
 
   const handleLogout = () => {
     logout()
@@ -112,8 +118,23 @@ export default function SettingsPage() {
   };
 
   const handleEditProfile = () => {
-    setIsEditProfileModalOpen(true); // 👈 프로필 수정 모달 열기 함수
+    setSearchParams({ edit: 'profile', step: 'profile' }); // 👈 URL 파라미터로 프로필 수정 상태 설정
   };
+
+  const handleBackFromProfileEdit = () => {
+    setSearchParams({}, { replace: true }); // 👈 URL 파라미터 제거하여 메인 설정 페이지로 돌아가기 (히스토리 교체)
+  };
+
+  // 프로필 수정 페이지가 열려있으면 해당 컴포넌트를 렌더링
+  if (showProfileEdit) {
+    return (
+      <ProfileEditPage 
+        isDarkMode={isDarkMode}
+        onBack={handleBackFromProfileEdit}
+        currentStep={currentStep}
+      />
+    );
+  }
 
   return (
     <Container>
@@ -167,12 +188,6 @@ export default function SettingsPage() {
       <TermsModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-      />
-      
-      {/* 👈 EditProfileModal 컴포넌트 렌더링 */}
-      <EditProfileModal 
-        isOpen={isEditProfileModalOpen} 
-        onClose={() => setIsEditProfileModalOpen(false)} 
       />
     </Container>
   )

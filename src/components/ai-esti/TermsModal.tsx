@@ -29,7 +29,7 @@ const TabButton = styled.button<{ active: boolean }>`
   background: none;
   border: none;
   padding: 10px 12px;
-  font-size: 15px;
+  font-size: 13px;
   cursor: pointer;
   font-weight: ${({ active }) => (active ? 'bold' : 'normal')};
   color: ${({ active }) => (active ? AppColors.primary : '#555')};

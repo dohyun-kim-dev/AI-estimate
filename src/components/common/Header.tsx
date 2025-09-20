@@ -27,6 +27,16 @@ const HeaderContent = styled.div`
   padding: 0 16px;
 `
 
+const HeaderTitle = styled.h1`
+  font-size: 18px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.text};
+  margin: 0;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+`;
+
 const Logo = styled.div`
   cursor: pointer;
 `
@@ -80,9 +90,10 @@ const ProfileName = styled.span`
 
 interface HeaderProps {
   compact?: boolean;
+  title?: string; // 동적 제목을 위한 prop 추가
 }
 
-const Header = ({ compact }: HeaderProps) => {
+const Header = ({ compact, title }: HeaderProps) => {
   const { isDarkMode, toggleTheme } = useThemeStore()
   const { openLoginModal } = useModalStore()
   const { user, logout, isAuthenticated } = useAuthStore()
@@ -105,6 +116,7 @@ const Header = ({ compact }: HeaderProps) => {
             fallbackIcon="logo"
           />
         </Logo>
+        {title && <HeaderTitle>{title}</HeaderTitle>}
         <ProfileSection>
           <ThemeToggle onClick={toggleTheme}>
             <Icon 

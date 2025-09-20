@@ -177,7 +177,7 @@ const NON_DISCOUNT_TOKENS = [
   '스토리보드', '와이어프레임', '프로토타입', '프로토타이핑', '시안',
   '퍼블리싱', '퍼블', '마크업', 'markup', '정적코딩', 'htmlcss', 'html코딩', 'css코딩',
   // 기획 파생(안전빵으로 추가)
-  '화면기획', '기획설계',
+  '화면기획', '기획설계', '기획',
 ];
 
 // 3) 정규식: 공백 대신 제로폭 문자까지 허용
@@ -190,6 +190,9 @@ const NON_DISCOUNT_REGEX: RegExp[] = [
   new RegExp(`(퍼블리싱|퍼블|마크업|markup|정적${zws}코딩|html${zws}\\/?${zws}css)`, 'i'),
   // 👉 화면 + 기획 조합도 직접 허용
   new RegExp(`화면${zws}(기획)`, 'i'),
+  // 👉 기획 단독 및 괄호 포함 패턴
+  new RegExp(`기획`, 'i'),
+  new RegExp(`화면${zws}설계${zws}\\(${zws}기획${zws}\\)`, 'i'),
 ];
 
 // 4) 휴리스틱: 화면 + (설계|디자인|퍼블리싱|마크업|기획)
@@ -219,7 +222,7 @@ const isNonDiscountableItem = (item: EstimateItem): boolean => {
     }
   }
 
-  // 원문 정규식
+  // 원문 정규식 (normalize 전에 먼저 체크)
   if (NON_DISCOUNT_REGEX.some((re) => re.test(raw))) return true;
 
   // 정규화 토큰 포함
@@ -227,6 +230,9 @@ const isNonDiscountableItem = (item: EstimateItem): boolean => {
 
   // 휴리스틱
   if (heuristicScreenDesign(raw)) return true;
+
+  // 추가: 괄호 안에 기획이 포함된 경우 체크
+  if (/\([^)]*기획[^)]*\)/i.test(raw)) return true;
 
   return false;
 };
