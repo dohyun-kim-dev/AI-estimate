@@ -544,7 +544,8 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
             // 비회원 정보를 sessionStorage에 저장
             sessionStorage.setItem('guestInfo', JSON.stringify({
               name: info.name,
-              email: info.email
+              email: info.email,
+              cellphone: info.cellphone
             }));
             props.onDownload && props.onDownload();
           } else if (infoModalPurpose === 'share') {

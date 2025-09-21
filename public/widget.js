@@ -235,6 +235,19 @@ btn.appendChild(openIcon);
     tooltip.style.display = 'none';
   });
 
+  // 닫기 버튼이 항상 보이도록 보장하는 함수
+function ensureCloseButtonVisible() {
+  if (!closeButton.isConnected) {
+    tooltip.appendChild(closeButton);
+    closeButton.style.display = 'flex';
+    closeButton.style.opacity = '0.7';
+    console.log('[AI-Widget] 닫기 버튼이 사라져서 다시 추가함');
+  }
+}
+
+// 일정 시간마다 닫기 버튼 상태를 체크 (1초 간격)
+setInterval(ensureCloseButtonVisible, 1000);
+
   const root = document.createElement('div'); root.className='aiw-root';
   const wrap = document.createElement('div'); wrap.className='aiw-wrap';
   const loader = document.createElement('div'); loader.className='aiw-loader'; loader.textContent='Loading...';

@@ -539,8 +539,8 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
   // 헤더 제목 업데이트
   useEffect(() => {
     const titles = {
-      profile: '프로필 수정',
-      phone: '휴대전화 변경'
+      profile: '회원정보 수정',
+      phone: '전화번호 변경'
     };
     setTitle(titles[currentStep]);
     
@@ -955,9 +955,23 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
     }
   };
 
+  // 현재 경로가 /aiclient/heredot/ai가 아니면 상단에 뒤로가기 버튼 노출
+  const locationPath = window.location.pathname;
+  const showTopBackButton = !locationPath.includes('/aiclient/heredot/ai');
+
   return (
     <Container $isDarkMode={isDarkMode}>
-      {/* Layout의 뒤로가기를 사용하므로 별도 헤더 제거 */}
+      {showTopBackButton ? (
+        <Header>
+          <BackButton $isDarkMode={isDarkMode} onClick={handleBackButton}>
+            <IoArrowBack size={20} />
+            뒤로가기
+          </BackButton>
+          {/* <Title $isDarkMode={isDarkMode}>
+            {currentStep === 'phone' ? '전화번호 변경' : '회원정보 수정'}
+          </Title> */}
+        </Header>
+      ): <div style={{ height: '20px' }}></div> /* 헤더 높이만큼 빈 공간 */}
       <FormContainer>
         {currentStep === 'profile' ? (
           <>

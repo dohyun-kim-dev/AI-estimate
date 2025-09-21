@@ -1300,7 +1300,7 @@ export function AiChatMessage({
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobileView(window.innerWidth < 750);
+      setIsMobileView(window.innerWidth < 768);
     };
     handleResize();
     window.addEventListener('resize', handleResize);

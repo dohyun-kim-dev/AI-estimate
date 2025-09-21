@@ -30,6 +30,21 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
 
   const currentDate = formatDate(new Date());
   const user = useAuthStore((state) => state.user);
+//세션스토리지 guestInfo 안에 name과 email 뽑기
+  const guestInfo = sessionStorage.getItem('guestInfo');
+  let guestName = '';
+  let guestEmail = '';
+  let guestCellphone = '';  
+  if (guestInfo) {
+    try {
+      const parsedInfo = JSON.parse(guestInfo);
+      guestName = parsedInfo.name || '';
+      guestEmail = parsedInfo.email || '';
+      guestCellphone = parsedInfo.cellphone || '';
+    } catch (error) {
+      console.error('Failed to parse guestInfo from sessionStorage:', error);
+    }
+  }
 
   // 각 카테고리의 모든 아이템을 플랫하게 만들기 (is_deleted가 false인 항목만)
   const allItems = estimate.categories.flatMap((category) =>
@@ -138,13 +153,13 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
           </tr>
           <tr>
             <td style={headerCellStyle}>고객명</td>
-            <td style={valueCellStyle}>{user?.name || 'guest'} {user?.cellphone ? ' 82+' : ''} {user?.cellphone || ''}</td>
+            <td style={valueCellStyle}>{user?.name || guestName} {(user?.cellphone || guestCellphone) ? ' 82+' : ''} {user?.cellphone || guestCellphone}</td>
             <td style={headerCellStyle}>대표자명</td>
             <td style={valueCellStyle}>강태원 82+031-8039-7981</td>
           </tr>
           <tr>
             <td style={headerCellStyle}>메일주소</td>
-            <td style={valueCellStyle}>{user?.email || 'guest'}</td>
+            <td style={valueCellStyle}>{user?.email || guestEmail}</td>
             <td style={headerCellStyle}>사업자번호</td>
             <td style={valueCellStyle}>289-86-03278</td>
           </tr>

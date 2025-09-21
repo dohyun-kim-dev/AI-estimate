@@ -279,7 +279,7 @@ export default function AILayout() {
       const currentStep = urlParams.get('step') || 'profile';
       
       if (isProfileEdit) {
-        return currentStep === 'phone' ? '휴대전화 변경' : '회원정보 수정';
+        return currentStep === 'phone' ? '전화번호 변경' : '회원정보 수정';
       }
       
       return '설정';
@@ -295,7 +295,7 @@ export default function AILayout() {
     const urlParams = new URLSearchParams(location.search);
     const isProfileEdit = urlParams.get('edit') === 'profile';
     const currentStep = urlParams.get('step') || 'profile';
-    
+     
     // 프로필 수정 페이지에서의 뒤로가기 처리
     if (location.pathname.includes('/ai/setting') && isProfileEdit) {
       if (currentStep === 'phone') {
@@ -308,10 +308,13 @@ export default function AILayout() {
         // 프로필 편집에서는 설정 메인으로 돌아가기 (히스토리 교체)
         navigate(location.pathname, { replace: true });
       }
-    } else if (location.pathname.includes('/ai/setting')) {
+    } else if (location.pathname.includes('/ai/setting') || location.pathname.includes('/ai/my-estimate')) {
       // 설정 메인에서는 AI 홈으로 돌아가기
       navigate(`/aiclient/${companyCode}/ai`);
-    } else {
+    } else if (isMobile) {
+    navigate('/aiclient/heredot', { replace: true });
+    return;
+  } else {
       // 일반적인 뒤로가기
       navigate(-1);
     }
@@ -523,8 +526,9 @@ const handleNewChat = () => {
     }
   };
 
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
   const isAiHome = location.pathname === `/aiclient/${companyCode}/ai`;
-  const shouldShowBackButton = !isAiHome; // AI 홈에서는 뒤로가기 버튼 숨김
+  const shouldShowBackButton = isMobile || !isAiHome; // 모바일이면 항상, 데스크탑은 AI 홈에서 숨김
 
   return (
     <HeaderProvider>

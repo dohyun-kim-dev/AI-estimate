@@ -106,10 +106,24 @@ const Header = ({ compact, title }: HeaderProps) => {
     }
   } 
 
+  // 로고 클릭 핸들러: 특정 경로에서만 /aiclient/heredot로 이동
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const currentPath = window.location.pathname;
+    if (
+      currentPath === '/aiclient/heredot/my-estimate' ||
+      currentPath === '/aiclient/heredot/settings'
+    ) {
+      navigate('/aiclient/heredot', { replace: true });
+    } else {
+      window.open('https://aigopartners.com/', '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
     <HeaderWrapper>
       <HeaderContent>
-        <Logo as="a" href="https://aigopartners.com/" target="_blank" rel="noopener noreferrer"> {/* 새 탭에서 열기 */}
+        <Logo onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
           <Icon 
             src={isDarkMode ? '/main/logo_dark.png' : '/main/logo_light.png'} 
             height={32} 
