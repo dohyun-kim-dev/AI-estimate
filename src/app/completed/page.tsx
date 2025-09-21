@@ -150,13 +150,25 @@ const routeParams = {
   }
 
   if (!isSuccess) {
-    const displayError = errorMessage.includes('conflict') ? '이미 상담 요청했습니다.' : errorMessage;
+    let displayError = errorMessage;
+
+    if (errorMessage.includes('conflict')) {
+      displayError = '이미 접수된 상담입니다.';
+    } else {
+      displayError = '일시적인 오류가 발생했습니다';
+    }
+
     return (
       <PageContainer>
-        <MainTitle>상담 요청 실패</MainTitle>
-        <Description>{displayError}</Description>
+        <IconImage src="/ai-estimate/completed.png" alt="상담 완료" />
+        <MainTitle>{displayError}</MainTitle>
+        <Description>
+          {errorMessage.includes('conflict')
+          ? '이미 상담 접수가 완료된 상태입니다'
+            : '잠시 후 다시 시도해주세요'}
+        </Description>
         <div style={{ marginTop: '32px', textAlign: 'center' }}>
-          <button
+          {/* <button
             style={{
               background: '#dc2626',
               color: 'white',
@@ -170,7 +182,7 @@ const routeParams = {
             onClick={handleGoHome}
           >
             홈으로 돌아가기
-          </button>
+          </button> */}
         </div>
       </PageContainer>
     );
