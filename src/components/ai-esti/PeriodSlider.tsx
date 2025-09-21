@@ -230,7 +230,7 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({ value = 0, onChange, $isvis
           </Labels>
         </SliderContainer>
       </InnerContainer>
-      <Description>기획 및 디자인(퍼블리싱)은 할인에서 제외됩니다</Description>
+      <Description>기획 및 디자인은 할인에서 제외됩니다</Description>
     </SliderWrapper>
   );
 };
