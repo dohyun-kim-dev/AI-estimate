@@ -343,6 +343,9 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                 if (purpose === 'limitExceeded') {
                   openEstimateModal();
                 }
+                if (purpose === 'limitReached') {
+                  openEstimateModal();
+                }
                 if (purpose === 'consult') {
                   onGoogleLoginSuccess && onGoogleLoginSuccess();
                 }
@@ -553,6 +556,50 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
             props.onShare && props.onShare();
           } else if (infoModalPurpose === 'limitReached') {
             console.log('[IssuerInfoModal submit] purpose: limitReached', info);
+            try {
+              const chatStorage = sessionStorage.getItem('ai-chat-storage');
+              if (chatStorage) {
+                const parsed = JSON.parse(chatStorage);
+                const messages = parsed?.state?.messages || [];
+                // 뒤에서부터 estimateId 있는 메시지 찾기
+                let lastEstimateId = null;
+                for (let i = messages.length - 1; i >= 0; i--) {
+                  if (messages[i]?.estimateId) {
+                    lastEstimateId = messages[i].estimateId;
+                    break;
+                  }
+                }
+                if (lastEstimateId) {
+                  // requestEstimateConsult 호출
+                  const user = {
+                    id: '', // 비회원이므로 id는 빈값
+                    name: info.name,
+                    cellphone: info.cellphone,
+                    email: info.email,
+                  };
+                  
+                  try {
+                    const { requestEstimateConsult } = await import('@/lib/api/user/userApi');
+                    const consultResponse = await requestEstimateConsult(lastEstimateId, '', '', user);
+                    
+                    // API 에러 처리
+                    const { data: consultData } = consultResponse as unknown as { data: any; headers: Headers };
+                    if (consultData && consultData.statusCode !== 200) {
+                      const errorMessage = consultData.error?.customMessage || consultData.error?.message || '상담 요청에 실패했습니다.';
+                      console.error('상담 요청 실패:', errorMessage);
+                      showError('상담 요청에 실패했습니다. 잠시 후 다시 시도해주세요.');
+                    } else if (consultData) {
+                      success('상담 요청이 완료되었습니다!');
+                    }
+                  } catch (error) {
+                    console.error('상담 요청 처리 중 오류:', error);
+                    showError('상담 요청 처리 중 오류가 발생했습니다.');
+                  }
+                }
+              }
+            } catch (e) {
+              console.error('limitReached 상담 요청 처리 오류:', e);
+            }
           } else if (infoModalPurpose === 'limitExceeded') {
             console.log('[IssuerInfoModal submit] purpose: limitExceeded', info);
             // ai-chat-storage에서 가장 최근 estimateId 추출

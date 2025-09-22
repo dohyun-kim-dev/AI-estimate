@@ -11,6 +11,7 @@ import { useModalStore } from '@store/modalStore';
 import { SocialLoginModal } from '../../components/ai-esti/SocialLoginModal';
 import { HeaderProvider } from '@/contexts/HeaderContext';
 import { tr } from 'date-fns/locale';
+import useAI from '@/hooks/useAI';
 
 const LayoutWrapper = styled.div`
   min-height: 100dvh;
@@ -184,6 +185,7 @@ export default function AILayout() {
   const { isDarkMode, toggleTheme } = useThemeStore();
   const { success, error } = useToast();
   const resetChat = useChatStore((s) => s.clear);
+  const { clearChatHistory } = useAI();
   const chatSessionId = useChatStore((s) => s.chatSessionId);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
@@ -495,6 +497,7 @@ const handleNewChat = () => {
       const messages = parsedData.state?.messages || [];
       if (messages.length >= 2) {
         resetChat();
+        // clearChatHistory();
         localStorage.removeItem('chatSessionId');
         sessionStorage.removeItem('chatSessionId');
         success('새로운 견적 상담 시작됨');

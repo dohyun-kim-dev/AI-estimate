@@ -489,6 +489,14 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     }
   }, [ensureModel, modelName, thinkingBudget])
 
+  // const clearChatHistory = useCallback(() => {
+  //         console.log('[useAI] clearChatHistory 호출됨', chatRef);
+  //   if (chatRef.current) {
+  //     console.log('[useAI] clearChatHistory 호출됨', chatRef.current);
+  //     chatRef.current.history = [];
+  //   }
+  // }, []);
+
   /**
    * sendChat 사용법:
    * sendChat('메시지', [], { streaming: true, onStream: (chunk) => ... })
