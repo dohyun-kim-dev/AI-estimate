@@ -78,7 +78,10 @@ export const useChatStore = create<ChatState>()(
         clear: () => {
           const { setChatSessionId } = get();
           setChatSessionId(null); // 세션 ID 초기화
-          set({ messages: [] }); // 메시지 초기화
+          set({ 
+            messages: [], // 메시지 초기화
+            isProcessing: false // 처리 상태도 초기화
+          }); 
         },
         removeLastAiLoadingMessage: () => set((s) => {
           const messages = [...s.messages];

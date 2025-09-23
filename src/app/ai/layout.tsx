@@ -197,6 +197,7 @@ export default function AILayout() {
     closeShareChatModal,
     openShareChatModal,
   } = useModalStore();
+  const { startChatWithHistory, startNewChat } = useAI();
 
   useEffect(() => {
     const storedTheme = localStorage.getItem('theme');
@@ -496,7 +497,7 @@ const handleNewChat = () => {
       const messages = parsedData.state?.messages || [];
       if (messages.length >= 2) {
         resetChat();
-        // clearChatHistory();
+        startNewChat();
         localStorage.removeItem('chatSessionId');
         sessionStorage.removeItem('chatSessionId');
         success('새로운 견적 상담 시작됨');

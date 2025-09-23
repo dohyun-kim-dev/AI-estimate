@@ -471,6 +471,11 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     console.log('[useAI] startChatWithHistory 호출됨, 이력 개수:', history.length);
   }, [])
 
+const startNewChat = useCallback(() => {
+    chatRef.current = null; // 기존 세션 리셋
+    console.log('[useAI] startNewChat 호출됨, 새 세션 시작');
+  }, [])
+  
   const testModel = useCallback(async (): Promise<{ ok: boolean; message: string }> => {
     try {
       const model = ensureModel()
@@ -513,6 +518,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     sendChat,
     resetChat,
     startChatWithHistory,
+    startNewChat,
     testModel,
     setSystemInstruction: setSystem,
   }

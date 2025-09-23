@@ -18,13 +18,13 @@
   // Styles
   const style = document.createElement('style');
   style.textContent = `
-  .aiw-btn{position:fixed;${pos}:10px;bottom:-20px;z-index:2147483645;width:130px;height:130px;border-radius:50%;
+  .aiw-btn{position:fixed;${pos}:10px;bottom:-20px;z-index:1002;width:130px;height:130px;border-radius:50%;
     background:transparent;box-shadow:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;border:0;padding:0;transform:scale(1)}
   @media (max-width: 800px) {
     .aiw-btn {
       width: 100px;
-      height: 150px;
-      bottom: 30px;
+      height: 100px;
+      bottom: 80px;
       ${pos}: 10px;
     }
   }
@@ -34,7 +34,7 @@
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
+    height: 50%;
     opacity: 1;
     transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
   }
@@ -69,7 +69,7 @@
     opacity: 1;
     transition: all 0.3s ease;
     pointer-events: auto;
-    z-index: 2147483644;
+    z-index: 1002;
     white-space: pre-line;
     animation: aiw-float 2s ease-in-out infinite;
     -webkit-animation: aiw-float 2s ease-in-out infinite;
@@ -150,7 +150,7 @@
   }
 
   /* 바깥 투명 컨테이너 */
-  .aiw-root{position:fixed;${pos}:40px;bottom:100px;z-index:2147483646;width:${W}px;max-width:calc(100vw - 24px);display:none;}
+  .aiw-root{position:fixed;${pos}:40px;bottom:100px;z-index:1002;width:${W}px;max-width:calc(100vw - 24px);display:none;}
   .aiw-root.open{display:block}
   /* 실제 프레임 */
   .aiw-wrap{position:relative;width:100%;height:100%;border:1px solid #9ca3af;border-radius:12px;overflow:hidden;background:#000}
@@ -168,7 +168,7 @@
   @media (max-width: 800px){
     .aiw-root{ ${pos}:12px; left:12px; right:12px; width:auto; }
     .aiw-handle{ display:none !important; }
-    .aiw-root{bottom:170px;z-index:2147483646;display:none;height:calc(100vh - 270px);}
+    .aiw-root{bottom:170px;z-index:1002;display:none;height:calc(100vh - 270px);}
 
   }`;
   document.head.appendChild(style);
