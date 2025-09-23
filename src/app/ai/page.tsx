@@ -454,7 +454,13 @@ export const AiMessageContent: React.FC<{ content: string; chatSessionId?: strin
   const messages = useChatStore((s) => s.messages); // ⭐️ 추가: messages 배열 가져오기
 
 
-  
+//   window.addEventListener('message', (event) => {
+//   if (event.data?.type === 'aiw:userInfo') {
+//     if (event.data.token) localStorage.setItem('token', event.data.token);
+//     if (event.data.userInfo) localStorage.setItem('userInfo', JSON.stringify(event.data.userInfo));
+//     console.log('Received user info from parent:', event.data.userInfo);
+//   }
+// });
 
   const getUserId = () => {
     // 1) 회원 여부 확인 (auth-storage 최우선)

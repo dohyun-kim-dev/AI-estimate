@@ -238,15 +238,26 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     options?: SendChatOptions & { chatHistory?: Array<{ role: 'user' | 'model'; content: string }> },
   ): Promise<{ text: string, tokenUsage?: TokenUsage }> => {
     const model = ensureModel();
-
+    console.log(chatRef.current ? '[useAI] 기존 채팅 세션 재사용' : '[useAI] 새로운 채팅 세션 생성' , chatRef.current);
     // ✅ 첫 메시지부터 thinkingBudget 반영되도록 세션 생성 시 config 주입
+    //세션스토리지에 ai-chat-storage.state.message < 2 면 새 채팅으로 간주
+    const chatStorage = sessionStorage.getItem('ai-chat-storage');
+    if (chatStorage) {
+      const parsed = JSON.parse(chatStorage);
+      const messages = parsed?.state?.messages || [];
+      console.log('[useAI] 세션스토리지 메시지 수:', messages);
+      if (messages.length < 4) {
+        chatRef.current = null;
+      }
+    }
+    console.log(chatRef.current ? '[useAI] 채팅 세션 유지' : '[useAI] 채팅 세션 초기화', chatRef.current);
     if (!chatRef.current) {
       // 과거 대화 이력이 있으면 history와 함께 세션 시작
       const history = options?.chatHistory?.map(msg => ({
         role: msg.role,
         parts: [{ text: msg.content }]
       })) || [];
-
+    console.log('[useAI] 새로운 채팅 세션 시작, thinkingBudget:', thinkingBudget, '이력 메시지 수:', history);
       chatRef.current = model.startChat({
         history,
         generationConfig: {
@@ -469,11 +480,13 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
   const startChatWithHistory = useCallback((history: Array<{ role: 'user' | 'model'; content: string }>) => {
     chatRef.current = null; // 기존 세션 리셋
     console.log('[useAI] startChatWithHistory 호출됨, 이력 개수:', history.length);
+    console.log('chatRef.current:', chatRef.current);
   }, [])
 
 const startNewChat = useCallback(() => {
     chatRef.current = null; // 기존 세션 리셋
     console.log('[useAI] startNewChat 호출됨, 새 세션 시작');
+        console.log('chatRef:', chatRef);
   }, [])
   
   const testModel = useCallback(async (): Promise<{ ok: boolean; message: string }> => {

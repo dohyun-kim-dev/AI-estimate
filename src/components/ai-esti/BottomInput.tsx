@@ -244,7 +244,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
   onStopStreaming,
   onUsageCheck
 }) => {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState<string>('');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [loginModalPurpose, setLoginModalPurpose] = useState<'limitReached' | 'limitExceeded' | null>(null);
@@ -280,40 +280,56 @@ const BottomInput: React.FC<BottomInputProps> = ({
 
   // 스트리밍 시작 시 AbortController 생성, onSubmit에 전달 필요
   const lastInputRef = useRef('');
+
   const handleSubmit = async () => {
-    if ((value.trim() || uploadedFiles.length > 0) && onSubmit) {
-      lastInputRef.current = value;
-      // 전송 버튼 누르자마자 인풋 텍스트와 파일 미리보기 지우기
-      setValue('');
-      
-      // 스트리밍 시작 시 AbortController 새로 생성
-      if (abortController) {
-        abortController.abort();
-      }
-      const newAbort = new AbortController();
-      setAbortController(newAbort);
+  // value가 null일 경우 빈 문자열로 처리
+  const safeValue = value === null ? '' : value;
+  if ((safeValue.trim() || uploadedFiles.length > 0) && onSubmit) {
+    lastInputRef.current = safeValue;
+    setValue('');
+    if (abortController) abortController.abort();
+    const newAbort = new AbortController();
+    setAbortController(newAbort);
 
-      if (isLoggedIn) {
-        await onSubmit(lastInputRef.current.trim(), { abortSignal: newAbort.signal });
-        return;
-      }
+    // chatStore에서 현재 메시지 배열 가져오기
+    const { messages } = useChatStore.getState();
 
-      if (remainingCount > 0) {
-        await onSubmit(lastInputRef.current.trim(), { abortSignal: newAbort.signal });
-        decreaseCount();
-      } else {
-        // 횟수가 부족해서 전송하지 못한 경우 텍스트 복원
-        setValue(lastInputRef.current);
-        if (hasUsedExtraCount) {
-          setLoginModalPurpose('limitExceeded');
-          setIsLoginModalOpen(true);
-        } else {
-          setLoginModalPurpose('limitReached');
-          setIsLoginModalOpen(true);
+    // 과거 내역이 없는 완전 새 채팅방이면 chatHistory: []로 보냄
+    console.log("현재 메시지 개수:", messages.length);
+    const isNewChat = messages.length < 2; // 2 미만이면 새 채팅으로 간주
+
+    if (isLoggedIn) {
+      await onSubmit(
+        lastInputRef.current.trim(),
+        {
+          abortSignal: newAbort.signal,
+          ...(isNewChat ? { chatHistory: [] } : {}) // 새 채팅이면 빈 배열, 아니면 기존대로
         }
+      );
+      return;
+    }
+
+    if (remainingCount > 0) {
+      await onSubmit(
+        lastInputRef.current.trim(),
+        {
+          abortSignal: newAbort.signal,
+          ...(isNewChat ? { chatHistory: [] } : {})
+        }
+      );
+      decreaseCount();
+    } else {
+      setValue(lastInputRef.current);
+      if (hasUsedExtraCount) {
+        setLoginModalPurpose('limitExceeded');
+        setIsLoginModalOpen(true);
+      } else {
+        setLoginModalPurpose('limitReached');
+        setIsLoginModalOpen(true);
       }
     }
-  };
+  }
+};
 
   // 정지 버튼 클릭 시 abort
   const handleStopStreaming = () => {
@@ -478,8 +494,8 @@ const BottomInput: React.FC<BottomInputProps> = ({
             minRows={1}
             maxRows={12}
             placeholder={placeholder}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
+            value={value === null ? '' : value}
+            onChange={(e) => setValue(e.target.value === null ? '' : e.target.value)}
             onKeyDown={handleKeyPress}
             onPaste={onPaste} // 🔥 이미지 붙여넣기 이벤트 연결
             disabled={isUploading || isProcessing}

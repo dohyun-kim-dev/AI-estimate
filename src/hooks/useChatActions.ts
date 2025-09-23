@@ -537,6 +537,9 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       // ⭐️ 먼저 AI 응답을 받고 성공하면 DB에 저장하는 방식으로 변경
       let aiReply = '';
       let firstChunkReceived = false;
+      console.log('finalPrompt:', finalPrompt);
+      console.log('filesForAI:', filesForAI);
+      console.log('chatHistory:', chatHistory);
       const chatResult = await sendChat(finalPrompt, filesForAI, {
         streaming: true,
         chatHistory, // 🔥 과거 대화 이력 전달
@@ -545,6 +548,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         if (abortSignal?.aborted || !useChatStore.getState().isProcessing) {
           return;
         }
+        
         const wasEmpty = aiReply.length === 0;
         aiReply += chunk;
         updateLastMessage({
@@ -593,7 +597,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       // 스트리밍이 끝나면 마지막 ai 메시지의 isLoading을 false로 변경
       updateLastMessage({
         content: aiReply,
-        isLoading: false,
+        isLoading: false, 
       });
 
       // 견적 JSON 감지 및 저장 로직은 reply 전체가 온 뒤 기존대로 처리
@@ -606,23 +610,51 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       if (estimateData) {
         try {
           const invoiceTitle = estimateData.project_name || '새로운 견적서';
-          if (!userId) throw new Error('사용자 ID를 가져올 수 없습니다.');
+          // userId가 없으면 guest-uuid 사용
+          let effectiveUserId = userId;
+          if (!effectiveUserId) {
+            effectiveUserId = localStorage.getItem('guest-uuid') || undefined;
+          }
           ensureEstimateUuid(estimateData);
           console.log('견적 데이터 저장 시작', estimateData);
           estimateId = estimateData.uuid;
           const dataStr = buildFullEstimateData(reply, estimateId);
           console.log('견적 데이터 조립 완료, 업로드 시작', { estimateId, dataStr });
-            if (abortSignal?.aborted) return;
+          if (abortSignal?.aborted) return;
+
+          // sessionStorage에서 guestinfo 가져오기
+          let userInfo = undefined;
+          const guestInfoRaw = sessionStorage.getItem('guestinfo');
+          if (guestInfoRaw) {
+            try {
+              const guestInfo = JSON.parse(guestInfoRaw);
+              userInfo = {
+                name: guestInfo.name || '',
+                email: guestInfo.email || '',
+                cellphone: guestInfo.cellphone || ''
+              };
+            } catch {}
+          }
+
+          const uploadBody = {
+            sessionId: currentSessionId,
+            invoiceTitle,
+            userId: effectiveUserId,
+            dataStr,
+            estimateId,
+            ...(userInfo ? { userInfo } : {})
+          };
 
           const uploadResponse = await uploadEstimatePdf(
-            currentSessionId,
-            invoiceTitle,
-            userId,
-            dataStr,
-            estimateId
+            uploadBody.sessionId,
+            uploadBody.invoiceTitle,
+            uploadBody.userId,
+            uploadBody.dataStr,
+            uploadBody.estimateId,
+            uploadBody.userInfo // 옵셔널
           );
 
-            if (abortSignal?.aborted) return;
+          if (abortSignal?.aborted) return;
           if (uploadResponse?.statusCode !== 200) {
             throw new Error(uploadResponse?.error?.message || '견적 저장 실패');
           }

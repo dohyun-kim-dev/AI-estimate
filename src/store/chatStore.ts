@@ -99,6 +99,7 @@ export const useChatStore = create<ChatState>()(
             messages: [], // 메시지 초기화
             isProcessing: false // 처리 상태도 초기화
           }); 
+            sessionStorage.removeItem('ai-chat-storage'); // ⭐️ 스토리지도 직접 삭제
         },
         removeLastAiLoadingMessage: () => set((s) => {
           const messages = [...s.messages];

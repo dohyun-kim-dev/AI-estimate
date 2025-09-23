@@ -498,8 +498,20 @@ const handleNewChat = () => {
       if (messages.length >= 2) {
         resetChat();
         startNewChat();
+        setTimeout(() => {
+          console.log('messages after clear:', useChatStore.getState().messages); // 빈 배열이어야 정상
+        }, 0);
         localStorage.removeItem('chatSessionId');
         sessionStorage.removeItem('chatSessionId');
+        sessionStorage.removeItem('ai-chat-storage'); // ⭐️ 이 부분도 추가 추천
+
+        // URL의 sessionId 파라미터 제거
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('sessionId')) {
+          url.searchParams.delete('sessionId');
+          window.history.replaceState({}, '', url.pathname + url.search);
+        }
+
         success('새로운 견적 상담 시작됨');
       } else {
         success('이미 새로운 채팅방입니다');
@@ -559,14 +571,14 @@ const handleNewChat = () => {
     // 로그인 상태일 때 프로필 이미지를 클릭하면 드롭다운 메뉴가 열리도록 변경
     <ProfileImage onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
       <img
-        src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'}
+        src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/ai-estimate/no_profile.png'}
         alt="프로필"
         referrerPolicy="no-referrer"
         crossOrigin="anonymous"
         style={{ width: '36px', height: '36px' }}
         onError={(e) => {
           const target = e.target as HTMLImageElement;
-          target.src = '/main/profile.png';
+          target.src = '/ai-estimate/no_profile.png';
         }}
       />
     </ProfileImage>

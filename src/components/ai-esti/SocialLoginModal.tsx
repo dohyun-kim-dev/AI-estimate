@@ -540,22 +540,23 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
         onClose={() => setIsInfoModalOpen(false)}
         onSubmit={async (info: IssuerInfo) => {
           // infoModalPurpose를 기준으로 분기 처리
+          // 모든 케이스에서 guestinfo 저장
+          sessionStorage.setItem('guestinfo', JSON.stringify({
+            name: info.name,
+            email: info.email,
+            cellphone: info.cellphone
+          }));
+
           if (infoModalPurpose === 'contact') {
             console.log('[IssuerInfoModal submit] purpose: contact', info);
           } else if (infoModalPurpose === 'download') {
             console.log('[IssuerInfoModal submit] purpose: download', info);
-            // 비회원 정보를 sessionStorage에 저장
-            sessionStorage.setItem('guestInfo', JSON.stringify({
-              name: info.name,
-              email: info.email,
-              cellphone: info.cellphone
-            }));
             props.onDownload && props.onDownload();
           } else if (infoModalPurpose === 'share') {
             console.log('[IssuerInfoModal submit] purpose: share', info);
             props.onShare && props.onShare();
-          } else if (infoModalPurpose === 'limitReached') {
-            console.log('[IssuerInfoModal submit] purpose: limitReached', info);
+          } else if (infoModalPurpose === 'limitReached' || infoModalPurpose === 'limitExceeded') {
+            console.log(`[IssuerInfoModal submit] purpose: ${infoModalPurpose}`, info);
             try {
               const chatStorage = sessionStorage.getItem('ai-chat-storage');
               if (chatStorage) {
@@ -571,17 +572,16 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                 }
                 if (lastEstimateId) {
                   // requestEstimateConsult 호출
+                  const guestUuid = localStorage.getItem('guest-uuid') || '';
                   const user = {
-                    id: '', // 비회원이므로 id는 빈값
+                    id: guestUuid, // guest-uuid 사용
                     name: info.name,
                     cellphone: info.cellphone,
                     email: info.email,
                   };
-                  
                   try {
                     const { requestEstimateConsult } = await import('@/lib/api/user/userApi');
                     const consultResponse = await requestEstimateConsult(lastEstimateId, '', '', user);
-                    
                     // API 에러 처리
                     const { data: consultData } = consultResponse as unknown as { data: any; headers: Headers };
                     if (consultData && consultData.statusCode !== 200) {

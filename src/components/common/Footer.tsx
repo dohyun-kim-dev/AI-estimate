@@ -165,13 +165,38 @@ const Footer: React.FC<FooterProps> = ({ compact }) => {
             const fullUrl = sessionId
               ? `/aiclient/${companyCode}/ai?sessionId=${sessionId}`
               : `/aiclient/${companyCode}/ai`;
+
+            // 토큰/유저정보 준비
+            let token = localStorage.getItem('user_access_token') || '';
+            let userInfo = {};
+            try {
+              userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            } catch {}
+
             return (
               <ButtonLike
                 key={idx}
                 $isActive={false}
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.preventDefault();
-                  window.open(fullUrl, '_blank', 'noopener,noreferrer');
+                  const win = window.open(fullUrl, '_blank', 'noopener,noreferrer');
+                  // 새탭이 열리고 JS가 로드된 뒤 postMessage로 데이터 전달
+                  if (win) {
+                    // 반복적으로 메시지 전송 (새탭이 준비될 때까지)
+                    let sent = false;
+                    const sendMsg = () => {
+                      if (!sent) {
+                        win.postMessage({ type: 'aiw:userInfo', token, userInfo }, '*');
+                        sent = true;
+                      }
+                    };
+                    // 1초 간격으로 최대 5번 시도
+                    let tries = 0;
+                    const interval = setInterval(() => {
+                      if (tries++ < 5) sendMsg();
+                      else clearInterval(interval);
+                    }, 1000);
+                  }
                 }}
               >
                 <IconWrapper $isActive={false}>

@@ -118,26 +118,26 @@ export default function SettingsPage() {
       <ProfileSection>
         <ProfileImage>
           <img 
-            src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} 
+            src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/ai-estimate/no_profile.png'} 
             alt="프로필" 
             referrerPolicy="no-referrer"
             crossOrigin="anonymous"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
-              target.src = '/main/profile.png';
+              target.src = '/ai-estimate/no_profile.png';
             }}
           />
         </ProfileImage>
          <ProfileImage>
                   <img 
-                    src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/main/profile.png'} 
+                    src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/ai-estimate/no_profile.png'} 
                     alt="프로필" 
                     referrerPolicy="no-referrer"
                     crossOrigin="anonymous"
                     style={{width: '36px', height: '36px'}}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = '/main/profile.png';
+                      target.src = '/ai-estimate/no_profile.png';
                     }}
                   />
                 </ProfileImage>

@@ -262,24 +262,30 @@ export async function uploadEstimatePdf(
   title: string,
   userId: string,
   data: string,
-  estimateId?: string
+  estimateId?: string,
+  userInfo?: { id: string; name: string; email: string; cellphone: string }
 ) {
-  const companyCode = resolveCompanyCode(); // ★ 바디에도 넣어줌
-
-  const payload: Record<string, string> = {
+  const companyCode = resolveCompanyCode();
+  // userInfo를 중첩 객체로, id 필드 항상 포함
+  const payload: Record<string, any> = {
+    id: estimateId || userId, // estimateId가 있으면 업데이트, 없으면 userId(비회원 uuid)
     user: userId,
     chatSession: sessionId,
     title,
-    data,          // 인트로 + <script id="invoiceData">...</script>
-    companyCode,   // ★ 에러가 요구한 필드
+    data,
+    companyCode,
+    userInfo: {
+      name: userInfo?.name || '',
+      email: userInfo?.email || '',
+      cellphone: userInfo?.cellphone || '',
+    },
   };
-  if (estimateId) payload.id = estimateId; // 업데이트면만 추가
-console.log("uploadEstimatePdf payload:", payload);
+  console.log("uploadEstimatePdf payload:", payload);
   return callUserApi({
     title: '견적 저장',
     url: getApiUrl('/users/company/estimate/upload'),
     method: 'POST',
-    body: payload, // callUserApi가 JSON.stringify + Content-Type 자동 셋업
+    body: payload,
     isCallPageLoader: false,
   });
 }
