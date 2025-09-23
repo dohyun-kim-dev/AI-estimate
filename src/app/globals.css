@@ -17,3 +17,38 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* 클릭 하이라이트 및 포커스 아웃라인 제거 */
+* {
+  /* 모바일 터치 하이라이트 제거 */
+  -webkit-tap-highlight-color: transparent;
+  /* 포커스 아웃라인 제거 */
+  outline: none;
+}
+
+/* 버튼, 링크, 인풋 등의 포커스 아웃라인 제거 */
+button:focus,
+button:focus-visible,
+a:focus,
+a:focus-visible,
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible,
+div:focus,
+div:focus-visible,
+img:focus,
+img:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 클릭 시 나타나는 파란색 선택 영역 제거 */
+*::selection {
+  background: transparent;
+}
+*::-moz-selection {
+  background: transparent;
+}

@@ -82,12 +82,12 @@ const ProfileImage = styled.div<{ $isDarkMode?: boolean }>`
   height: 120px;
   border-radius: 50%;
   overflow: hidden;
-  border: 3px solid ${({ $isDarkMode, theme }) => $isDarkMode ? theme.border : '#e0e0e0'};
+  // border: 3px solid ${({ $isDarkMode, theme }) => $isDarkMode ? theme.border : '#e0e0e0'};
   cursor: pointer;
   transition: all 0.2s ease;
   
   &:hover {
-    border-color: ${({ $isDarkMode, theme }) => $isDarkMode ? theme.accent : '#202055'};
+    // border-color: ${({ $isDarkMode, theme }) => $isDarkMode ? theme.accent : '#202055'};
   }
   
   img {
@@ -99,11 +99,11 @@ const ProfileImage = styled.div<{ $isDarkMode?: boolean }>`
 
 const CameraIcon = styled.div<{ $isDarkMode?: boolean }>`
   position: absolute;
-  bottom: 8px;
-  right: 8px;
-  width: 32px;
-  height: 32px;
-  background-color: ${({ $isDarkMode, theme }) => $isDarkMode ? theme.accent : '#202055'};
+  bottom: 4px;
+  right: 4px;
+  width: 40px;
+  height: 40px;
+  background-color: #AAAAAA;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -190,14 +190,14 @@ const TextFieldContainer = styled.div`
 
 const FloatingLabel = styled.label<{ $isDarkMode?: boolean; $hasValue?: boolean; $isFocused?: boolean }>`
   position: absolute;
-  top: ${({ $hasValue, $isFocused }) => ($hasValue || $isFocused) ? '-10px' : '16px'};
+  top: ${({ $hasValue, $isFocused }) => ($hasValue || $isFocused) ? '-10px' : '12px'};
   left: 12px;
   margin-top: 3px;
   padding: 0 4px;
   font-size: ${({ $hasValue, $isFocused }) => ($hasValue || $isFocused) ? '12px' : '16px'};
   color: ${({ $isDarkMode, theme, $isFocused }) => 
     $isFocused 
-      ? ($isDarkMode ? theme.accent : '#202055')
+      ? ($isDarkMode ? '#ffffff' : '#202055')
       : ($isDarkMode ? '#ffffff' : '#666666')
   };
   background: ${({ $isDarkMode, theme }) => $isDarkMode ? theme.body : '#ffffff'};
@@ -224,7 +224,11 @@ const StyledInput = styled.input<{ $isDarkMode?: boolean; $hasError?: boolean }>
 
   &:focus {
     outline: none;
-    border-color: ${({ $isDarkMode, theme }) => $isDarkMode ? theme.accent : '#202055'};
+    border-color: ${({ $isDarkMode, theme, $hasError }) => 
+      $hasError 
+        ? '#e53935'
+        : ($isDarkMode ? '#ffffff' : '#202055')
+    };
   }
 
   &:read-only {
@@ -251,7 +255,7 @@ const ActionButton = styled.button<{ $isDarkMode?: boolean; $variant?: 'primary'
   border: 1px solid ${({ $isDarkMode, theme, $variant }) => 
     $variant === 'primary' 
       ? ($isDarkMode ? '#fff' : '#5799ED')
-      : ($isDarkMode ? theme.border : '#cccccc')
+      : ($isDarkMode ? '#fff' : '#cccccc')
   };
   border-radius: 4px;
   font-size: 14px;
@@ -294,14 +298,14 @@ const ErrorMessage = styled.p<{ $isDarkMode?: boolean }>`
 
 const CompleteButton = styled.button<{ $isDarkMode?: boolean }>`
   width: 100%;
-  height: 56px;
-  padding: 16px;
+  height: 42px;
+  padding: 8px;
   background-color: ${({ $isDarkMode, theme }) => $isDarkMode ? '#1D252D' : '#5799ED'};
   color: #ffffff;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
 //   margin-top: 40px;
   transition: all 0.2s ease;
@@ -348,79 +352,6 @@ const AuthTitle = styled.h3<{ $isDarkMode?: boolean }>`
   font-weight: 500;
   color: ${({ $isDarkMode, theme }) => $isDarkMode ? theme.text : '#333333'};
   margin-bottom: 16px;
-`;
-
-// 확인 모달 스타일
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-`;
-
-const ModalContainer = styled.div<{ $isDarkMode?: boolean }>`
-  background-color: ${({ $isDarkMode, theme }) => $isDarkMode ? theme.surface1 : '#ffffff'};
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 400px;
-  width: 90%;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-`;
-
-const ModalTitle = styled.h3<{ $isDarkMode?: boolean }>`
-  font-size: 18px;
-  font-weight: 600;
-  color: ${({ $isDarkMode, theme }) => $isDarkMode ? theme.text : '#333333'};
-  margin-bottom: 16px;
-  text-align: center;
-`;
-
-const ModalMessage = styled.p<{ $isDarkMode?: boolean }>`
-  font-size: 16px;
-  color: ${({ $isDarkMode, theme }) => $isDarkMode ? theme.text : '#666666'};
-  text-align: center;
-  line-height: 1.5;
-  margin-bottom: 24px;
-`;
-
-const ModalButtons = styled.div`
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-`;
-
-const ModalButton = styled.button<{ $isDarkMode?: boolean; $variant?: 'primary' | 'secondary' }>`
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 80px;
-
-  ${({ $isDarkMode, theme, $variant }) => $variant === 'primary' ? `
-    background: ${$isDarkMode ? '#1D252D' : '#5799ED'};
-    color: #ffffff;
-    border: none;
-
-    &:hover {
-      opacity: 0.9;
-    }
-  ` : `
-    background: ${$isDarkMode ? theme.surface2 : '#ffffff'};
-    color: ${$isDarkMode ? theme.text : '#333333'};
-    border: 1px solid ${$isDarkMode ? theme.border : '#cccccc'};
-
-    &:hover {
-      background: ${$isDarkMode ? theme.surface1 : '#f5f5f5'};
-    }
-  `}
 `;
 
 // 커스텀 TextField 컴포넌트
@@ -513,7 +444,6 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
   const [verificationSent, setVerificationSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [verifiedPhoneNumber, setVerifiedPhoneNumber] = useState('');
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
   
   // 프로필 이미지 관련 상태
   const [showImageDropdown, setShowImageDropdown] = useState(false);
@@ -690,7 +620,7 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
         const hasApiPath = apiHost.includes('/api');
         const displayImagePath = hasApiPath 
           ? `${apiHost}/file/${uploadedImagePath}` 
-          : `${apiHost}/api/file/${uploadedImagePath}`;
+          : `${apiHost}/file/${uploadedImagePath}`;
         
         if (!user?.providerId) {
           error('사용자 정보를 찾을 수 없습니다.');
@@ -780,8 +710,10 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
     }
   };
 
-  const handleVerifyCode = async () => {
-    if (verificationCode.length !== 6) {
+  const handleVerifyCode = async (code?: string) => {
+    const codeToVerify = code || verificationCode;
+    
+    if (codeToVerify.length !== 6) {
       setVerificationError('6자리 인증번호를 입력해주세요.');
       return;
     }
@@ -789,11 +721,13 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
     setIsVerifyingCode(true);
     try {
       const cleanPhone = newPhoneNumber.replace(/[^0-9]/g, '');
-      const response = await validateAuthCode(cleanPhone, verificationCode);
+      const response = await validateAuthCode(cleanPhone, codeToVerify);
       if (response.statusCode === 200) {
         setIsVerified(true);
         setVerifiedPhoneNumber(cleanPhone);
-        success('인증이 완료되었습니다.');
+        // success('인증이 완료되었습니다.');
+        // 인증 성공시 바로 변경 처리
+        await performPhoneUpdate(cleanPhone);
       } else {
         setVerificationError(response.error?.customMessage || '인증번호가 일치하지 않습니다.');
       }
@@ -814,26 +748,6 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
       return;
     }
 
-    // 휴대전화 변경 단계인 경우
-    if (currentStep === 'phone') {
-      if (!newPhoneNumber.trim()) {
-        setPhoneError('새로운 휴대전화 번호를 입력해주세요.');
-        return;
-      }
-      
-      // 인증된 번호가 있고, 현재 입력된 번호와 다른 경우 모달 표시
-      if (isVerified && verifiedPhoneNumber && newPhoneNumber.replace(/[^0-9]/g, '') !== verifiedPhoneNumber) {
-        setShowConfirmModal(true);
-        return;
-      }
-      
-      // 인증된 번호가 없는 경우
-      if (!isVerified || !verifiedPhoneNumber) {
-        setVerificationError('휴대전화 인증을 완료해주세요.');
-        return;
-      }
-    }
-
     setIsUpdating(true);
     
     try {
@@ -843,30 +757,25 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
         return;
       }
 
-      if (currentStep === 'phone') {
-        // 휴대전화 변경의 경우 인증된 번호로 업데이트
-        await performPhoneUpdate(verifiedPhoneNumber);
-      } else {
-        // 프로필 정보 업데이트
-        const response = await googleLoginUpdate({
-          providerId: user.providerId,
+      // 프로필 정보 업데이트
+      const response = await googleLoginUpdate({
+        providerId: user.providerId,
+        name: name,
+        email: email,
+        profileImage: profileImage,
+        cellphone: user.cellphone || '',
+      }) as unknown as ApiResponse<GoogleLoginResponse>;
+
+      if (response && response.data && response.data._id) {
+        setUser({
+          ...user,
           name: name,
           email: email,
-          profileImage: profileImage,
-          cellphone: user.cellphone || '',
-        }) as unknown as ApiResponse<GoogleLoginResponse>;
-
-        if (response && response.data && response.data._id) {
-          setUser({
-            ...user,
-            name: name,
-            email: email,
-          });
-          success('프로필이 업데이트되었습니다.');
-          onBack?.();
-        } else {
-          error('프로필 업데이트에 실패했습니다.');
-        }
+        });
+        success('프로필이 업데이트되었습니다.');
+        onBack?.();
+      } else {
+        error('프로필 업데이트에 실패했습니다.');
       }
     } catch (err) {
       error('프로필 업데이트 중 오류가 발생했습니다.');
@@ -884,17 +793,6 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
       logout(); // 로그아웃 처리
       onBack?.(); // 이전 페이지로 이동
     }
-  };
-
-  // 모달 확인 핸들러 - 인증된 번호로 변경
-  const handleConfirmVerifiedNumber = async () => {
-    setShowConfirmModal(false);
-    await performPhoneUpdate(verifiedPhoneNumber);
-  };
-
-  // 모달 취소 핸들러
-  const handleCancelModal = () => {
-    setShowConfirmModal(false);
   };
 
   // 실제 전화번호 업데이트 수행
@@ -932,8 +830,6 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
         setVerificationSent(false);
         setIsVerified(false);
         setVerifiedPhoneNumber('');
-        
-        onBack?.();
       } else {
         error('프로필 업데이트에 실패했습니다.');
       }
@@ -1125,74 +1021,31 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
 
               {verificationSent && !isVerified && (
                 <FormRow>
-                  <InputGroup>
-                    <TextField
-                      id="verificationCode"
-                      label="인증번호"
-                      value={verificationCode}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9]/g, '');
-                        if (value.length <= 6) {
-                          setVerificationCode(value);
-                          if (verificationError) setVerificationError('');
+                  <TextField
+                    id="verificationCode"
+                    label="인증번호"
+                    value={verificationCode}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, '');
+                      if (value.length <= 6) {
+                        setVerificationCode(value);
+                        if (verificationError) setVerificationError('');
+                        // 6자리가 되면 자동으로 인증 시도
+                        if (value.length === 6) {
+                          handleVerifyCode(value);
                         }
-                      }}
-                      placeholder="인증번호 6자리를 입력해주세요"
-                      errorMessage={verificationError}
-                      isDarkMode={isDarkMode}
-                    />
-                    <ActionButton
-                      $isDarkMode={isDarkMode}
-                      $variant="primary"
-                      onClick={handleVerifyCode}
-                      disabled={verificationCode.length !== 6 || isVerifyingCode}
-                    >
-                      {isVerifyingCode ? '확인 중...' : '인증하기'}
-                    </ActionButton>
-                  </InputGroup>
+                      }
+                    }}
+                    placeholder="인증번호 6자리를 입력해주세요"
+                    errorMessage={verificationError}
+                    isDarkMode={isDarkMode}
+                  />
                 </FormRow>
               )}
             </Section>
-
-            <CompleteButton
-              $isDarkMode={isDarkMode}
-              onClick={handleUpdateProfile}
-              disabled={!newPhoneNumber.trim() || isUpdating}
-            >
-              {isUpdating ? '변경 중...' : '휴대전화 변경 완료'}
-            </CompleteButton>
           </>
         )}
       </FormContainer>
-      
-      {/* 확인 모달 */}
-      {showConfirmModal && (
-        <ModalOverlay onClick={handleCancelModal}>
-          <ModalContainer $isDarkMode={isDarkMode} onClick={(e) => e.stopPropagation()}>
-            <ModalTitle $isDarkMode={isDarkMode}>휴대전화 번호 확인</ModalTitle>
-            <ModalMessage $isDarkMode={isDarkMode}>
-              인증받으신 {verifiedPhoneNumber?.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3')}로<br />
-              변경하시겠습니까?
-            </ModalMessage>
-            <ModalButtons>
-              <ModalButton
-                $isDarkMode={isDarkMode}
-                $variant="secondary"
-                onClick={handleCancelModal}
-              >
-                취소
-              </ModalButton>
-              <ModalButton
-                $isDarkMode={isDarkMode}
-                $variant="primary"
-                onClick={handleConfirmVerifiedNumber}
-              >
-                변경
-              </ModalButton>
-            </ModalButtons>
-          </ModalContainer>
-        </ModalOverlay>
-      )}
     </Container>
   );
 };
