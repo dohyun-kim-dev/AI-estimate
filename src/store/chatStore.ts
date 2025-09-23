@@ -23,6 +23,8 @@ interface ChatState {
   setIsProcessing: (processing: boolean) => void; // 추가: 처리 상태 설정
   clear: () => void;
   removeLastAiLoadingMessage: () => void;
+  clearAllLoadingMessages: () => void; // 추가: 모든 로딩 메시지 제거
+  removeIncompleteEstimateMessages: () => void; // 추가: 불완전한 견적 메시지 제거
 }
 
 export const useChatStore = create<ChatState>()(
@@ -59,6 +61,21 @@ export const useChatStore = create<ChatState>()(
           }
           return s;
         }),
+        clearAllLoadingMessages: () => set((state) => ({
+          messages: state.messages.map(msg =>
+            msg.isLoading ? { ...msg, isLoading: false } : msg
+          ),
+        })),
+        removeIncompleteEstimateMessages: () => set((state) => ({
+          messages: state.messages.filter(msg => {
+            if (msg.role !== 'ai') return true;
+            if (typeof msg.content !== 'string') return true;
+            const scriptStartPattern = /<script[^>]*id="invoiceData"[^>]*>/;
+            const hasScriptStart = scriptStartPattern.test(msg.content);
+            const hasScriptEnd = msg.content.includes('</script>');
+            return !(hasScriptStart && !hasScriptEnd);
+          }),
+        })),
         // 특정 messageId로 메시지를 찾아 업데이트합니다.
         updateMessageById: (messageId: string, payload: Partial<Omit<ChatMessage, 'role'>>) => set((s) => {
  const messages = s.messages.map((m) => {
@@ -94,6 +111,7 @@ export const useChatStore = create<ChatState>()(
           return { messages };
         }),
       }),
+      
       {
         name: 'ai-chat-storage',
         storage: createJSONStorage(() => sessionStorage),

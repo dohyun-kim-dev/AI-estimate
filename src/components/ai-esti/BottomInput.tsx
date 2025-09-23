@@ -258,12 +258,12 @@ const BottomInput: React.FC<BottomInputProps> = ({
   const theme = useTheme();
   const isLightTheme = theme.body === '#FFFFFF';
   const { isAuthenticated } = useAuthStore();
-  const { isProcessing } = useChatStore(); // 추가: store에서 isProcessing 가져오기
-  const { 
-    remainingCount, 
-    hasUsedExtraCount, 
-    decreaseCount, 
-    addExtraCount, 
+  const { isProcessing, updateLastMessage, clearAllLoadingMessages, removeIncompleteEstimateMessages } = useChatStore(); // 추가: store에서 isProcessing 가져오기
+  const {
+    remainingCount,
+    hasUsedExtraCount,
+    decreaseCount,
+    addExtraCount,
     checkAndResetIfNewDay 
   } = useUsageStore();
   const isLoggedIn = isAuthenticated();
@@ -330,6 +330,8 @@ const BottomInput: React.FC<BottomInputProps> = ({
     if (onStopStreaming) {
       onStopStreaming();
     }
+  clearAllLoadingMessages(); // 모든 로딩 메시지 꺼줌
+  removeIncompleteEstimateMessages(); 
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

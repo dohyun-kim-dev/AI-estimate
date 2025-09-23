@@ -453,7 +453,11 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       
       if (selectedFiles.length > 0) {
         console.log('📤 서버로 파일 업로드 시작...');
+          if (abortSignal?.aborted) return;
+
         const uploadResponse = await uploadFiles(selectedFiles);
+          if (abortSignal?.aborted) return;
+
         console.log('📥 서버 업로드 응답:', uploadResponse);
         
         // 🔥 API 응답 구조 수정: { statusCode: 200, data: [...] } 형태
@@ -537,27 +541,33 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         streaming: true,
         chatHistory, // 🔥 과거 대화 이력 전달
         onStream: (chunk) => {
-          const wasEmpty = aiReply.length === 0;
-          aiReply += chunk;
-          // 스트리밍 중에는 content만 누적, isLoading은 그대로 true 유지
-            updateLastMessage({
-            content: aiReply,
-            isLoading: wasEmpty ? false : false, 
-          });
-            if (!firstChunkReceived && wasEmpty) firstChunkReceived = true;
-        },
+        // 중지(abort) 상태면 메시지 업데이트 하지 않음
+        if (abortSignal?.aborted || !useChatStore.getState().isProcessing) {
+          return;
+        }
+        const wasEmpty = aiReply.length === 0;
+        aiReply += chunk;
+        updateLastMessage({
+          content: aiReply,
+          isLoading: wasEmpty ? false : false,
+        });
+        if (!firstChunkReceived && wasEmpty) firstChunkReceived = true;
+      },
         abortSignal,
       });
 
       const reply = chatResult.text;
 
       // AI 응답이 성공했으므로 이제 DB에 사용자 메시지 저장
+      if (abortSignal?.aborted) return;
+
       const userMessageResponse = await sendChatMessage(currentSessionId, {
         role: 'USER',
         content: messageContent,
         uid: userId
       });
-      
+      if (abortSignal?.aborted) return;
+
       // Zustand 스토어에서 마지막 사용자 메시지를 업데이트하여 messageId 추가
       // 현재 messages 배열에서 뒤에서 두 번째가 사용자 메시지
       const currentMessagesForUpdate = useChatStore.getState().messages;
@@ -602,6 +612,8 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           estimateId = estimateData.uuid;
           const dataStr = buildFullEstimateData(reply, estimateId);
           console.log('견적 데이터 조립 완료, 업로드 시작', { estimateId, dataStr });
+            if (abortSignal?.aborted) return;
+
           const uploadResponse = await uploadEstimatePdf(
             currentSessionId,
             invoiceTitle,
@@ -609,6 +621,8 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
             dataStr,
             estimateId
           );
+
+            if (abortSignal?.aborted) return;
           if (uploadResponse?.statusCode !== 200) {
             throw new Error(uploadResponse?.error?.message || '견적 저장 실패');
           }
@@ -620,11 +634,14 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       }
 
       // AI 응답 메시지를 DB에 저장
+      if (abortSignal?.aborted) return;
+
       const aiMessageResponse: ChatMessageResponseData = await sendChatMessage(currentSessionId, {
         role: 'AI',
         content: { type: 'text', value: finalReply, ...(estimateId && { estimateId }) },
         uid: userId
       });
+      if (abortSignal?.aborted) return;
       const aiMessageId = aiMessageResponse?.data?._id;
       
       // 스토어의 마지막 AI 메시지 업데이트 (messageId와 estimateId 추가)
