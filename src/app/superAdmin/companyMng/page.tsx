@@ -339,7 +339,7 @@ const CustomerMngPage: React.FC = () => {
         defaultViewMode="detail"
         enableDateFilter={false}
         renderMiddleContent={() => (
-          <div style={{ flex: 1, textAlign: 'end', fontWeight: 'bold', display: 'flex', gap: '8px' }}>
+          <div style={{ flex: 1, textAlign: 'end', justifyContent: 'flex-end', fontWeight: 'bold', display: 'flex', gap: '8px' }}>
             <PrimaryButton $themeMode="light" onClick={handleCategoryRegisterClick}>
               카테고리 등록
             </PrimaryButton>

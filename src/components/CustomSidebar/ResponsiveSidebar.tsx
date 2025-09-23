@@ -181,7 +181,7 @@ const AppBar = styled.div<{ $sidebarWidth: number }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 20px;
   z-index: 1200;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 `;

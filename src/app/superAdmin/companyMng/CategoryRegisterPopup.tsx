@@ -5,22 +5,49 @@ import CmsPopup from '@/components/CmsPopup';
 import CommonTextField from '@/components/common/TextField';
 import ActionButton from '@/components/ActionButton';
 import { toast } from 'react-toastify';
+import { createCategory, updateCategory } from '@/lib/api/admin/adminApi';
 
 interface CategoryRegisterPopupProps {
   isOpen: boolean;
   onClose: () => void;
+  editData?: any | null;
 }
 
-const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, onClose }) => {
-  const [categoryName, setCategoryName] = useState('');
-  const [categoryCode, setCategoryCode] = useState('');
+const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, onClose, editData }) => {
+  const [categoryName, setCategoryName] = useState(editData?.name ?? '');
+  const [categoryCode, setCategoryCode] = useState(editData?.code ?? '');
 
-  const handleSave = () => {
-    // TODO: 카테고리 등록 API 호출
-    toast.success('카테고리가 등록되었습니다.');
-    setCategoryName('');
-    setCategoryCode('');
-    onClose();
+  // editData가 변경될 때마다 값 초기화
+  React.useEffect(() => {
+    setCategoryName(editData?.name ?? '');
+    setCategoryCode(editData?.code ?? '');
+  }, [editData, isOpen]);
+
+  const handleSave = async () => {
+    if (!categoryName) {
+      toast.error('카테고리명을 입력하세요.');
+      return;
+    }
+    if (!editData && !categoryCode) {
+      toast.error('카테고리코드를 입력하세요.');
+      return;
+    }
+    try {
+      if (editData) {
+        // 수정
+        await updateCategory(editData._id, { name: categoryName, code: categoryCode });
+        toast.success('카테고리가 수정되었습니다.');
+      } else {
+        // 등록
+        await createCategory({ name: categoryName, code: categoryCode });
+        toast.success('카테고리가 등록되었습니다.');
+      }
+      setCategoryName('');
+      setCategoryCode('');
+      onClose();
+    } catch (error) {
+      toast.error('카테고리 저장 중 오류가 발생했습니다.');
+    }
   };
 
   return (
@@ -30,15 +57,9 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
       onClose={onClose}
       height="auto"
       backgroundColor="#FFF"
-      bottomFloating={
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '16px 24px' }}>
-          <ActionButton $themeMode="light" onClick={handleSave}>저장</ActionButton>
-          <ActionButton $themeMode="light" onClick={onClose}>닫기</ActionButton>
-        </div>
-      }
+    
     >
-      <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <RequiredText>* 필수항목</RequiredText>
+      <div style={{ paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '36px' }}>
         <CommonTextField
           id="categoryName"
           value={categoryName}
@@ -54,6 +75,10 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
           placeholder="카테고리코드를 입력하세요"
         />
       </div>
+        <BottomButtonRow>
+    <SaveButton onClick={handleSave}>{editData ? '수정' : '저장'}</SaveButton>
+    <CloseButton onClick={onClose}>닫기</CloseButton>
+      </BottomButtonRow>
     </CmsPopup>
   );
 };
@@ -64,5 +89,47 @@ const RequiredText = styled.div`
   margin-bottom: 8px;
   text-align: right;
 `;
+
+
+
+const BottomButtonRow = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 0;
+`;
+
+const SaveButton = styled.button`
+  background: #2C2E3C;
+  color: #fff;
+  border: 1px solid #2C2E3C;
+  border-radius: 2px;
+  padding: 9px 53px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  &:hover {
+    opacity: 0.9;
+  }
+`;
+
+const CloseButton = styled.button`
+  background: #fff;
+  color: #2C2E3C;
+  border: 1px solid #2C2E3C;
+  border-radius: 2px;
+  padding: 9px 53px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  &:hover {
+    background: #f5f5f5;
+  }
+`;
+
 
 export default CategoryRegisterPopup;

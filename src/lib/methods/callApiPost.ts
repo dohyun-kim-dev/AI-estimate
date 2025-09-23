@@ -72,8 +72,12 @@ export async function callApiPost<T = unknown>({
     const response = await fetch(fullUrl, fetchOptions);
 
     devLog(`📱 [${title}] 응답 상태:`, response.status, response.statusText);
-    
-    if (!response.ok) {
+    if (response.status === 401) {
+      devLog(`❌ [${title}] 인증 오류:`, response.status, response.statusText);
+      localStorage.removeItem('adminId');
+      alert('인증이 만료되었습니다. 다시 로그인 해주세요.');
+      window.location.href = '/superadmin/login';
+    } else if (!response.ok) {
       devLog(`❌ [${title}] HTTP 에러:`, response.status, response.statusText);
     }
 

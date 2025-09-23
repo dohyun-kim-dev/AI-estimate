@@ -373,6 +373,43 @@ export async function getCompanyList(
   }
 }
 
+// *************** 카테고리
+
+// 카테고리 조회
+export async function getCategoryList() {
+  return callAdminApi({
+    title: '카테고리 목록 조회',
+    url: `${BASE_URL}/cms/company/category`,
+    method: 'GET',
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// 카테고리 생성
+export async function createCategory(params: { name: string; code: string }) {
+  return callAdminApi({
+    title: '카테고리 생성',
+    url: `${BASE_URL}/cms/company/category`,
+    method: 'POST',
+    body: params,
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// 카테고리 수정
+export async function updateCategory(id: string, params: { name?: string; code?: string }) {
+  return callAdminApi({
+    title: '카테고리 수정',
+    url: `${BASE_URL}/cms/company/category/${id}`,
+    method: 'PATCH',
+    body: params,
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
 // 단가 업로드 API
 export async function uploadUnitPrices(
   params: UnitPriceUploadParams) {
