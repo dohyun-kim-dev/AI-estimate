@@ -185,7 +185,6 @@ export default function AILayout() {
   const { isDarkMode, toggleTheme } = useThemeStore();
   const { success, error } = useToast();
   const resetChat = useChatStore((s) => s.clear);
-  const { clearChatHistory } = useAI();
   const chatSessionId = useChatStore((s) => s.chatSessionId);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
@@ -529,7 +528,7 @@ const handleNewChat = () => {
     }
   };
 
-  const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth <= 801 : false;
   const isAiHome = location.pathname === `/aiclient/${companyCode}/ai`;
   const shouldShowBackButton = isMobile || !isAiHome; // 모바일이면 항상, 데스크탑은 AI 홈에서 숨김
 
