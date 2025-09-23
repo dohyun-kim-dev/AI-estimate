@@ -61,6 +61,7 @@ const PopupContainer = styled.div<{
   width: ${({ $isWide }) => ($isWide ? '1200px' : '800px')};
   min-width: ${({ $isWide }) => ($isWide ? '1200px' : '800px')};
   height: ${({ $customHeight }) => $customHeight ?? '85vh'};
+  max-height: 85vh;
   background: ${({ $backgroundColor }) => $backgroundColor ?? '#2c2e3c'}; // ✅ 배경색
   border-radius: 4px;
   padding-bottom: ${({ $hasBottomFloating }) => ($hasBottomFloating ? '100px' : '0')};

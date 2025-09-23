@@ -18,8 +18,8 @@ export type AdminLoginParams = {
     cellphone: string;
     memo?: string;
     email: string;
-    emailYn?: string;
-    smsYn?: string;
+    receiveEmail?: boolean;
+    receiveAlimtalk?: boolean;
     companyCode?: string; // 옵션: 없으면 통합관리자, 있으면 고객사 관리자
   };
 
@@ -43,8 +43,8 @@ export type AdminLoginParams = {
     cellphone?: string;
     description?: string;
     email?: string;
-    emailYn?: 'Y' | 'N';
-    smsYn?: 'Y' | 'N';
+    receiveAlimtalk?: boolean;
+    receiveEmail?: boolean;
     password?: string;
     companyCode?: string;
   };

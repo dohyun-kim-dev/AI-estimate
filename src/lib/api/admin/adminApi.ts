@@ -124,11 +124,11 @@ export async function adminCreate(
   }
 
   // emailYn, smsYn이 있으면 추가
-  if (params.emailYn) {
-    requestBody.emailYn = params.emailYn;
+  if (params.receiveEmail) {
+    requestBody.receiveEmail = params.receiveEmail;
   }
-  if (params.smsYn) {
-    requestBody.smsYn = params.smsYn;
+  if (params.receiveAlimtalk) {
+    requestBody.receiveAlimtalk = params.receiveAlimtalk;
   }
 
   return callAdminApi({
@@ -163,11 +163,11 @@ export async function adminUpdate(params: AdminUpdateParams) {
   }
 
   // 이메일 및 SMS 수신 여부 필드 추가
-  if (params.emailYn) {
-    requestBody.emailYn = params.emailYn;
+  if (params.receiveEmail) {
+    requestBody.receiveEmail = params.receiveEmail;
   }
-  if (params.smsYn) {
-    requestBody.smsYn = params.smsYn;
+  if (params.receiveAlimtalk) {
+    requestBody.receiveAlimtalk = params.receiveAlimtalk;
   }
 
   return callAdminApi({

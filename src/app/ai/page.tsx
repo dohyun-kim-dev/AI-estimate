@@ -1348,7 +1348,7 @@ useEffect(() => {
           {isUploading ? '파일 업로드 중...' : '여기에 파일을 드래그하여 업로드'} 
         </FileUploadText>
         <FileUploadSubtext>
-          지원 형식: 이미지, PDF, 문서 파일
+          지원 형식: 이미지, PDF 한정
         </FileUploadSubtext>
         {isUploading && <ProgressBar $progress={uploadProgress} />}
       </FileUploadArea>
@@ -1426,7 +1426,6 @@ useEffect(() => {
           </svg>
         </ScrollDownIcon>
       </ScrollDownButton>
-      
       <BottomInput
         placeholder="메시지를 입력하세요"
         onSubmit={handleSubmit}

@@ -2,96 +2,120 @@
 import React, { useState, useCallback, useRef, useMemo } from 'react';
 import CmsResponsiveContainer from '@components/CustomList/ResponsiveList/CmsResponsiveContainer';
 import { toast, ToastContainer } from 'react-toastify';
+import { getCompanyList } from '@/lib/api/admin/adminApi';
+import dayjs from 'dayjs';
+import { FetchParams, FetchResult } from '@/components/CustomList/GenericListUI';
+import { ColumnDefinition } from '@/components/CustomList/GenericDataTable';
 import CompanyFormPopup from './CompanyFormPopup';
+import CategoryRegisterPopup from './CategoryRegisterPopup';
+import CategorySearchPopup from './CategorySearchPopup';
+import styled from 'styled-components';
+import ActionButton from '@/components/ActionButton';
+import { THEME_COLORS } from '@/styles/theme_colors';
+import { ThemeMode } from '@/styles/theme_colors';
 
-type Customer = {
-  id: string;
+// API 응답 타입 정의
+interface ApiResponse<T> {
+  statusCode: number;
+  message: string;
+  data: T[];
+  metadata: {
+    allCnt: number;
+    totalCnt: number;
+  };
+  error: {
+    statusCode: number;
+    message: string;
+    customMessage?: string;
+  } | null;
+}
+
+type Company = {
+  _id: string;
   name: string;
-  ceo: string;
-  businessNo: string;
-  adminId: string;
-  email: string;
+  companyName: string;
   cellphone: string;
+  email: string;
+  companyCode: string;
+  dbName: string;
   address: string;
-  description: string;
-  createdTime: string | null;
-  lastLoginTime: string | null;
+  detailAddress: string;
+  ciImage: string;
+  businessImage: string;
+  contractType: string;
+  contractStartDate: string;
+  contractEndDate: string;
+  aiConfidence: string;
+  mode: string;
+  category: {name: string, code: string} | null;
+  businessNumber: string;
+  memo: string;
+  licence: string;
+  createAt: string;
 };
 
-const MOCK_CUSTOMERS: Customer[] = [
-  {
-    id: '1',
-    name: '엠브이픽',
-    ceo: '김브이',
-    businessNo: '123-45-67890',
-    adminId: 'mvpic_admin',
-    email: 'contact@mvpic.com',
-    cellphone: '010-1234-5678',
-    address: '서울특별시 강남구',
-    description: '주요 고객사',
-    createdTime: '2025-01-10',
-    lastLoginTime: '2025-08-17',
-  },
-  {
-    id: '2',
-    name: 'KT 지사',
-    ceo: '김철수',
-    businessNo: '987-65-43210',
-    adminId: 'kt_branch',
-    email: 'kt@kt.com',
-    cellphone: '010-8765-4321',
-    address: '서울특별시 종로구',
-    description: '지사 고객사',
-    createdTime: '2025-02-20',
-    lastLoginTime: '2025-08-16',
-  },
-  {
-    id: '3',
-    name: '여기닷',
-    ceo: '김여기',
-    businessNo: '456-78-90123',
-    adminId: 'yeogidot_admin',
-    email: 'hello@yeogidot.com',
-    cellphone: '010-2345-6789',
-    address: '경기도 성남시',
-    description: '신규 고객사',
-    createdTime: '2025-03-15',
-    lastLoginTime: '2025-08-15',
-  },
-];
+const PrimaryButton = styled(ActionButton)`
+  width: 110px;
+  height: 40px;
+  background: ${THEME_COLORS.light.primary};
+  color: #f8f8f8;
+  border: none;
+  margin-left: 8px;
+`;
 
 const CustomerMngPage: React.FC = () => {
-  const [customers, setCustomers] = useState<Customer[]>(MOCK_CUSTOMERS);
-  const [selectedCustomer, setSelectedCustomer] = useState<Partial<Customer> | null>(null);
+  const [customers, setCustomers] = useState<Company[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<Partial<Company> | null>(null);
+  
+  // 새로운 Company 타입에 맞는 상태
+  const [name, setName] = useState('');
+  const [code, setCode] = useState('');
+  const [category, setCategory] = useState('');
+  const [businessNumber, setBusinessNumber] = useState('');
+  const [memo, setMemo] = useState('');
+  const [licence, setLicence] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [customerId, setCustomerId] = useState('');
-  const [name, setName] = useState('');
-  const [ceo, setCeo] = useState('');
-  const [businessNo, setBusinessNo] = useState('');
-  const [adminId, setAdminId] = useState('');
   const [email, setEmail] = useState('');
   const [cellphone, setCellphone] = useState('');
   const [address, setAddress] = useState('');
-  const [description, setDescription] = useState('');
-  const [pwdError, setPwdError] = useState<string | null>(null);
-  const [confirmPwdError, setConfirmPwdError] = useState<string | null>(null);
+  
+  // 에러 상태
+  const [errors, setErrors] = useState<{
+    name?: string;
+    code?: string;
+    category?: string;
+    businessNumber?: string;
+    memo?: string;
+    licence?: string;
+    password?: string;
+    confirmPassword?: string;
+    email?: string;
+    cellphone?: string;
+    address?: string;
+  }>({});
  
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isCategoryRegisterOpen, setIsCategoryRegisterOpen] = useState(false);
+  const [isCategorySearchOpen, setIsCategorySearchOpen] = useState(false);
+  const [isCompanyRegisterOpen, setIsCompanyRegisterOpen] = useState(false);
   const listRef = useRef<{ refetch: () => void }>(null);
 
   const resetForm = useCallback(
-    (initial?: Partial<Customer>) => {
+    (initial?: Partial<Company>) => {
       setSelectedCustomer(initial ?? null);
-      setCustomerId(initial?.id ?? '');
       setName(initial?.name ?? '');
-      setCeo(initial?.ceo ?? '');
-      setBusinessNo(initial?.businessNo ?? '');
-      setAdminId(initial?.adminId ?? '');
+      setCode(initial?.companyCode ?? '');
+      setCategory(initial?.category?.name ?? '');
+      setBusinessNumber(initial?.businessNumber ?? '');
+      setMemo(initial?.memo ?? '');
+      setLicence(initial?.licence ?? '');
       setEmail(initial?.email ?? '');
       setCellphone(initial?.cellphone ?? '');
-      setAddress(initial?.address ?? '');
-      setDescription(initial?.description ?? '');
+      setAddress(`${initial?.address || ''} ${initial?.detailAddress || ''}`.trim());
+      setPassword('');
+      setConfirmPassword('');
+      setErrors({});
     },
     []
   );
@@ -101,83 +125,198 @@ const CustomerMngPage: React.FC = () => {
     setIsPopupOpen(true);
   };
 
-  const handleRowClick = (customer: Customer) => {
+  const handleRowClick = (customer: Company) => {
     resetForm(customer);
     setIsPopupOpen(true);
   };
 
+  const handleCategoryRegisterClick = () => {
+    setIsCategoryRegisterOpen(true);
+  };
+
+  const handleCategorySearchClick = () => {
+    setIsCategorySearchOpen(true);
+  };
+
+  const handleCompanyRegisterClick = () => {
+    setIsCompanyRegisterOpen(true);
+  };
+
   const handleSave = () => {
     if (selectedCustomer) {
-      // 수정
-      setCustomers((prev) =>
-        prev.map((c) => (c.id === customerId ? { ...c, name, ceo, businessNo, adminId, email, cellphone, address, description } : c))
-      );
+      // 수정 - 실제로는 API 호출 필요
       toast.success('고객사 정보가 수정되었습니다.');
     } else {
-      // 신규
-      const newCustomer: Customer = {
-        id: Date.now().toString(),
-        name,
-        ceo,
-        businessNo,
-        adminId,
-        email,
-        cellphone,
-        address,
-        description,
-        createdTime: new Date().toISOString(),
-        lastLoginTime: null,
-      };
-      setCustomers((prev) => [...prev, newCustomer]);
+      // 신규 - 실제로는 API 호출 필요
       toast.success('고객사가 등록되었습니다.');
     }
     setIsPopupOpen(false);
+    // 리스트 새로고침
+    setTimeout(() => {
+      listRef.current?.refetch();
+    }, 100);
   };
 
+  const fetchData = useCallback(
+    async (params: FetchParams): Promise<FetchResult<Company>> => {
+      try {
+        const fromDate = '2025-01-01';
+        const toDate = dayjs().format('YYYY-MM-DD');
+
+        const response = await getCompanyList({
+          keyword: params.keyword || '',
+          fromDate: fromDate,
+          toDate: toDate,
+        });
+
+        console.log('response', response);
+
+        // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+        const actualResponse = Array.isArray(response) ? response[0] : response;
+        console.log('actualResponse', actualResponse);
+
+        // actualResponse.data에서 실제 API 응답을 가져옴
+        const apiResponse = (actualResponse as any)?.data as ApiResponse<Company>;
+        console.log('apiResponse', apiResponse);
+
+        if (apiResponse && apiResponse.message === 'success') {
+          return {
+            data: apiResponse.data || [],
+            totalItems: apiResponse.metadata?.totalCnt || 0,
+            allItems: apiResponse.metadata?.allCnt || 0
+          } as FetchResult<Company>;
+        } else {
+          console.error('API Error:', apiResponse);
+          return {
+            data: [],
+            totalItems: 0,
+            allItems: 0
+          };
+        }
+      } catch (error) {
+        console.error('Fetch Error:', error);
+        return {
+          data: [],
+          totalItems: 0,
+          allItems: 0
+        };
+      }
+    },
+    []
+  );
+
   const formData = {
-    customerId,
+    name,
+    code,
+    category,
+    businessNumber,
+    memo,
+    licence,
     password,
     confirmPassword,
-    name,
-    ceo,
-    businessNo,
-    adminId,
     email,
     cellphone,
     address,
-    description,
-    pwdError,
-    confirmPwdError,
+    errors,
   };
 
   const onFormChange = {
-    setCustomerId,
+    setName,
+    setCode,
+    setCategory,
+    setBusinessNumber,
+    setMemo,
+    setLicence,
     setPassword,
     setConfirmPassword,
-    setName,
-    setCeo,
-    setBusinessNo,
-    setAdminId,
     setEmail,
     setCellphone,
     setAddress,
-    setDescription,
   };
 
   const columns = useMemo(
     () => [
-      { header: 'No', accessor: 'id' },
-      { header: '가입일', accessor: 'createdTime' },
-      { header: '최근접속', accessor: 'lastLoginTime' },
-      { header: '고객사명', accessor: 'name' },
-      { header: '로고', accessor: 'logo' },
-      { header: '대표명', accessor: 'ceo' },
-      { header: '사업자번호', accessor: 'businessNo' },
-      { header: '아이디', accessor: 'adminId' },
-      { header: '이메일', accessor: 'email' },
+      {
+        header: 'No',
+        accessor: 'no',
+        formatter: (value, item, index) => index + 1,
+      },
+      {
+        header: '가입일시',
+        accessor: 'createAt',
+        sortable: true,
+        formatter: (value) => (value ? dayjs(value).format('YY-MM-DD(ddd) HH:mm') : '-'),
+      },
+      { header: '고객사명', accessor: 'companyName' },
+      {
+        header: '고객사 CI',
+        accessor: 'ciImage',
+        formatter: (value) => value ? '이미지 있음' : '-',
+      },
+      {
+        header: '라이선스',
+        accessor: 'mode',
+        formatter: (value) => {
+          switch (value) {
+            case 'LIGHT': return 'Lite (고객용)';
+            case 'FULL': return 'Full';
+            default: return value || '-';
+          }
+        },
+      },
+      {
+        header: '계약구분',
+        accessor: 'contractType',
+        formatter: (value) => {
+          switch (value) {
+            case 'MONTH': return '월계약';
+            case 'YEAR': return '년계약';
+            default: return value || '-';
+          }
+        },
+      },
+      {
+        header: '계약기간',
+        accessor: 'contractStartDate',
+        formatter: (value, row) => {
+          const start = row.contractStartDate ? dayjs(row.contractStartDate).format('YY-MM-DD') : '';
+          const end = row.contractEndDate ? dayjs(row.contractEndDate).format('YY-MM-DD') : '';
+          return start && end ? `${start} ~ ${end}` : '-';
+        },
+      },
+      {
+        header: '카테고리명',
+        accessor: 'category',
+        formatter: (value) => value?.name || '-',
+      },
+      {
+        header: '카테고리코드',
+        accessor: 'category',
+        formatter: (value) => value?.code || '-',
+      },
+      {
+        header: '사업자번호',
+        accessor: 'businessNumber',
+        formatter: (value) => value || '-',
+      },
+      { header: '대표명', accessor: 'name' },
+      {
+        header: '고객사 주소',
+        accessor: 'address',
+        formatter: (value, row) => `${row.address || ''} ${row.detailAddress || ''}`.trim() || '-',
+      },
       { header: '전화번호', accessor: 'cellphone' },
-      { header: '주소', accessor: 'address' },
-      { header: '비고', accessor: 'description' },
+      { header: '이메일', accessor: 'email' },
+      {
+        header: '라이선스',
+        accessor: 'licence',
+        formatter: (value) => value || '-',
+      },
+      {
+        header: '메모',
+        accessor: 'memo',
+        formatter: (value) => value || '-',
+      },
     ],
     []
   );
@@ -186,20 +325,47 @@ const CustomerMngPage: React.FC = () => {
     <>
       <ToastContainer position="top-center" autoClose={3000} theme="light" style={{ zIndex: 10000 }} />
 
-      <CmsResponsiveContainer<Customer>
+      <CmsResponsiveContainer<Company>
+        ref={listRef}
         title="고객사 관리"
-        data={customers}
+        data={[]} // 초기값, fetchData가 있으면 무시됨
         columns={columns}
-        fetchData={() => Promise.resolve({ data: customers, totalItems: customers.length, allItems: customers.length })}
+        fetchData={fetchData}
         onRowClick={handleRowClick}
-        onAdd={handleAddClick}
-        addButtonLabel="고객사 등록"
+        // onAdd={handleAddClick}
+        // addButtonLabel="고객사 등록"
         themeMode="light"
         compactFieldCount={4}
         defaultViewMode="detail"
-        enableDateFilter
+        enableDateFilter={false}
+        renderMiddleContent={() => (
+          <div style={{ flex: 1, textAlign: 'end', fontWeight: 'bold', display: 'flex', gap: '8px' }}>
+            <PrimaryButton $themeMode="light" onClick={handleCategoryRegisterClick}>
+              카테고리 등록
+            </PrimaryButton>
+            <PrimaryButton $themeMode="light" onClick={handleCategorySearchClick}>
+              카테고리 조회
+            </PrimaryButton>
+            <PrimaryButton $themeMode="light" onClick={handleCompanyRegisterClick}>
+              고객사 등록
+            </PrimaryButton>
+          </div>
+        )}
       />
 
+      {/* 카테고리 등록 팝업 */}
+      <CategoryRegisterPopup
+        isOpen={isCategoryRegisterOpen}
+        onClose={() => setIsCategoryRegisterOpen(false)}
+      />
+
+      {/* 카테고리 조회 팝업 */}
+      <CategorySearchPopup
+        isOpen={isCategorySearchOpen}
+        onClose={() => setIsCategorySearchOpen(false)}
+      />
+
+      {/* 고객사 수정 팝업 */}
       <CompanyFormPopup
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
@@ -207,6 +373,44 @@ const CustomerMngPage: React.FC = () => {
         selectedCustomer={selectedCustomer}
         formData={formData}
         onFormChange={onFormChange}
+      />
+
+      {/* 고객사 등록 팝업 */}
+      <CompanyFormPopup
+        isOpen={isCompanyRegisterOpen}
+        onClose={() => setIsCompanyRegisterOpen(false)}
+        onSave={() => {
+          toast.success('고객사가 등록되었습니다.');
+          setIsCompanyRegisterOpen(false);
+        }}
+        selectedCustomer={null}
+        formData={{
+          name: '',
+          code: '',
+          category: '',
+          businessNumber: '',
+          memo: '',
+          licence: '',
+          password: '',
+          confirmPassword: '',
+          email: '',
+          cellphone: '',
+          address: '',
+          errors: {},
+        }}
+        onFormChange={{
+          setName: () => {},
+          setCode: () => {},
+          setCategory: () => {},
+          setBusinessNumber: () => {},
+          setMemo: () => {},
+          setLicence: () => {},
+          setPassword: () => {},
+          setConfirmPassword: () => {},
+          setEmail: () => {},
+          setCellphone: () => {},
+          setAddress: () => {},
+        }}
       />
     </>
   );

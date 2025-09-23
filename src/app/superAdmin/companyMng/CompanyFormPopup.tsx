@@ -4,6 +4,10 @@ import styled from 'styled-components';
 import CmsPopup from '@/components/CmsPopup';
 import { TextField } from '@/components/TextField';
 import { AppColors } from '@/styles/colors';
+import TextArea from '@/components/common/TextArea';
+import CommonTextField from '@/components/common/TextField';
+import { SwitchInput } from '@/components/SwitchInput';
+
 
 const FormContainer = styled.div`
   display: flex;
@@ -19,6 +23,17 @@ const PopupFooter = styled.div`
   width: 100%;
   gap: 12px;
 `;
+
+
+const Title = styled.h2`
+  margin: 10px 0 ;
+  padding: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: ${AppColors.onSurface};
+`;
+
+
 
 const FooterButton = styled.button`
   width: 120px;
@@ -99,17 +114,27 @@ const HiddenInput = styled.input`
 `;
 
 type Customer = {
-  id: string;
+  _id: string;
   name: string;
-  ceo: string;
-  businessNo: string;
-  adminId: string;
-  email: string;
+  companyName: string;
   cellphone: string;
+  email: string;
+  companyCode: string;
+  dbName: string;
   address: string;
-  description: string;
-  createdTime: string | null;
-  lastLoginTime: string | null;
+  detailAddress: string;
+  ciImage: string;
+  businessImage: string;
+  contractType: string;
+  contractStartDate: string;
+  contractEndDate: string;
+  aiConfidence: string;
+  mode: string;
+  category: {name: string, code: string} | null;
+  businessNumber: string;
+  memo: string;
+  licence: string;
+  createAt: string;
 };
 
 interface CompanyFormPopupProps {
@@ -118,32 +143,45 @@ interface CompanyFormPopupProps {
   onSave: () => void;
   selectedCustomer: Partial<Customer> | null;
   formData: {
-    customerId: string;
+    name: string;
+    code: string;
+    category: string;
+    businessNumber: string;
+    memo: string;
+    licence: string;
     password: string;
     confirmPassword: string;
-    name: string;
-    ceo: string;
-    businessNo: string;
-    adminId: string;
     email: string;
     cellphone: string;
     address: string;
-    description: string;
-    pwdError: string | null;
-    confirmPwdError: string | null;
+    ciImage?: File | null;
+    businessImage?: File | null;
+    errors?: {
+      name?: string;
+      code?: string;
+      category?: string;
+      businessNumber?: string;
+      memo?: string;
+      licence?: string;
+      password?: string;
+      confirmPassword?: string;
+      email?: string;
+      cellphone?: string;
+      address?: string;
+    };
   };
   onFormChange: {
-    setCustomerId: (value: string) => void;
+    setName: (value: string) => void;
+    setCode: (value: string) => void;
+    setCategory: (value: string) => void;
+    setBusinessNumber: (value: string) => void;
+    setMemo: (value: string) => void;
+    setLicence: (value: string) => void;
     setPassword: (value: string) => void;
     setConfirmPassword: (value: string) => void;
-    setName: (value: string) => void;
-    setCeo: (value: string) => void;
-    setBusinessNo: (value: string) => void;
-    setAdminId: (value: string) => void;
     setEmail: (value: string) => void;
     setCellphone: (value: string) => void;
     setAddress: (value: string) => void;
-    setDescription: (value: string) => void;
   };
   onFileUpload?: {
     onCiImageUpload: (file: File) => void;
@@ -161,33 +199,34 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
   onFileUpload,
 }) => {
   const {
-    customerId,
+    name,
+    code,
+    category,
+    businessNumber,
+    memo,
+    licence,
     password,
     confirmPassword,
-    name,
-    ceo,
-    businessNo,
-    adminId,
     email,
     cellphone,
     address,
-    description,
-    pwdError,
-    confirmPwdError,
+    ciImage,
+    businessImage,
+    errors = {},
   } = formData;
 
   const {
-    setCustomerId,
+    setName,
+    setCode,
+    setCategory,
+    setBusinessNumber,
+    setMemo,
+    setLicence,
     setPassword,
     setConfirmPassword,
-    setName,
-    setCeo,
-    setBusinessNo,
-    setAdminId,
     setEmail,
     setCellphone,
     setAddress,
-    setDescription,
   } = onFormChange;
 
   // 등록/수정 모드 구분
@@ -226,121 +265,103 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
       }
     >
       <FormContainer>
-        <TextField
-          radius="0"
-          value={customerId}
-          label="* 고객사 ID"
-          $labelPosition="horizontal"
-          labelColor="white"
-          onChange={(e) => setCustomerId(e.target.value)}
-          placeholder="고객사 고유 ID를 입력하세요"
-          readOnly={!!selectedCustomer}
+        <CommonTextField
+          id="name"
+          value={name}
+          label="* 카테고리명"
+          onChange={(e) => setName(e.target.value)}
+          placeholder="카테고리명을 입력하세요"
+          errorMessage={errors.name}
         />
-
-        {/* 신규 등록 시: 비밀번호/비밀번호 확인 */}
+        <CommonTextField
+          id="code"
+          value={code}
+          label="* 카테고리코드"
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="카테고리코드를 입력하세요"
+          errorMessage={errors.code}
+        />
+        <CommonTextField
+          id="category"
+          value={category}
+          label="카테고리"
+          onChange={(e) => setCategory(e.target.value)}
+          placeholder="카테고리 입력"
+          errorMessage={errors.category}
+        />
+        <CommonTextField
+          id="businessNumber"
+          value={businessNumber}
+          label="사업자번호"
+          onChange={(e) => setBusinessNumber(e.target.value)}
+          placeholder="사업자등록번호를 입력하세요"
+          errorMessage={errors.businessNumber}
+        />
+        <CommonTextField
+          id="memo"
+          value={memo}
+          label="메모"
+          onChange={(e) => setMemo(e.target.value)}
+          placeholder="메모 입력"
+          errorMessage={errors.memo}
+        />
+        <CommonTextField
+          id="licence"
+          value={licence}
+          label="라이선스"
+          onChange={(e) => setLicence(e.target.value)}
+          placeholder="라이선스 입력"
+          errorMessage={errors.licence}
+        />
         {!selectedCustomer && (
           <>
-            <TextField
-              radius="0"
+            <CommonTextField
+              id="password"
               value={password}
-              showSuffixIcon
               label="* 비밀번호"
-              $labelPosition="horizontal"
-              labelColor="white"
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="영문 + 숫자 + 특수문자 1개 포함 8자리 이상"
-              isPasswordField
-              errorMessage={pwdError ?? undefined}
+              placeholder="비밀번호 입력"
+              errorMessage={errors.password}
+              type="password"
             />
-
-            <TextField
-              radius="0"
+            <CommonTextField
+              id="confirmPassword"
               value={confirmPassword}
-              showSuffixIcon
               label="* 비밀번호 확인"
-              $labelPosition="horizontal"
-              labelColor="white"
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="비밀번호를 다시 입력하세요"
-              isPasswordField
-              errorMessage={confirmPwdError ?? undefined}
+              placeholder="비밀번호 확인 입력"
+              errorMessage={errors.confirmPassword}
+              type="password"
             />
           </>
         )}
-
-        <TextField
-          radius="0"
-          value={name}
-          label="* 고객사명"
-          $labelPosition="horizontal"
-          labelColor="white"
-          onChange={(e) => setName(e.target.value)}
-          placeholder="고객사명을 입력하세요"
-        />
-        <TextField
-          radius="0"
-          value={ceo}
-          label="대표명"
-          $labelPosition="horizontal"
-          labelColor="white"
-          onChange={(e) => setCeo(e.target.value)}
-          placeholder="대표자명을 입력하세요"
-        />
-        <TextField
-          radius="0"
-          value={businessNo}
-          label="사업자번호"
-          $labelPosition="horizontal"
-          labelColor="white"
-          onChange={(e) => setBusinessNo(e.target.value)}
-          placeholder="사업자등록번호를 입력하세요 (예: 123-45-67890)"
-        />
-        <TextField
-          radius="0"
+        <CommonTextField
+          id="email"
           value={email}
           label="이메일"
-          $labelPosition="horizontal"
-          labelColor="white"
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="이메일 형식으로 입력하세요"
+          placeholder="이메일 입력"
+          errorMessage={errors.email}
         />
-        <TextField
-          radius="0"
+        <CommonTextField
+          id="cellphone"
           value={cellphone}
           label="연락처"
-          $labelPosition="horizontal"
-          labelColor="white"
-          onChange={(e) => {
-            const input = e.target.value;
-            if (/^\d*$/.test(input)) setCellphone(input);
-          }}
-          placeholder="- 없이 숫자만 입력"
+          onChange={(e) => setCellphone(e.target.value)}
+          placeholder="연락처 입력"
+          errorMessage={errors.cellphone}
         />
-        <TextField
-          radius="0"
+        <CommonTextField
+          id="address"
           value={address}
           label="주소"
-          $labelPosition="horizontal"
-          labelColor="white"
           onChange={(e) => setAddress(e.target.value)}
-          placeholder="도로명/상세주소 입력"
+          placeholder="주소 입력"
+          errorMessage={errors.address}
         />
-        <TextField
-          radius="0"
-          value={description}
-          label="비고"
-          $labelPosition="horizontal"
-          labelColor="white"
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="기타 참고 사항 입력"
-          multiline
-          minLines={3}
-        />
-
         {/* 이미지 첨부 섹션 */}
         <ImageUploadSection>
           <ImageUploadTitle>이미지 첨부</ImageUploadTitle>
-          
           {/* 고객사 CI */}
           <div style={{ marginBottom: '24px' }}>
             <div style={{ fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#333' }}>
@@ -361,7 +382,6 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
               onChange={handleCiImageUpload}
             />
           </div>
-
           {/* 사업자등록증 */}
           <div>
             <div style={{ fontSize: '14px', fontWeight: '500', marginBottom: '8px', color: '#333' }}>

@@ -60,8 +60,8 @@ type AdminUser = {
   cellphone: string;
   createAt: string;
   memo?: string;
-  emailYn?: 'Y' | 'N';
-  smsYn?: 'Y' | 'N';
+  receiveEmail?: boolean;
+  receiveAlimtalk?: boolean;
   description?: string;
   lastLoginAt?: string;
   companyCode?: string;
@@ -84,6 +84,7 @@ const RegisterButton = styled(ActionButton)<{ $themeMode: 'light' | 'dark' }>`
 const AdminMngPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<Partial<AdminUser> | null>(null);
   const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('');
+  const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
 
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
@@ -91,8 +92,8 @@ const AdminMngPage: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [cellphone, setCellphone] = useState('');
-  const [emailYn, setEmailYn] = useState<'Y' | 'N'>('Y');
-  const [smsYn, setSmsYn] = useState<'Y' | 'N'>('Y');
+  const [receiveEmail, setReceiveEmail] = useState<boolean>(true);
+  const [receiveAlimtalk, setReceiveAlimtalk] = useState<boolean>(true);
   const [description, setDescription] = useState('');
 
   const [idError, setIdError] = useState<string | null>(null);
@@ -125,17 +126,9 @@ const AdminMngPage: React.FC = () => {
       setName(initial?.name ?? '');
       setEmail(initial?.email ?? '');
       setCellphone(initial?.cellphone ?? '');
-      setEmailYn(initial?.emailYn ?? 'Y');
-      setSmsYn(initial?.smsYn ?? 'Y');
+      setReceiveEmail(initial?.receiveEmail ?? true);
+      setReceiveAlimtalk(initial?.receiveAlimtalk ?? true);
       setDescription(initial?.description ?? '');
-      
-      // 수정 모드일 때 회사 정보 설정
-      if (initial?.companyCode) {
-        setSelectedCompanyCode(initial.companyCode);
-      } else {
-        setSelectedCompanyCode('');
-      }
-      
       clearFormErrors();
     },
     [clearFormErrors]
@@ -207,8 +200,8 @@ const AdminMngPage: React.FC = () => {
           cellphone,
           description,
           email,
-          emailYn,
-          smsYn,
+          receiveEmail: receiveEmail,
+          receiveAlimtalk: receiveAlimtalk,
           companyCode: selectedCompanyCode || '', // 고객사 코드 추가
         };
 
@@ -243,8 +236,8 @@ const AdminMngPage: React.FC = () => {
           cellphone,
           memo: description, // description을 memo로 매핑
           email,
-          emailYn,
-          smsYn,
+          receiveEmail: receiveEmail,
+          receiveAlimtalk: receiveAlimtalk,
           companyCode: selectedCompanyCode, // 고객사 코드 추가
         };
 
@@ -318,8 +311,8 @@ const AdminMngPage: React.FC = () => {
             cellphone: item.cellphone,
             createAt: item.createAt,
             memo: item.memo,
-            emailYn: item.emailYn,
-            smsYn: item.smsYn,
+            receiveEmail: item.emailYn,
+            receiveAlimtalk: item.smsYn,
             description: item.memo, // memo를 description으로 매핑
             lastLoginAt: item.lastLoginAt,
             companyCode: item.companyCode,
@@ -398,7 +391,7 @@ const AdminMngPage: React.FC = () => {
   );
 
   const handleDropdownChange = useCallback(
-    async (_id: string, type: 'emailYn' | 'smsYn', newValue: 'Y' | 'N') => {
+    async (_id: string, type: 'receiveEmail' | 'receiveAlimtalk', newValue: boolean) => {
       try {
         console.log('handleDropdownChange', _id, type, newValue);
 
@@ -420,7 +413,7 @@ const AdminMngPage: React.FC = () => {
         const apiResponse = (actualResponse as any)?.data as ApiResponse<AdminUser>;
 
         if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
-          toast.success(`${type === 'emailYn' ? '메일' : 'SMS'} 수신 설정이 변경되었습니다.`);
+          toast.success(`${type === 'receiveEmail' ? '메일' : 'SMS'} 수신 설정이 변경되었습니다.`);
           genericListRef.current?.refetch();
         } else {
           const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '변경에 실패했습니다.';
@@ -436,17 +429,12 @@ const AdminMngPage: React.FC = () => {
 
   const handleCompanySelect = useCallback((company: { id: string; name: string }) => {
     setSelectedCompanyCode(company.id);
+    setSelectedCompanyName(company.name);
     // 고객사 변경 시 리스트 새로고침
     setTimeout(() => {
       genericListRef.current?.refetch();
     }, 100);
   }, []);
-
-  // 선택된 고객사명 가져오기 (메모화)
-  const selectedCompanyName = useMemo(() => {
-    // 실제 고객사 이름을 가져오는 로직 (필요시 API 호출 또는 상태 관리)
-    return selectedCompanyCode ? `고객사 ${selectedCompanyCode}` : '';
-  }, [selectedCompanyCode]);
 
   const columns: ColumnDefinition<AdminUser>[] = useMemo(
     () => [
@@ -473,17 +461,17 @@ const AdminMngPage: React.FC = () => {
       { header: '이메일', accessor: 'email' },
       { header: '전화번호', accessor: 'cellphone' },
       {
-        header: 'SMS 수신',
-        accessor: 'smsYn',
+        header: '알림톡 수신',
+        accessor: 'receiveAlimtalk',
         noPopup: true,
         formatter: (_value, row) => (
           <Switch
-            checked={row.smsYn === 'Y'}
+            checked={row.receiveAlimtalk === true}
             onToggle={() =>
               handleDropdownChange(
                 row._id,
-                'smsYn',
-                row.smsYn === 'Y' ? 'N' : 'Y'
+                'receiveAlimtalk',
+                row.receiveAlimtalk === true ? false : true
               )
             }
           />
@@ -491,16 +479,16 @@ const AdminMngPage: React.FC = () => {
       },
       {
         header: '메일 수신',
-        accessor: 'emailYn',
+        accessor: 'receiveEmail',
         noPopup: true,
         formatter: (_value, row) => (
           <Switch
-            checked={row.emailYn === 'Y'}
+            checked={row.receiveEmail === true}
             onToggle={() =>
               handleDropdownChange(
                 row._id,
-                'emailYn',
-                row.emailYn === 'Y' ? 'N' : 'Y'
+                'receiveEmail',
+                row.receiveEmail === true ? false : true
               )
             }
           />
@@ -540,7 +528,7 @@ const AdminMngPage: React.FC = () => {
         themeMode="light"
         compactFieldCount={3} // 모바일 compact 모드에서 보여줄 필드 수
         defaultViewMode="detail" // 모바일 기본 보기 모드
-        enableDateFilter={false}
+        enableDateFilter={true}
         enableCompanySearch={true}
         onCompanySelect={handleCompanySelect}
         renderMiddleContent={() => (
@@ -573,10 +561,10 @@ const AdminMngPage: React.FC = () => {
         setEmail={setEmail}
         cellphone={cellphone}
         setCellphone={setCellphone}
-        emailYn={emailYn}
-        setEmailYn={setEmailYn}
-        smsYn={smsYn}
-        setSmsYn={setSmsYn}
+        receiveEmail={receiveEmail}
+        setReceiveEmail={setReceiveEmail}
+        receiveAlimtalk={receiveAlimtalk}
+        setReceiveAlimtalk={setReceiveAlimtalk}
         description={description}
         setDescription={setDescription}
         idError={idError}

@@ -95,13 +95,33 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
         console.log('📋 첫 번째 고객사 데이터:', apiData.data[0]);
         setCompanies(apiData.data);
       } else {
+        // 401 인증 실패 응답 구조일 때 catch로 넘김
+        if (
+          apiData?.statusCode === 401 ||
+          apiData?.message === 'unauthorized' ||
+          apiData?.error?.customMessage === '시스템 관리자 인증이 필요합니다.'
+        ) {
+          console.log('🚫 401 Unauthorized - catch로 에러 전파');
+          throw apiData;
+        }
         console.log('⚠️ API 응답이 예상된 구조가 아님:', apiData);
         setCompanies([]);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // 401 에러 감지 시 로그아웃 및 superadmin/login으로 이동
+      if (
+        error?.statusCode === 401 ||
+        error?.response?.statusCode === 401 ||
+        error?.response?.message === 'unauthorized' ||
+        error?.response?.error?.customMessage === '시스템 관리자 인증이 필요합니다.'
+      ) {
+        localStorage.removeItem('adminId');
+        console.log('🚫 401 Unauthorized - 자동 로그아웃 및 superadmin/login 이동');
+        window.location.replace('/superadmin/login');
+        return;
+      }
       console.error('❌ 고객사 목록 조회 중 오류 발생:', error);
       console.error('❌ 에러 상세:', JSON.stringify(error, null, 2));
-      // 오류 발생 시 빈 배열로 설정
       setCompanies([]);
     } finally {
       setLoading(false);
@@ -190,6 +210,7 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
                       onClose();
                     }}
                     $themeMode={themeMode}
+                    $isEven={index % 2 === 1}
                   >
                     <td>{index + 1}</td>
                     <td>{company.createAt}</td>
@@ -258,8 +279,13 @@ const TableBody = styled.tbody`
   }
 `;
 
-const TableRow = styled.tr<{ $themeMode: ThemeMode }>`
+const TableRow = styled.tr<{ $themeMode: ThemeMode; $isEven?: boolean }>`
   cursor: pointer;
+  background-color: ${({ $themeMode, $isEven }) => 
+    $isEven 
+      ? ($themeMode === 'light' ? '#f9f9f9' : THEME_COLORS.dark.secondary)
+      : 'transparent'
+  };
   
   td {
     padding: 12px;

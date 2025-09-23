@@ -9,8 +9,8 @@ import type { DeviceType } from '@/types/device';
 import Switch from './Switch';
 
 interface SwitchInputProps {
-  value: 'Y' | 'N';
-  onChange: (val: 'Y' | 'N') => void;
+  value: boolean;
+  onChange: (val: boolean) => void;
   label?: string;
   labelColor?: string;
   $labelPosition?: 'vertical' | 'horizontal';
@@ -47,7 +47,7 @@ export const SwitchInput = ({
   $labelPosition = 'vertical',
 }: SwitchInputProps) => {
   const device = useDevice();
-  const isChecked = value === 'Y';
+  const isChecked = value === true;
 
   return (
     <Container $device={device} $labelPosition={$labelPosition}>
@@ -66,7 +66,7 @@ export const SwitchInput = ({
       <SwitchWrapper $labelPosition={$labelPosition}>
         <Switch
           checked={isChecked}
-          onToggle={() => onChange(isChecked ? 'N' : 'Y')}
+          onToggle={() => onChange(!isChecked)}
         />
       </SwitchWrapper>
     </Container>

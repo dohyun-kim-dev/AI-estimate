@@ -139,10 +139,10 @@ interface AdminFormPopupProps {
   setEmail: (value: string) => void;
   cellphone: string;
   setCellphone: (value: string) => void;
-  emailYn: 'Y' | 'N';
-  setEmailYn: (value: 'Y' | 'N') => void;
-  smsYn: 'Y' | 'N';
-  setSmsYn: (value: 'Y' | 'N') => void;
+  receiveEmail: boolean;
+  setReceiveEmail: (value: boolean) => void;
+  receiveAlimtalk: boolean;
+  setReceiveAlimtalk: (value: boolean) => void;
   description: string;
   setDescription: (value: string) => void;
   idError: string | null;
@@ -176,10 +176,10 @@ const AdminFormPopup: React.FC<AdminFormPopupProps> = ({
   setEmail,
   cellphone,
   setCellphone,
-  emailYn,
-  setEmailYn,
-  smsYn,
-  setSmsYn,
+  receiveEmail,
+  setReceiveEmail,
+  receiveAlimtalk,
+  setReceiveAlimtalk,
   description,
   setDescription,
   idError,
@@ -230,15 +230,15 @@ const AdminFormPopup: React.FC<AdminFormPopupProps> = ({
         
         <SwitchInput
           label="SMS 수신"
-          value={smsYn}
-          onChange={setSmsYn}
+          value={receiveAlimtalk}
+          onChange={setReceiveAlimtalk}
           $labelPosition="horizontal"
           labelColor="white"
         />
         <SwitchInput
           label="이메일 수신"
-          value={emailYn}
-          onChange={setEmailYn}
+          value={receiveEmail}
+          onChange={setReceiveEmail}
           $labelPosition="horizontal"
           labelColor="white"
         />
