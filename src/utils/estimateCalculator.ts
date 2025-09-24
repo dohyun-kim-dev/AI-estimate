@@ -179,10 +179,10 @@ export function calculateTotalPages(categories: Category[]): number {
 }
 
 /**
- * 화면설계/UI디자인 항목의 가격을 총 페이지 수 기반으로 업데이트
+ * 화면설계/UI디자인 항목의 가격 및 설명을 총 페이지 수 기반으로 업데이트
  */
 export function updateDesignItemPrices(estimate: ProjectEstimate, totalPages: number): ProjectEstimate {
-  devLog('🎨 화면설계/UI디자인 가격 업데이트 시작');
+  devLog('🎨 화면설계/UI디자인 가격 및 설명 업데이트 시작');
   devLog(`   📊 총 페이지 수: ${totalPages}페이지`);
   devLog(`   💰 계산 공식: ${totalPages} × 150,000원 = ${totalPages * 150000}원`);
 
@@ -203,8 +203,24 @@ export function updateDesignItemPrices(estimate: ProjectEstimate, totalPages: nu
             const newPrice = totalPages * 150000; // 15만원
             const formattedPrice = newPrice.toLocaleString();
 
-            devLog(`   🔄 ${item.name}: ${item.price} → ${formattedPrice}`);
+            // 기존 description에서 총 페이지 수 정보 제거 (있다면)
+            let baseDescription = item.description;
+            // 다양한 패턴으로 기존 페이지 수 정보 제거
+            baseDescription = baseDescription
+              .replace(/\s*총\s*(장수|페이지\s*수)\s*:\s*\d+/g, '')
+              .replace(/\s*총\s*(장수|페이지\s*수)\s*\d+/g, '')
+              .replace(/\s*\(\s*총\s*(장수|페이지\s*수)\s*:\s*\d+\s*\)/g, '')
+              .trim();
+            
+            // 새로운 총 페이지 수 정보 추가
+            const updatedDescription = `${baseDescription} \n총 페이지 수: ${totalPages}`;
+
+            devLog(`   🔄 ${item.name}:`);
+            devLog(`     💰 가격: ${item.price} → ${formattedPrice}`);
+            devLog(`     📝 설명: "${item.description}" → "${updatedDescription}"`);
+            
             item.price = formattedPrice;
+            item.description = updatedDescription;
             item.page_count = totalPages; // 페이지 카운트도 업데이트
           }
         }
