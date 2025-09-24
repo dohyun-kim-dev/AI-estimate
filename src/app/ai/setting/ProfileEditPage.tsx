@@ -252,7 +252,6 @@ const ActionButton = styled.button<{ $isDarkMode?: boolean; $variant?: 'primary'
   height: 56px;
   width: 120px;
   padding: 0 20px;
-//   margin-bottom: 22px;
   
   border-radius: 4px;
   font-size: 14px;
@@ -414,6 +413,10 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
   const { success, error } = useToast();
   const { setTitle } = useHeader();
 
+  // 인증번호 카운트다운 관련 상태 (최상단에 선언)
+  const [countdown, setCountdown] = useState(0);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
+
   // 페이지 상태 (기본정보, 휴대폰변경) - URL 파라미터 또는 props에서 가져옴
   const [currentStep, setCurrentStep] = useState<'profile' | 'phone'>(
     propCurrentStep === 'phone' ? 'phone' : 'profile'
@@ -472,6 +475,12 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
       setCurrentPhoneNumber(user.cellphone || '');
     }
   }, [user]);
+
+useEffect(() => {
+  return () => {
+    if (countdownRef.current) clearInterval(countdownRef.current);
+  };
+}, []);
 
   // 클릭 외부 감지로 드롭다운 닫기
   useEffect(() => {
@@ -669,6 +678,18 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
   const handleSendVerification = async () => {
     if (!validateNewPhone()) return;
     
+      setCountdown(180); // 3분
+      if (countdownRef.current) clearInterval(countdownRef.current);
+      countdownRef.current = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(countdownRef.current!);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
     // 인증받기 버튼을 누르면 기존 인증 정보 완전 초기화
     setVerifiedPhoneNumber('');
     setIsVerified(false);
@@ -1034,27 +1055,46 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
               </FormRow>
 
               {verificationSent && !isVerified && (
-                <FormRow>
-                  <TextField
-                    id="verificationCode"
-                    label="인증번호"
-                    value={verificationCode}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^0-9]/g, '');
-                      if (value.length <= 6) {
-                        setVerificationCode(value);
-                        if (verificationError) setVerificationError('');
-                        // 6자리가 되면 자동으로 인증 시도
-                        if (value.length === 6) {
-                          handleVerifyCode(value);
-                        }
+             <FormRow>
+              <InputGroup>
+                <TextField
+                  id="verificationCode"
+                  label="인증번호"
+                  value={verificationCode}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, '');
+                    if (value.length <= 6) {
+                      setVerificationCode(value);
+                      if (verificationError) setVerificationError('');
+                      if (value.length === 6) {
+                        handleVerifyCode(value);
                       }
-                    }}
-                    placeholder="인증번호 6자리를 입력해주세요"
-                    errorMessage={verificationError}
-                    isDarkMode={isDarkMode}
-                  />
-                </FormRow>
+                    }
+                  }}
+                  placeholder="인증번호 6자리를 입력해주세요"
+                  errorMessage={verificationError}
+                  isDarkMode={isDarkMode}
+                />
+                {countdown > 0 && (
+                   <span style={{
+                      color: '#e53935',
+                      fontWeight: 500,
+                      fontSize: 14,
+                      alignSelf: 'center',
+                      // marginLeft: 8,
+                      minWidth: 95,
+                      maxWidth: 95,
+                      textAlign: 'center',
+                      display: 'inline-flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '56px'
+                    }}>
+                    {`${Math.floor(countdown / 60)}:${(countdown % 60).toString().padStart(2, '0')}`}
+                  </span>
+                )}
+              </InputGroup>
+            </FormRow>
               )}
             </Section>
           </>
