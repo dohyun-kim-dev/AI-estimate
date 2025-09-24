@@ -12,18 +12,19 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import PhoneIcon from '@mui/icons-material/Phone';
 import EmailIcon from '@mui/icons-material/Email';
 import { ColumnDefinition } from '@/components/CustomList/GenericDataTable';
-import { adminGetList } from '@/lib/api/admin/adminApi';
+import { adminGetList, getUserList, adminCreate } from '@/lib/api/admin/adminApi';
 import dayjs from 'dayjs';
 import styled from 'styled-components';
 import { THEME_COLORS } from '@/styles/theme_colors';
 import ActionButton from '@/components/ActionButton';
 import CmsPopup from '@/components/CmsPopup';
 import { TextField } from '@/components/TextField';
+import CommonTextField from '@/components/common/TextField';
+import TextArea from '@/components/common/TextArea';
 import SelectionField from '@/components/selectionField';
 import { AppColors } from '@/styles/colors';
 import { Validators } from '@/lib/utils/validators';
 import { toast, ToastContainer } from 'react-toastify';
-import { adminCreate } from '@/lib/api/admin';
 import Switch from '@/components/Switch';
 import { SwitchInput } from '@/components/SwitchInput';
 import { devLog } from '@/lib/utils/devLogger';
@@ -62,22 +63,35 @@ const ProfileHeader = styled.div<{ $imageUrl: string | null }>`
 `;
 
 type User = {
-  adminId: string;
+  _id: string;
   name: string;
   email: string;
   cellphone: string;
-  lastLoginTime: string | null;
-  createdTime: string | null;
-  emailYn: 'Y' | 'N';
-  smsYn: 'Y' | 'N';
-  profileImageUrl?: string;
+  lastLoginAt?: string | null;
+  createAt: string;
+  updateAt?: string;
+  profileImage?: string;
+  providerId?: string;
+  usingService?: string[];
+  memo?: string;
+  nation?: string;
 };
 
 const PopupFooter = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
   gap: 12px;
-  margin-top: 24px;
+  padding: 0 14px;
+`;
+
+const Title = styled.h2`
+  margin: 10px 0;
+  padding: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: ${AppColors.onSurface};
 `;
 
 const FooterButton = styled.button`
@@ -94,12 +108,14 @@ const CancelButton = styled(FooterButton)`
   background-color: #ffffff;
   color: ${AppColors.onSurface};
   border: 1px solid ${AppColors.border};
+  border-radius: 4px;
 `;
 
 const SaveButton = styled(FooterButton)`
-
-  background-color: ${AppColors.primary};
+  background-color: #2C2E3C;
+  border: 1px solid ${AppColors.border};
   color: ${AppColors.onPrimary};
+  border-radius: 4px;
 `;
 
 const FormContainer = styled.div`
@@ -181,7 +197,8 @@ const MemoField = styled(TextField)`
 const FormSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 22px;
+  padding-top: 10px;
 `;
 
 const UserMngPage: React.FC = () => {
@@ -205,6 +222,9 @@ const UserMngPage: React.FC = () => {
   const [cellphoneError, setCellphoneError] = useState<string | null>(null);
 
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [currentKeyword, setCurrentKeyword] = useState<string>('');
+  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('');
+  const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
 
   const listRef = useRef<{ refetch: () => void }>(null);
 
@@ -219,13 +239,15 @@ const UserMngPage: React.FC = () => {
   const resetForm = useCallback(
     (initial?: Partial<User>) => {
       setSelectedUser(initial ?? null);
-      setUserId(initial?.adminId ?? '');
+      setUserId(initial?._id ?? '');
       setPassword('');
       setName(initial?.name ?? '');
       setEmail(initial?.email ?? '');
       setCellphone(initial?.cellphone ?? '');
-      setEmailYn(initial?.emailYn ?? 'Y');
-      setSmsYn(initial?.smsYn ?? 'Y');
+      // 이메일/SMS 수신 여부 기본값 설정
+      setEmailYn('Y'); // 기본값으로 설정
+      setSmsYn('Y'); // 기본값으로 설정
+      setDescription(initial?.memo || '');
       clearFormErrors();
     },
     [clearFormErrors]
@@ -283,21 +305,35 @@ const UserMngPage: React.FC = () => {
         password,
         name,
         cellphone,
-        description,
+        memo: description, // description을 memo로 변경
         email,
-        emailYn,
-        smsYn,
+        receiveEmail: emailYn === 'Y', // Y/N 값을 boolean으로 변환
+        receiveAlimtalk: smsYn === 'Y', // Y/N 값을 boolean으로 변환
+        companyCode: selectedCompanyCode || undefined, // 선택된 회사 코드 추가
       });
 
       devLog('사용자 등록 응답', response);
 
-      if (response?.[0]?.message === 'success') {
+      const responseData = Array.isArray(response) ? response[0] : response;
+      
+      // 타입 안전하게 응답 처리
+      if (responseData && typeof responseData === 'object' && 'message' in responseData && responseData.message === 'success') {
         toast.success('사용자가 성공적으로 등록되었습니다.');
         setIsPopupOpen(false);
+        
+        // 현재 검색어와 필터를 유지하면서 리스트 새로고침
         listRef.current?.refetch();
       } else {
-        const errorMessage =
-          response?.[0]?.error?.customMessage || response?.[0]?.message || '사용자 등록에 실패했습니다.';
+        let errorMessage = '사용자 등록에 실패했습니다.';
+        
+        if (responseData && typeof responseData === 'object') {
+          if ('error' in responseData && responseData.error && typeof responseData.error === 'object' && 'customMessage' in responseData.error) {
+            errorMessage = responseData.error.customMessage as string;
+          } else if ('message' in responseData) {
+            errorMessage = responseData.message as string;
+          }
+        }
+        
         toast.error(errorMessage);
       }
     } catch (error: any) {
@@ -308,14 +344,61 @@ const UserMngPage: React.FC = () => {
 
   const fetchData = useCallback(
     async (params: FetchParams): Promise<FetchResult<User>> => {
-      const raw = await adminGetList({ keyword: params.keyword ?? '' });
-      const wrapper = raw?.[0];
-      const data = wrapper?.data ?? [];
-      const totalItems = wrapper?.metadata?.totalCnt ?? data.length;
-      const allItems = wrapper?.metadata?.allCnt ?? totalItems;
-      return { data, totalItems, allItems };
+      try {
+        // 현재 입력된 검색어 저장
+        if (params.keyword !== undefined) {
+          setCurrentKeyword(params.keyword);
+        }
+
+        const fromDate = params.fromDate || '2000-01-01';
+        const toDate = params.toDate || dayjs().format('YYYY-MM-DD');
+        
+        // API 호출
+        const response = await getUserList({
+          keyword: params.keyword || currentKeyword || '',
+          fromDate: fromDate,
+          toDate: toDate,
+          companyCode: selectedCompanyCode || '',
+        });
+        
+        console.log('고객 회원 조회 응답:', response);
+        
+        // 응답 처리 (응답 구조에 맞게 수정)
+        if (response && typeof response === 'object') {
+          // 응답이 직접 API 응답 객체인 경우
+          if ('statusCode' in response && response.statusCode === 200) {
+            // 타입 단언으로 안전하게 처리
+            const responseWithData = response as { data?: any[]; metadata?: { totalCnt?: number; allCnt?: number } };
+            const userData = responseWithData.data || [];
+            const totalItems = responseWithData.metadata?.totalCnt || userData.length;
+            const allItems = responseWithData.metadata?.allCnt || totalItems;
+            return { data: userData, totalItems, allItems };
+          } 
+          // 응답이 배열로 감싸져 있는 경우 (callAdminApi 특성)
+          else if (Array.isArray(response) && response[0]) {
+            const firstItem = response[0];
+            if (firstItem && typeof firstItem === 'object' && 'data' in firstItem) {
+              const responseData = firstItem.data;
+              if (responseData && typeof responseData === 'object' && 'statusCode' in responseData) {
+                // 타입 단언으로 안전하게 처리
+                const typedResponseData = responseData as { data?: any[]; metadata?: { totalCnt?: number; allCnt?: number } };
+                const userData = typedResponseData.data || [];
+                const totalItems = typedResponseData.metadata?.totalCnt || userData.length;
+                const allItems = typedResponseData.metadata?.allCnt || totalItems;
+                return { data: userData, totalItems, allItems };
+              }
+            }
+          }
+        }
+        
+        console.error('유저 목록 응답 형식이 예상과 다릅니다:', response);
+        return { data: [], totalItems: 0, allItems: 0 };
+      } catch (error) {
+        console.error('고객 회원 조회 오류:', error);
+        return { data: [], totalItems: 0, allItems: 0 };
+      }
     },
-    []
+    [currentKeyword, selectedCompanyCode]
   );
 
   const handleDropdownChange = useCallback(
@@ -325,38 +408,80 @@ const UserMngPage: React.FC = () => {
     []
   );
 
+  const handleCompanySelect = useCallback((company: { id: string; name: string }) => {
+    setSelectedCompanyCode(company.id);
+    setSelectedCompanyName(company.name);
+    
+    // 고객사 변경 시 리스트 새로고침
+    setTimeout(() => {
+      if (listRef.current) {
+        listRef.current.refetch();
+      }
+    }, 100);
+  }, []);
+
   const columns: ColumnDefinition<User>[] = useMemo(
     () => [
-      { header: 'No', accessor: 'no' },
+      { 
+        header: 'No', 
+        accessor: 'no',
+        formatter: (_value, _item, index) => index + 1 
+      },
       {
-        header: '가입일',
-        accessor: 'createdTime',
+        header: '가입일시',
+        accessor: 'createAt',
         sortable: true,
-        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '-'),
+        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '-'),
       },
       {
         header: '최근접속',
-        accessor: 'lastLoginTime',
+        accessor: 'lastLoginAt',
         sortable: true,
-        formatter: (value) =>
-          value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '-',
+        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '-'),
+      },
+      {
+        header: '고객사명',
+        accessor: 'usingService',
+        formatter: (value) => (Array.isArray(value) && value.length > 0 ? value.join(', ') : '-'),
+      },
+      {
+        header: '이름',
+        accessor: 'name',
       },
       {
         header: '프로필',
-        accessor: 'profile',
-        formatter: (row) => (
+        accessor: 'profileImage',
+        formatter: (value, row) => (
           <ProfileWrapper>
-            {/* <ProfileHeader $imageUrl={row.profileImageUrl} /> */}
+            <ProfileHeader $imageUrl={row.profileImage || null} />
           </ProfileWrapper>
         ),
       },
-      {
-        header: '이름',accessor: 'name',
+      { 
+        header: '아이디', 
+        accessor: '_id',
+        formatter: (value) => value || '-'
       },
-      { header: '아이디', accessor: 'adminId' },
-      { header: '이메일', accessor: 'email' },
-      { header: '전화번호', accessor: 'cellphone' },
-      { header: '비고', accessor: 'description' },
+      { 
+        header: '이메일', 
+        accessor: 'email',
+        formatter: (value) => value || '-'
+      },
+      { 
+        header: '국가', 
+        accessor: 'nation',
+        formatter: (value) => value || '-' 
+      },
+      { 
+        header: '전화번호', 
+        accessor: 'cellphone',
+        formatter: (value) => value || '-' 
+      },
+      { 
+        header: '비고', 
+        accessor: 'memo',
+        formatter: (value) => value || '-' 
+      },
     ],
     []
   );
@@ -378,98 +503,116 @@ const UserMngPage: React.FC = () => {
       <CmsResponsiveContainer<User>
         ref={listRef}
         title="고객 회원관리"
-        excelFileName="UserList"
         columns={columns}
-        fetchData={() => fetchData({})}
-        enableSearch={true}
+        fetchData={fetchData}
         enableDateFilter={true}
         searchPlaceholder="이름, 이메일, 아이디 검색"
         onRowClick={handleRowClick}
         themeMode="light"
+        enableCompanySearch={true}
+        onCompanySelect={handleCompanySelect}
+        renderMiddleContent={() => (
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            {selectedCompanyName && (
+              <div style={{ color: '#666', fontSize: '14px' }}>
+                선택된 고객사: {selectedCompanyName}
+              </div>
+            )}
+          </div>
+        )}
       />
 
 <CmsPopup
       title="회원 정보 수정"
       isOpen={isPopupOpen}
       onClose={closePopup}
+      showRequiredMark={true}
+      height="auto"
+      backgroundColor="white"
       bottomFloating={
         <PopupFooter>
-        <CancelButton onClick={closePopup}>닫기</CancelButton>
-        
-        <ConfirmButton
-          title="회원 정보를 저장하시겠습니까?"
-          content={
-            <>
-              입력하신 내용으로 회원 정보를 저장합니다.<br />
-              저장 후에는 이전 정보로 되돌릴 수 없습니다.
-            </>
-          }          
-          onConfirm={handleSave} // 확인 눌렀을 때만 handleSave 실행
-        >
-        </ConfirmButton>
-      </PopupFooter>
+          {/* 왼쪽 영역 */}
+          <div />
+
+          {/* 오른쪽 영역: 저장/닫기 */}
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <SaveButton onClick={handleSave}>저장</SaveButton>
+            <CancelButton onClick={closePopup}>닫기</CancelButton>
+          </div>
+        </PopupFooter>
       }
     >
-      {/* 팝업 내용 시작 */}
-      <UserInfoSection>
-        <ProfileImage src={selectedUser?.profileImageUrl || "/default-profile.png"} alt="Profile" />
-        <UserDetails>
-          <DetailItem>
-            <DetailIcon><PersonIcon /></DetailIcon>
-            <NameText>{selectedUser?.name} (KRW)</NameText>
-          </DetailItem>
-          <DetailItem>
-            <DetailIcon><BadgeIcon /></DetailIcon>
-            <span>{selectedUser?.adminId}</span>
-          </DetailItem>
-          <DetailItem>
-            <DetailIcon><PhoneIcon /></DetailIcon>
-            <span>{selectedUser?.cellphone}</span>
-          </DetailItem>
-          <DetailItem>
-            <DetailIcon><EmailIcon /></DetailIcon>
-            <span>{selectedUser?.email}</span>
-          </DetailItem>
-        </UserDetails>
-      </UserInfoSection>
+      <FormContainer>
+        {/* 사용자 정보 섹션 */}
+        <Title>사용자 정보</Title>
+        
+        <UserInfoSection>
+          <ProfileImage src={selectedUser?.profileImage || "/ai-estimate/no_profile.png"} alt="Profile" />
+          <UserDetails>
+            <DetailItem>
+              <DetailIcon><PersonIcon /></DetailIcon>
+              <NameText>{selectedUser?.name || '-'}</NameText>
+            </DetailItem>
+            <DetailItem>
+              <DetailIcon><svg xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 14 11" fill="none">
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M0.332031 0.166992V10.8337H13.6653V0.166992H0.332031ZM6.21744 8.16699V2.63184H7.74869C8.39973 2.63184 8.92056 2.69434 9.31119 2.81934C9.8216 2.9834 10.2122 3.28809 10.4831 3.7334C10.7539 4.17611 10.8893 4.7321 10.8893 5.40137C10.8893 6.08887 10.7539 6.65006 10.4831 7.08496C10.1445 7.63444 9.62108 7.96777 8.91275 8.08496C8.58723 8.13965 8.17056 8.16699 7.66275 8.16699H6.21744ZM7.46353 7.19043H7.70181C8.26952 7.19043 8.69009 7.09798 8.96353 6.91309C9.20311 6.75423 9.37629 6.50814 9.48306 6.1748C9.56119 5.92743 9.60025 5.66441 9.60025 5.38574C9.60025 5.08628 9.55468 4.80894 9.46353 4.55371C9.37239 4.29852 9.24739 4.0993 9.08853 3.95605C8.93749 3.82064 8.76561 3.72949 8.57291 3.68262C8.3802 3.63314 8.08983 3.6084 7.70181 3.6084H7.46353V7.19043ZM3.65494 2.63184V8.16699H4.90103V2.63184H3.65494Z" fill="#AAAAAA"/>
+</svg></DetailIcon>
+              <span>ID: {selectedUser?._id || '-'}</span>
+            </DetailItem>
+            <DetailItem>
+              <DetailIcon><PhoneIcon /></DetailIcon>
+              <span>{selectedUser?.cellphone || '-'}</span>
+            </DetailItem>
+            <DetailItem>
+              <DetailIcon><EmailIcon /></DetailIcon>
+              <span>{selectedUser?.email || '-'}</span>
+            </DetailItem>
+            {selectedUser?.usingService && selectedUser.usingService.length > 0 && (
+              <DetailItem>
+                <DetailIcon><i className="fas fa-building"></i></DetailIcon>
+                <span>사용 서비스: {selectedUser.usingService.join(', ')}</span>
+              </DetailItem>
+            )}
+          </UserDetails>
+        </UserInfoSection>
 
-      <FormSection>
-        <TextField
-          radius="0"
-          value={email}
-          label="회사메일"
-          $labelPosition="vertical"
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="이메일 형식으로 입력하세요"
-          errorMessage={emailError ?? undefined}
-        />
-        <TextField
-          radius="0"
-          value={cellphone}
-          label="전화번호"
-          $labelPosition="vertical"
-          onChange={(e) => {
-            const input = e.target.value;
-            if (/^\d*$/.test(input)) {
-              setCellphone(input);
-            }
-          }}
-          placeholder="- 제외하고 입력하세요"
-          maxLength={11}
-          errorMessage={cellphoneError ?? undefined}
-        />
-        <MemoField
-          radius="0"
-          multiline
-          minLines={5} // 이미지에 맞춰 minLines 조정
-          height="150px"
-          value={description}
-          label="메모"
-          $labelPosition="horizontal"
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="메모를 입력하세요"
-        />
-      </FormSection>
+        <Title>연락처 정보</Title>
+
+        <FormSection>
+          <CommonTextField
+            id="email"
+            value={email}
+            label="* 이메일"
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="이메일 형식으로 입력하세요"
+            errorMessage={emailError ?? undefined}
+          />
+          <CommonTextField
+            id="cellphone"
+            value={cellphone}
+            label="* 전화번호"
+            onChange={(e) => {
+              const input = e.target.value;
+              if (/^\d*$/.test(input) && input.length <= 11) {
+                setCellphone(input);
+              }
+            }}
+            placeholder="- 제외하고 입력하세요"
+            errorMessage={cellphoneError ?? undefined}
+          />
+          
+          <Title>비고</Title>
+          
+          <TextArea
+            id="description"
+            value={description}
+            label="비고"
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="비고를 입력하세요"
+            height="200px"
+          />
+        </FormSection>
+      </FormContainer>
     </CmsPopup>
     </>
   );

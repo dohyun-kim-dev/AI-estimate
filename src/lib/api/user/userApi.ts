@@ -519,3 +519,20 @@ export async function getAiPrompts() {
     method: 'GET'
   });
 }
+
+// URL 크롤링 API
+export async function crawlUrl(url: string) {
+  return callUserApi<{
+    statusCode: number;
+    message: string;
+    data: string;
+    metadata: any;
+    error: any;
+  }>({
+    title: 'URL 크롤링',
+    url: getApiUrl('/croller'),
+    method: 'POST',
+    body: { url },
+    isCallPageLoader: false,
+  });
+}

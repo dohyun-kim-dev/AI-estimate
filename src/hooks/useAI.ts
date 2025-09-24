@@ -138,7 +138,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
   const [modelName, setModelName] = useState<SimpleModel>(initialModel)
   const [systemInstruction, setSystemInstruction] = useState<string | undefined>(undefined)
   // maximum output tokens / thinking budget
-  const [thinkingBudget, setThinkingBudget] = useState<number>(0)
+  const [thinkingBudget, setThinkingBudget] = useState<number>(500)
 
   const modelRef = useRef<GenerativeModel | null>(null)
   const chatRef = useRef<ChatSession | null>(null)

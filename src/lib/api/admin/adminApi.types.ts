@@ -3,6 +3,13 @@ export type AdminLoginParams = {
     password: string;
   };
 
+  export type UserGetListParams = {
+    keyword?: string;
+    fromDate?: string;
+    toDate?: string;
+    companyCode?: string;
+  };
+
   export type AdminGetListParams = {
     keyword?: string;
     fromDate?: string;

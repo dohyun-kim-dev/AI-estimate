@@ -42,6 +42,7 @@ interface CmsResponsiveContainerProps<T extends BaseRecord> {
   deleteBtnCallBack?: () => void;
   // 중간 영역 커스텀 컨텐츠 prop 추가
   renderMiddleContent?: () => React.ReactNode;
+  
 }
 
 const CmsResponsiveContainer = <T extends BaseRecord>(

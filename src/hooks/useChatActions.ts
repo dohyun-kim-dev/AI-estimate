@@ -6,13 +6,12 @@ import { useAuthStore } from '@/store/authStore';
 import { combinePrompts } from '@/ai/promptTemplates';
 import { FileUploadData } from '@/firebase.functions';
 import type { SimpleModel } from './useAI';
-import { createChatSession, createGuestChatSession, sendChatMessage, sendMessageWithFiles, validateFileType, validateFileSize, uploadFiles, ChatMessageResponseData } from '@/lib/api/user/userApi';
+import { createChatSession, createGuestChatSession, sendChatMessage, sendMessageWithFiles, validateFileType, validateFileSize, uploadFiles, ChatMessageResponseData, crawlUrl } from '@/lib/api/user/userApi';
 import { generateAndUploadPdf } from '@/hooks/pdfUtils';
 import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import { v4 as uuidv4 } from 'uuid';
 import { ensureEstimateUuid, buildFullEstimateData, extractIntroFromReply } from '@/hooks/estimate';
 import { uploadEstimatePdf } from '@/lib/api/user/userApi';
-import { detectUrls, shortenUrl, analyzeUrls } from './useUrlAnalyzer';
 
 // 견적서 데이터를 추출하는 유틸리티 함수
 const extractEstimateData = (content: string): ProjectEstimate | null => {
@@ -362,24 +361,25 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
     setIsProcessing(true);
 
-    // URL 감지 및 동기 처리
-    const detectedUrls = detectUrls(displayMessage);
+    // URL 감지 및 크롤링 처리
+    const urlPattern = /https?:\/\/[^\s]+/gi;
+    const detectedUrls = displayMessage.match(urlPattern);
     let urlAnalysisForAI = '';
 
-    if (detectedUrls.length > 0) {
+    if (detectedUrls && detectedUrls.length > 0) {
       try {
-        // URL 분석을 동기적으로 처리 (메시지 전송 전에 완료)
-        const analysisResult = await analyzeUrls(detectedUrls, (progress) => {
-          console.log(`URL 분석 진행: ${progress.completed}/${progress.total}`);
-        });
+        console.log('URL 발견, 크롤링 시작:', detectedUrls);
+        // 첫 번째 URL만 크롤링 (여러 개 있어도 하나만 처리)
+        const firstUrl = detectedUrls[0];
+        const crawlResponse = await crawlUrl(firstUrl);
         
-        if (analysisResult && analysisResult.summary) {
-          urlAnalysisForAI = analysisResult.summary;
-          console.log('URL 분석 완료, AI에게 전달할 내용 준비됨');
+        if (crawlResponse?.statusCode === 200 && crawlResponse.data) {
+          urlAnalysisForAI = crawlResponse.data;
+          console.log('URL 크롤링 완료, AI에게 전달할 내용 준비됨');
         }
       } catch (error) {
-        console.error('URL 분석 실패:', error);
-        // 분석 실패해도 원본 메시지로 진행
+        console.error('URL 크롤링 실패:', error);
+        // 크롤링 실패해도 원본 메시지로 진행
       }
     }
 
@@ -504,11 +504,11 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
       const combinedPrompt = await combinePrompts(selectedPromptId, input);
 
-      // URL 분석 결과가 있으면 프롬프트에 추가
+      // URL 크롤링 결과가 있으면 프롬프트에 추가
       let finalPrompt = combinedPrompt;
       if (urlAnalysisForAI) {
-        finalPrompt = `${combinedPrompt}\n\n[추가 참고 정보 - 웹사이트 분석 결과]\n${urlAnalysisForAI}`;
-        console.log('URL 분석 결과가 AI 프롬프트에 포함됨');
+        finalPrompt = `url 크롤링한 텍스트야 보고 분석해줘 ${input} ${urlAnalysisForAI}`;
+        console.log('URL 크롤링 결과가 AI 프롬프트에 포함됨');
       }
 
       // 🔥 스토어에서 현재 메시지 히스토리 가져와서 AI에게 전달

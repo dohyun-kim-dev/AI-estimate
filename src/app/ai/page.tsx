@@ -385,7 +385,7 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
     if(typeof content !== 'string') { console.log('string이 아닌 content', typeof content,content);}
     const match = content.match(/<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/);
     if (!match) return null;
-    console.log('match', match);
+    // console.log('match', match);
     const jsonStr = match[1];
     const data = JSON.parse(jsonStr);
     // console.log('파싱된 견적 데이터:', data);

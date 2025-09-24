@@ -628,8 +628,8 @@ export default GenericListUI;
 
 const Container = styled.div<{ $themeMode: ThemeMode }>`
   min-width: 1200px;
-  min-width: 100vw;
-  min-height: 100vh;
+  width: 100%;
+  min-height: 100%;
   box-sizing: border-box;
   padding: 2px 30px 22px 30px;
   background-color: ${({ $themeMode }) =>

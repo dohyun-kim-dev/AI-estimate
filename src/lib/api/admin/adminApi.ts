@@ -317,6 +317,37 @@ export async function getAllUnitPrices(
 
 // ***************** 고객사
 
+// 고객 회원 목록 조회 API
+export async function getUserList(
+  params: UserGetListParams = {}) {
+  const queryParams = new URLSearchParams();
+  
+  // 선택적 파라미터들
+  if (params.keyword) queryParams.append('keyword', params.keyword);
+  if (params.fromDate) queryParams.append('fromDate', params.fromDate);
+  if (params.toDate) queryParams.append('toDate', params.toDate);
+  if (params.companyCode) queryParams.append('companyCode', params.companyCode);
+
+  const queryString = queryParams.toString();
+  const url = `${BASE_URL}/cms/users${queryString ? `?${queryString}` : ''}`;
+
+  try {
+    const result = await callAdminApi({
+      title: '고객 회원 목록 조회',
+      url: url,
+      method: 'GET',
+      isCallPageLoader: true,
+      isWithToken: true,
+    });
+    
+    console.log('getUserList 응답:', result);
+    return result;
+  } catch (error) {
+    console.error('getUserList 에러:', error);
+    throw error;
+  }
+}
+
 // 모든 고객사 조회 API
 export async function getCompanyList(
   params: CompanyGetListParams = {}) {
