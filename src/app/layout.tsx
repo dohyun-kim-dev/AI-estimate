@@ -40,6 +40,10 @@ function LayoutContent() {
   const location = useLocation();
   const { setTitle } = useHeader();
   const [compact, setCompact] = useState(false);
+   const isProfileEditPage = location.pathname.includes('/settings') && location.search.includes('edit=profile');
+  const stepParam = new URLSearchParams(location.search).get('step');
+  const showCustomHeader = isProfileEditPage && (stepParam === 'profile' || stepParam === 'phone');
+
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -93,14 +97,17 @@ function LayoutContent() {
     }
   }, []);
 
+
+  
   return (
     <>
-      <HeaderWrapper isCompact={compact} />
-      <Main>
-        <Outlet />
-      </Main>
-      <FooterWrapper isCompact={compact} />
-      {/* <SocialLoginModal 
+  {/* ...기존 코드... */}
+      {!showCustomHeader && <HeaderWrapper isCompact={compact} />}
+    <Main style={showCustomHeader ? { paddingTop: 60 } : {}}>
+      <Outlet />
+    </Main>
+    {!showCustomHeader && <FooterWrapper isCompact={compact} />}
+    {/* <SocialLoginModal 
         $isOpen={isLoginModalOpen} 
         onClose={closeLoginModal}
         purpose="limitExceeded"

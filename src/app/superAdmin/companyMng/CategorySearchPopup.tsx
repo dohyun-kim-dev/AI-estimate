@@ -85,9 +85,10 @@ import {getCategoryList} from '@/lib/api/admin/adminApi';
 interface CategorySearchPopupProps {
   isOpen: boolean;
   onClose: () => void;
+  onSelect?: (category: {name: string, code: string}) => void;
 }
 
-const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClose }) => {
+const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClose, onSelect }) => {
   // 페이징 관련 상태 (예시)
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -170,6 +171,12 @@ const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClo
           : a.name.localeCompare(b.name);
       }
       if (sortKey === 'code') {
+        // 숫자형 문자열이면 숫자로 변환해서 비교, 아니면 문자열 비교
+        const aNum = Number(a.code);
+        const bNum = Number(b.code);
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          return sortOrder === 'desc' ? bNum - aNum : aNum - bNum;
+        }
         return sortOrder === 'desc'
           ? b.code.localeCompare(a.code)
           : a.code.localeCompare(b.code);
@@ -245,23 +252,67 @@ const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClo
         <TableContainer>
           <Table>
             <TableHeader>
-              <tr>
+              <tr >
                 <th onClick={() => {
                   setSortKey('no');
                   setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-                }} style={{ cursor: 'pointer' }}>No {sortKey === 'no' ? (sortOrder === 'desc' ? '▼' : '▲') : ''}</th>
+                }} style={{ cursor: 'pointer' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 80, position: 'relative' }}>
+                    <span style={{ flex: 1, textAlign: 'center' }}>No</span>
+                    <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 17, display: 'inline-block' }}>
+                      <span style={{ visibility: sortKey === 'no' ? 'visible' : 'hidden', display: 'inline-block', transform: sortOrder === 'desc' ? 'rotate(180deg)' : 'none' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="16" viewBox="0 0 17 16" fill="none">
+                          <path d="M4.83203 10L8.83203 6L12.832 10" stroke="#888888" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </span>
+                    </span>
+                  </span>
+                </th>
                 <th onClick={() => {
                   setSortKey('createdAt');
                   setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-                }} style={{ cursor: 'pointer' }}>등록일 {sortKey === 'createdAt' ? (sortOrder === 'desc' ? '▼' : '▲') : ''}</th>
+                }} style={{ cursor: 'pointer' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 100, position: 'relative' }}>
+                    <span style={{ flex: 1, textAlign: 'center' }}>등록일</span>
+                    <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 17, display: 'inline-block' }}>
+                      <span style={{ visibility: sortKey === 'createdAt' ? 'visible' : 'hidden', display: 'inline-block', transform: sortOrder === 'desc' ? 'rotate(180deg)' : 'none' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="16" viewBox="0 0 17 16" fill="none">
+                          <path d="M4.83203 10L8.83203 6L12.832 10" stroke="#888888" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </span>
+                    </span>
+                  </span>
+                </th>
                 <th onClick={() => {
                   setSortKey('name');
                   setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-                }} style={{ cursor: 'pointer' }}>카테고리명 {sortKey === 'name' ? (sortOrder === 'desc' ? '▼' : '▲') : ''}</th>
+                }} style={{ cursor: 'pointer' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 120, position: 'relative' }}>
+                    <span style={{ flex: 1, textAlign: 'center' }}>카테고리명</span>
+                    <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 17, display: 'inline-block' }}>
+                      <span style={{ visibility: sortKey === 'name' ? 'visible' : 'hidden', display: 'inline-block', transform: sortOrder === 'desc' ? 'rotate(180deg)' : 'none' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="16" viewBox="0 0 17 16" fill="none">
+                          <path d="M4.83203 10L8.83203 6L12.832 10" stroke="#888888" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </span>
+                    </span>
+                  </span>
+                </th>
                 <th onClick={() => {
                   setSortKey('code');
                   setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-                }} style={{ cursor: 'pointer' }}>카테고리코드 {sortKey === 'code' ? (sortOrder === 'desc' ? '▼' : '▲') : ''}</th>
+                }} style={{ cursor: 'pointer' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 120, position: 'relative' }}>
+                    <span style={{ flex: 1, textAlign: 'center' }}>카테고리코드</span>
+                    <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 17, display: 'inline-block' }}>
+                      <span style={{ visibility: sortKey === 'code' ? 'visible' : 'hidden', display: 'inline-block', transform: sortOrder === 'desc' ? 'rotate(180deg)' : 'none' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="16" viewBox="0 0 17 16" fill="none">
+                          <path d="M4.83203 10L8.83203 6L12.832 10" stroke="#888888" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </span>
+                    </span>
+                  </span>
+                </th>
                 <th>수정</th>
                 <th>삭제</th>
               </tr>
@@ -275,16 +326,29 @@ const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClo
                 </tr>
               ) : sortedCategories.length > 0 ? (
                   sortedCategories.map((category, index) => (
-                    <TableRow key={category.id} $isEven={index % 2 === 1}>
+                    <TableRow 
+                      key={category.id} 
+                      $isEven={index % 2 === 1}
+                      onClick={() => {
+                        if (onSelect) {
+                          onSelect({ name: category.name, code: category.code });
+                          onClose();
+                        }
+                      }}
+                    >
                       <td>{category.no}</td>
                       <td>{category.createdAt}</td>
                       <td>{category.name}</td>
                       <td>{category.code}</td>
                       <td>
-                        <EditButton onClick={() => { setEditCategory(category); setRegisterOpen(true); }}>수정</EditButton>
+                        <EditButton onClick={(e) => { 
+                          e.stopPropagation(); // 이벤트 버블링 방지
+                          setEditCategory(category); 
+                          setRegisterOpen(true); 
+                        }}>수정</EditButton>
                       </td>
                       <td>
-                        <DeleteButton>삭제</DeleteButton>
+                        <DeleteButton onClick={(e) => e.stopPropagation()}>삭제</DeleteButton>
                       </td>
                     </TableRow>
                   ))

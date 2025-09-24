@@ -110,7 +110,7 @@ const CameraIcon = styled.div<{ $isDarkMode?: boolean }>`
   justify-content: center;
   color: white;
   cursor: pointer;
-  border: 2px solid ${({ $isDarkMode, theme }) => $isDarkMode ? theme.body : '#ffffff'};
+  // border: 2px solid ${({ $isDarkMode, theme }) => $isDarkMode ? theme.body : '#ffffff'};
   transition: all 0.2s ease;
   
   &:hover {
@@ -213,7 +213,7 @@ const StyledInput = styled.input<{ $isDarkMode?: boolean; $hasError?: boolean }>
   border: 1px solid ${({ $isDarkMode, theme, $hasError }) => 
     $hasError 
       ? '#e53935'
-      : ($isDarkMode ? '#ffffff' : '#e0e0e0')
+      : ($isDarkMode ? '#858A8E' : '#79747E')
   };
   border-radius: 4px;
   font-size: 14px;
@@ -227,12 +227,13 @@ const StyledInput = styled.input<{ $isDarkMode?: boolean; $hasError?: boolean }>
     border-color: ${({ $isDarkMode, theme, $hasError }) => 
       $hasError 
         ? '#e53935'
-        : ($isDarkMode ? '#ffffff' : '#202055')
+        : ($isDarkMode ? '#858A8E' : '#79747E')
     };
   }
 
   &:read-only {
-    background-color: ${({ $isDarkMode, theme }) => $isDarkMode ? theme.surface2 : '#f5f5f5'};
+    background-color: ${({ $isDarkMode, theme }) => $isDarkMode ? '#000' : '#ffffff'};
+    color: ${({ $isDarkMode, theme }) => $isDarkMode ? theme.text : '#000000'};
     cursor: not-allowed;
   }
 
@@ -252,36 +253,24 @@ const ActionButton = styled.button<{ $isDarkMode?: boolean; $variant?: 'primary'
   width: 120px;
   padding: 0 20px;
 //   margin-bottom: 22px;
-  border: 1px solid ${({ $isDarkMode, theme, $variant }) => 
-    $variant === 'primary' 
-      ? ($isDarkMode ? '#fff' : '#5799ED')
-      : ($isDarkMode ? '#fff' : '#cccccc')
-  };
+  
   border-radius: 4px;
   font-size: 14px;
   font-weight: 500;
   background-color: ${({ $isDarkMode, theme, $variant }) => 
     $variant === 'primary' 
       ? ($isDarkMode ? '#1D252D': '#5799ED')
-      : ($isDarkMode ? theme.surface1 : '#ffffff')
+      : ($isDarkMode ? theme.surface1 : '#5799ED')
   };
   color: ${({ $isDarkMode, theme, $variant }) => 
     $variant === 'primary' 
       ? '#ffffff'
-      : ($isDarkMode ? theme.text : '#333333')
+      : ($isDarkMode ? theme.text : '#ffffff')
   };
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s ease;
 
-  &:hover:not(:disabled) {
-    background-color: ${({ $isDarkMode, theme, $variant }) => 
-      $variant === 'primary' 
-        ? ($isDarkMode ? theme.accent : '#1a1a45')
-        : ($isDarkMode ? theme.surface2 : '#f5f5f5')
-    };
-    opacity: ${({ $variant }) => $variant === 'primary' ? '0.9' : '1'};
-  }
 
   &:disabled {
     opacity: 0.5;
@@ -298,7 +287,7 @@ const ErrorMessage = styled.p<{ $isDarkMode?: boolean }>`
 
 const CompleteButton = styled.button<{ $isDarkMode?: boolean }>`
   width: 100%;
-  height: 42px;
+  height: 56px;
   padding: 8px;
   background-color: ${({ $isDarkMode, theme }) => $isDarkMode ? '#1D252D' : '#5799ED'};
   color: #ffffff;
@@ -309,11 +298,6 @@ const CompleteButton = styled.button<{ $isDarkMode?: boolean }>`
   cursor: pointer;
 //   margin-top: 40px;
   transition: all 0.2s ease;
-
-  &:hover:not(:disabled) {
-    background-color: ${({ $isDarkMode, theme }) => $isDarkMode ? theme.accent : '#1a1a45'};
-    opacity: 0.9;
-  }
 
   &:disabled {
     opacity: 0.5;
@@ -794,7 +778,7 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
       onBack?.(); // 이전 페이지로 이동
     }
   };
-
+  
   // 실제 전화번호 업데이트 수행
   const performPhoneUpdate = async (phoneNumber: string) => {
     setIsUpdating(true);
@@ -856,13 +840,41 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
   const showTopBackButton = !locationPath.includes('/aiclient/heredot/ai');
 
   return (
+    <>
+    {(currentStep === 'profile' || currentStep === 'phone') && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+    display: 'flex',
+    alignItems: 'center',
+    background: isDarkMode ? '#000' : '#fff', // 다크모드면 검정, 라이트면 흰색
+    zIndex: 100,
+    padding: '0 16px'
+  }}>
+    <img
+      src={'/ai-estimate/arrow_back.png'}
+      alt="뒤로가기"
+      style={{ width: 24, height: 24, cursor: 'pointer', marginRight: 12 }}
+      onClick={handleBackButton}
+    />
+    <span style={{
+      fontSize: 16,
+      fontWeight: 700
+    }}>
+      {currentStep === 'phone' ? '전화번호 변경' : '회원정보 수정'}
+    </span>
+  </div>
+)}
     <Container $isDarkMode={isDarkMode}>
       {showTopBackButton ? (
         <Header>
-          <BackButton $isDarkMode={isDarkMode} onClick={handleBackButton}>
+          {/* <BackButton $isDarkMode={isDarkMode} onClick={handleBackButton}>
             <IoArrowBack size={20} />
             뒤로가기
-          </BackButton>
+          </BackButton> */}
           {/* <Title $isDarkMode={isDarkMode}>
             {currentStep === 'phone' ? '전화번호 변경' : '회원정보 수정'}
           </Title> */}
@@ -885,7 +897,9 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
                   />
                 </ProfileImage>
                 <CameraIcon $isDarkMode={isDarkMode} onClick={handleImageClick}>
-                  <IoCamera size={16} />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="25" height="24" viewBox="0 0 25 24" fill="none">
+                    <path d="M20.5 4H17.33L15.5 2H9.5L7.67 4H4.5C3.96957 4 3.46086 4.21071 3.08579 4.58579C2.71071 4.96086 2.5 5.46957 2.5 6V18C2.5 18.5304 2.71071 19.0391 3.08579 19.4142C3.46086 19.7893 3.96957 20 4.5 20H20.5C21.0304 20 21.5391 19.7893 21.9142 19.4142C22.2893 19.0391 22.5 18.5304 22.5 18V6C22.5 5.46957 22.2893 4.96086 21.9142 4.58579C21.5391 4.21071 21.0304 4 20.5 4ZM20.5 18H4.5V6H8.55L10.38 4H14.62L16.45 6H20.5V18ZM12.5 7C11.1739 7 9.90215 7.52678 8.96447 8.46447C8.02678 9.40215 7.5 10.6739 7.5 12C7.5 13.3261 8.02678 14.5979 8.96447 15.5355C9.90215 16.4732 11.1739 17 12.5 17C13.8261 17 15.0979 16.4732 16.0355 15.5355C16.9732 14.5979 17.5 13.3261 17.5 12C17.5 10.6739 16.9732 9.40215 16.0355 8.46447C15.0979 7.52678 13.8261 7 12.5 7ZM12.5 15C11.7044 15 10.9413 14.6839 10.3787 14.1213C9.81607 13.5587 9.5 12.7956 9.5 12C9.5 11.2044 9.81607 10.4413 10.3787 9.87868C10.9413 9.31607 11.7044 9 12.5 9C13.2956 9 14.0587 9.31607 14.6213 9.87868C15.1839 10.4413 15.5 11.2044 15.5 12C15.5 12.7956 15.1839 13.5587 14.6213 14.1213C14.0587 14.6839 13.2956 15 12.5 15Z" fill="white"/>
+                  </svg>
                 </CameraIcon>
                 
                 <DropdownMenu $isDarkMode={isDarkMode} $isOpen={showImageDropdown}>
@@ -1047,6 +1061,7 @@ export const ProfileEditPage: React.FC<ProfileEditPageProps> = ({
         )}
       </FormContainer>
     </Container>
+    </>
   );
 };
 
