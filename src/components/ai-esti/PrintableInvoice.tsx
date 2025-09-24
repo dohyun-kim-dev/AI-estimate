@@ -38,8 +38,8 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
   if (guestInfo) {
     try {
       const parsedInfo = JSON.parse(guestInfo);
-      guestName = parsedInfo.name || '';
-      guestEmail = parsedInfo.email || '';
+      guestName = parsedInfo.name || '비회원';
+      guestEmail = parsedInfo.email || '비회원';
       guestCellphone = parsedInfo.cellphone || '';
     } catch (error) {
       console.error('Failed to parse guestInfo from sessionStorage:', error);
@@ -153,13 +153,13 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
           </tr>
           <tr>
             <td style={headerCellStyle}>고객명</td>
-            <td style={valueCellStyle}>{user?.name || guestName} {(user?.cellphone || guestCellphone) ? ' 82+' : ''} {user?.cellphone || guestCellphone}</td>
+            <td style={valueCellStyle}>{user?.name || '비회원'} {(user?.cellphone || guestCellphone) ? ' 82+' : ''} {user?.cellphone || ''}</td>
             <td style={headerCellStyle}>대표자명</td>
             <td style={valueCellStyle}>강태원 82+031-8039-7981</td>
           </tr>
           <tr>
             <td style={headerCellStyle}>메일주소</td>
-            <td style={valueCellStyle}>{user?.email || guestEmail}</td>
+            <td style={valueCellStyle}>{user?.email || '비회원'}</td>
             <td style={headerCellStyle}>사업자번호</td>
             <td style={valueCellStyle}>289-86-03278</td>
           </tr>

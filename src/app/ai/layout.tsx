@@ -323,8 +323,103 @@ export default function AILayout() {
   };
 
 
+  // 비회원 견적서 업로드 함수
+  const uploadEstimateForGuestShare = async () => {
+    console.log('[uploadEstimateForGuestShare] 비회원 견적서 업로드 시작');
+    
+    // 비회원이고 URL에 share가 없을 때만 실행
+    const isGuest = !isAuthenticated();
+    const hasShareInUrl = window.location.href.includes('share');
+    
+    if (isGuest && !hasShareInUrl) {
+      try {
+        // 게스트 정보 가져오기
+        const guestInfoStr = sessionStorage.getItem('guestinfo');
+        if (!guestInfoStr) {
+          console.log('guestinfo 없음, 업로드 건너뛰기');
+          return;
+        }
+        
+        const guestInfo = JSON.parse(guestInfoStr);
+        
+        // 세션 스토리지에서 메시지 데이터 가져오기
+        const storedData = sessionStorage.getItem('ai-chat-storage');
+        if (!storedData) {
+          console.log('채팅 데이터 없음, 업로드 건너뛰기');
+          return;
+        }
+        
+        const parsedData = JSON.parse(storedData);
+        const messages = parsedData.state?.messages || [];
+        
+        // 맨 아래부터 content에서 uuid를 추출해서 estimateId로 사용
+        let estimateId = null;
+        for (let i = messages.length - 1; i >= 0; i--) {
+          const message = messages[i];
+          if (message.content && typeof message.content === 'string') {
+            try {
+              // content에서 JSON 부분 찾기
+              const scriptMatch = message.content.match(/<script[^>]*id="invoiceData"[^>]*>(.*?)<\/script>/s);
+              if (scriptMatch) {
+                const jsonStr = scriptMatch[1].trim();
+                const invoiceData = JSON.parse(jsonStr);
+                if (invoiceData.uuid) {
+                  estimateId = invoiceData.uuid;
+                  break;
+                }
+              }
+            } catch (error) {
+              console.log('JSON 파싱 실패:', error);
+              continue;
+            }
+          }
+        }
+        
+        if (!estimateId) {
+          console.log('estimateId 없음, 업로드 건너뛰기');
+          return;
+        }
+        
+        // 게스트 UUID 보장
+        let guestUuid = localStorage.getItem('guest-uuid');
+        if (!guestUuid) {
+          guestUuid = crypto.randomUUID();
+          localStorage.setItem('guest-uuid', guestUuid);
+        }
+        
+        // 채팅 세션 ID 가져오기
+        const chatSessionId = localStorage.getItem('chatSessionId') || sessionStorage.getItem('chatSessionId') || '';
+        
+        if (chatSessionId && estimateId) {
+          // uploadEstimatePdf를 동적으로 임포트
+          const { uploadEstimatePdf } = await import('@/lib/api/user/userApi');
+          
+          await uploadEstimatePdf(
+            chatSessionId,
+            undefined, // title
+            guestUuid,
+            undefined, // data
+            estimateId,
+            {
+              id: guestUuid,
+              name: guestInfo.name || '',
+              email: guestInfo.email || '',
+              cellphone: guestInfo.cellphone || ''
+            }
+          );
+          
+          console.log('✅ 비회원 채팅 공유 시 견적서 업로드 완료');
+        } else {
+          console.log('❌ 필수 데이터 누락:', { chatSessionId, estimateId });
+        }
+      } catch (error) {
+        console.error('❌ 견적서 업로드 실패:', error);
+      }
+    }
+  };
+
   // '공유' 버튼을 눌렀을 때 실행될 함수 (AILayout에서 호출됨)
-  const handleOpenShare = () => {
+  const handleOpenShare = async () => {
  
 
   const storedData = sessionStorage.getItem('ai-chat-storage');
@@ -335,6 +430,8 @@ export default function AILayout() {
       if (messages.length >= 2) {
 
          if (!isAuthenticated()) {
+          // 비회원인 경우 견적서 업로드 시도
+          await uploadEstimateForGuestShare();
           openLoginModal('shareChat');
           return;
         }

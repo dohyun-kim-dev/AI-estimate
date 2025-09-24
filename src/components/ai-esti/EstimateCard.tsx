@@ -241,9 +241,69 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
     }
   
 
+  const uploadEstimateForGuest = async (estimateObj: any) => {
+    console.log('[uploadEstimateForGuest] estimateObj:', estimateObj);
+    
+    // 비회원이고 URL에 share가 없을 때만 실행
+    const isGuest = !isAuthenticated();
+    const hasShareInUrl = window.location.href.includes('share');
+    
+    if (isGuest && !hasShareInUrl) {
+      try {
+        // 게스트 정보 가져오기
+        const guestInfoStr = sessionStorage.getItem('guestinfo');
+        if (!guestInfoStr) {
+          console.log('guestinfo 없음, 업로드 건너뛰기');
+          return;
+        }
+        
+        const guestInfo = JSON.parse(guestInfoStr);
+        
+        // 필요한 데이터 준비
+        const title = estimateObj.project_name || '견적서';
+        const estimateId = estimateObj.uuid;
+        
+        // 게스트 UUID 보장
+        let guestUuid = localStorage.getItem('guest-uuid');
+        if (!guestUuid) {
+          guestUuid = crypto.randomUUID();
+          localStorage.setItem('guest-uuid', guestUuid);
+        }
+        
+        // 채팅 세션 ID 가져오기
+        const chatSessionId = localStorage.getItem('chatSessionId') || '';
+        
+        if (chatSessionId && estimateId) {
+          await uploadEstimatePdf(
+            chatSessionId,
+            title,
+            guestUuid,
+            undefined, // data는 옵셔널하게 안받음
+            estimateId,
+            {
+              id: guestUuid,
+              name: guestInfo.name || '',
+              email: guestInfo.email || '',
+              cellphone: guestInfo.cellphone || ''
+            }
+          );
+          
+          console.log('✅ 비회원 견적서 업로드 완료');
+        } else {
+          console.log('❌ 필수 데이터 누락:', { chatSessionId, estimateId });
+        }
+      } catch (error) {
+        console.error('❌ 견적서 업로드 실패:', error);
+      }
+    }
+  };
 
   const ensureUuidAndGetUrl = async () => {
     console.log("ensureUuidAndGetUrl 함수 호출 직전 estimate:", estimate);
+    
+    // 비회원일 때 견적서 업로드 실행
+    await uploadEstimateForGuest(estimate);
+    
     const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
     console.log("ensuredUuid:", ensuredUuid); 
     return `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
@@ -254,6 +314,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
   const openPreviewTab = async () => {
     try {
       console.log("openPreviewTab 함수 호출 직전 estimate:", estimate);
+          await uploadEstimateForGuest(estimate);
       const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
       const previewUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
       const newWindow = window.open(previewUrl, '_blank');

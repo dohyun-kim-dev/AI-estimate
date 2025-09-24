@@ -749,9 +749,9 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
   const currentDate = formatDate(new Date());
   const user = useAuthStore((state) => state.user);
 
-  const userName = user?.name;
+  const userName = user?.name || '비회원';
   const userPhone = user?.cellphone;
-  const userEmail = user?.email;
+  const userEmail = user?.email || '비회원';
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recipientName =
@@ -1010,7 +1010,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
           <tr>
             <td style={headerCellStyle}>{clientNameLabel}</td>
             <td style={clientValueCellStyle}>
-              {userName || 'guest'} {userPhone ? ' 82+' : ''} {userPhone || ''}
+              {userName || '비회원'} {userPhone ? ' 82+' : ''} {userPhone || ''}
             </td>
             <td style={headerCellStyle}>{supplierCeoLabel}</td>
             <td style={valueCellStyle}>{representativeName}</td>
@@ -1019,7 +1019,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
           {/* Row 3: 메일주소, 사업자번호 */}
           <tr>
             <td style={headerCellStyle}>{clientEmailLabel}</td>
-            <td style={valueCellStyle}>{userEmail || 'guest'}</td>
+            <td style={valueCellStyle}>{userEmail || '비회원'}</td>
             <td style={headerCellStyle}>{supplierBizNumLabel}</td>
             <td style={valueCellStyle}>{companyRegistrationNumber}</td>
           </tr>

@@ -101,7 +101,6 @@ function LayoutContent() {
   
   return (
     <>
-  {/* ...기존 코드... */}
       {!showCustomHeader && <HeaderWrapper isCompact={compact} />}
     <Main style={showCustomHeader ? { paddingTop: 60 } : {}}>
       <Outlet />

@@ -261,7 +261,7 @@ export async function uploadEstimatePdf(
   sessionId: string,
   title: string,
   userId: string,
-  data: string,
+  data?: string,
   estimateId?: string,
   userInfo?: { id: string; name: string; email: string; cellphone: string }
 ) {

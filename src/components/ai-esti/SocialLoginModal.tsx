@@ -343,9 +343,6 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                 if (purpose === 'limitExceeded') {
                   openEstimateModal();
                 }
-                if (purpose === 'limitReached') {
-                  openEstimateModal();
-                }
                 if (purpose === 'consult') {
                   onGoogleLoginSuccess && onGoogleLoginSuccess();
                 }
@@ -540,66 +537,21 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
         onClose={() => setIsInfoModalOpen(false)}
         onSubmit={async (info: IssuerInfo) => {
           // infoModalPurpose를 기준으로 분기 처리
-          // 모든 케이스에서 guestinfo 저장
-          sessionStorage.setItem('guestinfo', JSON.stringify({
-            name: info.name,
-            email: info.email,
-            cellphone: info.cellphone
-          }));
-
           if (infoModalPurpose === 'contact') {
             console.log('[IssuerInfoModal submit] purpose: contact', info);
           } else if (infoModalPurpose === 'download') {
             console.log('[IssuerInfoModal submit] purpose: download', info);
+            // 비회원 정보를 sessionStorage에 저장
+            sessionStorage.setItem('guestInfo', JSON.stringify({
+              name: info.name,
+              email: info.email
+            }));
             props.onDownload && props.onDownload();
           } else if (infoModalPurpose === 'share') {
             console.log('[IssuerInfoModal submit] purpose: share', info);
             props.onShare && props.onShare();
-          } else if (infoModalPurpose === 'limitReached' || infoModalPurpose === 'limitExceeded') {
-            console.log(`[IssuerInfoModal submit] purpose: ${infoModalPurpose}`, info);
-            try {
-              const chatStorage = sessionStorage.getItem('ai-chat-storage');
-              if (chatStorage) {
-                const parsed = JSON.parse(chatStorage);
-                const messages = parsed?.state?.messages || [];
-                // 뒤에서부터 estimateId 있는 메시지 찾기
-                let lastEstimateId = null;
-                for (let i = messages.length - 1; i >= 0; i--) {
-                  if (messages[i]?.estimateId) {
-                    lastEstimateId = messages[i].estimateId;
-                    break;
-                  }
-                }
-                if (lastEstimateId) {
-                  // requestEstimateConsult 호출
-                  const guestUuid = localStorage.getItem('guest-uuid') || '';
-                  const user = {
-                    id: guestUuid, // guest-uuid 사용
-                    name: info.name,
-                    cellphone: info.cellphone,
-                    email: info.email,
-                  };
-                  try {
-                    const { requestEstimateConsult } = await import('@/lib/api/user/userApi');
-                    const consultResponse = await requestEstimateConsult(lastEstimateId, '', '', user);
-                    // API 에러 처리
-                    const { data: consultData } = consultResponse as unknown as { data: any; headers: Headers };
-                    if (consultData && consultData.statusCode !== 200) {
-                      const errorMessage = consultData.error?.customMessage || consultData.error?.message || '상담 요청에 실패했습니다.';
-                      console.error('상담 요청 실패:', errorMessage);
-                      showError('상담 요청에 실패했습니다. 잠시 후 다시 시도해주세요.');
-                    } else if (consultData) {
-                      success('상담 요청이 완료되었습니다!');
-                    }
-                  } catch (error) {
-                    console.error('상담 요청 처리 중 오류:', error);
-                    showError('상담 요청 처리 중 오류가 발생했습니다.');
-                  }
-                }
-              }
-            } catch (e) {
-              console.error('limitReached 상담 요청 처리 오류:', e);
-            }
+          } else if (infoModalPurpose === 'limitReached') {
+            console.log('[IssuerInfoModal submit] purpose: limitReached', info);
           } else if (infoModalPurpose === 'limitExceeded') {
             console.log('[IssuerInfoModal submit] purpose: limitExceeded', info);
             // ai-chat-storage에서 가장 최근 estimateId 추출
