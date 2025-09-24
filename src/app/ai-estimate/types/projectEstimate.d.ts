@@ -16,5 +16,8 @@ export interface SubCategory {
 export interface EstimateItem {
     name: string;
     price: string;
+    fe: string; // 프론트엔드 개발 여부
+    be: string; // 백엔드 개발 여부
+    page_count: number; // 페이지 수
     description: string;
 }

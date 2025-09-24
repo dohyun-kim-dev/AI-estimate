@@ -22,8 +22,9 @@ export interface EstimateItem {
   name: string;
   price: string;
   description: string;
-  front_end_period?: number | string;
-  back_end_period?: number | string;
+  fe: string; // 프론트엔드 개발 여부
+  be: string; // 백엔드 개발 여부
+  page_count: number; // 페이지 수
   item_id?: string; // 서버에서 관리하는 항목 ID (있을 수도 있고 없을 수도 있음)
   is_deleted?: boolean; // 항목 삭제 여부
 }

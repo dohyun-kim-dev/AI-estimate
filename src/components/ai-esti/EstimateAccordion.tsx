@@ -5,6 +5,7 @@ import EstimateAccordionItem from "./EstimateAccordionItem";
 import { patchChatMessages, uploadEstimatePdf } from "@/lib/api/user/userApi";
 import { buildFullEstimateData } from "@/hooks/estimate";
 import { ChatMessage, useChatStore } from "@/store/chatStore";
+import { calculateEstimatedPeriod, updateDesignItemPrices, calculateTotalPages } from "@/utils/estimateCalculator";
 import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
 
 const AccordionWrapper = styled.div`
@@ -154,6 +155,9 @@ type EstimateItem = {
   price: number | string;
   category?: string;
   tags?: string[];
+  fe: string; // 프론트엔드 개발 여부
+  be: string; // 백엔드 개발 여부
+  page_count: number; // 페이지 수
 };
 
 // 🔧 1) 정규화: 제로폭 문자까지 제거
@@ -263,6 +267,7 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
   // 전체 접기/펼치기 상태 관리
   const [allExpanded, setAllExpanded] = useState<boolean>(false);
   const [accordionStates, setAccordionStates] = useState<{[key: string]: boolean}>({});
+  const [isInitialUpdate, setIsInitialUpdate] = useState<boolean>(false);
 
   const handleSubItemSelect = (categoryName: string, subItemId: string) => {
     setSelectedCategory(categoryName);
@@ -304,6 +309,33 @@ useEffect(() => {
   }
 }, []);
 
+// 견적 데이터 변경 시 자동으로 화면설계/UI디자인 가격 업데이트 및 서버 저장
+useEffect(() => {
+  if (!chatSessionId || !userId || isInitialUpdate) return;
+
+  console.log("견적 데이터 변경 감지, 자동 가격 업데이트 시작...");
+  
+  // 화면설계/UI디자인 가격 업데이트
+  const totalPages = calculateTotalPages(data.categories);
+  const updatedEstimate = updateDesignItemPrices(data, totalPages);
+  
+  // 업데이트된 데이터가 기존과 다른 경우에만 저장
+  const hasChanges = JSON.stringify(updatedEstimate) !== JSON.stringify(data);
+  
+  if (hasChanges) {
+    console.log("가격 업데이트 변경사항 발견, 서버 저장 시작...");
+    setEstimate(updatedEstimate);
+    
+    const effectiveEstimateId = estimateId || updatedEstimate.uuid || data.uuid;
+    if (effectiveEstimateId) {
+      setIsInitialUpdate(true);
+      saveToServer(updatedEstimate, effectiveEstimateId);
+      // 1초 후 초기 업데이트 플래그 해제
+      setTimeout(() => setIsInitialUpdate(false), 1000);
+    }
+  }
+}, [data, chatSessionId, userId, estimateId]); // data 변경 시 자동 실행
+
   // 서버 저장 (디바운스) — 바깥에서 최신 est를 직접 넘겨 받음
   const saveToServer = useMemo(
     () =>
@@ -337,12 +369,32 @@ useEffect(() => {
             return;
           }
 
-          const dataStr = buildFullEstimateData(est);
+          // 이미 업데이트된 데이터를 받았는지 확인 (중복 업데이트 방지)
+          const hasDesignPricing = est.categories.some(cat => 
+            cat.sub_categories.some(sub => 
+              sub.items.some(item => 
+                (item.name === '화면설계' || item.name === 'UI/UX디자인'|| item.name === '스토리보드') && 
+                item.page_count > 0
+              )
+            )
+          );
+          
+          let finalEst = est;
+          if (!hasDesignPricing) {
+            console.log("견적서 업로드 전 가격 업데이트 시작...");
+            const totalPages = calculateTotalPages(est.categories);
+            finalEst = updateDesignItemPrices(est, totalPages);
+            console.log("견적서 가격 업데이트 완료, 데이터 빌드 시작...");
+          } else {
+            console.log("이미 업데이트된 가격 데이터 사용, 데이터 빌드 시작...");
+          }
+          
+          const dataStr = buildFullEstimateData(finalEst);
           console.log("견적서 데이터 빌드 완료, 업로드 시작...");
           
           const uploadResponse = await uploadEstimatePdf(
             chatSessionId,
-            title || est.project_name || "견적서",
+            title || finalEst.project_name || "견적서",
             userId,
             dataStr,
             effectiveEstimateId // ✅ 수정이라면 반드시 포함
@@ -352,7 +404,7 @@ useEffect(() => {
             console.log("견적서 업로드 성공, 채팅 메시지 업데이트 시작...");
             
             // 견적서 업로드 성공 시, 채팅 메시지도 함께 수정
-            const updatedReply = `<script type="application/json" id="invoiceData">${JSON.stringify(est)}</script>`;
+            const updatedReply = `<script type="application/json" id="invoiceData">${JSON.stringify(finalEst)}</script>`;
             await patchChatMessages(messageId, {
               type: "text",
               value: updatedReply,
@@ -400,6 +452,15 @@ useEffect(() => {
             });
           });
         });
+        
+        // ⭐️ 아이템 삭제/복구 후 총 페이지 수 재계산 및 화면설계/UI디자인 가격 업데이트
+        console.log("아이템 변경 후 화면설계/UI디자인 가격 재계산 시작...");
+        const newTotalPages = calculateTotalPages(next.categories);
+        const finalUpdatedEst = updateDesignItemPrices(next, newTotalPages);
+        console.log(`페이지 수 변경: ${newTotalPages}페이지 → 화면설계/UI디자인 가격 업데이트 완료`);
+        
+        // next를 최종 업데이트된 데이터로 교체
+        Object.assign(next, finalUpdatedEst);
         
         // ✅ 견적서 ID 찾기 - 우선순위:
         // 1. 전달받은 estimateId

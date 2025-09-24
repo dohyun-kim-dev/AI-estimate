@@ -32,6 +32,9 @@ export interface EstimateItem {
     name: string;
     price: string;
     description: string;
+    fe: string; // 프론트엔드 개발 여부
+    be: string; // 백엔드 개발 여부
+    page_count: number; // 페이지 수
     is_deleted?: boolean;
 }
 

@@ -6,6 +6,7 @@ import BottomInput from '@/components/ai-esti/BottomInput';
 import AiResponseMessage from '@/components/ai-esti/AiResponseMessage';
 import EstimateCard from '@/components/ai-esti/EstimateCard';
 import EstimateAccordion from '@/components/ai-esti/EstimateAccordion';
+import { calculateEstimatedPeriod } from '@/utils/estimateCalculator';
 import DetailModal from '@/components/ai-esti/DetailModal';
 import EstimateActionButtons from '@/components/ai-esti/EstimateActionButtons';
 import PeriodSlider from '@/components/ai-esti/PeriodSlider';
@@ -488,12 +489,28 @@ export const AiMessageContent: React.FC<{ content: string; chatSessionId?: strin
 const userId = getUserId() || '';
 
 
-  const { total_amount: basePrice, total_period: basePeriod } = useMemo(() => {
+  const { total_amount: basePrice, total_period: basePeriod, calculatedPeriod, updatedEstimateData } = useMemo(() => {
   if (!estimateData || !Array.isArray(estimateData.categories)) {
-    return { total_amount: 0, total_period: 0 };
+    return { total_amount: 0, total_period: 0, calculatedPeriod: null, updatedEstimateData: null };
   }
 
-  const total_amount = estimateData.categories.reduce((sum, category) => {
+  // 새로운 계산 로직 사용 (화면설계/UI디자인 가격 자동 업데이트 포함)
+  const calculationResult = calculateEstimatedPeriod(estimateData);
+  
+  // 디버깅용 로그
+  console.log('🔍 계산 결과:', {
+    totalPages: calculationResult.totalPages,
+    planningDesignWeeks: calculationResult.planningDesignWeeks,
+    totalFeDays: calculationResult.totalFeDays,
+    totalBeDays: calculationResult.totalBeDays,
+    pureDevelopmentDays: calculationResult.pureDevelopmentDays,
+    developmentWeeks: calculationResult.developmentWeeks,
+    finalWeeks: calculationResult.finalWeeks,
+    estimatedPeriodText: calculationResult.estimatedPeriodText
+  });
+
+  // 업데이트된 견적 데이터 사용 (화면설계/UI디자인 가격이 자동 계산됨)
+  const total_amount = calculationResult.updatedEstimate.categories.reduce((sum, category) => {
     if (!category.sub_categories || !Array.isArray(category.sub_categories)) {
       return sum;
     }
@@ -528,8 +545,10 @@ const userId = getUserId() || '';
         const subPeriod = subCategory.items.reduce((itemSum, item) => {
           // 삭제된 항목은 기간 합산에서 제외
           if (item.is_deleted) return itemSum;
-          const frontPeriod = typeof item.front_end_period === 'string' ? parseFloat(item.front_end_period) : (item.front_end_period || 0);
-          const backPeriod = typeof item.back_end_period === 'string' ? parseFloat(item.back_end_period) : (item.back_end_period || 0);
+          const feMatch = item.fe?.match(/(\d+)/);
+          const beMatch = item.be?.match(/(\d+)/);
+          const frontPeriod = feMatch ? parseFloat(feMatch[1]) : 0;
+          const backPeriod = beMatch ? parseFloat(beMatch[1]) : 0;
           return itemSum + (isNaN(frontPeriod) ? 0 : frontPeriod) + (isNaN(backPeriod) ? 0 : backPeriod);
         }, 0);
         return subSum + subPeriod;
@@ -537,10 +556,12 @@ const userId = getUserId() || '';
       return sum + categoryPeriod;
     }, 0);
 
-    return { total_amount, total_period };
+    return { total_amount, total_period, calculatedPeriod: calculationResult, updatedEstimateData: calculationResult.updatedEstimate };
   }, [estimateData]);
 
-  const [projectPeriod, setProjectPeriod] = useState(basePeriod);
+  // 계산된 기간이 있으면 사용, 없으면 기존 basePeriod 사용
+  const effectiveBasePeriod = calculatedPeriod?.finalWeeks || basePeriod;
+  const [projectPeriod, setProjectPeriod] = useState(effectiveBasePeriod);
   const [discountedPrice, setDiscountedPrice] = useState(basePrice);
 
   // 로딩 텍스트 가져오기 함수
@@ -558,11 +579,13 @@ const userId = getUserId() || '';
   };
 
   useEffect(() => {
-    if (basePeriod > 0) {
-      setProjectPeriod(basePeriod);
+    // 계산된 기간이 있으면 사용, 없으면 basePeriod 사용
+    const newBasePeriod = calculatedPeriod?.finalWeeks || basePeriod;
+    if (newBasePeriod > 0) {
+      setProjectPeriod(newBasePeriod);
     }
     setDiscountedPrice(basePrice);
-  }, [basePeriod, basePrice]);
+  }, [basePeriod, basePrice, calculatedPeriod]);
 
   useEffect(() => {
     // 💡 `estimateData`가 null이거나 undefined일 경우 바로 종료
@@ -595,9 +618,11 @@ const userId = getUserId() || '';
     const discountableBase = basePrice - nonDiscountableSum;
 
     let discountPercentage = 0;
-    const maxPeriod = basePeriod + 8;
-    const periodDiff = projectPeriod - basePeriod;
-    const maxPeriodDiff = maxPeriod - basePeriod;
+    // 계산된 기간이 있으면 사용, 없으면 basePeriod 사용
+    const effectiveBasePeriod = calculatedPeriod?.finalWeeks || basePeriod;
+    const maxPeriod = effectiveBasePeriod + 8;
+    const periodDiff = projectPeriod - effectiveBasePeriod;
+    const maxPeriodDiff = maxPeriod - effectiveBasePeriod;
 
     if (periodDiff > 0 && maxPeriodDiff > 0) {
       // 슬라이더 위치에 비례하여 0%부터 최대 10%까지 할인율 적용
@@ -613,15 +638,18 @@ const userId = getUserId() || '';
     // EstimateItem 타입으로 변환
     const estimateItem: EstimateItem = {
       id: item.name, // 임시로 name을 id로 사용
+      name: item.name,
+      price: item.price,
       category: '', // 빈 문자열로 설정
       task: item.name,
       description: item.description,
       people: 1, // 기본값
       days: 1, // 기본값
       cost: typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : parseFloat(item.price),
-      // const: item.price,
-      front_end_period: 0, // 기본값
-      back_end_period: 0 // 기본값
+      fe: '0일', // 기본값
+      be: '0일', // 기본값
+      page_count: 0, // 기본값
+      is_deleted: false
     };
     setSelectedItem(estimateItem);
   };
@@ -710,9 +738,10 @@ const userId = getUserId() || '';
           <TopSection>
             <MainContent>
               <EstimateCard 
-                estimate={estimateData} 
+                estimate={updatedEstimateData || estimateData} 
                 discountedPrice={discountedPrice || 0} 
-                projectPeriod={projectPeriod || 0}   
+                projectPeriod={projectPeriod || 0}
+                calculatedPeriod={calculatedPeriod}
               />
               <DetailsToggle
                 onClick={() => setIsDetailsVisible(!isDetailsVisible)}
@@ -724,8 +753,8 @@ const userId = getUserId() || '';
                 }
               </DetailsToggle>
               <PeriodSlider 
-                value={Math.max(0, (projectPeriod || 0) - (basePeriod || 0))}  // 0~8
-                onChange={setProjectPeriod}
+                value={Math.max(0, (projectPeriod || 0) - (effectiveBasePeriod || 0))}  // 0~8
+                onChange={(sliderValue) => setProjectPeriod((effectiveBasePeriod || 0) + sliderValue)}
                 $isvisible={isDetailsVisible}
                 min={0}     
                 max={8}     
@@ -755,20 +784,22 @@ const userId = getUserId() || '';
                   discountableBase = basePrice - nonDiscountableSum;
                 }
                 let discountPercentage = 0;
-                const maxPeriod = basePeriod + 8;
-                const periodDiff = projectPeriod - basePeriod;
-                const maxPeriodDiff = maxPeriod - basePeriod;
+                // 계산된 기간이 있으면 사용, 없으면 basePeriod 사용
+                const effectiveBasePeriod = calculatedPeriod?.finalWeeks || basePeriod;
+                const maxPeriod = effectiveBasePeriod + 8;
+                const periodDiff = projectPeriod - effectiveBasePeriod;
+                const maxPeriodDiff = maxPeriod - effectiveBasePeriod;
                 if (periodDiff > 0 && maxPeriodDiff > 0) {
                   discountPercentage = (periodDiff / maxPeriodDiff) * 0.1;
                 }
                 return (
                   <AnimatedContainer $isvisible={isDetailsVisible}>
                     <EstimateAccordion
-                      data={estimateData}
+                      data={updatedEstimateData || estimateData}
                       onItemClick={handleItemClick}
                       estimateId={estimateId}
                       userId={userId}
-                      title={estimateData?.project_name || '견적서'}
+                      title={(updatedEstimateData || estimateData)?.project_name || '견적서'}
                       discountRate={discountPercentage}
                     />
                   </AnimatedContainer>
@@ -783,13 +814,13 @@ const userId = getUserId() || '';
                 onSubmit={(action) => {
                   // 견적 데이터를 포함해서 AI에게 요청
                   const aiPrompt = estimateData 
-                    ? `${action}\n\n[현재 견적 정보]\n프로젝트명: ${estimateData.project_name}\n총 금액: ${estimateData.categories?.reduce((sum, cat) => 
+                    ? `${action}\n아래 견적을 기반으로 ${action}를 진행해주세요.\n[현재 견적 정보]\n프로젝트명: ${estimateData.project_name}\n총 금액: ${estimateData.categories?.reduce((sum, cat) => 
                         sum + cat.sub_categories?.reduce((subSum, sub) => 
                           subSum + sub.items?.reduce((itemSum, item) => 
                             itemSum + (item.is_deleted ? 0 : parseFloat(item.price?.replace(/,/g, '') || '0')), 0) || 0, 0) || 0, 0)?.toLocaleString()}원\n\n[세부 항목]\n${estimateData.categories?.map(cat => 
                       `${cat.category_name}:\n${cat.sub_categories?.map(sub => 
                         `  ${sub.sub_category_name}:\n${sub.items?.filter(item => !item.is_deleted).map(item => 
-                          `    - ${item.name}: ${item.price}원 (${item.front_end_period || 0}주/${item.back_end_period || 0}주)`).join('\n')}`).join('\n')}`).join('\n\n')}\n\n위 견적을 기반으로 ${action}를 진행해주세요.`
+                          `    - ${item.name}: ${item.price}원 (FE: ${item.fe || '0일'}/BE: ${item.be || '0일'})`).join('\n')}`).join('\n')}`).join('\n\n')}\n\n`
                     : action;
                   
                   // 사용자 메시지는 간단하게 표시

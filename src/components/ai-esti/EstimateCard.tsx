@@ -117,9 +117,19 @@ interface EstimateCardProps {
   estimate: ProjectEstimate;
   discountedPrice?: number;
   projectPeriod?: number;
+  calculatedPeriod?: {
+    totalPages: number;
+    planningDesignWeeks: number;
+    totalFeDays: number;
+    totalBeDays: number;
+    pureDevelopmentDays: number;
+    developmentWeeks: number;
+    finalWeeks: number;
+    estimatedPeriodText: string;
+  } | null;
 }
 
-const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, projectPeriod = 0}) => {
+const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, projectPeriod = 0, calculatedPeriod }) => {
   const [openShare, setOpenShare] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [isSocialLoginModalOpen, setIsSocialLoginModalOpen] = useState(false);
@@ -546,12 +556,10 @@ https://heredotcorp.com
     }
   };
 
-  // 기간 안전 표시
-  const estimatedPeriod = parseInt(estimate.estimated_period) || 0;
-  const safeProjectPeriod = projectPeriod || 0;
-  const weekValue = estimatedPeriod + safeProjectPeriod;
+  // 기간 안전 표시 - projectPeriod(슬라이더로 조정된 기간) 사용
+  const finalWeekValue = projectPeriod || (calculatedPeriod?.finalWeeks || parseInt(estimate.estimated_period) || 0);
   const weeksPerMonth = 4.345;
-  const monthValue = Math.ceil(weekValue / weeksPerMonth);
+  const monthValue = Math.ceil(finalWeekValue / weeksPerMonth);
   const displayPeriod = `(약 ${monthValue}개월)`;
 
   return (
@@ -582,7 +590,7 @@ https://heredotcorp.com
         </Price>
         <Period>
           <span style={{ marginRight: '4px' }}>
-            {(parseInt(estimate.estimated_period) || 0) + (projectPeriod || 0)}주
+            {projectPeriod || (calculatedPeriod?.finalWeeks || parseInt(estimate.estimated_period) || 0)}주
           </span>
           <span className="p">{displayPeriod}</span>
         </Period>
