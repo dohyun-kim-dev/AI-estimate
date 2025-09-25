@@ -360,3 +360,29 @@ export function calculateEstimatedPeriod(estimate: ProjectEstimate): {
     };
   }
 }
+
+/**
+ * 실제 총 금액 계산 (삭제되지 않은 기능들의 가격 합산)
+ */
+export function calculateTotalAmount(estimate: ProjectEstimate): number {
+  if (!estimate || !Array.isArray(estimate.categories)) {
+    return 0;
+  }
+
+  let totalAmount = 0;
+
+  estimate.categories.forEach(category => {
+    category.sub_categories.forEach(subCategory => {
+      subCategory.items.forEach(item => {
+        if (!item.is_deleted) {
+          const price = typeof item.price === 'string' 
+            ? parseFloat(item.price.replace(/,/g, '')) 
+            : item.price;
+          totalAmount += (price || 0);
+        }
+      });
+    });
+  });
+
+  return totalAmount;
+}

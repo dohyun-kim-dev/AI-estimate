@@ -319,7 +319,7 @@ const CustomerMngPage: React.FC = () => {
   return (
     <>
       <ToastContainer position="top-center" autoClose={3000} theme="light" style={{ zIndex: 10000 }} />
-
+<div style={{ height: '100vw' }} > {/* 상단 여백 */}
       <CmsResponsiveContainer<Company>
         ref={listRef}
         title="고객사 관리"
@@ -407,6 +407,7 @@ const CustomerMngPage: React.FC = () => {
           setAddress: () => {},
         }}
       />
+      </div>
     </>
   );
 };

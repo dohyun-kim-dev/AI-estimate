@@ -182,13 +182,27 @@ export default function MyEstimatePage() {
 
   // 날짜별 그룹화 로직
   const groupedEstimates = estimates.reduce((acc, estimate) => {
-    const date = estimate.createAt.split(' ')[0];
-    if (!acc[date]) {
-      acc[date] = [];
+  // createAt이 없는 경우 오늘 날짜로 처리
+  let date;
+  try {
+    if (estimate.createAt && typeof estimate.createAt === 'string') {
+      date = estimate.createAt.split(' ')[0];
+    } else {
+      // createAt이 없으면 오늘 날짜 사용
+      date = new Date().toISOString().slice(0, 10);
     }
-    acc[date].push(estimate);
-    return acc;
-  }, {} as Record<string, EstimateHistory[]>);
+  } catch (error) {
+    // split 에러 등이 발생하면 오늘 날짜 사용
+    console.warn('createAt 파싱 오류:', error, estimate);
+    date = new Date().toISOString().slice(0, 10);
+  }
+  
+  if (!acc[date]) {
+    acc[date] = [];
+  }
+  acc[date].push(estimate);
+  return acc;
+}, {} as Record<string, EstimateHistory[]>);
 
   const sortedDates = Object.keys(groupedEstimates).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
 
@@ -222,7 +236,7 @@ export default function MyEstimatePage() {
   }
 
 return (
-  <Container>
+<Container>
     {sortedDates.map(date => (
       <React.Fragment key={date}>
         <GroupTitle>{getDisplayTitle(date)}</GroupTitle>
@@ -232,21 +246,33 @@ return (
           const authData = authStorage ? JSON.parse(authStorage) : null;
           const user = authData?.state?.user;
           const userId = user ? user._id : localStorage.getItem('guest-uuid');
-  
+
           const downloadUrl = `${window.location.origin}${getDownloadEstimateUrlWithUserInfo(
             companyCode,
-            estimate.file,
+            estimate.file || '',
           )}`;
-  
-          // 👇 MyEstimateCard에 고유한 key를 추가했습니다.
+
+          // createAt 안전 처리 - 오늘 날짜를 기본값으로 사용
+          let createdDate;
+          try {
+            if (estimate.createAt && typeof estimate.createAt === 'string') {
+              createdDate = estimate.createAt.split(' ')[0];
+            } else {
+              createdDate = new Date().toISOString().slice(0, 10);
+            }
+          } catch (error) {
+            console.warn('createAt 파싱 오류:', error, estimate);
+            createdDate = new Date().toISOString().slice(0, 10);
+          }
+
           return (
             <MyEstimateCard
-              key={`${estimate._id}-${index}`} 
+              key={`${estimate._id || index}-${index}`} 
               estimate={{
-                _id: estimate._id,
-                project_name: estimate.title,
-                created_at: estimate.createAt.split(' ')[0],
-                file: estimate.file,
+                _id: estimate._id || `temp-${index}`,
+                project_name: estimate.title || '제목 없음',
+                created_at: createdDate,
+                file: estimate.file || '',
               }}
               downloadUrl={downloadUrl}
             />

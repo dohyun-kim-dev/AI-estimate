@@ -256,30 +256,36 @@ export async function fetchEstimateById(id: string) {
     isCallPageLoader: true,
   });
 }
-
 export async function uploadEstimatePdf(
   sessionId: string,
   title: string,
   userId: string,
   data?: string,
   estimateId?: string,
-  userInfo?: { id: string; name: string; email: string; cellphone: string }
+  userInfo?: { id: string; name: string; email: string; cellphone: string },
+  amount?: number
 ) {
   const companyCode = resolveCompanyCode();
-  // userInfo를 중첩 객체로, id 필드 항상 포함
+
   const payload: Record<string, any> = {
-    id: estimateId || userId, // estimateId가 있으면 업데이트, 없으면 userId(비회원 uuid)
+    id: estimateId || userId,
     user: userId,
     chatSession: sessionId,
     title,
     data,
     companyCode,
-    userInfo: {
-      name: userInfo?.name || '',
-      email: userInfo?.email || '',
-      cellphone: userInfo?.cellphone || '',
-    },
+    amount,
   };
+
+  // userInfo가 유효한 값일 경우에만 payload에 추가합니다.
+  if (userInfo && Object.values(userInfo).some(value => value)) {
+    payload.userInfo = {
+      name: userInfo.name || '',
+      email: userInfo.email || '',
+      cellphone: userInfo.cellphone || '',
+    };
+  }
+
   console.log("uploadEstimatePdf payload:", payload);
   return callUserApi({
     title: '견적 저장',

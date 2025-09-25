@@ -405,7 +405,8 @@ export default function AILayout() {
               name: guestInfo.name || '',
               email: guestInfo.email || '',
               cellphone: guestInfo.cellphone || ''
-            }
+            },
+            undefined // amount - 여기서는 견적서 데이터에 접근할 수 없으므로 undefined
           );
           
           console.log('✅ 비회원 채팅 공유 시 견적서 업로드 완료');

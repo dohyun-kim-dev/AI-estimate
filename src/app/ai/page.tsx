@@ -1009,6 +1009,7 @@ useEffect(() => {
       console.log('AI 프롬프트 API 응답:', aiPromptsResponse);
 
       if (aiPromptsResponse && aiPromptsResponse.statusCode === 200 && aiPromptsResponse.data.length > 0) {
+        ('AI 프롬프트 데이터를 불러왔습니다.');
         const promptsData = aiPromptsResponse.data as any[];
         const greetingItem = promptsData.find(item => item.name === 'GREETING');
         if (greetingItem && greetingItem.content) {
@@ -1024,6 +1025,7 @@ useEffect(() => {
         ].join('\n\n');
         
         usePromptStore.getState().setAiPrompts(aiPromptsContent);
+        console.log('AI 프롬프트 데이터를 불러왔습니다.',aiPromptsContent);
       } else {
         console.warn('AI 프롬프트 데이터를 불러오는데 실패했습니다.');
       }

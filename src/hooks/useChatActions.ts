@@ -12,6 +12,7 @@ import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import { v4 as uuidv4 } from 'uuid';
 import { ensureEstimateUuid, buildFullEstimateData, extractIntroFromReply } from '@/hooks/estimate';
 import { uploadEstimatePdf } from '@/lib/api/user/userApi';
+import { calculateTotalAmount } from '../utils/estimateCalculator';
 
 // 견적서 데이터를 추출하는 유틸리티 함수
 const extractEstimateData = (content: string): ProjectEstimate | null => {
@@ -617,62 +618,68 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
       // 견적 JSON 감지 및 저장 로직은 reply 전체가 온 뒤 기존대로 처리
       const estimateData = extractEstimateData(reply);
-      console.log('extractEstimateData 직후 추출된 견적 데이터:', estimateData); 
-      
-      let finalReply = reply;
-      let estimateId = null;
-      
-      if (estimateData) {
-        try {
-          const invoiceTitle = estimateData.project_name || '새로운 견적서';
-          // userId가 없으면 guest-uuid 사용
-          let effectiveUserId = userId;
-          if (!effectiveUserId) {
-            effectiveUserId = localStorage.getItem('guest-uuid') || undefined;
-          }
-          ensureEstimateUuid(estimateData);
-          console.log('견적 데이터 저장 시작', estimateData);
-          estimateId = estimateData.uuid;
-          const dataStr = buildFullEstimateData(reply, estimateId);
-          console.log('견적 데이터 조립 완료, 업로드 시작', { estimateId, dataStr });
-          if (abortSignal?.aborted) return;
+console.log('extractEstimateData 직후 추출된 견적 데이터:', estimateData); 
 
-          // sessionStorage에서 guestinfo 가져오기
-          let userInfo = undefined;
-          const guestInfoRaw = sessionStorage.getItem('guestinfo');
-          if (guestInfoRaw) {
-            try {
-              const guestInfo = JSON.parse(guestInfoRaw);
-              userInfo = {
-                name: guestInfo.name || '',
-                email: guestInfo.email || '',
-                cellphone: guestInfo.cellphone || ''
-              };
-            } catch {}
-          }
+let finalReply = reply;
+let estimateId = null;
 
-          const uploadBody = {
-            sessionId: currentSessionId,
-            invoiceTitle,
-            userId: effectiveUserId,
-            dataStr,
-            estimateId,
-            ...(userInfo ? { userInfo } : {})
-          };
+if (estimateData) {
+  try {
+    const invoiceTitle = estimateData.project_name || '새로운 견적서';
+    // userId가 없으면 guest-uuid 사용
+    let effectiveUserId = userId;
+    if (!effectiveUserId) {
+      effectiveUserId = localStorage.getItem('guest-uuid') || undefined;
+    }
+    ensureEstimateUuid(estimateData);
+    console.log('견적 데이터 저장 시작', estimateData);
+    estimateId = estimateData.uuid;
+    const dataStr = buildFullEstimateData(reply, estimateId);
+    console.log('견적 데이터 조립 완료, 업로드 시작', { estimateId, dataStr });
+    if (abortSignal?.aborted) return;
 
-          const uploadResponse = await uploadEstimatePdf(
-            uploadBody.sessionId,
-            uploadBody.invoiceTitle,
-            uploadBody.userId,
-            uploadBody.dataStr,
-            uploadBody.estimateId,
-            uploadBody.userInfo // 옵셔널
-          );
+    // sessionStorage에서 guestinfo 가져오기
+    let userInfo = undefined;
+    const guestInfoRaw = sessionStorage.getItem('guestinfo');
+    if (guestInfoRaw) {
+      try {
+        const guestInfo = JSON.parse(guestInfoRaw);
+        userInfo = {
+          name: guestInfo.name || '',
+          email: guestInfo.email || '',
+          cellphone: guestInfo.cellphone || ''
+        };
+      } catch {}
+    }
 
-          if (abortSignal?.aborted) return;
-          if (uploadResponse?.statusCode !== 200) {
-            throw new Error(uploadResponse?.error?.message || '견적 저장 실패');
-          }
+    // calculateTotalAmount 함수를 사용하여 실제 총 금액 계산
+    const totalAmount = calculateTotalAmount(estimateData);
+    console.log('계산된 실제 총 금액:', totalAmount);
+
+    const uploadBody = {
+      sessionId: currentSessionId,
+      invoiceTitle,
+      userId: effectiveUserId,
+      dataStr,
+      estimateId,
+      amount: totalAmount,
+      ...(userInfo ? { userInfo } : {})
+    };
+
+    const uploadResponse = await uploadEstimatePdf(
+      uploadBody.sessionId,
+      uploadBody.invoiceTitle,
+      uploadBody.userId,
+      uploadBody.dataStr,
+      uploadBody.estimateId,
+      uploadBody.userInfo, // 옵셔널
+      uploadBody.amount // 실제 계산된 총 금액
+    );
+
+    if (abortSignal?.aborted) return;
+    if (uploadResponse?.statusCode !== 200) {
+      throw new Error(uploadResponse?.error?.message || '견적 저장 실패');
+    }
           finalReply = dataStr;
         } catch (pdfError) {
           error(`견적 저장 실패: ${(pdfError as Error).message}`);

@@ -347,7 +347,22 @@ useEffect(() => {
             userId,
             estUuid: est.uuid
           });
-          
+          //chatSessionId 없으면 로컬에서 빼오고 로컬에도 없으면 세션스토리 chatSessionId 에서 뺴오게 해줘
+          if (!chatSessionId) {
+            const localChatSessionId = localStorage.getItem('chatSessionId');
+            if (localChatSessionId) {
+              console.log("localStorage에서 chatSessionId 가져옴:", localChatSessionId);
+              setChatSessionId(localChatSessionId);
+            } else {
+              const sessionChatSessionId = sessionStorage.getItem('chatSessionId');
+              if (sessionChatSessionId) {
+                console.log("sessionStorage에서 chatSessionId 가져옴:", sessionChatSessionId);
+                setChatSessionId(sessionChatSessionId);
+              }
+            }
+            console.warn("[save] chatSessionId 없음 — 업데이트 생략");
+          }
+
           // 💡 id 없으면 업데이트 못 하므로 여기서 바로 가드
           if (!effectiveEstimateId) {
             console.warn("[save] estimateId 없음 — 업데이트 생략");
@@ -392,12 +407,31 @@ useEffect(() => {
           const dataStr = buildFullEstimateData(finalEst);
           console.log("견적서 데이터 빌드 완료, 업로드 시작...");
           
+          // 실제 기능들을 계산한 총 금액 계산 (삭제된 기능 제외)
+          let totalAmount = 0;
+          if (finalEst && Array.isArray(finalEst.categories)) {
+            finalEst.categories.forEach(category => {
+              category.sub_categories?.forEach(subCategory => {
+                subCategory.items?.forEach(item => {
+                  if (!item.is_deleted) {
+                    const price = typeof item.price === 'string' 
+                      ? parseFloat(item.price.replace(/,/g, '')) 
+                      : item.price;
+                    totalAmount += (price || 0);
+                  }
+                });
+              });
+            });
+          }
+          
           const uploadResponse = await uploadEstimatePdf(
             chatSessionId,
             title || finalEst.project_name || "견적서",
             userId,
             dataStr,
-            effectiveEstimateId // ✅ 수정이라면 반드시 포함
+            effectiveEstimateId, // ✅ 수정이라면 반드시 포함
+            undefined, // userInfo
+            totalAmount // 총 금액
           );
 
           if (uploadResponse?.statusCode === 200) {

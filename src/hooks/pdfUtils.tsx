@@ -4,6 +4,7 @@ import { uploadEstimatePdf } from '@/lib/api/user/userApi';
 // 공통: AI 전문 생성 유틸 — 아래 3) 참고
 import { buildFullEstimateData } from '@/hooks/buildFullEstimateData';
 import { extractInvoiceJSON } from './estimate';
+import { calculateTotalAmount } from '@/utils/estimateCalculator';
 
 type PDFResult =
   | { blobUrl: string; pdfBlob: Blob } // 미리보기용
@@ -43,12 +44,17 @@ export async function generatePDF(
       // AI 전문(텍스트 + <script id="invoiceData">JSON</script>)을 문자열로 구성
       const data = buildFullEstimateData(options.content || estimate);
 
+      // 실제 기능들을 계산한 총 금액 계산 (삭제된 기능 제외)
+      const totalAmount = calculateTotalAmount(estimate);
+
       const res = await uploadEstimatePdf(
         sessionId,
         title || '견적서',
         userId,
         data,
-        estimateId // 업데이트면 전달
+        estimateId, // 업데이트면 전달
+        undefined, // userInfo
+        totalAmount // 총 금액
       );
 
       if (res?.statusCode === 200) {

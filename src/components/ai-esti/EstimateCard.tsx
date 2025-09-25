@@ -295,7 +295,8 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
               name: guestInfo.name || '',
               email: guestInfo.email || '',
               cellphone: guestInfo.cellphone || ''
-            }
+            },
+            discountedPrice // amount 파라미터로 총합계 금액 전달
           );
           
           console.log('✅ 비회원 견적서 업로드 완료');
