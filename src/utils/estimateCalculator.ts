@@ -153,12 +153,13 @@ export function calculateTotalPages(categories: Category[]): number {
       subCategory.items.forEach(item => {
         if (!item.is_deleted) {
           // 화면설계, UI/UX디자인은 페이지 수 계산에서 제외
-          const isDesignItem = item.name === '화면설계' || 
-                              item.name === 'UI/UX디자인' || 
-                              item.name === '화면 설계' || 
-                              item.name === 'UI/UX 디자인' ||
-                               item.name === '스토리보드' ||
-                              item.name === '화면디자인';
+          const isDesignItem =  item.name === '화면설계' ||
+                              item.name.includes('화면설계')||
+                              item.name.includes('화면 설계')||
+                              item.name.includes('UI/UX디자인')||
+                              item.name.includes('UI/UX 디자인')||
+                              item.name.includes('스토리보드') ||
+                              item.name.includes('화면디자인');
           
           if (!isDesignItem) {
             const pageCount = item.page_count || 0;
@@ -192,13 +193,14 @@ export function updateDesignItemPrices(estimate: ProjectEstimate, totalPages: nu
     category.sub_categories.forEach(subCategory => {
       subCategory.items.forEach(item => {
         if (!item.is_deleted) {
-          const isDesignItem = item.name === '화면설계' || 
-                              item.name === 'UI/UX디자인' || 
-                              item.name === '화면 설계' || 
-                              item.name === 'UI/UX 디자인' ||
-                               item.name === '스토리보드' ||
-                              item.name === '화면디자인';
-          
+          const isDesignItem = item.name === '화면설계' ||
+                              item.name.includes('화면설계')||
+                              item.name.includes('화면 설계')||
+                              item.name.includes('UI/UX디자인')||
+                              item.name.includes('UI/UX 디자인')||
+                              item.name.includes('스토리보드') ||
+                              item.name.includes('화면디자인');
+
           if (isDesignItem) {
             const newPrice = totalPages * 150000; // 15만원
             const formattedPrice = newPrice.toLocaleString();

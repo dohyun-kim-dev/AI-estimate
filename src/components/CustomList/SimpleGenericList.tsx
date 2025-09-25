@@ -24,7 +24,7 @@ const RightControls = styled.div`
   display: flex;
   justify-content: end;
   margin: 24px 0;
-
+  color: '#000';
   align-items: center;
   flex-wrap: wrap;
   gap: 20px;
@@ -38,14 +38,12 @@ const PaginationControls = styled.div`
 
 const Cnt = styled.div<{ $themeMode: ThemeMode }>`
   font-size: 14px;
-  color: '#fff';
   white-space: nowrap;
 `;
 
 const PageBox = styled.div<{ $themeMode: ThemeMode }>`
   margin: 0 5px;
   font-size: 14px;
-  color: '#fff';
   white-space: nowrap;
 `;
 
@@ -73,7 +71,6 @@ const CMSTitle = styled.h1<{ $themeMode: ThemeMode }>`
   font-weight: bold;
   margin: 0;
   margin-bottom: 0;
-  color: '#fff';
 `;
 
 const TabsWrapper = styled.div`
@@ -89,7 +86,7 @@ const Container = styled.div<{ $themeMode: ThemeMode }>`
   /* background-color: ${({ $themeMode }) =>
     $themeMode === "light" ? THEME_COLORS.light.background : THEME_COLORS.dark.background}; */
   box-sizing: border-box;
-  color: '#fff';
+  color: '#000';
 `;
 
 export interface FetchParams {
@@ -269,7 +266,7 @@ const NavButton = styled.button<{ $themeMode: ThemeMode }>`
   border: 1px solid
     ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.borderColor : THEME_COLORS.dark.borderColor)};
   background-color: ${({ $themeMode }) => ($themeMode === "light" ? "#FFFFFF" : THEME_COLORS.dark.secondary)};
-  color: ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.text : THEME_COLORS.dark.text)};
+  color:#000;
   border-radius: 4px;
   font-size: 16px;
   font-weight: bold;

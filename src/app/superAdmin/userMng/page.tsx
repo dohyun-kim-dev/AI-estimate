@@ -87,8 +87,7 @@ const PopupFooter = styled.div`
 `;
 
 const Title = styled.h2`
-  margin: 10px 0;
-  padding: 0;
+  padding: 20px;
   font-size: 16px;
   font-weight: 500;
   color: ${AppColors.onSurface};
@@ -144,23 +143,23 @@ const UserInfoSection = styled.div`
   display: flex;
   align-items: flex-start;
   padding: 24px;
-  background-color: #2C2E3C; // 이미지 배경색에 맞춰 조정
+  // background-color: #2C2E3C; // 이미지 배경색에 맞춰 조정
   border-radius: 8px;
   margin-bottom: 24px;
 `;
 
 const ProfileImage = styled.img`
-  width: 96px;
-  height: 96px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   object-fit: cover;
-  margin-right: 100px;
+  margin-right: 50px;
 `;
 
 const UserDetails = styled.div`
   display: flex;
   flex-direction: column;
-  color: white;
+  color: #000;
   font-size: 16px;
   flex-grow: 1;
 `;
@@ -169,6 +168,7 @@ const DetailItem = styled.div`
   display: flex;
   align-items: center;
   margin-bottom: 8px;
+  font-size: 14px;
 `;
 
 const DetailIcon = styled.div`
@@ -178,13 +178,13 @@ const DetailIcon = styled.div`
   width: 20px;
   height: 20px;
   margin-right: 8px;
-  color: #fff;
+  color: #AAAAAA;
 `;
 
 const NameText = styled.div`
-  font-weight: bold;
-  font-size: 20px;
-  margin-bottom: 8px;
+  // font-weight: bold;
+  font-size: 14px;
+  // margin-bottom: 8px;
 `;
 
 const MemoField = styled(TextField)`
@@ -544,7 +544,7 @@ const UserMngPage: React.FC = () => {
     >
       <FormContainer>
         {/* 사용자 정보 섹션 */}
-        <Title>사용자 정보</Title>
+        <Title>회원 정보</Title>
         
         <UserInfoSection>
           <ProfileImage src={selectedUser?.profileImage || "/ai-estimate/no_profile.png"} alt="Profile" />
@@ -570,13 +570,13 @@ const UserMngPage: React.FC = () => {
             {selectedUser?.usingService && selectedUser.usingService.length > 0 && (
               <DetailItem>
                 <DetailIcon><i className="fas fa-building"></i></DetailIcon>
-                <span>사용 서비스: {selectedUser.usingService.join(', ')}</span>
+                {/* <span>사용 서비스: {selectedUser.usingService.join(', ')}</span> */}
               </DetailItem>
             )}
           </UserDetails>
         </UserInfoSection>
 
-        <Title>연락처 정보</Title>
+        <Title>정보 수정</Title>
 
         <FormSection>
           <CommonTextField

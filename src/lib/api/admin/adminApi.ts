@@ -13,6 +13,11 @@ import {
   AllUnitPricesParams,
   CompanyGetListParams,
   UnitPriceUploadParams,
+  UserGetListParams,
+  AIPromptGetListParams,
+  AIPromptCreateParams,
+  AIPromptUpdateParams,
+  AIPromptDeleteParams,
 } from './adminApi.types';
 
 // API URL 생성 헬퍼 함수
@@ -471,5 +476,86 @@ export async function deleteUnitPrice(id: string, companyCode: string) {
     method: 'DELETE',
     isCallPageLoader: true,
     isWithToken: true, // 토큰 필요
+  });
+}
+
+// ***************** AI 프롬프트
+
+// AI 프롬프트 목록 조회
+export async function getAIPromptList(
+  params: AIPromptGetListParams
+) {
+  const queryParams = new URLSearchParams();
+  queryParams.append('companyCode', params.companyCode);
+  
+  if (params.keyword) {
+    queryParams.append('keyword', params.keyword);
+  }
+
+  return callAdminApi({
+    title: 'AI 프롬프트 목록 조회',
+    url: `${BASE_URL}/cms/ai-prompts?${queryParams.toString()}`,
+    method: 'GET',
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// AI 프롬프트 생성
+export async function createAIPrompt(
+  params: AIPromptCreateParams
+) {
+  const queryParams = new URLSearchParams();
+  queryParams.append('companyCode', params.companyCode);
+
+  return callAdminApi({
+    title: 'AI 프롬프트 생성',
+    url: `${BASE_URL}/cms/ai-prompts?${queryParams.toString()}`,
+    method: 'POST',
+    body: {
+      name: params.name,
+      description: params.description,
+      content: params.content,
+    },
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// AI 프롬프트 수정
+export async function updateAIPrompt(
+  params: AIPromptUpdateParams
+) {
+  const queryParams = new URLSearchParams();
+  queryParams.append('companyCode', params.companyCode);
+
+  const requestBody: any = {};
+  if (params.name !== undefined) requestBody.name = params.name;
+  if (params.description !== undefined) requestBody.description = params.description;
+  if (params.content !== undefined) requestBody.content = params.content;
+
+  return callAdminApi({
+    title: 'AI 프롬프트 수정',
+    url: `${BASE_URL}/cms/ai-prompts/${params.id}?${queryParams.toString()}`,
+    method: 'PATCH',
+    body: requestBody,
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// AI 프롬프트 삭제
+export async function deleteAIPrompt(
+  params: AIPromptDeleteParams
+) {
+  const queryParams = new URLSearchParams();
+  queryParams.append('companyCode', params.companyCode);
+
+  return callAdminApi({
+    title: 'AI 프롬프트 삭제',
+    url: `${BASE_URL}/cms/ai-prompts/${params.id}?${queryParams.toString()}`,
+    method: 'DELETE',
+    isCallPageLoader: true,
+    isWithToken: true,
   });
 }

@@ -29,7 +29,7 @@ interface CmsResponsiveContainerProps<T extends BaseRecord> {
   fetchData?: (params: FetchParams) => Promise<FetchResult<T>>;
   themeMode?: "light" | "dark";
   compactFieldCount?: number;
-  defaultViewMode?: ViewMode; // 모바일에서 기본 보기 모드
+  defaultViewMode?: ViewMode; // 모바일에서 기본 보기   모드
   enableDateFilter: boolean;
   // 고객사 검색 관련 props
   enableCompanySearch?: boolean;

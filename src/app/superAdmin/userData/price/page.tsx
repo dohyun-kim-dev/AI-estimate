@@ -432,7 +432,7 @@ const PriceListPage: React.FC = () => {
   const { show: showToast } = useToast(); // 토스트 훅 추가
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
-  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string | null>(null);
+  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>(''); // 초기값 빈 문자열
   const [selectedCompanyName, setSelectedCompanyName] = useState<string>(''); // 선택된 고객사명 추가
   const [dynamicColumns, setDynamicColumns] = useState<ColumnDefinition<any>[]>([]);
   const [currentTableData, setCurrentTableData] = useState<any[]>([]); // 현재 테이블 데이터 저장
@@ -581,7 +581,7 @@ const PriceListPage: React.FC = () => {
   };
 
   // 검색 키워드와 함께 데이터를 조회하는 함수
-  const fetchUnitPricesData = async (params: FetchParams) => {
+  const fetchUnitPricesData = useCallback(async (params: FetchParams) => {
     console.log('=== fetchUnitPricesData START ===', params);
     
     // 검색 조건 저장
@@ -592,11 +592,11 @@ const PriceListPage: React.FC = () => {
     });
     
     if (!selectedCompanyCode) {
-      console.log('No company selected, returning current data');
+      console.log('No company selected, returning empty data');
       return {
-        data: transformedTableData,
-        totalItems: transformedTableData.length,
-        allItems: transformedTableData.length,
+        data: [],
+        totalItems: 0,
+        allItems: 0,
       };
     }
     
@@ -618,94 +618,6 @@ const PriceListPage: React.FC = () => {
       console.log('API response received');
 
       // API 응답 처리 로직
-      let columnsInfo: any[] = [];
-      let apiData: any[] = [];
-      
-      // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
-      const actualResponse = Array.isArray(response) ? response[0] : response;
-      
-      // actualResponse.data에서 실제 API 응답을 가져옴
-      const apiResponse = (actualResponse as any)?.data;
-      
-      if (apiResponse) {
-        if ((apiResponse.statusCode === 404 || apiResponse.statusCode === "404") && apiResponse.message === 'not found') {
-          // 404 에러 응답 처리 - 빈 데이터 반환
-          apiData = [];
-        } else if ((apiResponse.statusCode === 200 || apiResponse.statusCode === "200") && apiResponse.message === 'success') {
-          // 성공 응답 처리
-          if (apiResponse.data && typeof apiResponse.data === 'object') {
-            const responseData = apiResponse.data;
-            
-            if ('data' in responseData) {
-              // data가 배열이면 그대로, 객체면 배열로 감싸기
-              if (Array.isArray(responseData.data)) {
-                apiData = responseData.data;
-              } else if (responseData.data && typeof responseData.data === 'object') {
-                apiData = [responseData.data]; // 단일 객체를 배열로 감싸기
-              } else {
-                apiData = [];
-              }
-            }
-          }
-        } else {
-          console.error('API Error:', apiResponse);
-          apiData = [];
-        }
-      } else {
-        console.error('No API response data');
-        apiData = [];
-      }
-
-      // 데이터에 서버에서 전달받은 no 필드 사용 (없으면 index + 1로 폴백)
-      const transformedData = apiData.map((item: any, index: number) => ({
-        ...item,
-        select: false,
-        no: (item.no !== undefined ? item.no : index + 1),
-      }));
-
-      console.log('Transformed data:', transformedData);
-      
-      return {
-        data: transformedData,
-        totalItems: transformedData.length,
-        allItems: transformedData.length,
-      };
-      
-    } catch (error) {
-      console.error('Error fetching unit prices data:', error);
-      return {
-        data: [],
-        totalItems: 0,
-        allItems: 0,
-      };
-    }
-  };
-
-  const handleCompanySelect = async (
-    company: { id: string; name: string }, 
-    searchParams?: { keyword?: string; fromDate?: string; toDate?: string }
-  ) => {
-    console.log('=== Company selected START ===:', company);
-    console.log("companyCode:",company.id);
-    console.log("searchParams:", searchParams);
-     if (!company.id) {
-    showToast('회사 코드가 없습니다. 고객사를 다시 선택해주세요.', 'error');
-    return;
-  }
-    
-    try {
-      console.log('Fetching data for company:', company.id);
-      
-      const response = await getAllUnitPrices({
-        companyCode: company.id,
-        keyword: searchParams?.keyword,
-        fromDate: searchParams?.fromDate,
-        toDate: searchParams?.toDate,
-      });
-
-      console.log('API response received');
-
-      // API 응답 처리 로직 (superAdminMng 스타일로 수정)
       let columnsInfo: any[] = [];
       let apiData: any[] = [];
       
@@ -788,18 +700,17 @@ const PriceListPage: React.FC = () => {
         apiData = [];
       }
 
-      // 컬럼 정보가 있을 때만 처리
+      // 컬럼 정보가 있을 때 UI 상태 업데이트
       if (Array.isArray(columnsInfo) && columnsInfo.length > 0) {
-        // id 컬럼 추가
+        // id 컬럼 확인 및 추가
         const hasIdColumn = columnsInfo.some(col => col.name === 'id');
         let allColumnsForTable = columnsInfo;
         if (!hasIdColumn) {
           const idColumn = { name: 'id', type: 'string', required: false, orderNo: 0 };
           allColumnsForTable = [idColumn, ...columnsInfo];
         }
-        
 
-        // 1. 'No' 헤더 추가
+        // 동적 컬럼 생성
         const generatedColumns: ColumnDefinition<any>[] = [
           {
             header: 'No',
@@ -849,37 +760,54 @@ const PriceListPage: React.FC = () => {
             })
         ];
 
-        const columnsWithSelect: ColumnDefinition<any>[] = [
-          ...generatedColumns
-        ];
-
-        // 2. 데이터에 서버에서 전달받은 no 필드 사용 (없으면 index + 1로 폴백)
-        const transformedData = apiData.map((item: any, index: number) => ({
-          ...item,
-          select: false,
-          no: (item.no !== undefined ? item.no : index + 1),
-        }));
-
-        console.log('Setting all states in batch');
-        
-        // 모든 상태를 한 번에 업데이트
-        setSelectedCompanyCode(company.id);
-        setSelectedCompanyName(company.name); // 고객사명도 저장
+        // 상태 업데이트
         setCurrentColumnsInfo(allColumnsForTable);
         setCurrentTableData(apiData);
-        setDynamicColumns(columnsWithSelect);
-        setTransformedTableData(transformedData);
-        setForceUpdateKey(prev => prev + 1); // 테이블 강제 업데이트
+        setDynamicColumns(generatedColumns);
       }
+
+      // 데이터에 서버에서 전달받은 no 필드 사용 (없으면 index + 1로 폴백)
+      const transformedData = apiData.map((item: any, index: number) => ({
+        ...item,
+        select: false,
+        no: (item.no !== undefined ? item.no : index + 1),
+      }));
+
+      console.log('Transformed data:', transformedData);
       
-      console.log('=== Company selected END ===');
-        
+      return {
+        data: transformedData,
+        totalItems: transformedData.length,
+        allItems: transformedData.length,
+      };
+      
     } catch (error) {
-      console.error('Error fetching data for selected company:', error);
-      // 에러 시에도 회사 코드는 설정
-      setSelectedCompanyCode(company.id);
+      console.error('Error fetching unit prices data:', error);
+      return {
+        data: [],
+        totalItems: 0,
+        allItems: 0,
+      };
     }
-  };
+  }, [selectedCompanyCode]);
+
+  const handleCompanySelect = useCallback((company: { id: string; name: string; }) => {
+    console.log('=== Company selected ===:', company);
+    
+    if (!company.id) {
+      showToast('회사 코드가 없습니다. 고객사를 다시 선택해주세요.', 'error');
+      return;
+    }
+    
+    // 상태 업데이트
+    setSelectedCompanyCode(company.id);
+    setSelectedCompanyName(company.name);
+    
+    // 리스트 새로고침으로 데이터 조회
+    if (genericListRef.current) {
+      genericListRef.current.refetch();
+    }
+  }, [showToast]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

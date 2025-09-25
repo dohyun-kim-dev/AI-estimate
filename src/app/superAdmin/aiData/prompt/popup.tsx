@@ -232,6 +232,7 @@ const PopupLayout = styled.div`
   gap: 24px;
   height: calc(85vh - 100px);
   min-width: 0;
+  color: #000;
 `;
 
 const LeftSection = styled.div`
@@ -253,7 +254,6 @@ const LabelTitle = styled.h2`
   font-size: 20px;
   font-weight: bold;
   margin: 0 0 72px 0;
-  color: '#fff';
 `;
 
 const SubTitle = styled.h2`
@@ -261,7 +261,6 @@ const SubTitle = styled.h2`
   font-weight: 500;
     margin: 0 0 16px 0;
     margin-bottom: 20px;
-    color: '#fff';
 `;
 
 const ContentBox = styled.div`

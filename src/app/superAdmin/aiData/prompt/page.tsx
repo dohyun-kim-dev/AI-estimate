@@ -1,12 +1,12 @@
 'use client';
-import React, { useCallback, useMemo, useRef, useState } from 'react'; // useRef 추가
+import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 
 import GenericListUI, {
   FetchParams,
   FetchResult,
 } from '@/components/CustomList/GenericListUI';
 import { ColumnDefinition } from '@/components/CustomList/GenericDataTable';
-import { promptGetList } from '@/lib/api/admin/adminApi';
+import { getAIPromptList, createAIPrompt, updateAIPrompt, deleteAIPrompt } from '@/lib/api/admin/adminApi';
 import dayjs from 'dayjs';
 import styled from 'styled-components';
 import { THEME_COLORS } from '@/styles/theme_colors';
@@ -23,19 +23,17 @@ import { SwitchInput } from '@/components/SwitchInput';
 import { devLog } from '@/lib/utils/devLogger';
 import SimpleGenericList from '@/components/CustomList/\bSimpleGenericList';
 import PromptPopup from './popup';
+import PromptFormPopup from './PromptFormPopup';
 import CmsResponsiveContainer from '@/components/CustomList/ResponsiveList/CmsResponsiveContainer';
 
 type Prompt = {
-  index: number;
-  key: string;
-  category: string;
-  label: string;
+  _id: string;
+  name: string;
   description: string;
-  descricreatedIdption: string;
   content: string;
-  updateId: string;
-  createdTime: string | null;
-  updateTime: string | null;
+  createBy: string;
+  createAt: string;
+  updateAt: string;
 };
 
 const PopupFooter = styled.div`
@@ -117,19 +115,34 @@ const PromptPage: React.FC = () => {
   );
 
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [currentKeyword, setCurrentKeyword] = useState<string>('');
+  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>(''); // 기본값을 heredot으로 설정
+  const [selectedCompanyName, setSelectedCompanyName] = useState<string>(''); // 기본 회사명
 
   const listRef = useRef<{ refetch: () => void }>(null);
 
-
   const handleHeaderButtonClick = () => {
+    setSelectedItem(null); // 신규 등록
     setIsPopupOpen(true);
   };
 
   const handleRowClick = (item: Prompt) => {
-    setSelectedItem(item); // index 저장
+    setSelectedItem(item);
     setIsPopupOpen(true);
   };
   
+  // 고객사 선택 핸들러
+  const handleCompanySelect = useCallback((company: { id: string; name: string; }) => {
+    setSelectedCompanyCode(company.id);
+    setSelectedCompanyName(company.name);
+  }, []);
+
+  // 고객사가 변경되면 자동으로 리패치
+  useEffect(() => {
+    if (selectedCompanyCode && listRef.current) {
+      listRef.current.refetch();
+    }
+  }, [selectedCompanyCode]);
 
   const closePopup = () => {
     setIsPopupOpen(false);
@@ -137,74 +150,50 @@ const PromptPage: React.FC = () => {
 
 
   const fetchData = useCallback(
-    // async (params: FetchParams): Promise<FetchResult<Prompt>> => {
-    //   const raw = await promptGetList({ keyword: params.keyword ?? '' });
-    //   const wrapper = raw?.[0];
-    //   const data = wrapper?.data ?? [];
-    //   const totalItems = wrapper?.metadata?.totalCnt ?? data.length;
-    //   const allItems = wrapper?.metadata?.allCnt ?? totalItems;
-    //   return { data, totalItems, allItems };
-    // },
     async (params: FetchParams): Promise<FetchResult<Prompt>> => {
-      // ✅ API 호출 대신 목 데이터 반환
-      // 실제 API 호출 로직은 주석 처리하여 나중에 쉽게 복구 가능
-      console.log('Mock Data fetching...', params);
+      try {
+        // 현재 입력된 검색어 저장
+        if (params.keyword !== undefined) {
+          setCurrentKeyword(params.keyword);
+        }
 
-      const mockData: Prompt[] = [
-        {
-          index: 1,
-          key: 'prompt-1',
-          category: '기초조사',
-          label: 'AI 서비스 소개',
-          description: 'AI 서비스의 기본 기능과 장점을 소개하는 프롬프트',
-          content: '저희 AI 서비스는...',
-          createdId: 'admin1',
-          updateId: 'admin1',
-          createdTime: '2025-08-10T10:00:00Z',
-          updateTime: '2025-08-14T15:30:00Z',
-        },
-        {
-          index: 2,
-          key: 'prompt-2',
-          category: '견적문의',
-          label: '가격 정책 안내',
-          description: '제품의 가격 정책 및 할인 정보를 설명하는 프롬프트',
-          content: '가격은 다음과 같습니다...',
-          createdId: 'admin2',
-          updateId: 'admin2',
-          createdTime: '2025-08-11T11:00:00Z',
-          updateTime: '2025-08-14T16:00:00Z',
-        },
-        {
-          index: 3,
-          key: 'prompt-3',
-          category: '기술지원',
-          label: '자주 묻는 질문',
-          description: '고객들이 자주 문의하는 내용에 대한 답변 프롬프트',
-          content: 'FAQ 내용은...',
-          createdId: 'admin1',
-          updateId: 'admin3',
-          createdTime: '2025-08-12T12:00:00Z',
-          updateTime: '2025-08-14T17:00:00Z',
-        },
-        // 여기에 더 많은 목 데이터를 추가할 수 있습니다.
-      ];
-
-      // 검색 키워드에 따라 필터링
-      const filteredData = params.keyword
-        ? mockData.filter(item =>
-            item.description.includes(params.keyword as string) ||
-            item.label.includes(params.keyword as string)
-          )
-        : mockData;
-
-      return {
-        data: filteredData,
-        totalItems: filteredData.length,
-        allItems: mockData.length,
-      };
+        const response = await getAIPromptList({
+          companyCode: selectedCompanyCode || '',
+          keyword: params.keyword || currentKeyword || '',
+        });
+        
+        console.log('AI 프롬프트 조회 응답:', response);
+        
+        // 응답 처리 (응답 구조에 맞게 수정)
+        if (response && typeof response === 'object') {
+          // 응답이 직접 API 응답 객체인 경우
+          if ('statusCode' in response && response.statusCode === 200) {
+            const promptData = (response as any).data || [];
+            const totalItems = promptData.length;
+            return { data: promptData, totalItems, allItems: totalItems };
+          } 
+          // 응답이 배열로 감싸져 있는 경우 (callAdminApi 특성)
+          else if (Array.isArray(response) && response[0]) {
+            const firstItem = response[0];
+            if (firstItem && typeof firstItem === 'object' && 'data' in firstItem) {
+              const responseData = firstItem.data;
+              if (responseData && typeof responseData === 'object' && 'statusCode' in responseData) {
+                const promptData = (responseData as any).data || [];
+                const totalItems = promptData.length;
+                return { data: promptData, totalItems, allItems: totalItems };
+              }
+            }
+          }
+        }
+        
+        console.error('프롬프트 목록 응답 형식이 예상과 다릅니다:', response);
+        return { data: [], totalItems: 0, allItems: 0 };
+      } catch (error) {
+        console.error('프롬프트 목록 조회 오류:', error);
+        return { data: [], totalItems: 0, allItems: 0 };
+      }
     },
-    []
+    [currentKeyword, selectedCompanyCode]
   );
 
 
@@ -213,26 +202,16 @@ const PromptPage: React.FC = () => {
       { header: 'No', accessor: 'no' },
       {
         header: '최종수정일',
-        accessor: 'updateTime',
+        accessor: 'updateAt',
         formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '-'),
       },
-      // {
-      //   header: '최종수정자',
-      //   accessor: 'updateId',
-      // },
       {
         header: '작성자',
-        accessor: 'createdId',
+        accessor: 'createBy',
       },
       {
-        header: '카테고리',
-        accessor: 'category',
-        sortable: true,
-        formatter: (value) => value ?? '-',
-      },
-      {
-        header: '프롬프트 항목',
-        accessor: 'label',
+        header: '프롬프트명',
+        accessor: 'name',
         sortable: true,
         formatter: (value) => value ?? '-',
       },
@@ -263,28 +242,26 @@ const PromptPage: React.FC = () => {
       <CmsResponsiveContainer<Prompt>
         ref={listRef}
         title="AI 프롬프트 관리"
-        excelFileName="PromptList"
+        data={[]}
         columns={columns}
         fetchData={fetchData}
-        enableSearch
         enableDateFilter={false}
-        searchPlaceholder="프롬프트 검색"
+        enableCompanySearch={true}
+        onCompanySelect={handleCompanySelect}
+        selectedCompanyCode={selectedCompanyCode}
+        selectedCompanyName={selectedCompanyName}
         onRowClick={handleRowClick}
+        onAdd={handleHeaderButtonClick}
+        addButtonLabel="프롬프트 추가"
         themeMode="light"
       />
 
 <PromptPopup
-  index={selectedItem?.index ? Number(selectedItem.index) : 0}
+  index={0}
   isOpen={isPopupOpen}
   onClose={closePopup}
-  firstCreatedTime={
-    selectedItem?.createdTime
-      ? dayjs(selectedItem.createdTime).format('YYYY-MM-DD')
-      : ''
-  }
-  firstContent={
-    selectedItem?.content ?? ''
-  }
+  firstCreatedTime={selectedItem?.createAt ? dayjs(selectedItem.createAt).format('YYYY-MM-DD') : ''}
+  firstContent={selectedItem?.content || ''}
 />
 
     </>

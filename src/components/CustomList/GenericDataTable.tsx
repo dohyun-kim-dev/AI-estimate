@@ -274,7 +274,7 @@ const Td = styled.td<{ $isEven: boolean; $themeMode: ThemeMode; $fixedLayout?: b
 `;
 
 const TdNoData = styled.td<{ $themeMode: ThemeMode }>`
-  padding: 300px;
+  padding: 100px;
   color: #aaa;
   background-color: ${({ $themeMode }) => THEME_COLORS[$themeMode].tableBackground};
 `;

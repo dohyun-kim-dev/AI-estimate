@@ -593,20 +593,19 @@ const userId = getUserId() || '';
       return;
     }
 
+    // 할인 제외 항목 배열
+    const NON_DISCOUNT_ITEMS = [
+      '화면설계', '화면디자인', '화면퍼블리싱', '퍼블리싱', 'UI/UX디자인',
+      '화면 설계', '화면 퍼블리싱', 'UI/UX 디자인', '스토리보드', '스토리 보드'
+    ];
+
     // `flatMap`을 사용하여 모든 `items`를 단일 배열로 만들고 필터링합니다.
     const nonDiscountableItems = estimateData.categories
       .flatMap(category => category.sub_categories)
       .flatMap(subCategory => subCategory.items)
-      .filter(item => 
-        item.name === '화면설계' || 
-        item.name === '화면디자인' || 
-        item.name === '화면퍼블리싱' ||
-        item.name === '퍼블리싱' ||
-        item.name === 'UI/UX디자인' ||
-        item.name === '화면 설계' ||
-        item.name === '화면 퍼블리싱' ||
-        item.name === 'UI/UX 디자인'
-      );
+      .filter(item => NON_DISCOUNT_ITEMS.some(excludeItem => 
+        item.name.includes(excludeItem) || excludeItem.includes(item.name)
+      ));
 
     const nonDiscountableSum = nonDiscountableItems.reduce((sum, item) => {
       // 삭제된 항목은 비할인 대상 합산에서도 제외
@@ -776,7 +775,9 @@ const userId = getUserId() || '';
                     .flatMap(category => category.sub_categories)
                     .flatMap(subCategory => subCategory.items);
                   nonDiscountableSum = allItems
-                    .filter(item => NON_DISCOUNT_ITEMS.includes(item.name) && !item.is_deleted)
+                    .filter(item => NON_DISCOUNT_ITEMS.some(excludeItem => 
+                      item.name.includes(excludeItem) || excludeItem.includes(item.name)
+                    ) && !item.is_deleted)
                     .reduce((sum, item) => {
                       const price = typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : item.price;
                       return sum + (price || 0);
@@ -823,10 +824,10 @@ const userId = getUserId() || '';
                           `    - ${item.name}: ${item.price}원 (FE: ${item.fe || '0일'}/BE: ${item.be || '0일'})`).join('\n')}`).join('\n')}`).join('\n\n')}\n\n`
                     : action;
                   
-                  // 사용자 메시지는 간단하게 표시
-                  const displayMessage = estimateData 
-                    ? `${estimateData.project_name}${action.includes('예산') ? ' (예산 절감)' : action.includes('맞춤') ? ' (맞춤 추천)' : ` - ${action}`}`
-                    : action;
+                  // 사용자 메시지는 간단하게 표시 (견적 정보 없이 액션명만)
+                  const displayMessage = action.includes('예산 줄이기') ? '예산 줄이기' : 
+                                        action.includes('맞춤 추천') ? '맞춤 추천' : 
+                                        action;
                   
                   handleSubmit(aiPrompt, { displayMessage });
                 }}

@@ -373,7 +373,7 @@ useEffect(() => {
           const hasDesignPricing = est.categories.some(cat => 
             cat.sub_categories.some(sub => 
               sub.items.some(item => 
-                (item.name === '화면설계' || item.name === 'UI/UX디자인'|| item.name === '스토리보드') && 
+                (item.name.includes('화면설계') || item.name.includes('UI/UX디자인') || item.name.includes('스토리보드') || item.name.includes('화면설계(기획)') || item.name.includes('화면설계(스토리보드)')) && 
                 item.page_count > 0
               )
             )

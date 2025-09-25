@@ -361,28 +361,6 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
     setIsProcessing(true);
 
-    // URL 감지 및 크롤링 처리
-    const urlPattern = /https?:\/\/[^\s]+/gi;
-    const detectedUrls = displayMessage.match(urlPattern);
-    let urlAnalysisForAI = '';
-
-    if (detectedUrls && detectedUrls.length > 0) {
-      try {
-        console.log('URL 발견, 크롤링 시작:', detectedUrls);
-        // 첫 번째 URL만 크롤링 (여러 개 있어도 하나만 처리)
-        const firstUrl = detectedUrls[0];
-        const crawlResponse = await crawlUrl(firstUrl);
-        
-        if (crawlResponse?.statusCode === 200 && crawlResponse.data) {
-          urlAnalysisForAI = crawlResponse.data;
-          console.log('URL 크롤링 완료, AI에게 전달할 내용 준비됨');
-        }
-      } catch (error) {
-        console.error('URL 크롤링 실패:', error);
-        // 크롤링 실패해도 원본 메시지로 진행
-      }
-    }
-
     // 사용자 메시지 생성
     let userMessageContent = displayMessage;
     if (uploadedFiles.length > 0) {
@@ -395,6 +373,43 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     // ai 메시지는 isLoading: true로 추가 (실시간 업데이트용)
     addMessage({ role: 'ai', content: '', isLoading: true });
     console.log('사용자 메시지 및 빈 AI 메시지 추가 완료', { userMessageContent }, { role: 'ai', content: '', isLoading: true });
+
+    // URL 감지 및 크롤링 처리 (UI 로딩 상태가 이미 표시된 후 실행)
+    const urlPattern = /https?:\/\/[^\s]+/gi;
+    const detectedUrls = displayMessage.match(urlPattern);
+    let urlAnalysisForAI = '';
+
+    if (detectedUrls && detectedUrls.length > 0) {
+      try {
+        console.log('URL 발견, 크롤링 시작:', detectedUrls);
+        // URL 크롤링 중임을 AI 메시지로 표시
+        updateLastMessage({
+          content: 'URL을 분석하고 있습니다...',
+          isLoading: true,
+        });
+        
+        // 첫 번째 URL만 크롤링 (여러 개 있어도 하나만 처리)
+        const firstUrl = detectedUrls[0];
+        const crawlResponse = await crawlUrl(firstUrl);
+        
+        if (crawlResponse?.statusCode === 200 && crawlResponse.data) {
+          urlAnalysisForAI = crawlResponse.data;
+          console.log('URL 크롤링 완료, AI에게 전달할 내용 준비됨');
+          // 크롤링 완료 후 다시 빈 상태로 변경
+          updateLastMessage({
+            content: '',
+            isLoading: true,
+          });
+        }
+      } catch (error) {
+        console.error('URL 크롤링 실패:', error);
+        // 크롤링 실패해도 원본 메시지로 진행
+        updateLastMessage({
+          content: '',
+          isLoading: true,
+        });
+      }
+    }
 
     // 🔥 UI 미리보기만 즉시 제거 (실제 파일은 업로드 후 제거)
     setUploadedFiles([]);

@@ -233,6 +233,7 @@ interface EstimateItem {
 // 할인 제외 항목명
 const NON_DISCOUNT_ITEMS = ['화면설계', '화면디자인', '화면퍼블리싱', '퍼블리싱', 'UI/UX디자인','화면 설계','화면 퍼블리싱','UI/UX 디자인','스토리보드', '스토리 보드'];
 
+
 interface EstimateAccordionItemProps {
   name: string;
   price?: string;
@@ -289,7 +290,10 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
   const safeDiscountRate = typeof discountRate === 'number' ? discountRate : 0;
   const getDiscountedPrice = (item: EstimateItem) => {
     const originalPrice = parsePrice(item.price);
-    const isExcluded = NON_DISCOUNT_ITEMS.includes(item.name);
+    // 정확한 매칭 대신 부분 매칭으로 변경하여 "화면설계(스토리보드)" 같은 경우도 처리
+    const isExcluded = NON_DISCOUNT_ITEMS.some(excludeItem => 
+      item.name.includes(excludeItem) || excludeItem.includes(item.name)
+    );
     
     // console.log(`Item: ${item.name}, Original: ${originalPrice}, Excluded: ${isExcluded}, Rate: ${safeDiscountRate}`);
     
@@ -385,7 +389,9 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
         <ContentInner>
           {children || (hasItems && items.map((item, index) => {
             const discounted = getDiscountedPrice(item);
-            const isDiscounted = !NON_DISCOUNT_ITEMS.includes(item.name) && safeDiscountRate > 0;
+            const isDiscounted = !NON_DISCOUNT_ITEMS.some(excludeItem => 
+              item.name.includes(excludeItem) || excludeItem.includes(item.name)
+            ) && safeDiscountRate > 0;
             return (
               <ListItem
                 key={item.item_id || index} 

@@ -100,3 +100,29 @@ export type AdminLoginParams = {
     data: any[];
   };
 
+  // AI 프롬프트 관련 타입들
+  export type AIPromptGetListParams = {
+    companyCode: string;
+    keyword?: string;
+  };
+
+  export type AIPromptCreateParams = {
+    companyCode: string;
+    name: string;
+    description: string;
+    content: string;
+  };
+
+  export type AIPromptUpdateParams = {
+    id: string;
+    companyCode: string;
+    name?: string;
+    description?: string;
+    content?: string;
+  };
+
+  export type AIPromptDeleteParams = {
+    id: string;
+    companyCode: string;
+  };
+
