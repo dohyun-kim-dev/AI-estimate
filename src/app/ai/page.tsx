@@ -495,7 +495,23 @@ const userId = getUserId() || '';
   }
 
   // 새로운 계산 로직 사용 (화면설계/UI디자인 가격 자동 업데이트 포함)
-  const calculationResult = calculateEstimatedPeriod(estimateData);
+  let calculationResult;
+  try {
+    calculationResult = calculateEstimatedPeriod(estimateData);
+  } catch (error) {
+    console.error('견적 기간 계산 실패, 기본값 사용:', error);
+    calculationResult = {
+      totalPages: 10,
+      planningDesignWeeks: 4,
+      totalFeDays: 10,
+      totalBeDays: 10,
+      pureDevelopmentDays: 10,
+      developmentWeeks: 2,
+      finalWeeks: 8,
+      estimatedPeriodText: '8주 (약 2개월)',
+      updatedEstimate: estimateData
+    };
+  }
   
   // 디버깅용 로그
   console.log('🔍 계산 결과:', {
@@ -545,8 +561,9 @@ const userId = getUserId() || '';
         const subPeriod = subCategory.items.reduce((itemSum, item) => {
           // 삭제된 항목은 기간 합산에서 제외
           if (item.is_deleted) return itemSum;
-          const feMatch = item.fe?.match(/(\d+)/);
-          const beMatch = item.be?.match(/(\d+)/);
+          // 예전 데이터에서는 fe, be 필드가 없을 수 있으므로 안전하게 처리
+          const feMatch = item.fe?.match?.(/(\d+)/);
+          const beMatch = item.be?.match?.(/(\d+)/);
           const frontPeriod = feMatch ? parseFloat(feMatch[1]) : 0;
           const backPeriod = beMatch ? parseFloat(beMatch[1]) : 0;
           return itemSum + (isNaN(frontPeriod) ? 0 : frontPeriod) + (isNaN(backPeriod) ? 0 : backPeriod);

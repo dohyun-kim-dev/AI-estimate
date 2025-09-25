@@ -79,16 +79,15 @@ export function calculateDevelopmentDays(categories: Category[]): { totalFeDays:
     console.log(`   📁 카테고리: ${category.category_name}`);
     category.sub_categories.forEach(subCategory => {
       devLog(`     📂 하위 카테고리: ${subCategory.sub_category_name}`);
-      subCategory.items.forEach(item => {
+        subCategory.items.forEach(item => {
         if (!item.is_deleted) {
           // fe, be 문자열을 숫자로 변환 (예: "3일" -> 3, "3" -> 3)
-          const feMatch = item.fe.match(/(\d+)/);
-          const beMatch = item.be.match(/(\d+)/);
+          // 예전 데이터에서는 fe, be 필드가 없을 수 있으므로 안전하게 처리
+          const feMatch = item.fe?.match?.(/(\d+)/);
+          const beMatch = item.be?.match?.(/(\d+)/);
           
           const feDays = feMatch ? parseInt(feMatch[1]) : 0;
-          const beDays = beMatch ? parseInt(beMatch[1]) : 0;
-          
-          if (feDays > 0 || beDays > 0) {
+          const beDays = beMatch ? parseInt(beMatch[1]) : 0;          if (feDays > 0 || beDays > 0) {
             devLog(`       📄 ${item.name}: FE ${feDays}일, BE ${beDays}일`);
           }
           
@@ -162,7 +161,8 @@ export function calculateTotalPages(categories: Category[]): number {
                               item.name.includes('화면디자인');
           
           if (!isDesignItem) {
-            const pageCount = item.page_count || 0;
+            // 예전 데이터에서는 page_count 필드가 없을 수 있으므로 안전하게 처리
+            const pageCount = (typeof item.page_count === 'number') ? item.page_count : 0;
             if (pageCount > 0) {
               devLog(`       📃 ${item.name}: ${pageCount}페이지`);
             }
@@ -185,50 +185,70 @@ export function calculateTotalPages(categories: Category[]): number {
 export function updateDesignItemPrices(estimate: ProjectEstimate, totalPages: number): ProjectEstimate {
   devLog('🎨 화면설계/UI디자인 가격 및 설명 업데이트 시작');
   devLog(`   📊 총 페이지 수: ${totalPages}페이지`);
+  
+  // 총 페이지 수가 0이거나 계산할 수 없으면 원본 반환
+  if (!totalPages || totalPages === 0) {
+    devLog('   ⚠️ 총 페이지 수가 0이므로 기존 가격 유지');
+    return estimate;
+  }
+  
   devLog(`   💰 계산 공식: ${totalPages} × 150,000원 = ${totalPages * 150000}원`);
 
   const updatedEstimate = JSON.parse(JSON.stringify(estimate)); // 깊은 복사
   
-  updatedEstimate.categories.forEach(category => {
-    category.sub_categories.forEach(subCategory => {
-      subCategory.items.forEach(item => {
-        if (!item.is_deleted) {
-          const isDesignItem = item.name === '화면설계' ||
-                              item.name.includes('화면설계')||
-                              item.name.includes('화면 설계')||
-                              item.name.includes('UI/UX디자인')||
-                              item.name.includes('UI/UX 디자인')||
-                              item.name.includes('스토리보드') ||
-                              item.name.includes('화면디자인');
+  try {
+    updatedEstimate.categories.forEach(category => {
+      category.sub_categories.forEach(subCategory => {
+        subCategory.items.forEach(item => {
+          if (!item.is_deleted) {
+            const isDesignItem = item.name === '화면설계' ||
+                                item.name.includes('화면설계')||
+                                item.name.includes('화면 설계')||
+                                item.name.includes('UI/UX디자인')||
+                                item.name.includes('UI/UX 디자인')||
+                                item.name.includes('스토리보드') ||
+                                item.name.includes('화면디자인');
 
-          if (isDesignItem) {
-            const newPrice = totalPages * 150000; // 15만원
-            const formattedPrice = newPrice.toLocaleString();
+            if (isDesignItem) {
+              try {
+                const newPrice = totalPages * 150000; // 15만원
+                const formattedPrice = newPrice.toLocaleString();
 
-            // 기존 description에서 총 페이지 수 정보 제거 (있다면)
-            let baseDescription = item.description;
-            // 다양한 패턴으로 기존 페이지 수 정보 제거
-            baseDescription = baseDescription
-              .replace(/\s*총\s*(장수|페이지\s*수)\s*:\s*\d+/g, '')
-              .replace(/\s*총\s*(장수|페이지\s*수)\s*\d+/g, '')
-              .replace(/\s*\(\s*총\s*(장수|페이지\s*수)\s*:\s*\d+\s*\)/g, '')
-              .trim();
-            
-            // 새로운 총 페이지 수 정보 추가
-            const updatedDescription = `${baseDescription} \n총 페이지 수: ${totalPages}`;
+                // 기존 description에서 총 페이지 수 정보 제거 (있다면)
+                let baseDescription = item.description || '';
+                // 다양한 패턴으로 기존 페이지 수 정보 제거
+                baseDescription = baseDescription
+                  .replace(/\s*총\s*(장수|페이지\s*수)\s*:\s*\d+/g, '')
+                  .replace(/\s*총\s*(장수|페이지\s*수)\s*\d+/g, '')
+                  .replace(/\s*\(\s*총\s*(장수|페이지\s*수)\s*:\s*\d+\s*\)/g, '')
+                  .trim();
+                
+                // 새로운 총 페이지 수 정보 추가
+                const updatedDescription = `${baseDescription} \n총 페이지 수: ${totalPages}`;
 
-            devLog(`   🔄 ${item.name}:`);
-            devLog(`     💰 가격: ${item.price} → ${formattedPrice}`);
-            devLog(`     📝 설명: "${item.description}" → "${updatedDescription}"`);
-            
-            item.price = formattedPrice;
-            item.description = updatedDescription;
-            item.page_count = totalPages; // 페이지 카운트도 업데이트
+                devLog(`   🔄 ${item.name}:`);
+                devLog(`     💰 가격: ${item.price} → ${formattedPrice}`);
+                devLog(`     📝 설명: "${item.description}" → "${updatedDescription}"`);
+                
+                item.price = formattedPrice;
+                item.description = updatedDescription;
+                // 예전 데이터 호환성을 위해 안전하게 page_count 설정
+                if (typeof item.page_count !== 'undefined') {
+                  item.page_count = totalPages; // 페이지 카운트도 업데이트
+                }
+              } catch (itemError) {
+                console.warn(`화면설계/UI디자인 항목 "${item.name}" 가격 업데이트 실패, 기존 값 유지:`, itemError);
+                // 개별 항목 업데이트 실패 시 기존 값 유지 (아무것도 하지 않음)
+              }
+            }
           }
-        }
+        });
       });
     });
-  });
+  } catch (error) {
+    console.warn('화면설계/UI디자인 가격 업데이트 중 오류 발생, 원본 견적 반환:', error);
+    return estimate; // 전체 업데이트 실패 시 원본 반환
+  }
   
   return updatedEstimate;
 }
@@ -249,51 +269,94 @@ export function calculateEstimatedPeriod(estimate: ProjectEstimate): {
 } {
   devLog('📊 예상 기간 계산 시작:', estimate.project_name);
 
-  // 1단계: 총 페이지 수 계산
-  const totalPages = calculateTotalPages(estimate.categories);
-  devLog('1️⃣ 총 페이지 수:', totalPages, '페이지');
+  try {
+    // 1단계: 총 페이지 수 계산
+    let totalPages = 0;
+    let updatedEstimate = estimate;
+    
+    try {
+      totalPages = calculateTotalPages(estimate.categories);
+      devLog('1️⃣ 총 페이지 수:', totalPages, '페이지');
+      
+      // 1.5단계: 화면설계/UI디자인 가격 업데이트
+      try {
+        updatedEstimate = updateDesignItemPrices(estimate, totalPages);
+      } catch (priceError) {
+        console.warn('가격 업데이트 실패, 원본 견적 사용:', priceError);
+        updatedEstimate = estimate; // 가격 업데이트 실패 시 원본 사용
+      }
+    } catch (error) {
+      console.warn('페이지 수 계산 실패, 기본값과 원본 견적 사용:', error);
+      totalPages = 10; // 기본값
+      updatedEstimate = estimate; // 원본 사용
+    }
+    
+    // 2단계: 기획/디자인 기간 산출
+    const planningDesignWeeks = calculatePlanningDesignPeriod(totalPages);
+    devLog('2️⃣ 기획/디자인 기간:', planningDesignWeeks, '주');
 
-  // 1.5단계: 화면설계/UI디자인 가격 업데이트
-  const updatedEstimate = updateDesignItemPrices(estimate, totalPages);
-  
-  // 2단계: 기획/디자인 기간 산출
-  const planningDesignWeeks = calculatePlanningDesignPeriod(totalPages);
-  devLog('2️⃣ 기획/디자인 기간:', planningDesignWeeks, '주');
+    // 3단계: 기능별 개발 기간 합산
+    let totalFeDays = 0;
+    let totalBeDays = 0;
+    
+    try {
+      const result = calculateDevelopmentDays(estimate.categories);
+      totalFeDays = result.totalFeDays;
+      totalBeDays = result.totalBeDays;
+    } catch (error) {
+      console.warn('개발 기간 계산 실패, 기본값 사용:', error);
+      totalFeDays = 10; // 기본값
+      totalBeDays = 10; // 기본값
+    }
+    
+    devLog('3️⃣ 개발 기간 합산:');
+    devLog('   - 프론트엔드:', totalFeDays, '일');
+    devLog('   - 백엔드:', totalBeDays, '일');
+    
+    // 4단계: 순수 개발 기간 확정
+    const pureDevelopmentDays = calculatePureDevelopmentDays(totalFeDays, totalBeDays);
+    devLog('4️⃣ 순수 개발 기간:', pureDevelopmentDays, '일 (FE/BE 중 최대값)');
 
-  // 3단계: 기능별 개발 기간 합산
-  const { totalFeDays, totalBeDays } = calculateDevelopmentDays(estimate.categories);
-  devLog('3️⃣ 개발 기간 합산:');
-  devLog('   - 프론트엔드:', totalFeDays, '일');
-  devLog('   - 백엔드:', totalBeDays, '일');
-  
-  // 4단계: 순수 개발 기간 확정
-  const pureDevelopmentDays = calculatePureDevelopmentDays(totalFeDays, totalBeDays);
-  devLog('4️⃣ 순수 개발 기간:', pureDevelopmentDays, '일 (FE/BE 중 최대값)');
+    // 5단계: 최종 프로젝트 기간 계산
+    const developmentWeeks = Math.ceil(pureDevelopmentDays / 5);
+    devLog('5️⃣ 개발 기간(주):', developmentWeeks, '주 (', pureDevelopmentDays, '일 ÷ 5 = ', (pureDevelopmentDays / 5).toFixed(1), '→', developmentWeeks, ')');
 
-  // 5단계: 최종 프로젝트 기간 계산
-  const developmentWeeks = Math.ceil(pureDevelopmentDays / 5);
-  devLog('5️⃣ 개발 기간(주):', developmentWeeks, '주 (', pureDevelopmentDays, '일 ÷ 5 = ', (pureDevelopmentDays / 5).toFixed(1), '→', developmentWeeks, ')');
+    const finalWeeks = calculateFinalProjectPeriod(planningDesignWeeks, pureDevelopmentDays);
+    devLog('6️⃣ 최종 계산:', planningDesignWeeks, '주(기획/디자인) +', developmentWeeks, '주(개발) + 2주(검수/테스트) =', finalWeeks, '주');
 
-  const finalWeeks = calculateFinalProjectPeriod(planningDesignWeeks, pureDevelopmentDays);
-  devLog('6️⃣ 최종 계산:', planningDesignWeeks, '주(기획/디자인) +', developmentWeeks, '주(개발) + 2주(검수/테스트) =', finalWeeks, '주');
+    // 월 단위 계산 (1개월 = 4주)
+    const weeksPerMonth = 4;
+    const monthValue = Math.ceil(finalWeeks / weeksPerMonth);
+    devLog('7️⃣ 월 단위 변환:', finalWeeks, '주 ÷', weeksPerMonth, '= ', (finalWeeks / weeksPerMonth).toFixed(1), '→', monthValue, '개월');
 
-  // 월 단위 계산 (1개월 = 4주)
-  const weeksPerMonth = 4;
-  const monthValue = Math.ceil(finalWeeks / weeksPerMonth);
-  devLog('7️⃣ 월 단위 변환:', finalWeeks, '주 ÷', weeksPerMonth, '= ', (finalWeeks / weeksPerMonth).toFixed(1), '→', monthValue, '개월');
+    const estimatedPeriodText = `${finalWeeks}주 (약 ${monthValue}개월)`;
+    devLog('✅ 최종 결과:', estimatedPeriodText);
 
-  const estimatedPeriodText = `${finalWeeks}주 (약 ${monthValue}개월)`;
-  devLog('✅ 최종 결과:', estimatedPeriodText);
-
-  return {
-    totalPages,
-    planningDesignWeeks,
-    totalFeDays,
-    totalBeDays,
-    pureDevelopmentDays,
-    developmentWeeks,
-    finalWeeks,
-    estimatedPeriodText,
-    updatedEstimate
-  };
+    return {
+      totalPages,
+      planningDesignWeeks,
+      totalFeDays,
+      totalBeDays,
+      pureDevelopmentDays,
+      developmentWeeks,
+      finalWeeks,
+      estimatedPeriodText,
+      updatedEstimate
+    };
+  } catch (error) {
+    console.error('예상 기간 계산 중 전체 오류 발생, 기본값으로 폴백:', error);
+    
+    // 전체 실패 시 기본값 반환
+    return {
+      totalPages: 10,
+      planningDesignWeeks: 4,
+      totalFeDays: 10,
+      totalBeDays: 10,
+      pureDevelopmentDays: 10,
+      developmentWeeks: 2,
+      finalWeeks: 8,
+      estimatedPeriodText: '8주 (약 2개월)',
+      updatedEstimate: estimate // 원본 견적 반환
+    };
+  }
 }
