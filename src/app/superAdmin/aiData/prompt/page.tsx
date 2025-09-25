@@ -86,6 +86,20 @@ const RegisterButton = styled(ActionButton)<{ $themeMode: 'light' | 'dark' }>`
   }
 `;
 
+const EditButton = styled.button`
+  font-size: 13px;
+  color: ${AppColors.primary};
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    color: ${AppColors.primary}dd;
+  }
+`;
+
 // const SwitchButton = styled.div<{ checked: boolean; readOnly?: boolean }>`
 //   display: inline-block;
 //   margin: 0 auto;
@@ -115,6 +129,7 @@ const PromptPage: React.FC = () => {
   );
 
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isFormPopupOpen, setIsFormPopupOpen] = useState(false);
   const [currentKeyword, setCurrentKeyword] = useState<string>('');
   const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>(''); // 기본값을 heredot으로 설정
   const [selectedCompanyName, setSelectedCompanyName] = useState<string>(''); // 기본 회사명
@@ -123,12 +138,17 @@ const PromptPage: React.FC = () => {
 
   const handleHeaderButtonClick = () => {
     setSelectedItem(null); // 신규 등록
-    setIsPopupOpen(true);
+    setIsFormPopupOpen(true);
   };
 
   const handleRowClick = (item: Prompt) => {
     setSelectedItem(item);
     setIsPopupOpen(true);
+  };
+
+  const handleEditClick = (item: Prompt) => {
+    setSelectedItem(item);
+    setIsFormPopupOpen(true);
   };
   
   // 고객사 선택 핸들러
@@ -146,20 +166,44 @@ const PromptPage: React.FC = () => {
 
   const closePopup = () => {
     setIsPopupOpen(false);
+    // 팝업이 닫힐 때 리스트 새로고침
+    setTimeout(() => {
+      if (listRef.current) {
+        listRef.current.refetch();
+      }
+    }, 100);
+  };
+
+  const closeFormPopup = () => {
+    setIsFormPopupOpen(false);
+  };
+
+  const handleFormSave = () => {
+    setIsFormPopupOpen(false);
+    // 저장 후 리스트 새로고침
+    setTimeout(() => {
+      if (listRef.current) {
+        listRef.current.refetch();
+      }
+    }, 100);
   };
 
 
   const fetchData = useCallback(
     async (params: FetchParams): Promise<FetchResult<Prompt>> => {
       try {
-        // 현재 입력된 검색어 저장
+        // 키워드가 전달되면 현재 키워드 업데이트 (빈 문자열 포함)
+        let searchKeyword = '';
         if (params.keyword !== undefined) {
           setCurrentKeyword(params.keyword);
+          searchKeyword = params.keyword;
+        } else {
+          searchKeyword = currentKeyword;
         }
 
         const response = await getAIPromptList({
           companyCode: selectedCompanyCode || '',
-          keyword: params.keyword || currentKeyword || '',
+          keyword: searchKeyword,
         });
         
         console.log('AI 프롬프트 조회 응답:', response);
@@ -199,7 +243,11 @@ const PromptPage: React.FC = () => {
 
   const columns: ColumnDefinition<Prompt>[] = useMemo(
     () => [
-      { header: 'No', accessor: 'no' },
+      { 
+        header: 'No', 
+        accessor: 'no',
+        formatter: (_value, _item, index) => (index !== undefined ? index + 1 : 1),
+      },
       {
         header: '최종수정일',
         accessor: 'updateAt',
@@ -251,17 +299,25 @@ const PromptPage: React.FC = () => {
         selectedCompanyCode={selectedCompanyCode}
         selectedCompanyName={selectedCompanyName}
         onRowClick={handleRowClick}
-        onAdd={handleHeaderButtonClick}
-        addButtonLabel="프롬프트 추가"
+        // onAdd={handleHeaderButtonClick}
+        // addButtonLabel="프롬프트 추가"
         themeMode="light"
+        searchPlaceholder="프롬프트명, 설명 검색"
       />
 
 <PromptPopup
-  index={0}
   isOpen={isPopupOpen}
   onClose={closePopup}
-  firstCreatedTime={selectedItem?.createAt ? dayjs(selectedItem.createAt).format('YYYY-MM-DD') : ''}
-  firstContent={selectedItem?.content || ''}
+  selectedPrompt={selectedItem as any}
+  companyCode={selectedCompanyCode || 'heredot'}
+/>
+
+<PromptFormPopup
+  isOpen={isFormPopupOpen}
+  onClose={closeFormPopup}
+  onSave={handleFormSave}
+  selectedPrompt={selectedItem}
+  companyCode={selectedCompanyCode || 'heredot'}
 />
 
     </>

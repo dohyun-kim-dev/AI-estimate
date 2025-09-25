@@ -36,6 +36,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   deleteBtnCallBack?: () => void;
   // 중간 영역 커스텀 컨텐츠 prop 추가
   renderMiddleContent?: () => React.ReactNode;
+  searchPlaceholder?: string;
 }
 
 const CmsDesktopView = forwardRef<{ refetch: () => void }, CmsDesktopViewProps<any>>(function CmsDesktopView<T extends BaseRecord>({
@@ -59,6 +60,7 @@ const CmsDesktopView = forwardRef<{ refetch: () => void }, CmsDesktopViewProps<a
   excelTemplateBtnCallBack,
   deleteBtnCallBack,
   renderMiddleContent,
+  searchPlaceholder
 }: CmsDesktopViewProps<T>, ref: React.Ref<{ refetch: () => void }>) {
   const handleFetchData = async (params: FetchParams) => {
     if (fetchData) {
@@ -93,6 +95,7 @@ const CmsDesktopView = forwardRef<{ refetch: () => void }, CmsDesktopViewProps<a
       excelTemplateBtnCallBack={excelTemplateBtnCallBack}
       deleteBtnCallBack={deleteBtnCallBack}
       renderMiddleContent={renderMiddleContent}
+      searchPlaceholder={searchPlaceholder}
     />
   );
 });

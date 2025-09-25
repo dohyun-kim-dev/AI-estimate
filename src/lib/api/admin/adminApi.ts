@@ -18,6 +18,7 @@ import {
   AIPromptCreateParams,
   AIPromptUpdateParams,
   AIPromptDeleteParams,
+  UserUpdateParams,
 } from './adminApi.types';
 
 // API URL 생성 헬퍼 함수
@@ -555,6 +556,43 @@ export async function deleteAIPrompt(
     title: 'AI 프롬프트 삭제',
     url: `${BASE_URL}/cms/ai-prompts/${params.id}?${queryParams.toString()}`,
     method: 'DELETE',
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// AI 프롬프트 수정 이력 조회
+export async function getAIPromptHistory(
+  params: { id: string; companyCode: string }
+) {
+  const queryParams = new URLSearchParams();
+  queryParams.append('companyCode', params.companyCode);
+
+  return callAdminApi({
+    title: 'AI 프롬프트 수정 이력 조회',
+    url: `${BASE_URL}/cms/ai-prompts/${params.id}/history?${queryParams.toString()}`,
+    method: 'GET',
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// ***************** 회원 정보 수정
+
+// 회원 정보 수정
+export async function updateUser(params: UserUpdateParams) {
+  const requestBody: any = {};
+  
+  // 옵션 값들을 body에 추가
+  if (params.cellphone !== undefined) requestBody.cellphone = params.cellphone;
+  if (params.email !== undefined) requestBody.email = params.email;
+  if (params.memo !== undefined) requestBody.memo = params.memo;
+
+  return callAdminApi({
+    title: '회원 정보 수정',
+    url: `${BASE_URL}/cms/users/${params.id}`,
+    method: 'PATCH',
+    body: requestBody,
     isCallPageLoader: true,
     isWithToken: true,
   });

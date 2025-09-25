@@ -308,11 +308,6 @@ const CustomerMngPage: React.FC = () => {
       { header: '전화번호', accessor: 'cellphone' },
       { header: '이메일', accessor: 'email' },
       {
-        header: '라이선스',
-        accessor: 'licence',
-        formatter: (value) => value || '-',
-      },
-      {
         header: '메모',
         accessor: 'memo',
         formatter: (value) => value || '-',

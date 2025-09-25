@@ -522,7 +522,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       // URL 크롤링 결과가 있으면 프롬프트에 추가
       let finalPrompt = combinedPrompt;
       if (urlAnalysisForAI) {
-        finalPrompt = `url 크롤링한 텍스트야 보고 분석해줘 ${input} ${urlAnalysisForAI}`;
+        finalPrompt = `url 크롤링한 텍스트야 보고 분석한 뒤 핵심 서비스 기능들을 나열해줘 ${input} ${urlAnalysisForAI}`;
         console.log('URL 크롤링 결과가 AI 프롬프트에 포함됨');
       }
 

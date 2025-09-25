@@ -126,3 +126,11 @@ export type AdminLoginParams = {
     companyCode: string;
   };
 
+  // 회원 정보 수정 관련 타입
+  export type UserUpdateParams = {
+    id: string;
+    cellphone?: string;
+    email?: string;
+    memo?: string;
+  };
+

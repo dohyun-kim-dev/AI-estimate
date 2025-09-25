@@ -12,7 +12,7 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import PhoneIcon from '@mui/icons-material/Phone';
 import EmailIcon from '@mui/icons-material/Email';
 import { ColumnDefinition } from '@/components/CustomList/GenericDataTable';
-import { adminGetList, getUserList, adminCreate } from '@/lib/api/admin/adminApi';
+import { adminGetList, getUserList, adminCreate, updateUser } from '@/lib/api/admin/adminApi';
 import dayjs from 'dayjs';
 import styled from 'styled-components';
 import { THEME_COLORS } from '@/styles/theme_colors';
@@ -269,24 +269,31 @@ const UserMngPage: React.FC = () => {
 
   const handleSave = async () => {
     let valid = true;
+    
+    // 수정 모드인지 확인 (selectedUser가 있으면 수정, 없으면 신규 등록)
+    const isEditMode = selectedUser && selectedUser._id;
 
-    if (!Validators.required(userId) || !Validators.id(userId)) {
-      setIdError('아이디는 영문자와 숫자를 포함한 6~20자여야 합니다.');
-      valid = false;
-    } else setIdError(null);
+    // 신규 등록시에만 아이디와 비밀번호 검증
+    if (!isEditMode) {
+      if (!Validators.required(userId) || !Validators.id(userId)) {
+        setIdError('아이디는 영문자와 숫자를 포함한 6~20자여야 합니다.');
+        valid = false;
+      } else setIdError(null);
 
-    if (!Validators.password(password)) {
-      setPwdError(
-        '비밀번호는 영문, 숫자, 특수문자를 포함해 8자 이상이어야 합니다.'
-      );
-      valid = false;
-    } else setPwdError(null);
+      if (!Validators.password(password)) {
+        setPwdError(
+          '비밀번호는 영문, 숫자, 특수문자를 포함해 8자 이상이어야 합니다.'
+        );
+        valid = false;
+      } else setPwdError(null);
 
-    if (!Validators.required(name)) {
-      setNameError('이름을 입력해주세요.');
-      valid = false;
-    } else setNameError(null);
+      if (!Validators.required(name)) {
+        setNameError('이름을 입력해주세요.');
+        valid = false;
+      } else setNameError(null);
+    }
 
+    // 이메일과 전화번호는 수정 모드에서도 검증
     if (!Validators.email(email)) {
       setEmailError('올바른 이메일 형식이 아닙니다.');
       valid = false;
@@ -300,44 +307,76 @@ const UserMngPage: React.FC = () => {
     if (!valid) return;
 
     try {
-      const response = await adminCreate({
-        adminId: userId,
-        password,
-        name,
-        cellphone,
-        memo: description, // description을 memo로 변경
-        email,
-        receiveEmail: emailYn === 'Y', // Y/N 값을 boolean으로 변환
-        receiveAlimtalk: smsYn === 'Y', // Y/N 값을 boolean으로 변환
-        companyCode: selectedCompanyCode || undefined, // 선택된 회사 코드 추가
-      });
-
-      devLog('사용자 등록 응답', response);
-
-      const responseData = Array.isArray(response) ? response[0] : response;
+      let response;
       
-      // 타입 안전하게 응답 처리
-      if (responseData && typeof responseData === 'object' && 'message' in responseData && responseData.message === 'success') {
-        toast.success('사용자가 성공적으로 등록되었습니다.');
-        setIsPopupOpen(false);
+      if (isEditMode) {
+        // 회원 정보 수정
+        response = await updateUser({
+          id: selectedUser._id!,
+          cellphone: cellphone,
+          email: email,
+          memo: description,
+        });
         
-        // 현재 검색어와 필터를 유지하면서 리스트 새로고침
-        listRef.current?.refetch();
-      } else {
-        let errorMessage = '사용자 등록에 실패했습니다.';
+        devLog('회원 정보 수정 응답', response);
         
-        if (responseData && typeof responseData === 'object') {
-          if ('error' in responseData && responseData.error && typeof responseData.error === 'object' && 'customMessage' in responseData.error) {
-            errorMessage = responseData.error.customMessage as string;
-          } else if ('message' in responseData) {
-            errorMessage = responseData.message as string;
+        const responseData = Array.isArray(response) ? response[0] : response;
+        console.log("응답데이터 ",responseData);
+      if (responseData && responseData.data.statusCode === 200 && responseData.data.message === 'success') {
+          toast.success('회원 정보가 수정되었습니다.');
+          setIsPopupOpen(false);
+          listRef.current?.refetch();
+        } else {
+          let errorMessage = '회원 정보 수정에 실패했습니다.';
+          
+          if (responseData && typeof responseData === 'object') {
+            if ('error' in responseData && responseData.error && typeof responseData.error === 'object' && 'customMessage' in responseData.error) {
+              errorMessage = responseData.error.customMessage as string;
+            } else if ('message' in responseData) {
+              errorMessage = responseData.message as string;
+            }
           }
+          
+          toast.error(errorMessage);
         }
+      } else {
+        // 신규 사용자 등록 (기존 로직)
+        response = await adminCreate({
+          adminId: userId,
+          password,
+          name,
+          cellphone,
+          memo: description,
+          email,
+          receiveEmail: emailYn === 'Y',
+          receiveAlimtalk: smsYn === 'Y',
+          companyCode: selectedCompanyCode || undefined,
+        });
+
+        devLog('사용자 등록 응답', response);
+
+        const responseData = Array.isArray(response) ? response[0] : response;
         
-        toast.error(errorMessage);
+        if (responseData && typeof responseData === 'object' && 'message' in responseData && responseData.message === 'success') {
+          toast.success('사용자가 성공적으로 등록되었습니다.');
+          setIsPopupOpen(false);
+          listRef.current?.refetch();
+        } else {
+          let errorMessage = '사용자 등록에 실패했습니다.';
+          
+          if (responseData && typeof responseData === 'object') {
+            if ('error' in responseData && responseData.error && typeof responseData.error === 'object' && 'customMessage' in responseData.error) {
+              errorMessage = responseData.error.customMessage as string;
+            } else if ('message' in responseData) {
+              errorMessage = responseData.message as string;
+            }
+          }
+          
+          toast.error(errorMessage);
+        }
       }
     } catch (error: any) {
-      const errorMessage = error?.customMessage || error?.message || '사용자 등록에 실패했습니다.';
+      const errorMessage = error?.customMessage || error?.message || (isEditMode ? '회원 정보 수정에 실패했습니다.' : '사용자 등록에 실패했습니다.');
       toast.error(errorMessage);
     }
   };
@@ -345,9 +384,13 @@ const UserMngPage: React.FC = () => {
   const fetchData = useCallback(
     async (params: FetchParams): Promise<FetchResult<User>> => {
       try {
-        // 현재 입력된 검색어 저장
+        // 키워드가 전달되면 현재 키워드 업데이트 (빈 문자열 포함)
+        let searchKeyword = '';
         if (params.keyword !== undefined) {
           setCurrentKeyword(params.keyword);
+          searchKeyword = params.keyword;
+        } else {
+          searchKeyword = currentKeyword;
         }
 
         const fromDate = params.fromDate || '2000-01-01';
@@ -355,7 +398,7 @@ const UserMngPage: React.FC = () => {
         
         // API 호출
         const response = await getUserList({
-          keyword: params.keyword || currentKeyword || '',
+          keyword: searchKeyword,
           fromDate: fromDate,
           toDate: toDate,
           companyCode: selectedCompanyCode || '',
@@ -453,7 +496,7 @@ const UserMngPage: React.FC = () => {
         accessor: 'profileImage',
         formatter: (value, row) => (
           <ProfileWrapper>
-            <ProfileHeader $imageUrl={row.profileImage || null} />
+            <ProfileHeader $imageUrl={row.profileImage || "/ai-estimate/no_profile.png"} />
           </ProfileWrapper>
         ),
       },
@@ -503,6 +546,7 @@ const UserMngPage: React.FC = () => {
       <CmsResponsiveContainer<User>
         ref={listRef}
         title="고객 회원관리"
+        data={[]}
         columns={columns}
         fetchData={fetchData}
         enableDateFilter={true}
@@ -523,7 +567,7 @@ const UserMngPage: React.FC = () => {
       />
 
 <CmsPopup
-      title="회원 정보 수정"
+      title={selectedUser?._id ? "회원 정보 수정" : "회원 등록"}
       isOpen={isPopupOpen}
       onClose={closePopup}
       showRequiredMark={true}
@@ -536,7 +580,9 @@ const UserMngPage: React.FC = () => {
 
           {/* 오른쪽 영역: 저장/닫기 */}
           <div style={{ display: 'flex', gap: '12px' }}>
-            <SaveButton onClick={handleSave}>저장</SaveButton>
+            <SaveButton onClick={handleSave}>
+              {selectedUser?._id ? "수정" : "등록"}
+            </SaveButton>
             <CancelButton onClick={closePopup}>닫기</CancelButton>
           </div>
         </PopupFooter>
@@ -576,9 +622,41 @@ const UserMngPage: React.FC = () => {
           </UserDetails>
         </UserInfoSection>
 
-        <Title>정보 수정</Title>
+        <Title>{selectedUser?._id ? "정보 수정" : "회원 등록"}</Title>
 
         <FormSection>
+          {/* 신규 등록시에만 표시되는 필드들 */}
+          {!selectedUser?._id && (
+            <>
+              <CommonTextField
+                id="userId"
+                value={userId}
+                label="* 아이디"
+                onChange={(e) => setUserId(e.target.value)}
+                placeholder="영문자와 숫자를 포함한 6~20자"
+                errorMessage={idError ?? undefined}
+              />
+              <CommonTextField
+                id="password"
+                value={password}
+                label="* 비밀번호"
+                type="password"
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="영문, 숫자, 특수문자를 포함해 8자 이상"
+                errorMessage={pwdError ?? undefined}
+              />
+              <CommonTextField
+                id="name"
+                value={name}
+                label="* 이름"
+                onChange={(e) => setName(e.target.value)}
+                placeholder="이름을 입력하세요"
+                errorMessage={nameError ?? undefined}
+              />
+            </>
+          )}
+          
+          {/* 공통 필드들 */}
           <CommonTextField
             id="email"
             value={email}

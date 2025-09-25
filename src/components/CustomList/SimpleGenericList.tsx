@@ -57,7 +57,7 @@ const TopHeader = styled.div`
 
 const TableContainer = styled.div<{ $themeMode: ThemeMode }>`
   width: 100%;
-  max-height: 400px;
+  // max-height: 400px;
   overflow-y: auto;
   border: 1px solid ${({ $themeMode }) =>
     $themeMode === 'light' ? '#dddddd' : THEME_COLORS.dark.borderColor};
@@ -115,6 +115,7 @@ interface SimpleGenericListProps<T extends BaseRecord> {
   renderTabs?: () => React.ReactNode;
   themeMode?: ThemeMode;
   fixedLayout?: boolean; // 테이블 레이아웃을 fixed로 설정할지 여부
+  onRowClick?: (item: T, rowIndex: number) => void; // 행 클릭 핸들러 추가
 }
 
 const SimpleGenericListInner = <T extends BaseRecord>(
@@ -127,6 +128,7 @@ const SimpleGenericListInner = <T extends BaseRecord>(
     renderTabs,
     themeMode = 'light',
     fixedLayout = false,
+    onRowClick,
   }: SimpleGenericListProps<T>,
   ref: React.Ref<{ refetch: () => void }>
 ) => {
@@ -235,6 +237,7 @@ const SimpleGenericListInner = <T extends BaseRecord>(
           sortKey={sortKey}
           sortOrder={sortOrder}
           fixedLayout={fixedLayout}
+          onRowClick={onRowClick}
           onHeaderClick={(key) => {
             const order = sortKey === key && sortOrder === 'asc' ? 'desc' : 'asc';
             setSortKey(key as string);

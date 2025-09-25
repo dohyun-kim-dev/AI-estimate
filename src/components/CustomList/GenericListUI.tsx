@@ -631,7 +631,7 @@ const Container = styled.div<{ $themeMode: ThemeMode }>`
   width: 100%;
   min-height: 100%;
   box-sizing: border-box;
-  padding: 2px 30px 22px 30px;
+  padding: 2px 30px 100px 30px;
   background-color: ${({ $themeMode }) =>
     $themeMode === "light" ? THEME_COLORS.light.background : THEME_COLORS.dark.background};
   color: ${({ $themeMode }) =>

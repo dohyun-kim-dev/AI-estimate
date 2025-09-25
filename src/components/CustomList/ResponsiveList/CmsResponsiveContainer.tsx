@@ -42,6 +42,7 @@ interface CmsResponsiveContainerProps<T extends BaseRecord> {
   deleteBtnCallBack?: () => void;
   // 중간 영역 커스텀 컨텐츠 prop 추가
   renderMiddleContent?: () => React.ReactNode;
+  searchPlaceholder?: string;
   
 }
 
@@ -71,6 +72,7 @@ const CmsResponsiveContainer = <T extends BaseRecord>(
     excelTemplateBtnCallBack,
     deleteBtnCallBack,
     renderMiddleContent,
+    searchPlaceholder,
     ref,
   } = props;
   
@@ -97,7 +99,8 @@ const CmsResponsiveContainer = <T extends BaseRecord>(
     excelUploadBtnCallBack,
     excelTemplateBtnCallBack,
     deleteBtnCallBack,
-    renderMiddleContent
+    renderMiddleContent,
+    searchPlaceholder,
   };
 
   return (
