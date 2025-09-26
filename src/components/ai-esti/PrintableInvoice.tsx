@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { useAuthStore } from '@/store/authStore';
 import { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
+import { calculateEstimatedPeriod } from '@/utils/estimateCalculator';
 
 const PrintableInvoiceWrapper = styled.div`
   width: 780px;
@@ -46,6 +47,9 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
     }
   }
 
+  // 정확한 개발 기간 계산
+  const periodCalculation = calculateEstimatedPeriod(estimate);
+  
   // 각 카테고리의 모든 아이템을 플랫하게 만들기 (is_deleted가 false인 항목만)
   const allItems = estimate.categories.flatMap((category) =>
     category.sub_categories.flatMap((subCategory) =>
@@ -283,7 +287,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
                 </tr>
                 <tr>
                   <td colSpan={4} style={{ ...headerCellStyle, textAlign: 'right' }}>개발 기간</td>
-                  <td style={{ ...valueCellStyle, textAlign: 'right' }}>{`${estimate.estimated_period}(약 ${Math.ceil(parseInt(estimate.estimated_period) / 4.345)}개월)`}</td>
+                  <td style={{ ...valueCellStyle, textAlign: 'right' }}>{periodCalculation.estimatedPeriodText}</td>
                 </tr>
               </>
             );

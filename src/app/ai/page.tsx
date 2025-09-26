@@ -25,6 +25,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { usePromptStore } from '@/store/promptStore';
 import { useAuthStore } from '@/store/authStore';
 import { useThemeStore } from '@/store/themeStore';
+import { transformMessageForDisplay } from '@/utils/messageTransform';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -414,37 +415,11 @@ const parseMessageContent = (content: string) => {
   
   // AI 프롬프트와 명령어 제거 및 액션별 메시지 변환
   const stripAiPrompt = (text: string) => {
-    // AI 예산 줄이기 패턴 감지 및 변환
-    if (text.includes('AI 예산 줄이기') || text.includes('예산을 줄이')) {
-      const projectNameMatch = text.match(/프로젝트명:\s*([^\n]*)/);
-      const projectName = projectNameMatch ? projectNameMatch[1].trim() : '프로젝트';
-      return `${projectName} - AI 예산 줄이기`;
-    }
-    
-    // AI 맞춤 추천 패턴 감지 및 변환
-    if (text.includes('AI 맞춤 추천') || text.includes('맞춤 추천')) {
-      const projectNameMatch = text.match(/프로젝트명:\s*([^\n]*)/);
-      const projectName = projectNameMatch ? projectNameMatch[1].trim() : '프로젝트';
-      return `${projectName} - AI 맞춤 추천`;
-    }
-    
-    // [현재 견적 정보] 패턴이 포함된 경우 프로젝트명만 추출
-    if (text.includes('[현재 견적 정보]')) {
-      const projectNameMatch = text.match(/프로젝트명:\s*([^\n]*)/);
-      if (projectNameMatch) {
-        const projectName = projectNameMatch[1].trim();
-        // 액션 유형 결정
-        if (text.includes('예산을 줄이')) {
-          return `${projectName} - AI 예산 줄이기`;
-        } else if (text.includes('맞춤 추천')) {
-          return `${projectName} - AI 맞춤 추천`;
-        }
-        return projectName; // 기본적으로 프로젝트명만
-      }
-    }
+    // 액션 버튼 메시지 변환을 먼저 수행
+    const transformedText = transformMessageForDisplay(text);
     
     // [현재 견적 정보] ~ 위 견적을 기반으로 ... 패턴만 제거 (기존 로직)
-    let cleanedText = text.replace(/\[현재 견적 정보][\s\S]*?위 견적을 기반으로 [^\n]*를 진행해주세요\./g, '').trim();
+    let cleanedText = transformedText.replace(/\[현재 견적 정보][\s\S]*?위 견적을 기반으로 [^\n]*를 진행해주세요\./g, '').trim();
     
     return cleanedText;
   };
@@ -869,10 +844,8 @@ const userId = getUserId() || '';
                           `    - ${item.name}: ${item.price}원 (FE: ${item.fe || '0일'}/BE: ${item.be || '0일'})`).join('\n')}`).join('\n')}`).join('\n\n')}\n\n`
                     : action;
                   
-                  // 사용자 메시지는 간단하게 표시 (견적 정보 없이 액션명만)
-                  const displayMessage = action.includes('예산 줄이기') ? '예산 줄이기' : 
-                                        action.includes('맞춤 추천') ? '맞춤 추천' : 
-                                        action;
+                  // 사용자 메시지는 일관성 있게 변환
+                  const displayMessage = transformMessageForDisplay(aiPrompt);
                   
                   handleSubmit(aiPrompt, { displayMessage });
                 }}
@@ -1225,7 +1198,7 @@ useEffect(() => {
     const urlSessionId = searchParams.get('sessionId');
 
     const handleSessionManagement = async () => {
-      const localChatSessionId = localStorage.getItem('chatSessionId');
+      const localChatSessionId = localStorage.getItem('chatSessionId')||sessionStorage.getItem('chatSessionId');
       let effectiveSessionId = urlSessionId || localChatSessionId;
 
       if (urlSessionId) {
@@ -1293,7 +1266,7 @@ useEffect(() => {
               }
             }
           } catch (error) {
-            console.error('세션 소유권 이전 실패:', error);
+            console.error('세션 소유권 이전 실패:',localChatSessionId, error);
           }
         } else {
           try {
