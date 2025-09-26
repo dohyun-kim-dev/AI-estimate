@@ -450,12 +450,18 @@ export const AiMessageContent: React.FC<{ content: string; chatSessionId?: strin
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
   const [loadingStep, setLoadingStep] = useState(0); // 0: 생각 중, 1: 깊게 생각 중, 2: 더 좋은 답변 고민 중
   const [isEstimateGenerating, setIsEstimateGenerating] = useState(false); // 견적서 생성 중 상태
-  const estimateData = useMemo(() => extractEstimateData(content), [content]);
+  const [estimateData, setEstimateData] = useState<ProjectEstimate | null>(() => extractEstimateData(content));
   const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash', selectedPromptId: 'default' });
   const estimateId = estimateData?.uuid;
   const effectiveChatSessionId = chatSessionId || localStorage.getItem('chatSessionId') || '';
   const updateLastMessage = useChatStore((s) => s.updateLastMessage); // ⭐️ 추가: updateLastMessage 가져오기
   const messages = useChatStore((s) => s.messages); // ⭐️ 추가: messages 배열 가져오기
+
+  // content 변경 시 estimateData 업데이트
+  useEffect(() => {
+    const newEstimateData = extractEstimateData(content);
+    setEstimateData(newEstimateData);
+  }, [content]);
 
 
 //   window.addEventListener('message', (event) => {
@@ -682,6 +688,12 @@ const userId = getUserId() || '';
     setSelectedItem(null);
   };
 
+  // 견적 데이터 변경 핸들러
+  const handleEstimateChange = useCallback((updatedEstimate: ProjectEstimate) => {
+    console.log('견적 데이터 변경됨:', updatedEstimate);
+    setEstimateData(updatedEstimate);
+  }, []);
+
   // 메시지 내용을 견적서와 일반 텍스트로 분리
   if (typeof content !== 'string') {
     return null;
@@ -822,6 +834,7 @@ const userId = getUserId() || '';
                       userId={userId}
                       title={(updatedEstimateData || estimateData)?.project_name || '견적서'}
                       discountRate={discountPercentage}
+                      onEstimateChange={handleEstimateChange}
                     />
                   </AnimatedContainer>
                 );
@@ -844,8 +857,23 @@ const userId = getUserId() || '';
                           `    - ${item.name}: ${item.price}원 (FE: ${item.fe || '0일'}/BE: ${item.be || '0일'})`).join('\n')}`).join('\n')}`).join('\n\n')}\n\n`
                     : action;
                   
-                  // 사용자 메시지는 일관성 있게 변환
-                  const displayMessage = transformMessageForDisplay(aiPrompt);
+                  // 디버깅용 로그
+                  console.log('EstimateActionButtons - estimateData:', estimateData);
+                  console.log('EstimateActionButtons - project_name:', estimateData?.project_name);
+                  console.log('EstimateActionButtons - project_name type:', typeof estimateData?.project_name);
+                  console.log('EstimateActionButtons - project_name length:', estimateData?.project_name?.length);
+                  console.log('EstimateActionButtons - action:', action);
+                  
+                  // 사용자 메시지는 프로젝트명과 액션으로 직접 생성
+                  const projectName = estimateData?.project_name;
+                  console.log('projectName 확인:', projectName);
+                  console.log('조건 확인:', !!projectName);
+                  
+                  const displayMessage = projectName 
+                    ? `${projectName} - ${action}`
+                    : transformMessageForDisplay(aiPrompt);
+                  
+                  console.log('최종 displayMessage:', displayMessage);
                   
                   handleSubmit(aiPrompt, { displayMessage });
                 }}
@@ -1432,13 +1460,17 @@ useEffect(() => {
       <ChatBox>
         {messages.map((m, idx) => {
           if (m.role === 'user') {
-            const parsedContent = parseMessageContent(m.content);
+            // 사용자 메시지는 transformMessageForDisplay로 간단하게 표시
+            const fileMatch = m.content.match(/\[첨부파일: (.+?)\]/);
+            const messageWithoutFile = fileMatch ? m.content.replace(/\[첨부파일: .+?\]/, '').trim() : m.content;
+            const displayText = transformMessageForDisplay(messageWithoutFile);
+            
             return (
               <UserMessage key={idx}>
-                {parsedContent.text}
-                {parsedContent.fileName && (
+                {displayText}
+                {fileMatch && (
                   <div style={{ marginTop: '8px', fontSize: '14px', opacity: 0.7 }}>
-                    📎 {parsedContent.fileName}
+                    📎 {fileMatch[1]}
                   </div>
                 )}
               </UserMessage>

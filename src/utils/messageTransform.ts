@@ -1,5 +1,11 @@
 // 메시지 변환 유틸리티 함수
 export const transformMessageForDisplay = (content: string): string => {
+  // 이미 변환된 형식인지 확인 (프로젝트명 - 액션 패턴)
+  const alreadyTransformedPattern = /^.+ - (AI 예산 줄이기|AI 맞춤 추천)$/;
+  if (alreadyTransformedPattern.test(content.trim())) {
+    return content; // 이미 변환된 메시지는 그대로 반환
+  }
+  
   // AI 예산 줄이기 패턴 감지 및 변환
   if (content.includes('AI 예산 줄이기') || content.includes('예산을 줄이')) {
     const projectNameMatch = content.match(/프로젝트명:\s*([^\n]*)/);

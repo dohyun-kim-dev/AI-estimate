@@ -157,7 +157,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
           </tr>
           <tr>
             <td style={headerCellStyle}>고객명</td>
-            <td style={valueCellStyle}>{user?.name || '비회원'} {(user?.cellphone || guestCellphone) ? ' 82+' : ''} {user?.cellphone || ''}</td>
+            <td style={valueCellStyle}>{user?.name || '비회원'}</td>
             <td style={headerCellStyle}>대표자명</td>
             <td style={valueCellStyle}>강태원 82+031-8039-7981</td>
           </tr>

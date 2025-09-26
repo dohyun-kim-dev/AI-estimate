@@ -43,11 +43,11 @@ export function extractIntroFromReply(reply: string) {
 }
 
 /** 인트로 + 스크립트(JSON) 문자열 조립 */
-export function buildFullEstimateData(input: any, estimateId?: string) {
+export function buildFullEstimateData(input: any, estimateIdOrIntro?: string, providedIntro?: string) {
   if (typeof input === 'string') {
     // content인 경우
     const intro = extractIntroFromReply(input);
-    const estimate = extractEstimateData(input,estimateId); //uuid 있음?
+    const estimate = extractEstimateData(input, estimateIdOrIntro); //uuid 있음?
     console.log("buildFullEstimateData extracted estimate:", estimate);
     if (!estimate) return input; // 견적서가 없으면 원본 반환
     console.log("buildFullEstimateData input (string):", input);
@@ -70,7 +70,16 @@ ${json}
     const prepared = normalizeEstimate(JSON.parse(JSON.stringify(input || {})));
     console.log("buildFullEstimateData:", prepared);
     const json = JSON.stringify(prepared, null, 2);
-    const headline = '지금까지 논의된 내용을 바탕으로 주요 기능과 예상 비용을 정리한 견적서를 아래에 바로 제공드립니다.';
+    
+    // providedIntro가 있으면 사용, 아니면 estimateIdOrIntro가 인트로인지 확인, 둘 다 없으면 기본값
+    let headline = '지금까지 논의된 내용을 바탕으로 주요 기능과 예상 비용을 정리한 견적서를 아래에 바로 제공드립니다.';
+    
+    if (providedIntro && providedIntro.length > 0) {
+      headline = providedIntro;
+    } else if (estimateIdOrIntro && estimateIdOrIntro.length > 0 && !estimateIdOrIntro.match(/^[a-f0-9-]{36}$/i)) {
+      // estimateIdOrIntro가 UUID가 아니면 인트로로 간주
+      headline = estimateIdOrIntro;
+    }
 
     return `${headline}
 

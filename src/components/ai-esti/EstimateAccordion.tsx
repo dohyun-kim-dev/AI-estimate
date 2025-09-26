@@ -7,6 +7,7 @@ import { buildFullEstimateData } from "@/hooks/estimate";
 import { ChatMessage, useChatStore } from "@/store/chatStore";
 import { calculateEstimatedPeriod, updateDesignItemPrices, calculateTotalPages } from "@/utils/estimateCalculator";
 import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
+import { devLog } from "../../utils/devLogger";
 
 const AccordionWrapper = styled.div`
   display: flex;
@@ -55,6 +56,7 @@ interface EstimateAccordionProps {
   onItemDelete?: (itemId: string, updatedItem: any) => void; 
   onItemRestore?: (itemId: string, updatedItem: any) => void; 
   discountRate?: number; // 각 기능별 할인율 적용
+  onEstimateChange?: (updatedEstimate: ProjectEstimate) => void; // 견적 변경 콜백
 }
 
 // 간단 딥클론 (structuredClone 미지원 대비)
@@ -257,6 +259,7 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
   title,
   onItemDelete,
   onItemRestore,
+  onEstimateChange,
   discountRate
 }) => {
   // 화면에 쓰는 소스 오브 트루스
@@ -313,7 +316,7 @@ useEffect(() => {
 useEffect(() => {
   if (!chatSessionId || !userId || isInitialUpdate) return;
 
-  console.log("견적 데이터 변경 감지, 자동 가격 업데이트 시작...");
+  // console.log("견적 데이터 변경 감지, 자동 가격 업데이트 시작...");
   
   // 화면설계/UI디자인 가격 업데이트
   const totalPages = calculateTotalPages(data.categories);
@@ -323,7 +326,7 @@ useEffect(() => {
   const hasChanges = JSON.stringify(updatedEstimate) !== JSON.stringify(data);
   
   if (hasChanges) {
-    console.log("가격 업데이트 변경사항 발견, 서버 저장 시작...");
+    // console.log("가격 업데이트 변경사항 발견, 서버 저장 시작...");
     setEstimate(updatedEstimate);
     
     const effectiveEstimateId = estimateId || updatedEstimate.uuid || data.uuid;
@@ -341,7 +344,7 @@ useEffect(() => {
     () =>
       debounce(async (est, effectiveEstimateId) => {
         try {
-          console.log("saveToServer 시작:", {
+          devLog("saveToServer 시작:", {
             estimateId: effectiveEstimateId,
             chatSessionId,
             userId,
@@ -351,28 +354,28 @@ useEffect(() => {
           if (!chatSessionId) {
             const localChatSessionId = localStorage.getItem('chatSessionId');
             if (localChatSessionId) {
-              console.log("localStorage에서 chatSessionId 가져옴:", localChatSessionId);
+              devLog("localStorage에서 chatSessionId 가져옴:", localChatSessionId);
               setChatSessionId(localChatSessionId);
             } else {
               const sessionChatSessionId = sessionStorage.getItem('chatSessionId');
               if (sessionChatSessionId) {
-                console.log("sessionStorage에서 chatSessionId 가져옴:", sessionChatSessionId);
+                devLog("sessionStorage에서 chatSessionId 가져옴:", sessionChatSessionId);
                 setChatSessionId(sessionChatSessionId);
               }
             }
-            console.warn("[save] chatSessionId 없음 — 업데이트 생략");
+            devLog("[save] chatSessionId 없음 — 업데이트 생략");
           }
 
           // 💡 id 없으면 업데이트 못 하므로 여기서 바로 가드
           if (!effectiveEstimateId) {
-            console.warn("[save] estimateId 없음 — 업데이트 생략");
+            devLog("[save] estimateId 없음 — 업데이트 생략");
             return;
           }
 
           // 항상 최신 messageId를 스토리지에서 조회 (동시에 여러 탭에서 변경될 수 있어서)
           const messageId = findMessageIdForEstimate(effectiveEstimateId);
-          
-          console.log("messageId 조회 결과:", {
+
+          devLog("messageId 조회 결과:", {
             effectiveEstimateId,
             messageId,
             chatSessionId,
@@ -380,7 +383,7 @@ useEffect(() => {
           });
 
           if (!chatSessionId || !userId || !messageId) {
-            console.warn("[save] 필수값 누락:", { chatSessionId, effectiveEstimateId, userId, messageId });
+            devLog("[save] 필수값 누락:", { chatSessionId, effectiveEstimateId, userId, messageId });
             return;
           }
 
@@ -396,16 +399,16 @@ useEffect(() => {
           
           let finalEst = est;
           if (!hasDesignPricing) {
-            console.log("견적서 업로드 전 가격 업데이트 시작...");
+            devLog("견적서 업로드 전 가격 업데이트 시작...");
             const totalPages = calculateTotalPages(est.categories);
             finalEst = updateDesignItemPrices(est, totalPages);
-            console.log("견적서 가격 업데이트 완료, 데이터 빌드 시작...");
+            devLog("견적서 가격 업데이트 완료, 데이터 빌드 시작...");
           } else {
-            console.log("이미 업데이트된 가격 데이터 사용, 데이터 빌드 시작...");
+            devLog("이미 업데이트된 가격 데이터 사용, 데이터 빌드 시작...");
           }
           
           const dataStr = buildFullEstimateData(finalEst);
-          console.log("견적서 데이터 빌드 완료, 업로드 시작...");
+          devLog("견적서 데이터 빌드 완료, 업로드 시작...");
           
           // 실제 기능들을 계산한 총 금액 계산 (삭제된 기능 제외)
           let totalAmount = 0;
@@ -435,7 +438,7 @@ useEffect(() => {
           );
 
           if (uploadResponse?.statusCode === 200) {
-            console.log("견적서 업로드 성공, 채팅 메시지 업데이트 시작...");
+            devLog("견적서 업로드 성공, 채팅 메시지 업데이트 시작...");
             
             // 견적서 업로드 성공 시, 채팅 메시지도 함께 수정
             const updatedReply = `<script type="application/json" id="invoiceData">${JSON.stringify(finalEst)}</script>`;
@@ -444,20 +447,20 @@ useEffect(() => {
               value: updatedReply,
             });
 
-            console.log("채팅 메시지 업데이트 완료");
+            devLog("채팅 메시지 업데이트 완료");
 
             // 로컬 스토어에도 반영하여 UI가 즉시 갱신되도록 함
             try {
               useChatStore.getState().updateMessageById(messageId, { content: updatedReply });
-              console.log("로컬 스토어 업데이트 완료");
+              devLog("로컬 스토어 업데이트 완료");
             } catch (e) {
-              console.warn("local updateMessageById failed", e);
+              devLog("local updateMessageById failed", e);
             }
           } else {
-            console.error("견적서 업로드 실패:", uploadResponse);
+            devLog("견적서 업로드 실패:", uploadResponse);
           }
         } catch (e) {
-          console.error("[save] 견적 업데이트 실패:", e);
+          devLog("[save] 견적 업데이트 실패:", e);
         }
       }, 700),
     [chatSessionId, estimateId, title, userId]
@@ -557,10 +560,16 @@ useEffect(() => {
         }
         
         saveToServer(next, effectiveEstimateId);
+        
+        // ✅ 부모 컴포넌트에 변경사항 전파
+        if (onEstimateChange) {
+          onEstimateChange(next);
+        }
+        
         return next;
       });
     },
-    [saveToServer, estimateId, data.uuid]
+    [saveToServer, estimateId, data.uuid, onEstimateChange]
   );
 
   // 자식에서 넘어오는 삭제/복구 콜백 (최신 상태를 직접 만드는 toggle 안에서 저장까지 처리)

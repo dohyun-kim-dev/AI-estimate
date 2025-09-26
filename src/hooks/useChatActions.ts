@@ -367,11 +367,16 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     setIsProcessing(true);
 
     // 사용자에게 보이는 메시지 생성 (간단한 버전)
-    let userDisplayContent = transformMessageForDisplay(displayMessage);
+    let userDisplayContent = displayMessage; // 이미 변환된 메시지 그대로 사용
+    console.log('useChatActions - displayMessage:', displayMessage);
+    console.log('useChatActions - userDisplayContent 초기값:', userDisplayContent);
+    
     if (uploadedFiles.length > 0) {
       const fileInfo = uploadedFiles.map((file) => `[첨부파일: ${file.name}]`).join('\n');
       userDisplayContent = `${userDisplayContent}\n\n${fileInfo}`;
     }
+
+    console.log('useChatActions - userDisplayContent 최종값:', userDisplayContent);
 
     // AI에게 전달할 실제 메시지 내용 (상세 정보 포함)
     let messageContent = input; // 원본 input (AI 프롬프트 등 포함)
@@ -791,8 +796,9 @@ if (estimateData) {
       corrected_period: correctedEstimateData.estimated_period
     });
 
-    // 수정된 견적 데이터로 다시 조립 (첫 번째는 견적 데이터, 두 번째는 AI 인트로)
-    const correctedDataStr = buildFullEstimateData(correctedEstimateData, extractIntroFromReply(reply));
+    // 수정된 견적 데이터로 다시 조립 (인트로 정보 보존)
+    const originalIntro = extractIntroFromReply(reply);
+    const correctedDataStr = buildFullEstimateData(correctedEstimateData, estimateId, originalIntro);
 
     const uploadBody = {
       sessionId: currentSessionId,
