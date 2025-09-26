@@ -46,7 +46,7 @@ const transformMessageForDisplay = (content: string): string => {
 };
 import { ensureEstimateUuid, buildFullEstimateData, extractIntroFromReply } from '@/hooks/estimate';
 import { uploadEstimatePdf } from '@/lib/api/user/userApi';
-import { calculateTotalAmount } from '../utils/estimateCalculator';
+import { calculateTotalAmount, calculateEstimatedPeriod } from '../utils/estimateCalculator';
 
 // 견적서 데이터를 추출하는 유틸리티 함수
 const extractEstimateData = (content: string): ProjectEstimate | null => {
@@ -796,15 +796,40 @@ if (estimateData) {
       } catch {}
     }
 
-    // calculateTotalAmount 함수를 사용하여 실제 총 금액 계산
+    // calculateTotalAmount와 calculateEstimatedPeriod 함수를 사용하여 정확한 값 계산
     const totalAmount = calculateTotalAmount(estimateData);
     console.log('계산된 실제 총 금액:', totalAmount);
+
+    // 정확한 기간 계산을 위해 calculateEstimatedPeriod 함수 사용
+    const periodCalculation = calculateEstimatedPeriod(estimateData);
+    console.log('계산된 실제 기간:', periodCalculation.estimatedPeriodText);
+
+    // 부가세 포함 금액 계산 (10% 부가세)
+    const vatIncludedAmount = Math.round(totalAmount * 1.1);
+
+    // AI가 생성한 견적 데이터를 정확한 계산 값으로 업데이트
+    const correctedEstimateData = {
+      ...estimateData,
+      total_price: totalAmount.toLocaleString(), // 계산된 총 금액으로 수정
+      vat_included_price: vatIncludedAmount.toLocaleString(), // 부가세 포함 금액 수정
+      estimated_period: `${periodCalculation.finalWeeks}주`, // 계산된 기간으로 수정 (주 단위만)
+      categories: periodCalculation.updatedEstimate.categories // 화면설계 가격이 업데이트된 카테고리 사용
+    };
+    console.log('수정된 견적 데이터:', {
+      original_total: estimateData.total_price,
+      corrected_total: correctedEstimateData.total_price,
+      original_period: estimateData.estimated_period,
+      corrected_period: correctedEstimateData.estimated_period
+    });
+
+    // 수정된 견적 데이터로 다시 조립 (첫 번째는 견적 데이터, 두 번째는 AI 인트로)
+    const correctedDataStr = buildFullEstimateData(correctedEstimateData, extractIntroFromReply(reply));
 
     const uploadBody = {
       sessionId: currentSessionId,
       invoiceTitle,
       userId: effectiveUserId,
-      dataStr,
+      dataStr: correctedDataStr, // 수정된 데이터 사용
       estimateId,
       amount: totalAmount,
       ...(userInfo ? { userInfo } : {})
@@ -824,7 +849,7 @@ if (estimateData) {
     if (uploadResponse?.statusCode !== 200) {
       throw new Error(uploadResponse?.error?.message || '견적 저장 실패');
     }
-          finalReply = dataStr;
+          finalReply = correctedDataStr; // 수정된 데이터 사용
         } catch (pdfError) {
           error(`견적 저장 실패: ${(pdfError as Error).message}`);
           // 견적 저장 실패해도 일반 응답으로 처리
