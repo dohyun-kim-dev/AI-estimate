@@ -10,6 +10,40 @@ import { createChatSession, createGuestChatSession, sendChatMessage, sendMessage
 import { generateAndUploadPdf } from '@/hooks/pdfUtils';
 import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import { v4 as uuidv4 } from 'uuid';
+
+// 메시지 변환 유틸리티 함수
+const transformMessageForDisplay = (content: string): string => {
+  // AI 예산 줄이기 패턴 감지 및 변환
+  if (content.includes('AI 예산 줄이기') || content.includes('예산을 줄이')) {
+    const projectNameMatch = content.match(/프로젝트명:\s*([^\n]*)/);
+    const projectName = projectNameMatch ? projectNameMatch[1].trim() : '프로젝트';
+    return `${projectName} - AI 예산 줄이기`;
+  }
+  
+  // AI 맞춤 추천 패턴 감지 및 변환
+  if (content.includes('AI 맞춤 추천') || content.includes('맞춤 추천')) {
+    const projectNameMatch = content.match(/프로젝트명:\s*([^\n]*)/);
+    const projectName = projectNameMatch ? projectNameMatch[1].trim() : '프로젝트';
+    return `${projectName} - AI 맞춤 추천`;
+  }
+  
+  // [현재 견적 정보] 패턴이 포함된 경우 프로젝트명만 추출
+  if (content.includes('[현재 견적 정보]')) {
+    const projectNameMatch = content.match(/프로젝트명:\s*([^\n]*)/);
+    if (projectNameMatch) {
+      const projectName = projectNameMatch[1].trim();
+      // 액션 유형 결정
+      if (content.includes('예산을 줄이')) {
+        return `${projectName} - AI 예산 줄이기`;
+      } else if (content.includes('맞춤 추천')) {
+        return `${projectName} - AI 맞춤 추천`;
+      }
+      return projectName; // 기본적으로 프로젝트명만
+    }
+  }
+  
+  return content; // 변환할 패턴이 없으면 원본 반환
+};
 import { ensureEstimateUuid, buildFullEstimateData, extractIntroFromReply } from '@/hooks/estimate';
 import { uploadEstimatePdf } from '@/lib/api/user/userApi';
 import { calculateTotalAmount } from '../utils/estimateCalculator';
@@ -355,25 +389,29 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     }
   };
 
-  const handleSubmit = async (input: string, options?: { displayMessage?: string; abortSignal?: AbortSignal }) => {
+  const handleSubmit = async (input: string, options?: { displayMessage?: string; abortSignal?: AbortSignal; chatHistory?: Array<{role: 'user' | 'model'; content: string}> }) => {
     const displayMessage = options?.displayMessage || input;
     const abortSignal = options?.abortSignal;
+    const explicitChatHistory = options?.chatHistory;
     if ((!input.trim() && uploadedFiles.length === 0) || isProcessing) return;
 
     setIsProcessing(true);
 
-    // 사용자 메시지 생성
-    let userMessageContent = displayMessage;
+    // 사용자에게 보이는 메시지 생성 (간단한 버전)
+    let userDisplayContent = displayMessage;
     if (uploadedFiles.length > 0) {
       const fileInfo = uploadedFiles.map((file) => `[첨부파일: ${file.name}]`).join('\n');
-      userMessageContent = `${displayMessage}\n\n${fileInfo}`;
+      userDisplayContent = `${displayMessage}\n\n${fileInfo}`;
     }
 
-    // 사용자 메시지 임시 추가 (깔끔한 버전)
-    addMessage({ role: 'user', content: userMessageContent });
+    // AI에게 전달할 실제 메시지 내용 (상세 정보 포함)
+    let messageContent = input; // 원본 input (AI 프롬프트 등 포함)
+    
+    // 사용자 메시지 임시 추가 (표시용은 간단하게)
+    addMessage({ role: 'user', content: userDisplayContent });
     // ai 메시지는 isLoading: true로 추가 (실시간 업데이트용)
     addMessage({ role: 'ai', content: '', isLoading: true });
-    console.log('사용자 메시지 및 빈 AI 메시지 추가 완료', { userMessageContent }, { role: 'ai', content: '', isLoading: true });
+    console.log('사용자 메시지 및 빈 AI 메시지 추가 완료', { userDisplayContent }, { role: 'ai', content: '', isLoading: true });
 
     // URL 감지 및 크롤링 처리 (UI 로딩 상태가 이미 표시된 후 실행)
     const urlPattern = /https?:\/\/[^\s]+/gi;
@@ -506,8 +544,9 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         console.log('📝 파일 없이 텍스트만 전송');
       }
 
-      const messageContent = {
-        content: input,
+      // DB 저장용 메시지 내용
+      const messageContentForDB = {
+        content: input, // AI에게 전달되는 원본 내용
         file: uploadedFileNames.length > 0 ? uploadedFileNames[0] : undefined
       };
 
@@ -527,25 +566,46 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         console.log('URL 크롤링 결과가 AI 프롬프트에 포함됨');
       }
 
-      // 🔥 스토어에서 현재 메시지 히스토리 가져와서 AI에게 전달
-      const currentMessages = useChatStore.getState().messages;
-      let chatHistory = currentMessages
-        .filter(msg => msg.role === 'user' || msg.role === 'ai')
-        .filter(msg => !msg.isLoading) // 로딩 중인 메시지 제외
-        .slice(0, -2) // 방금 추가한 사용자 메시지와 빈 AI 메시지 제외
-        .map(msg => ({
+      // 🔥 명시적으로 전달된 chatHistory가 있으면 우선 사용, 없으면 스토어에서 생성
+      let chatHistory: Array<{role: 'user' | 'model'; content: string}> = [];
+      
+      if (explicitChatHistory !== undefined) {
+        // 명시적으로 전달된 chatHistory 사용 (빈 배열일 수도 있음)
+        chatHistory = explicitChatHistory;
+        console.log('[useChatActions] 명시적으로 전달된 chatHistory 사용:', chatHistory.length, '개 메시지');
+      } else {
+        // 스토어에서 현재 메시지 히스토리 가져와서 AI에게 전달
+        const currentMessages = useChatStore.getState().messages;
+        
+        // 로딩 중이거나 빈 content를 가진 메시지 제외
+        const filteredMessages = currentMessages
+          .filter(msg => msg.role === 'user' || msg.role === 'ai')
+          .filter(msg => !msg.isLoading) // 로딩 중인 메시지 제외
+          .filter(msg => msg.content && msg.content.trim() !== ''); // 빈 content 메시지 제외
+
+        // 마지막 메시지가 방금 추가한 사용자 메시지라면 그것만 제외
+        let historyMessages = filteredMessages;
+        if (historyMessages.length > 0 && 
+            historyMessages[historyMessages.length - 1].role === 'user') {
+          historyMessages = historyMessages.slice(0, -1);
+        }
+
+        chatHistory = historyMessages.map(msg => ({
           role: msg.role === 'user' ? 'user' as const : 'model' as const,
           content: msg.content
         }));
 
-      // 첫 번째 메시지가 AI(model) 역할이면 제외 (초기 인사말 제거)
-      if (chatHistory.length > 0 && chatHistory[0].role === 'model') {
-        chatHistory = chatHistory.slice(1);
-      }
+        // 첫 번째 메시지가 AI(model) 역할이면 제외 (초기 인사말 제거)
+        if (chatHistory.length > 0 && chatHistory[0].role === 'model') {
+          chatHistory = chatHistory.slice(1);
+        }
 
-      // 첫 번째 메시지가 user가 아니면 빈 배열로 시작 (안전장치)
-      if (chatHistory.length > 0 && chatHistory[0].role !== 'user') {
-        chatHistory = [];
+        // 첫 번째 메시지가 user가 아니면 빈 배열로 시작 (안전장치)
+        if (chatHistory.length > 0 && chatHistory[0].role !== 'user') {
+          chatHistory = [];
+        }
+        
+        console.log('[useChatActions] 스토어에서 생성된 chatHistory 사용:', chatHistory.length, '개 메시지');
       }
 
       console.log('[useChatActions] AI에게 전달할 채팅 히스토리:', chatHistory.length, '개 메시지');
@@ -583,7 +643,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
       const userMessageResponse = await sendChatMessage(currentSessionId, {
         role: 'USER',
-        content: messageContent,
+        content: messageContentForDB,
         uid: userId
       });
       if (abortSignal?.aborted) return;

@@ -329,9 +329,38 @@ const SharePage: React.FC = () => {
   const [lastScrollY, setLastScrollY] = useState(0);
 
   // 메시지에서 파일 정보를 파싱하는 함수
-  // 유저 메시지에서 ai 프롬프트(견적 정보 등) 제거
+  // 유저 메시지에서 ai 프롬프트(견적 정보 등) 제거 및 액션별 메시지 변환
   const stripAiPrompt = (text: string) => {
-    // [현재 견적 정보] ~ 위 견적을 기반으로 ... 패턴만 제거
+    // AI 예산 줄이기 패턴 감지 및 변환
+    if (text.includes('AI 예산 줄이기') || text.includes('예산을 줄이')) {
+      const projectNameMatch = text.match(/프로젝트명:\s*([^\n]*)/);
+      const projectName = projectNameMatch ? projectNameMatch[1].trim() : '프로젝트';
+      return `${projectName} - AI 예산 줄이기`;
+    }
+    
+    // AI 맞춤 추천 패턴 감지 및 변환
+    if (text.includes('AI 맞춤 추천') || text.includes('맞춤 추천')) {
+      const projectNameMatch = text.match(/프로젝트명:\s*([^\n]*)/);
+      const projectName = projectNameMatch ? projectNameMatch[1].trim() : '프로젝트';
+      return `${projectName} - AI 맞춤 추천`;
+    }
+    
+    // [현재 견적 정보] 패턴이 포함된 경우 프로젝트명만 추출
+    if (text.includes('[현재 견적 정보]')) {
+      const projectNameMatch = text.match(/프로젝트명:\s*([^\n]*)/);
+      if (projectNameMatch) {
+        const projectName = projectNameMatch[1].trim();
+        // 액션 유형 결정
+        if (text.includes('예산을 줄이')) {
+          return `${projectName} - AI 예산 줄이기`;
+        } else if (text.includes('맞춤 추천')) {
+          return `${projectName} - AI 맞춤 추천`;
+        }
+        return projectName; // 기본적으로 프로젝트명만
+      }
+    }
+    
+    // [현재 견적 정보] ~ 위 견적을 기반으로 ... 패턴만 제거 (기존 로직)
     let cleanedText = text.replace(/\[현재 견적 정보][\s\S]*?위 견적을 기반으로 [^\n]*를 진행해주세요\./g, '').trim();
     
     return cleanedText;
@@ -380,7 +409,7 @@ const SharePage: React.FC = () => {
         setSessionId(sessionId);
         
         // 공유용 메시지 API 직접 호출
-        const messagesResponse = await getChatMessages(sessionId);
+        const messagesResponse = await getChatMessages(sessionId) as any;
         
         if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
           const messages = messagesResponse.data;

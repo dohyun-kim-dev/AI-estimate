@@ -8,6 +8,7 @@ import { callApiDelete } from '@/lib/methods/callApiDelete';
 import { callNullCheck } from '@/lib/utils/nullChecker';
 import { ApiResponse } from './userApi.types';
 import { useAuthStore } from '@/store/authStore';
+import { interceptApiResponse } from '@/utils/authHandler';
 
 export async function callUserApi<T>({
   title,
@@ -232,6 +233,12 @@ export async function callUserApi<T>({
 
     console.log(`[API Response] Title: ${title}`);
     console.log('API Response:', response);
+
+    // 인증 에러 인터셉터 적용
+    if (interceptApiResponse(response)) {
+      // 인증 에러가 처리되면 응답 그대로 반환
+      return response as ApiResponse<T>;
+    }
 
     // HTTP 상태 코드에 따른 에러 처리
     if (response.statusCode >= 400) {

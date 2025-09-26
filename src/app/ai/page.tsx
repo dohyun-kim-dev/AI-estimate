@@ -413,9 +413,38 @@ const parseMessageContent = (content: string) => {
     };
   }
   
-  // AI 프롬프트와 명령어 제거
+  // AI 프롬프트와 명령어 제거 및 액션별 메시지 변환
   const stripAiPrompt = (text: string) => {
-    // [현재 견적 정보] ~ 위 견적을 기반으로 ... 패턴만 제거
+    // AI 예산 줄이기 패턴 감지 및 변환
+    if (text.includes('AI 예산 줄이기') || text.includes('예산을 줄이')) {
+      const projectNameMatch = text.match(/프로젝트명:\s*([^\n]*)/);
+      const projectName = projectNameMatch ? projectNameMatch[1].trim() : '프로젝트';
+      return `${projectName} - AI 예산 줄이기`;
+    }
+    
+    // AI 맞춤 추천 패턴 감지 및 변환
+    if (text.includes('AI 맞춤 추천') || text.includes('맞춤 추천')) {
+      const projectNameMatch = text.match(/프로젝트명:\s*([^\n]*)/);
+      const projectName = projectNameMatch ? projectNameMatch[1].trim() : '프로젝트';
+      return `${projectName} - AI 맞춤 추천`;
+    }
+    
+    // [현재 견적 정보] 패턴이 포함된 경우 프로젝트명만 추출
+    if (text.includes('[현재 견적 정보]')) {
+      const projectNameMatch = text.match(/프로젝트명:\s*([^\n]*)/);
+      if (projectNameMatch) {
+        const projectName = projectNameMatch[1].trim();
+        // 액션 유형 결정
+        if (text.includes('예산을 줄이')) {
+          return `${projectName} - AI 예산 줄이기`;
+        } else if (text.includes('맞춤 추천')) {
+          return `${projectName} - AI 맞춤 추천`;
+        }
+        return projectName; // 기본적으로 프로젝트명만
+      }
+    }
+    
+    // [현재 견적 정보] ~ 위 견적을 기반으로 ... 패턴만 제거 (기존 로직)
     let cleanedText = text.replace(/\[현재 견적 정보][\s\S]*?위 견적을 기반으로 [^\n]*를 진행해주세요\./g, '').trim();
     
     return cleanedText;
@@ -1018,6 +1047,7 @@ useEffect(() => {
         }
         
         const instructionItem = promptsData.find(item => item.name === 'INSTRUCTION');
+        console.log('instructionItem', instructionItem);
         const otherPrompts = promptsData.filter(item => item.name !== 'GREETING' && item.name !== 'INSTRUCTION' && item.content);
         const aiPromptsContent = [
           ...(instructionItem && instructionItem.content ? [instructionItem.content] : []),
@@ -1218,10 +1248,14 @@ useEffect(() => {
             }));
             startChatWithHistory(chatHistory);
             
-            clear();
-            addMessage({ role: 'ai', content: initialAiMessage });
-            chatMessages.forEach((msg: any) => addMessage(msg));
-            setHasShownInitialMessage(true);
+            // 기존 메시지가 있으면 clear하지 않고, 없을 때만 DB에서 로드
+            const currentMessages = useChatStore.getState().messages;
+            if (currentMessages.length === 0 || !hasShownInitialMessage) {
+              clear();
+              addMessage({ role: 'ai', content: initialAiMessage });
+              chatMessages.forEach((msg: any) => addMessage(msg));
+              setHasShownInitialMessage(true);
+            }
           }
         } catch (error) {
           console.error('URL 세션 메시지 조회 실패:', error);
@@ -1250,10 +1284,14 @@ useEffect(() => {
               }));
               startChatWithHistory(chatHistory);
               
-              clear();
-              addMessage({ role: 'ai', content: initialAiMessage });
-              chatMessages.forEach((msg: any) => addMessage(msg));
-              setHasShownInitialMessage(true);
+              // 기존 메시지가 있으면 clear하지 않고, 없을 때만 DB에서 로드
+              const currentMessages = useChatStore.getState().messages;
+              if (currentMessages.length === 0 || !hasShownInitialMessage) {
+                clear();
+                addMessage({ role: 'ai', content: initialAiMessage });
+                chatMessages.forEach((msg: any) => addMessage(msg));
+                setHasShownInitialMessage(true);
+              }
             }
           } catch (error) {
             console.error('세션 소유권 이전 실패:', error);
@@ -1274,10 +1312,15 @@ useEffect(() => {
                   content: msg.content.value || msg.content.content || '',
                   messageId: msg._id
                 }));
-                clear();
-                addMessage({ role: 'ai', content: initialAiMessage });
-                chatMessages.forEach((msg: any) => addMessage(msg));
-                setHasShownInitialMessage(true);
+                
+                // 기존 메시지가 있으면 clear하지 않고, 없을 때만 DB에서 로드
+                const currentMessages = useChatStore.getState().messages;
+                if (currentMessages.length === 0 || !hasShownInitialMessage) {
+                  clear();
+                  addMessage({ role: 'ai', content: initialAiMessage });
+                  chatMessages.forEach((msg: any) => addMessage(msg));
+                  setHasShownInitialMessage(true);
+                }
               }
             }
           } catch (error) {
@@ -1295,10 +1338,15 @@ useEffect(() => {
                 content: msg.content.value || msg.content.content || '',
                 messageId: msg._id
               }));
-              clear();
-              addMessage({ role: 'ai', content: initialAiMessage });
-              chatMessages.forEach((msg: any) => addMessage(msg));
-              setHasShownInitialMessage(true);
+              
+              // 기존 메시지가 있으면 clear하지 않고, 없을 때만 DB에서 로드
+              const currentMessages = useChatStore.getState().messages;
+              if (currentMessages.length === 0 || !hasShownInitialMessage) {
+                clear();
+                addMessage({ role: 'ai', content: initialAiMessage });
+                chatMessages.forEach((msg: any) => addMessage(msg));
+                setHasShownInitialMessage(true);
+              }
             }
           } catch (error) {
             console.error('세션 메시지 조회 실패:', error);

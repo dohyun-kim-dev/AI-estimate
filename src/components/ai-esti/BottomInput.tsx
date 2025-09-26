@@ -207,7 +207,7 @@ const FilePreviewContainer = styled.div`
 
 interface BottomInputProps {
   placeholder?: string;
-  onSubmit?: (value: string, options?: { displayMessage?: string; abortSignal?: AbortSignal }) => Promise<void>;
+  onSubmit?: (value: string, options?: { displayMessage?: string; abortSignal?: AbortSignal; chatHistory?: Array<{role: 'user' | 'model'; content: string}> }) => Promise<void>;
   onPaste?: (e: React.ClipboardEvent) => Promise<void>; // 🔥 이미지 붙여넣기 prop 추가
   maxSubmissions?: number;
   onFileInput?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -297,16 +297,14 @@ const BottomInput: React.FC<BottomInputProps> = ({
     // chatStore에서 현재 메시지 배열 가져오기
     const { messages } = useChatStore.getState();
 
-    // 과거 내역이 없는 완전 새 채팅방이면 chatHistory: []로 보냄
+    // 항상 스토어의 히스토리를 사용하여 액션 버튼과 바텀 인풋이 동일하게 처리됨
     console.log("현재 메시지 개수:", messages.length);
-    const isNewChat = messages.length < 2; // 2 미만이면 새 채팅으로 간주
 
     if (isLoggedIn) {
       await onSubmit(
         lastInputRef.current.trim(),
         {
-          abortSignal: newAbort.signal,
-          ...(isNewChat ? { chatHistory: [] } : {}) // 새 채팅이면 빈 배열, 아니면 기존대로
+          abortSignal: newAbort.signal
         }
       );
       return;
@@ -316,8 +314,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
       await onSubmit(
         lastInputRef.current.trim(),
         {
-          abortSignal: newAbort.signal,
-          ...(isNewChat ? { chatHistory: [] } : {})
+          abortSignal: newAbort.signal
         }
       );
       decreaseCount();
