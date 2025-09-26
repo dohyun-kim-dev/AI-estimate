@@ -126,8 +126,8 @@ const AdminMngPage: React.FC = () => {
       setName(initial?.name ?? '');
       setEmail(initial?.email ?? '');
       setCellphone(initial?.cellphone ?? '');
-      setReceiveEmail(initial?.receiveEmail ?? true);
-      setReceiveAlimtalk(initial?.receiveAlimtalk ?? true);
+      setReceiveEmail(initial?.receiveEmail ?? false);
+      setReceiveAlimtalk(initial?.receiveAlimtalk ?? false);
       setDescription(initial?.description ?? '');
       clearFormErrors();
     },
@@ -193,17 +193,52 @@ const AdminMngPage: React.FC = () => {
     try {
       if (selectedUser) {
         // 수정 모드
+        // 변경된 필드만 포함하는 payload 생성
         const updatePayload: AdminUpdateParams = {
           _id: selectedUser._id || '',
           targetAdminId: userId,
-          name,
-          cellphone,
-          description,
-          email,
-          receiveEmail: receiveEmail,
-          receiveAlimtalk: receiveAlimtalk,
           companyCode: selectedCompanyCode || '', // 고객사 코드 추가
         };
+
+        // 각 필드가 기존 값과 다른 경우에만 포함
+        if (name !== selectedUser.name) {
+          updatePayload.name = name;
+        }
+        if (cellphone !== selectedUser.cellphone) {
+          updatePayload.cellphone = cellphone;
+        }
+        if (email !== selectedUser.email) {
+          updatePayload.email = email;
+        }
+        if (description !== selectedUser.description) {
+          updatePayload.description = description;
+        }
+        if (receiveEmail !== selectedUser.receiveEmail) {
+          updatePayload.receiveEmail = receiveEmail;
+        }
+        if (receiveAlimtalk !== selectedUser.receiveAlimtalk) {
+          updatePayload.receiveAlimtalk = receiveAlimtalk;
+        }
+
+        console.log('💾 [수정 요청 데이터 - 변경된 필드만]', {
+          originalValues: {
+            name: selectedUser.name,
+            cellphone: selectedUser.cellphone,
+            email: selectedUser.email,
+            description: selectedUser.description,
+            receiveEmail: selectedUser.receiveEmail,
+            receiveAlimtalk: selectedUser.receiveAlimtalk,
+          },
+          newValues: {
+            name,
+            cellphone,
+            email,
+            description,
+            receiveEmail,
+            receiveAlimtalk,
+          },
+          payloadToSend: updatePayload
+        });
 
         const response = await adminUpdate(updatePayload);
 
@@ -241,7 +276,11 @@ const AdminMngPage: React.FC = () => {
           companyCode: selectedCompanyCode, // 고객사 코드 추가
         };
 
-        console.log('Creating admin with payload:', createPayload);
+        console.log('✨ [생성 요청 데이터]', {
+          receiveEmail,
+          receiveAlimtalk,
+          createPayload
+        });
         const response = await adminCreate(createPayload);
 
         console.log('Create response:', response);
@@ -311,8 +350,8 @@ const AdminMngPage: React.FC = () => {
             cellphone: item.cellphone,
             createAt: item.createAt,
             memo: item.memo,
-            receiveEmail: item.emailYn,
-            receiveAlimtalk: item.smsYn,
+            receiveEmail: item.receiveEmail, // 올바른 필드명 사용
+            receiveAlimtalk: item.receiveAlimtalk, // 올바른 필드명 사용
             description: item.memo, // memo를 description으로 매핑
             lastLoginAt: item.lastLoginAt,
             companyCode: item.companyCode,
@@ -399,7 +438,7 @@ const AdminMngPage: React.FC = () => {
         const updateParams: AdminUpdateParams = {
           _id: _id,
           targetAdminId: _id,
-          [type]: newValue,
+          [type]: newValue, // 변경하려는 필드만 포함
           companyCode: selectedCompanyCode || '', // 고객사 코드 추가
         };
 
@@ -415,14 +454,19 @@ const AdminMngPage: React.FC = () => {
 
         if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
           toast.success(`${type === 'receiveEmail' ? '메일' : 'SMS'} 수신 설정이 변경되었습니다.`);
+          // 성공 시 리스트 새로고침
           genericListRef.current?.refetch();
         } else {
           const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '변경에 실패했습니다.';
           toast.error(errorMessage);
+          // 실패 시 에러 발생시켜 롤백 처리
+          throw new Error(errorMessage);
         }
       } catch (error) {
         const err = error as Error;
         toast.error(err?.message || '변경에 실패했습니다.');
+        // 에러를 다시 throw해서 optimistic UI 롤백 처리
+        throw error;
       }
     },
     [selectedCompanyCode]
@@ -465,16 +509,14 @@ const AdminMngPage: React.FC = () => {
         header: '알림톡 수신',
         accessor: 'receiveAlimtalk',
         noPopup: true,
+        sortable: false,
         formatter: (_value, row) => (
           <Switch
-            checked={row.receiveAlimtalk === true}
-            onToggle={() =>
-              handleDropdownChange(
-                row._id,
-                'receiveAlimtalk',
-                row.receiveAlimtalk === true ? false : true
-              )
-            }
+            checked={Boolean(row.receiveAlimtalk)}
+            onToggle={() => {
+              const newValue = !Boolean(row.receiveAlimtalk);
+              handleDropdownChange(row._id, 'receiveAlimtalk', newValue);
+            }}
           />
         ),
       },
@@ -482,16 +524,14 @@ const AdminMngPage: React.FC = () => {
         header: '메일 수신',
         accessor: 'receiveEmail',
         noPopup: true,
+        sortable: false,
         formatter: (_value, row) => (
           <Switch
-            checked={row.receiveEmail === true}
-            onToggle={() =>
-              handleDropdownChange(
-                row._id,
-                'receiveEmail',
-                row.receiveEmail === true ? false : true
-              )
-            }
+            checked={Boolean(row.receiveEmail)}
+            onToggle={() => {
+              const newValue = !Boolean(row.receiveEmail);
+              handleDropdownChange(row._id, 'receiveEmail', newValue);
+            }}
           />
         ),
       },

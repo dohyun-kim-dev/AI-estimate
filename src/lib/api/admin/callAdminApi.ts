@@ -31,8 +31,10 @@ export async function callAdminApi<T = unknown>({
     companyCode = pathParts[companyCodeIndex];
   }
 
-devLog('url:', url);  
-devLog('body:', JSON.stringify(body, null, 2));
+devLog('🔍 [API 요청]', { title, method, url });  
+devLog('📄 [요청 body]:', JSON.stringify(body, null, 2));
+console.log('🔍 [API 요청]', { title, method, url });
+console.log('📄 [요청 body]:', JSON.stringify(body, null, 2));
 
   
 

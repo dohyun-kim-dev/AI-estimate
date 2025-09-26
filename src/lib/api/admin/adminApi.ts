@@ -129,11 +129,11 @@ export async function adminCreate(
     requestBody.companyCode = params.companyCode;
   }
 
-  // emailYn, smsYn이 있으면 추가
-  if (params.receiveEmail) {
+  // receiveEmail, receiveAlimtalk이 있으면 추가 (boolean 값이므로 !== undefined로 체크)
+  if (params.receiveEmail !== undefined) {
     requestBody.receiveEmail = params.receiveEmail;
   }
-  if (params.receiveAlimtalk) {
+  if (params.receiveAlimtalk !== undefined) {
     requestBody.receiveAlimtalk = params.receiveAlimtalk;
   }
 
@@ -150,29 +150,38 @@ export async function adminCreate(
 //test0521 a!111111
 //관리자 수정
 export async function adminUpdate(params: AdminUpdateParams) {
-  // body에 들어갈 데이터 객체 생성
-  const requestBody: any = {
-    name: params.name,
-    email: params.email,
-    cellphone: params.cellphone,
-    memo: params.description || null, // description을 memo로 매핑
-  };
+  // body에 들어갈 데이터 객체 생성 (변경된 필드만 포함)
+  const requestBody: any = {};
+
+  // 각 필드를 개별적으로 체크하여 값이 있을 때만 추가
+  if (params.name !== undefined) {
+    requestBody.name = params.name;
+  }
+  if (params.email !== undefined) {
+    requestBody.email = params.email;
+  }
+  if (params.cellphone !== undefined) {
+    requestBody.cellphone = params.cellphone;
+  }
+  if (params.description !== undefined) {
+    requestBody.memo = params.description || null; // description을 memo로 매핑
+  }
 
   // password 필드는 선택적이므로, 존재할 때만 추가
-  if (params.password) {
+  if (params.password !== undefined) {
     requestBody.password = params.password;
   }
 
   // companyCode 필드도 선택적이므로, 존재할 때만 추가
-  if (params.companyCode) {
+  if (params.companyCode !== undefined) {
     requestBody.companyCode = params.companyCode;
   }
 
-  // 이메일 및 SMS 수신 여부 필드 추가
-  if (params.receiveEmail) {
+  // 이메일 및 SMS 수신 여부 필드 추가 (boolean 값이므로 !== undefined로 체크)
+  if (params.receiveEmail !== undefined) {
     requestBody.receiveEmail = params.receiveEmail;
   }
-  if (params.receiveAlimtalk) {
+  if (params.receiveAlimtalk !== undefined) {
     requestBody.receiveAlimtalk = params.receiveAlimtalk;
   }
 

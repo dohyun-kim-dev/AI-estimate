@@ -78,13 +78,10 @@ const FooterButton = styled.button`
 `;
 
 const CancelButton = styled(FooterButton)`
-  background-color: #ffffff;
-  color: #2C2E3C;
+  background-color: #2C2E3C;
+  color: #ffffff;
   border: 1px solid #2C2E3C;
   width: 100%;
-  &:hover {
-    background-color: #f8f9fa;
-  }
 `;
 
 const SaveButton = styled(FooterButton)`

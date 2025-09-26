@@ -231,14 +231,20 @@ const AdminFormPopup: React.FC<AdminFormPopupProps> = ({
         <SwitchInput
           label="SMS 수신"
           value={receiveAlimtalk}
-          onChange={setReceiveAlimtalk}
+          onChange={(newValue) => {
+            console.log('📱 SMS 수신 변경:', receiveAlimtalk, '->', newValue);
+            setReceiveAlimtalk(newValue);
+          }}
           $labelPosition="horizontal"
           labelColor="white"
         />
         <SwitchInput
           label="이메일 수신"
           value={receiveEmail}
-          onChange={setReceiveEmail}
+          onChange={(newValue) => {
+            console.log('📧 이메일 수신 변경:', receiveEmail, '->', newValue);
+            setReceiveEmail(newValue);
+          }}
           $labelPosition="horizontal"
           labelColor="white"
         />
