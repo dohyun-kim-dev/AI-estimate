@@ -316,6 +316,7 @@ const AdminMngPage: React.FC = () => {
             description: item.memo, // memo를 description으로 매핑
             lastLoginAt: item.lastLoginAt,
             companyCode: item.companyCode,
+            no: item.no, // 번호는 나중에 설정
           }));
 
           console.log('Mapped data:', mappedData);
@@ -441,7 +442,7 @@ const AdminMngPage: React.FC = () => {
       {
         header: 'No',
         accessor: 'no',
-        formatter: (value, item, index) => index + 1,
+        // formatter: (value, item, index) => index + 1,
       },
       {
         header: '가입일',

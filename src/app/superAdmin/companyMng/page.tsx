@@ -239,7 +239,7 @@ const CustomerMngPage: React.FC = () => {
       {
         header: 'No',
         accessor: 'no',
-        formatter: (value, item, index) => index + 1,
+        // formatter: (value, item, index) => index + 1,
       },
       {
         header: '가입일시',

@@ -47,6 +47,7 @@ const SwitchLabel = styled.label`
 const ProfileWrapper = styled.div`
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
 `;
 
@@ -59,7 +60,7 @@ const ProfileHeader = styled.div<{ $imageUrl: string | null }>`
   background-image: url(${({ $imageUrl }) => $imageUrl || '/default-profile.png'});
   border: 1px solid #ccc;
   flex-shrink: 0;
-  margin-right: 8px;
+  // margin-right: 8px;
 `;
 
 type User = {
@@ -468,7 +469,7 @@ const UserMngPage: React.FC = () => {
       { 
         header: 'No', 
         accessor: 'no',
-        formatter: (_value, _item, index) => index + 1 
+        // formatter: (_value, _item, index) => index + 1 
       },
       {
         header: '가입일시',

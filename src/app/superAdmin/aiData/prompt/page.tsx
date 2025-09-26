@@ -246,7 +246,7 @@ const PromptPage: React.FC = () => {
       { 
         header: 'No', 
         accessor: 'no',
-        formatter: (_value, _item, index) => (index !== undefined ? index + 1 : 1),
+        // formatter: (_value, _item, index) => (index !== undefined ? index + 1 : 1),
       },
       {
         header: '최종수정일',

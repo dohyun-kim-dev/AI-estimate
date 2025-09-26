@@ -555,7 +555,7 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
       {/* 삭제 확인 모달 */}
       <Modal
         open={showDeleteModal}
-        title="단가표 정보를 삭제하시겠습니까?"
+        title="해당 단가표 정보를 삭제하시겠습니까?"
         onClose={() => setShowDeleteModal(false)}
         width={400}
         centerTitle={true}

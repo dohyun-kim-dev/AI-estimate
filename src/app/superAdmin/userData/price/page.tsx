@@ -246,7 +246,7 @@ const validateAndClassifyData = (data: any[], columns: any[], originalDataRows: 
       
       // 필수 필드 검증
       if (column.required && (value === null || value === undefined || value === '')) {
-        rowErrors.push(`${cellPosition}셀 '${fieldName}': 필수 필드가 비어있음`);
+        rowErrors.push(`${cellPosition}셀 → '${fieldName}': 필수 필드가 비어있음`);
         shouldExclude = true;
       }
       
@@ -255,7 +255,7 @@ const validateAndClassifyData = (data: any[], columns: any[], originalDataRows: 
         switch (column.type) {
           case 'number':
             if (isNaN(Number(originalValue))) {
-              rowErrors.push(`${cellPosition}셀 '${fieldName}': 숫자가 아님 (입력값: "${originalValue}")`);
+              rowErrors.push(`${cellPosition}셀 → '${fieldName}': 숫자가 아님 (입력값: "${originalValue}")`);
               shouldExclude = true;
             }
             break;
@@ -269,7 +269,7 @@ const validateAndClassifyData = (data: any[], columns: any[], originalDataRows: 
             }
             
             if (!isValidBoolean) {
-              rowErrors.push(`${cellPosition}셀 '${fieldName}': 올바른 불린값이 아님 (입력값: "${originalValue}", 가능값: Y/N, true/false, 1/0 등)`);
+              rowErrors.push(`${cellPosition}셀 → '${fieldName}': 올바른 불린값이 아님 (입력값: "${originalValue}", 가능값: Y/N, true/false, 1/0 등)`);
               shouldExclude = true;
             }
             break;
@@ -965,7 +965,7 @@ const PriceListPage: React.FC = () => {
           setUploadColumns(uploadColumns);
           
           showAlert(
-            `업로드 처리 완료\n\n전체 ${totalProcessed}행 중:\n✅ 성공: ${successCount}행\n❌ 제외: ${excludedCount}행${excludedCount > 0 ? `\n\n제외 사유:\n${excludeReasons.slice(0, 10).join('\n')}${excludeReasons.length > 10 ? `\n... 외 ${excludeReasons.length - 10}개` : ''}` : ''}`,
+            `업로드 처리 완료\n\n전체 ${totalProcessed}행 중:\n✅ 성공: ${successCount}행\n❌ 실패: ${excludedCount}행${excludedCount > 0 ? `\n\n업로드 중 아래 항목에서 오류가 발생했습니다.\n${excludeReasons.slice(0, 10).join('\n')}${excludeReasons.length > 10 ? `\n... 외 ${excludeReasons.length - 10}개` : ''}` : ''}`,
             excludedCount > 0 ? 'warning' : 'success'
           );
 

@@ -417,6 +417,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     const urlPattern = /https?:\/\/[^\s]+/gi;
     const detectedUrls = displayMessage.match(urlPattern);
     let urlAnalysisForAI = '';
+    let urlCrawlFailed = false;
 
     if (detectedUrls && detectedUrls.length > 0) {
       try {
@@ -429,19 +430,79 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         
         // 첫 번째 URL만 크롤링 (여러 개 있어도 하나만 처리)
         const firstUrl = detectedUrls[0];
-        const crawlResponse = await crawlUrl(firstUrl);
         
-        if (crawlResponse?.statusCode === 200 && crawlResponse.data) {
-          urlAnalysisForAI = crawlResponse.data;
-          console.log('URL 크롤링 완료, AI에게 전달할 내용 준비됨');
-          // 크롤링 완료 후 다시 빈 상태로 변경
-          updateLastMessage({
-            content: '',
-            isLoading: true,
+        // AbortController를 사용한 30초 타임아웃 처리
+        const crawlAbortController = new AbortController();
+        let crawlCompleted = false;
+        
+        // 30초 후 타임아웃 처리
+        const timeoutId = setTimeout(() => {
+          if (!crawlCompleted) {
+            console.log('URL 크롤링 30초 타임아웃, API 호출 중단');
+            crawlCompleted = true;
+            urlCrawlFailed = true; // 크롤링 실패 표시
+            crawlAbortController.abort(); // API 호출 중단
+            
+            // 타임아웃 시 사용자에게 알림 메시지 표시
+            updateLastMessage({
+              content: `URL 분석에 시간이 오래 걸려 건너뛰고 진행합니다.`,
+              isLoading: true,
+            });
+            // 2초 후 빈 상태로 변경하여 AI 응답 준비
+            setTimeout(() => {
+              updateLastMessage({
+                content: '',
+                isLoading: true,
+              });
+            }, 2000);
+          }
+        }, 30000);
+        
+        try {
+          // crawlUrl이 AbortSignal을 지원한다면 전달, 아니면 Promise.race 사용
+          const crawlPromise = crawlUrl(firstUrl);
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            crawlAbortController.signal.addEventListener('abort', () => {
+              reject(new Error('크롤링 타임아웃'));
+            });
           });
+          
+          const crawlResponse = await Promise.race([crawlPromise, timeoutPromise]);
+          
+          if (!crawlCompleted) {
+            crawlCompleted = true;
+            clearTimeout(timeoutId);
+            
+            if (crawlResponse?.statusCode === 200 && crawlResponse.data) {
+              urlAnalysisForAI = crawlResponse.data;
+              console.log('URL 크롤링 완료, AI에게 전달할 내용 준비됨');
+              // 크롤링 완료 후 다시 빈 상태로 변경
+              updateLastMessage({
+                content: '',
+                isLoading: true,
+              });
+            } else {
+              console.log('URL 크롤링 응답이 유효하지 않음, 원본 메시지로 진행');
+              updateLastMessage({
+                content: '',
+                isLoading: true,
+              });
+            }
+          }
+        } catch (error) {
+          if (!crawlCompleted) {
+            crawlCompleted = true;
+            urlCrawlFailed = true; // 크롤링 실패 표시
+            clearTimeout(timeoutId);
+            console.log('URL 크롤링 실패 또는 타임아웃, 원본 메시지로 진행:', error.message);
+            updateLastMessage({
+              content: '',
+              isLoading: true,
+            });
+          }
         }
       } catch (error) {
-        console.error('URL 크롤링 실패:', error);
+        console.error('URL 크롤링 처리 중 오류:', error);
         // 크롤링 실패해도 원본 메시지로 진행
         updateLastMessage({
           content: '',
@@ -564,6 +625,10 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       if (urlAnalysisForAI) {
         finalPrompt = `url 크롤링한 텍스트야 보고 분석한 뒤 핵심 서비스 기능들을 나열해줘 ${input} ${urlAnalysisForAI}`;
         console.log('URL 크롤링 결과가 AI 프롬프트에 포함됨');
+      } else if (urlCrawlFailed && detectedUrls && detectedUrls.length > 0) {
+        // URL 크롤링에 실패한 경우 AI에게 친절한 대응 요청
+        finalPrompt = `${input}\n\n[참고: 사용자가 제공한 URL(${detectedUrls[0]})의 내용을 분석하려 했지만 크롤링에 실패했습니다. URL 내용 없이도 친절하고 도움이 되는 답변을 해주세요. 가능하다면 사용자에게 URL을 다시 확인하거나 해당 페이지의 주요 내용을 직접 설명해달라고 요청해주세요.]`;
+        console.log('URL 크롤링 실패, AI에게 친절한 대응 요청 메시지 추가');
       }
 
       // 🔥 명시적으로 전달된 chatHistory가 있으면 우선 사용, 없으면 스토어에서 생성
@@ -608,17 +673,36 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         console.log('[useChatActions] 스토어에서 생성된 chatHistory 사용:', chatHistory.length, '개 메시지');
       }
 
-      console.log('[useChatActions] AI에게 전달할 채팅 히스토리:', chatHistory.length, '개 메시지');
+      // 🔥 chatHistory 검증 및 정리 (연속된 동일 역할 메시지 방지)
+      const validatedChatHistory: Array<{role: 'user' | 'model'; content: string}> = [];
+      let lastRole: 'user' | 'model' | null = null;
+      
+      for (const message of chatHistory) {
+        if (message.role !== lastRole && message.content.trim() !== '') {
+          validatedChatHistory.push(message);
+          lastRole = message.role;
+        } else {
+          console.log('🔍 중복 역할 또는 빈 메시지 제외:', message.role, message.content.substring(0, 50));
+        }
+      }
+      
+      // 첫 번째 메시지는 반드시 'user'여야 함
+      if (validatedChatHistory.length > 0 && validatedChatHistory[0].role !== 'user') {
+        validatedChatHistory.shift();
+      }
+      
+      console.log('[useChatActions] AI에게 전달할 검증된 채팅 히스토리:', validatedChatHistory.length, '개 메시지');
+      console.log('[useChatActions] 검증된 히스토리 구조:', validatedChatHistory.map(msg => `${msg.role}: ${msg.content.substring(0, 30)}...`));
 
       // ⭐️ 먼저 AI 응답을 받고 성공하면 DB에 저장하는 방식으로 변경
       let aiReply = '';
       let firstChunkReceived = false;
       console.log('finalPrompt:', finalPrompt);
       console.log('filesForAI:', filesForAI);
-      console.log('chatHistory:', chatHistory);
+      console.log('validatedChatHistory:', validatedChatHistory);
       const chatResult = await sendChat(finalPrompt, filesForAI, {
         streaming: true,
-        chatHistory, // 🔥 과거 대화 이력 전달
+        chatHistory: validatedChatHistory, // 🔥 검증된 과거 대화 이력 전달
         onStream: (chunk) => {
         // 중지(abort) 상태면 메시지 업데이트 하지 않음
         if (abortSignal?.aborted || !useChatStore.getState().isProcessing) {

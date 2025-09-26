@@ -311,6 +311,7 @@ const AdminMngPage: React.FC = () => {
             emailYn: item.emailYn,
             smsYn: item.smsYn,
             description: item.memo, // memo를 description으로 매핑
+            no: item.no, // 번호는 나중에 설정
           }));
 
           console.log('Mapped data:', mappedData);
@@ -430,7 +431,7 @@ const adminDeleteClick = useCallback(
       {
         header: 'No',
         accessor: 'no',
-        formatter: (value, item, index) => index + 1,
+        // formatter: (value, item, index) => index + 1,
       },
       {
         header: '가입일',

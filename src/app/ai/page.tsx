@@ -157,22 +157,21 @@ const UserMessage = styled.div`
 
 
 const FileUploadArea = styled.div<{ $isDragOver: boolean }>`
-  position: absolute;
-  height: 90vh;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  display: flex;
+  display: ${({ $isDragOver }) => ($isDragOver ? 'flex' : 'none')};
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  border: 2px dashed ${({ $isDragOver, theme }) => ($isDragOver ? theme.accent : 'transparent')};
-  background: ${({ $isDragOver, theme }) => ($isDragOver ? `${theme.accent}10` : 'transparent')};
-  transition: all 0.3s ease;
-  z-index: ${({ $isDragOver }) => ($isDragOver ? 1000 : -1)};
-  pointer-events: ${({ $isDragOver }) => ($isDragOver ? 'auto' : 'none')};
+  border: 2px dashed ${({ theme }) => theme.accent};
+  background: ${({ theme }) => `${theme.accent}10`};
+  z-index: 1000;
+  pointer-events: auto;
   border-radius: 8px;
+  backdrop-filter: blur(1px);
 `;
 
 const FileUploadText = styled.div`

@@ -21,6 +21,7 @@ type CmsPopupProps = {
   height?: string | null; // ✅ 팝업 높이 지정
   backgroundColor?: string; // ✅ 팝업 배경 색상 지정
   hideHeader?: boolean; // ✅ 헤더 숨김 여부
+  contentPadding?: string | { top?: string; right?: string; bottom?: string; left?: string }; // ✅ 콘텐츠 패딩 설정
 };
 
 
@@ -136,10 +137,15 @@ const CloseButton = styled.button`
   }
 `;
 
-const PopupContent = styled.div`
+const PopupContent = styled.div<{ $contentPadding?: string | { top?: string; right?: string; bottom?: string; left?: string } }>`
   flex: 1;
   overflow-y: auto;
-  padding: 20px 38px ;
+  padding: ${({ $contentPadding }) => {
+    if (!$contentPadding) return '20px 38px';
+    if (typeof $contentPadding === 'string') return $contentPadding;
+    const { top = '20px', right = '38px', bottom = '20px', left = '38px' } = $contentPadding;
+    return `${top} ${right} ${bottom} ${left}`;
+  }};
   min-height: 0; /* Flexbox에서 올바른 스크롤을 위해 필요 */
 
   scrollbar-width: none;
@@ -149,8 +155,12 @@ const PopupContent = styled.div`
   }
 
   @media (max-width: 768px) {
-    padding: 12px;
-    padding-top: 0;
+    padding: ${({ $contentPadding }) => {
+      if (!$contentPadding) return '12px';
+      if (typeof $contentPadding === 'string') return $contentPadding;
+      const { top = '12px', right = '12px', bottom = '0', left = '12px' } = $contentPadding;
+      return `${top} ${right} ${bottom} ${left}`;
+    }};
   }
 `;
 
@@ -187,6 +197,7 @@ const CmsPopup: React.FC<CmsPopupProps> = ({
   height,
   backgroundColor,
   hideHeader = false, // ✅ 기본값으로 헤더 표시
+  contentPadding, // ✅ 콘텐츠 패딩 설정
 }) => {
   const [scrollX, setScrollX] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -275,7 +286,7 @@ const CmsPopup: React.FC<CmsPopupProps> = ({
             </div>
           </HeaderRow>
         )}
-        <PopupContent>{children}</PopupContent>
+        <PopupContent $contentPadding={contentPadding}>{children}</PopupContent>
         {bottomFloating && (
           <BottomFloatingWrapper $backgroundColor={backgroundColor}>{bottomFloating}</BottomFloatingWrapper>
         )}
