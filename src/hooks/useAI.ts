@@ -610,6 +610,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
   }, [ensureModel, modelName, thinkingBudget])
 
   const resetChat = useCallback(() => {
+    console.log('[useAI] 채팅 세션 수동 리셋 - systemInstruction 재과금 발생');
     chatRef.current = null
   }, [])
 
