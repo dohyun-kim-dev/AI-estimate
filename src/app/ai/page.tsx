@@ -900,6 +900,7 @@ export default function AiChatPage() {
   const clear = useChatStore((s) => s.clear);
   const [selectedPromptId, setSelectedPromptId] = useState('default');
   const updateLastMessage = useChatStore((s) => s.updateLastMessage);
+  const isCrawlingUrl = useChatStore((s) => s.isCrawlingUrl); // 추가: URL 크롤링 상태 가져오기
   const { isAuthenticated, user } = useAuthStore(); // user 상태도 가져오기
   const { isDarkMode } = useThemeStore(); // 테마 상태 가져오기
 
@@ -1479,6 +1480,17 @@ useEffect(() => {
 
                  if (m.isLoading) {
               const isEstimateGen = isEstimateGenerationInProgress();
+              
+              // 크롤링 중일 때 특별한 메시지 표시
+              let loadingMessage = '';
+              if (isCrawlingUrl) {
+                loadingMessage = '보내주신 URL 탐색중... (최대 2분정도 소요됩니다.)';
+              } else if (isEstimateGen) {
+                loadingMessage = '견적서 만드는 중...';
+              } else {
+                loadingMessage = getGlobalLoadingText();
+              }
+              
               return (
                 <StyledAiMessage
                   key={idx}
@@ -1486,7 +1498,7 @@ useEffect(() => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                       <ProfileSpinner src="/ai-estimate/pretty.png" />
                       <GradientText>
-                        {isEstimateGen ? '견적서 만드는 중...' : getGlobalLoadingText()}
+                        {loadingMessage}
                       </GradientText>
                     </div>
                   }

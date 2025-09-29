@@ -16,11 +16,13 @@ interface ChatState {
   messages: ChatMessage[];
   chatSessionId: string | null;
   isProcessing: boolean; // 추가: AI 처리 중 상태
+  isCrawlingUrl: boolean; // 추가: URL 크롤링 중 상태
   addMessage: (m: ChatMessage) => void;
   updateLastMessage: (payload: Partial<Omit<ChatMessage, 'role'>>) => void; 
   updateMessageById: (messageId: string, payload: Partial<Omit<ChatMessage, 'role'>>) => void;
   setChatSessionId: (id: string | null) => void;
   setIsProcessing: (processing: boolean) => void; // 추가: 처리 상태 설정
+  setIsCrawlingUrl: (crawling: boolean) => void; // 추가: URL 크롤링 상태 설정
   clear: () => void;
   removeLastAiLoadingMessage: () => void;
   clearAllLoadingMessages: () => void; // 추가: 모든 로딩 메시지 제거
@@ -35,6 +37,7 @@ export const useChatStore = create<ChatState>()(
         messages: [],
         chatSessionId: null,
         isProcessing: false, // 추가: 초기값 false
+        isCrawlingUrl: false, // 추가: URL 크롤링 초기값 false
         addMessage: (m) => set((s) => ({ messages: [...s.messages, m] })),
         // 변경됨: 객체를 받아 마지막 메시지를 업데이트하도록 수정
         // Update the last AI message (searching from the end) with the provided payload.
@@ -93,12 +96,14 @@ export const useChatStore = create<ChatState>()(
         }),
         setChatSessionId: (id) => set({ chatSessionId: id }),
         setIsProcessing: (processing) => set({ isProcessing: processing }), // 추가: 처리 상태 설정
+        setIsCrawlingUrl: (crawling) => set({ isCrawlingUrl: crawling }), // 추가: URL 크롤링 상태 설정
         clear: () => {
           const { setChatSessionId } = get();
           setChatSessionId(null); // 세션 ID 초기화
           set({ 
             messages: [], // 메시지 초기화
-            isProcessing: false // 처리 상태도 초기화
+            isProcessing: false, // 처리 상태도 초기화
+            isCrawlingUrl: false // URL 크롤링 상태도 초기화
           }); 
             sessionStorage.removeItem('ai-chat-storage'); // ⭐️ 스토리지도 직접 삭제
         },

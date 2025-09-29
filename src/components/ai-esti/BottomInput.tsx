@@ -261,7 +261,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
   const theme = useTheme();
   const isLightTheme = theme.body === '#FFFFFF';
   const { isAuthenticated } = useAuthStore();
-  const { isProcessing, updateLastMessage, clearAllLoadingMessages, removeIncompleteEstimateMessages } = useChatStore(); // 추가: store에서 isProcessing 가져오기
+  const { isProcessing, updateLastMessage, clearAllLoadingMessages, removeIncompleteEstimateMessages, setIsCrawlingUrl } = useChatStore(); // 추가: store에서 isProcessing과 setIsCrawlingUrl 가져오기
   const {
     remainingCount,
     hasUsedExtraCount,
@@ -364,11 +364,15 @@ const BottomInput: React.FC<BottomInputProps> = ({
         setValue(lastInputRef.current);
       }
     }
+    
+    // URL 크롤링 상태 해제
+    setIsCrawlingUrl(false);
+    
     if (onStopStreaming) {
       onStopStreaming();
     }
-  clearAllLoadingMessages(); // 모든 로딩 메시지 꺼줌
-  removeIncompleteEstimateMessages(); 
+    clearAllLoadingMessages(); // 모든 로딩 메시지 꺼줌
+    removeIncompleteEstimateMessages(); 
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

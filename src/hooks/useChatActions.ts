@@ -408,6 +408,10 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     if (detectedUrls && detectedUrls.length > 0) {
       try {
         console.log('URL 발견, 크롤링 시작:', detectedUrls);
+        // URL 크롤링 상태 설정
+        const { setIsCrawlingUrl } = useChatStore.getState();
+        setIsCrawlingUrl(true);
+        
         // URL 크롤링 중임을 AI 메시지로 표시
         updateLastMessage({
           content: 'URL을 분석하고 있습니다...',
@@ -426,14 +430,17 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           const crawlResponse = await Promise.race([
             crawlUrl(firstUrl),
             new Promise<never>((_, reject) => {
-              setTimeout(() => {
-                reject(new Error('URL 크롤링 30초 타임아웃'));
-              }, 30000);
+              // setTimeout(() => {
+              //   reject(new Error('URL 크롤링 30초 타임아웃'));
+              // }, 30000);
             })
           ]);
           
           if (!crawlCompleted) {
             crawlCompleted = true;
+            // URL 크롤링 상태 해제
+            const { setIsCrawlingUrl } = useChatStore.getState();
+            setIsCrawlingUrl(false);
             
             if (crawlResponse?.statusCode === 200 && crawlResponse.data) {
               urlAnalysisForAI = crawlResponse.data;
@@ -454,6 +461,10 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         } catch (error) {
           if (!crawlCompleted) {
             crawlCompleted = true;
+            // URL 크롤링 상태 해제
+            const { setIsCrawlingUrl } = useChatStore.getState();
+            setIsCrawlingUrl(false);
+            
             urlCrawlFailed = true; // 크롤링 실패 표시
             console.log('URL 크롤링 실패 또는 타임아웃, 원본 메시지로 진행:', error.message);
             
@@ -480,6 +491,10 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         }
       } catch (error) {
         console.error('URL 크롤링 처리 중 오류:', error);
+        // URL 크롤링 상태 해제
+        const { setIsCrawlingUrl } = useChatStore.getState();
+        setIsCrawlingUrl(false);
+        
         // 크롤링 실패해도 원본 메시지로 진행
         updateLastMessage({
           content: '',
@@ -617,7 +632,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       // URL 크롤링 결과가 있으면 프롬프트에 추가
       let finalPrompt = combinedPrompt;
       if (urlAnalysisForAI) {
-        finalPrompt = `url 크롤링한 텍스트야 보고 분석한 뒤 핵심 서비스 기능들을 나열해줘 ${input} ${urlAnalysisForAI}`;
+        finalPrompt = `지능형 콘텐츠 분석 및 워크플로우 최적화 규칙에 따라주세요 URL 분석한 내용입니다 ${input} ${urlAnalysisForAI}`;
         console.log('URL 크롤링 결과가 AI 프롬프트에 포함됨');
       } else if (urlCrawlFailed && detectedUrls && detectedUrls.length > 0) {
         // URL 크롤링에 실패한 경우 AI에게 친절한 대응 요청
@@ -961,6 +976,10 @@ if (estimateData) {
     
     // 처리 상태 중지
     setIsProcessing(false);
+    
+    // URL 크롤링 상태 해제
+    const { setIsCrawlingUrl } = useChatStore.getState();
+    setIsCrawlingUrl(false);
     
     // 파일 상태 초기화
     setUploadedFiles([]);
