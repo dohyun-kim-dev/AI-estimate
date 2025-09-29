@@ -540,9 +540,7 @@ https://heredotcorp.com
 
           // 로그인 후 목적대로 바로 진행
           if (socialLoginPurpose === 'download') {
-            const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
-            const previewUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
-            window.open(previewUrl, '_blank');
+            await openPreviewTab();
           } else if (socialLoginPurpose === 'share') {
             await handleShareClick();
           }

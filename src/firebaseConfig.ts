@@ -53,7 +53,8 @@ if (!getApps().length) {
 
 const auth = getAuth(app)
 const db = app ? getFirestore(app) : null
-const storage = app ? getStorage(app) : null
+// const storage = app ? getStorage(app) : null // 🔧 서버 저장 사용으로 주석 처리
 const ai = app ? getAI(app) : null
 
-export { app, auth, db, storage, ai }
+export { app, auth, db, ai }
+// export { app, auth, db, storage, ai } // 기존
