@@ -705,6 +705,15 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       const chatResult = await sendChat(finalPrompt, filesForAI, {
         streaming: true,
         chatHistory: validatedChatHistory, // 🔥 검증된 과거 대화 이력 전달
+        maxRetries: 2, // 최대 2회 재시도
+        retryDelay: 1000, // 1초 기본 지연
+        onRetry: (attempt, error) => {
+          console.log(`🔄 AI API 재시도 중... (${attempt}번째 시도)`);
+          updateLastMessage({
+            content: `연결 문제로 재시도 중입니다... (${attempt}/2)`,
+            isLoading: true,
+          });
+        },
         onStream: (chunk) => {
         // 중지(abort) 상태면 메시지 업데이트 하지 않음
         if (abortSignal?.aborted || !useChatStore.getState().isProcessing) {

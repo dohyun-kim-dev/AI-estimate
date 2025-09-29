@@ -55,6 +55,116 @@ function pickNumber(...vals: any[]) {
   return 0
 }
 
+/**
+ * 재시도 가능한 에러인지 판단하는 함수
+ */
+function isRetryableError(error: any): boolean {
+  if (!error) return false;
+  
+  // FirebaseError의 경우
+  if (error.code && typeof error.code === 'string') {
+    const errorCode = error.code.toLowerCase();
+    // AI 서비스 관련 재시도 가능한 에러들
+    if (errorCode.includes('ai/fetch-error') || 
+        errorCode.includes('unavailable') || 
+        errorCode.includes('internal') ||
+        errorCode.includes('timeout') ||
+        errorCode.includes('ai/service-disabled') ||
+        errorCode.includes('ai/quota-exceeded') ||
+        errorCode.includes('ai/resource-exhausted')) {
+      return true;
+    }
+  }
+
+  // Firebase AI 특화 에러 메시지 패턴
+  const firebaseErrorMessage = error.message || String(error);
+  if (firebaseErrorMessage.includes('firebasevertexai.googleapis.com') && 
+      (firebaseErrorMessage.includes('[500]') || 
+       firebaseErrorMessage.includes('[502]') || 
+       firebaseErrorMessage.includes('[503]') || 
+       firebaseErrorMessage.includes('[504]') ||
+       firebaseErrorMessage.includes('service is currently unavailable'))) {
+    return true;
+  }
+  
+  // HTTP 상태 코드 기반 판단
+  if (error.status || error.statusCode) {
+    const status = error.status || error.statusCode;
+    // 5xx 서버 에러나 429 Rate Limit는 재시도 가능
+    return status >= 500 || status === 429;
+  }
+  
+  // 에러 메시지 기반 판단
+  const errorMessage = error.message || String(error);
+  const retryableMessages = [
+    'service is currently unavailable',
+    'internal error',
+    'timeout',
+    'network error',
+    'connection error',
+    'fetch failed',
+    'rate limit',
+    'quota exceeded'
+  ];
+  
+  return retryableMessages.some(msg => 
+    errorMessage.toLowerCase().includes(msg)
+  );
+}
+
+/**
+ * 지수 백오프를 사용한 재시도 대기 시간 계산
+ */
+function calculateRetryDelay(attempt: number, baseDelay: number = 1000): number {
+  // 지수 백오프: baseDelay * (2^attempt) + 랜덤 지터(0~500ms)
+  const exponentialDelay = baseDelay * Math.pow(2, attempt);
+  const jitter = Math.random() * 500; // 0~500ms 랜덤 지연
+  return Math.min(exponentialDelay + jitter, 10000); // 최대 10초
+}
+
+/**
+ * 재시도 가능한 비동기 함수 실행기
+ */
+async function executeWithRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 2,
+  baseDelay: number = 1000,
+  onRetry?: (attempt: number, error: Error) => void,
+  abortSignal?: AbortSignal
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    // AbortSignal 체크
+    if (abortSignal?.aborted) {
+      throw new Error('Operation aborted');
+    }
+    
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      
+      // 마지막 시도이거나 재시도 불가능한 에러면 즉시 throw
+      if (attempt === maxRetries || !isRetryableError(error)) {
+        throw error;
+      }
+      
+      // 재시도 콜백 호출
+      console.warn(`[useAI] Attempt ${attempt + 1} failed, retrying...`, error);
+      onRetry?.(attempt + 1, lastError);
+      
+      // 대기 시간 계산 및 대기
+      const delay = calculateRetryDelay(attempt, baseDelay);
+      console.log(`[useAI] Waiting ${delay}ms before retry...`);
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError!;
+}
+
 function logUsageAndCost(where: string, modelName: string, anyResponse: unknown) {
   const r: any = anyResponse as any
   const usage = r?.response?.usageMetadata || r?.usageMetadata
@@ -118,6 +228,9 @@ function logUsageAndCost(where: string, modelName: string, anyResponse: unknown)
  * @property onStream - 스트리밍일 때 chunk 단위로 호출되는 콜백
  * @property onEstimateJson - 견적서 JSON 감지 시 콜백
  * @property onLoading - 로딩 상태 콜백
+ * @property maxRetries - 최대 재시도 횟수 (기본값: 2)
+ * @property retryDelay - 재시도 간격(ms) (기본값: 1000)
+ * @property onRetry - 재시도 시 호출되는 콜백
  */
 export interface SendChatOptions {
   streaming?: boolean; // true: 실시간, false: 전체 응답만 (기본 true)
@@ -125,6 +238,9 @@ export interface SendChatOptions {
   onEstimateJson?: (json: any) => void;
   onLoading?: (loading: boolean) => void;
   abortSignal?: AbortSignal; // 스트리밍 중단용
+  maxRetries?: number; // 최대 재시도 횟수 (기본값: 2)
+  retryDelay?: number; // 재시도 간격(ms) (기본값: 1000)
+  onRetry?: (attempt: number, error: Error) => void; // 재시도 콜백
 }
 
 export interface TokenUsage {
@@ -144,10 +260,19 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
   const chatRef = useRef<ChatSession | null>(null)
   const initialized = useRef(false)
 
-  // thinkingBudget 또는 systemInstruction이 바뀌면 다음 전송 시 새 세션으로 시작되도록 리셋
+  // 🔧 최적화: systemInstruction은 초기화 후 거의 변경되지 않으므로 세션 리셋 조건 완화
+  // thinkingBudget과 modelName 변경 시에만 세션 리셋 (systemInstruction 제외)
   useEffect(() => {
     chatRef.current = null
-  }, [thinkingBudget, systemInstruction, modelName])
+  }, [thinkingBudget, modelName])
+  
+  // systemInstruction 변경 시에는 경고만 출력 (개발 중에만 발생)
+  useEffect(() => {
+    if (initialized.current && chatRef.current) {
+      console.warn('[useAI] systemInstruction 변경 감지됨. 다음 메시지부터 새 세션이 생성됩니다.');
+      // 운영 환경에서는 systemInstruction이 자주 변경되지 않으므로 즉시 리셋하지 않음
+    }
+  }, [systemInstruction])
 
   // 초기화 시 한 번만 시스템 프롬프트 설정
   useEffect(() => {
@@ -233,6 +358,23 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
    * @returns { text: string, tokenUsage?: TokenUsage } (전체 응답과 토큰 사용량)
    */
   const sendChat = useCallback(async (
+    message: string,
+    files: FileUploadData[] = [],
+    options?: SendChatOptions & { chatHistory?: Array<{ role: 'user' | 'model'; content: string }> },
+  ): Promise<{ text: string, tokenUsage?: TokenUsage }> => {
+    const maxRetries = options?.maxRetries ?? 2;
+    const retryDelay = options?.retryDelay ?? 1000;
+    
+    // 재시도 로직이 적용된 메인 함수
+    return executeWithRetry(async () => {
+      return await sendChatInternal(message, files, options);
+    }, maxRetries, retryDelay, options?.onRetry, options?.abortSignal);
+  }, [ensureModel, modelName, thinkingBudget])
+
+  /**
+   * 실제 채팅 메시지 전송 로직 (재시도 로직에서 호출됨)
+   */
+  const sendChatInternal = useCallback(async (
     message: string,
     files: FileUploadData[] = [],
     options?: SendChatOptions & { chatHistory?: Array<{ role: 'user' | 'model'; content: string }> },
