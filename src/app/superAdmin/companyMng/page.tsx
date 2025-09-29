@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useRef, useMemo } from 'react';
 import CmsResponsiveContainer from '@components/CustomList/ResponsiveList/CmsResponsiveContainer';
 import { toast, ToastContainer } from 'react-toastify';
-import { getCompanyList } from '@/lib/api/admin/adminApi';
+import { getCompanyList, createCompany, updateCompany } from '@/lib/api/admin/adminApi';
 import dayjs from 'dayjs';
 import { FetchParams, FetchResult } from '@/components/CustomList/GenericListUI';
 import { ColumnDefinition } from '@/components/CustomList/GenericDataTable';
@@ -69,6 +69,7 @@ const CustomerMngPage: React.FC = () => {
   
   // 새로운 Company 타입에 맞는 상태
   const [name, setName] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [code, setCode] = useState('');
   const [category, setCategory] = useState('');
   const [businessNumber, setBusinessNumber] = useState('');
@@ -79,10 +80,22 @@ const CustomerMngPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [cellphone, setCellphone] = useState('');
   const [address, setAddress] = useState('');
+  const [detailAddress, setDetailAddress] = useState('');
+  const [ceoName, setCeoName] = useState('');
+  const [ceoPhone, setCeoPhone] = useState('');
+  const [ceoEmail, setCeoEmail] = useState('');
+  const [contractType, setContractType] = useState('');
+  const [mode, setMode] = useState('');
+  const [contractStartDate, setContractStartDate] = useState('');
+  const [contractEndDate, setContractEndDate] = useState('');
+  const [homepage, setHomepage] = useState('');
+  const [ciImage, setCiImage] = useState<string | undefined>();
+  const [businessImage, setBusinessImage] = useState<string | undefined>();
   
   // 에러 상태
   const [errors, setErrors] = useState<{
     name?: string;
+    companyName?: string;
     code?: string;
     category?: string;
     businessNumber?: string;
@@ -93,6 +106,14 @@ const CustomerMngPage: React.FC = () => {
     email?: string;
     cellphone?: string;
     address?: string;
+    detailAddress?: string;
+    ceoName?: string;
+    ceoPhone?: string;
+    ceoEmail?: string;
+    contractType?: string;
+    mode?: string;
+    contractStartDate?: string;
+    contractEndDate?: string;
   }>({});
  
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -105,6 +126,7 @@ const CustomerMngPage: React.FC = () => {
     (initial?: Partial<Company>) => {
       setSelectedCustomer(initial ?? null);
       setName(initial?.name ?? '');
+      setCompanyName(initial?.companyName ?? '');
       setCode(initial?.companyCode ?? '');
       setCategory(initial?.category?.name ?? '');
       setBusinessNumber(initial?.businessNumber ?? '');
@@ -112,7 +134,15 @@ const CustomerMngPage: React.FC = () => {
       setLicence(initial?.licence ?? '');
       setEmail(initial?.email ?? '');
       setCellphone(initial?.cellphone ?? '');
-      setAddress(`${initial?.address || ''} ${initial?.detailAddress || ''}`.trim());
+      setAddress(initial?.address ?? '');
+      setDetailAddress(initial?.detailAddress ?? '');
+      setCeoName(''); // 실제 데이터에 맞게 수정 필요
+      setCeoPhone(''); // 실제 데이터에 맞게 수정 필요
+      setCeoEmail(''); // 실제 데이터에 맞게 수정 필요
+      setContractType(initial?.contractType ?? '');
+      setMode(initial?.mode ?? '');
+      setContractStartDate(initial?.contractStartDate ?? '');
+      setContractEndDate(initial?.contractEndDate ?? '');
       setPassword('');
       setConfirmPassword('');
       setErrors({});
@@ -142,19 +172,65 @@ const CustomerMngPage: React.FC = () => {
     setIsCompanyRegisterOpen(true);
   };
 
-  const handleSave = () => {
-    if (selectedCustomer) {
-      // 수정 - 실제로는 API 호출 필요
-      toast.success('고객사 정보가 수정되었습니다.');
-    } else {
-      // 신규 - 실제로는 API 호출 필요
-      toast.success('고객사가 등록되었습니다.');
+  const handleSave = async () => {
+    try {
+      if (selectedCustomer) {
+        // 수정 모드
+        const categoryId = typeof selectedCustomer.category === 'object' 
+          ? selectedCustomer.category?.name || category 
+          : selectedCustomer.category || category;
+          
+        const updateParams = {
+          name,
+          companyName,
+          cellphone,
+          email,
+          address,
+          detailAddress,
+          memo,
+          category: categoryId,
+          contractStartDate,
+          contractEndDate,
+          contractType: contractType as 'MONTH' | 'YEAR',
+        };
+        
+        const targetCompanyCode = code || selectedCustomer.companyCode || '';
+        await updateCompany(targetCompanyCode, updateParams);
+        toast.success('고객사 정보가 수정되었습니다.');
+      } else {
+        // 신규 생성 모드
+        const createParams = {
+          name: name || '',
+          companyName: companyName || '',
+          cellphone: cellphone || '',
+          email: email || '',
+          companyCode: code || '',
+          dbName: code || '', // 보통 companyCode와 동일
+          address: address || '',
+          detailAddress: detailAddress || '',
+          homepage: homepage,
+          ciImage: ciImage,
+          businessImage: businessImage,
+          memo: memo,
+          category: category || '',
+          contractStartDate: contractStartDate || '',
+          contractEndDate: contractEndDate || '',
+          contractType: contractType as 'MONTH' | 'YEAR',
+        };
+        
+        await createCompany(createParams);
+        toast.success('고객사가 등록되었습니다.');
+      }
+      
+      setIsPopupOpen(false);
+      // 리스트 새로고침
+      setTimeout(() => {
+        listRef.current?.refetch();
+      }, 100);
+    } catch (error) {
+      console.error('고객사 저장 실패:', error);
+      toast.error('저장 중 오류가 발생했습니다.');
     }
-    setIsPopupOpen(false);
-    // 리스트 새로고침
-    setTimeout(() => {
-      listRef.current?.refetch();
-    }, 100);
   };
 
   const fetchData = useCallback(
@@ -207,6 +283,7 @@ const CustomerMngPage: React.FC = () => {
 
   const formData = {
     name,
+    companyName,
     code,
     category,
     businessNumber,
@@ -217,11 +294,23 @@ const CustomerMngPage: React.FC = () => {
     email,
     cellphone,
     address,
+    detailAddress,
+    ceoName,
+    ceoPhone,
+    ceoEmail,
+    contractType,
+    mode,
+    contractStartDate,
+    contractEndDate,
+    homepage,
+    ciImage,
+    businessImage,
     errors,
   };
 
   const onFormChange = {
     setName,
+    setCompanyName,
     setCode,
     setCategory,
     setBusinessNumber,
@@ -232,6 +321,17 @@ const CustomerMngPage: React.FC = () => {
     setEmail,
     setCellphone,
     setAddress,
+    setDetailAddress,
+    setCeoName,
+    setCeoPhone,
+    setCeoEmail,
+    setContractType,
+    setMode,
+    setContractStartDate,
+    setContractEndDate,
+    setHomepage,
+    setCiImage,
+    setBusinessImage,
   };
 
   const columns = useMemo(
@@ -365,7 +465,7 @@ const CustomerMngPage: React.FC = () => {
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
         onSave={handleSave}
-        selectedCustomer={selectedCustomer}
+        selectedCustomer={selectedCustomer as any}
         formData={formData}
         onFormChange={onFormChange}
       />
@@ -374,13 +474,41 @@ const CustomerMngPage: React.FC = () => {
       <CompanyFormPopup
         isOpen={isCompanyRegisterOpen}
         onClose={() => setIsCompanyRegisterOpen(false)}
-        onSave={() => {
-          toast.success('고객사가 등록되었습니다.');
-          setIsCompanyRegisterOpen(false);
+        onSave={async () => {
+          try {
+            const createParams = {
+              name,
+              companyName,
+              cellphone,
+              email,
+              companyCode: code,
+              dbName: code, // 보통 companyCode와 동일
+              address,
+              detailAddress,
+              memo,
+              category,
+              contractStartDate,
+              contractEndDate,
+              contractType: contractType as 'MONTH' | 'YEAR',
+            };
+            
+            await createCompany(createParams);
+            toast.success('고객사가 등록되었습니다.');
+            setIsCompanyRegisterOpen(false);
+            
+            // 리스트 새로고침
+            setTimeout(() => {
+              listRef.current?.refetch();
+            }, 100);
+          } catch (error) {
+            console.error('고객사 등록 실패:', error);
+            toast.error('등록 중 오류가 발생했습니다.');
+          }
         }}
         selectedCustomer={null}
         formData={{
           name: '',
+          companyName: '',
           code: '',
           category: '',
           businessNumber: '',
@@ -391,20 +519,43 @@ const CustomerMngPage: React.FC = () => {
           email: '',
           cellphone: '',
           address: '',
+          detailAddress: '',
+          ceoName: '',
+          ceoPhone: '',
+          ceoEmail: '',
+          contractType: '',
+          mode: '',
+          contractStartDate: '',
+          contractEndDate: '',
+          homepage: '',
+          ciImage: undefined,
+          businessImage: undefined,
           errors: {},
         }}
         onFormChange={{
-          setName: () => {},
-          setCode: () => {},
-          setCategory: () => {},
-          setBusinessNumber: () => {},
-          setMemo: () => {},
-          setLicence: () => {},
-          setPassword: () => {},
-          setConfirmPassword: () => {},
-          setEmail: () => {},
-          setCellphone: () => {},
-          setAddress: () => {},
+          setName: setName,
+          setCompanyName: setCompanyName,
+          setCode: setCode,
+          setCategory: setCategory,
+          setBusinessNumber: setBusinessNumber,
+          setMemo: setMemo,
+          setLicence: setLicence,
+          setPassword: setPassword,
+          setConfirmPassword: setConfirmPassword,
+          setEmail: setEmail,
+          setCellphone: setCellphone,
+          setAddress: setAddress,
+          setDetailAddress: setDetailAddress,
+          setCeoName: setCeoName,
+          setCeoPhone: setCeoPhone,
+          setCeoEmail: setCeoEmail,
+          setContractType: setContractType,
+          setMode: setMode,
+          setContractStartDate: setContractStartDate,
+          setContractEndDate: setContractEndDate,
+          setHomepage: setHomepage,
+          setCiImage: setCiImage,
+          setBusinessImage: setBusinessImage,
         }}
       />
       </div>

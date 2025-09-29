@@ -25,6 +25,7 @@ interface ChatState {
   removeLastAiLoadingMessage: () => void;
   clearAllLoadingMessages: () => void; // 추가: 모든 로딩 메시지 제거
   removeIncompleteEstimateMessages: () => void; // 추가: 불완전한 견적 메시지 제거
+  removeLastUserAndAiMessage: () => void; // 추가: 마지막 사용자 메시지와 AI 메시지 제거
 }
 
 export const useChatStore = create<ChatState>()(
@@ -109,6 +110,30 @@ export const useChatStore = create<ChatState>()(
               break;
             }
           }
+          return { messages };
+        }),
+        removeLastUserAndAiMessage: () => set((s) => {
+          const messages = [...s.messages];
+          let removedCount = 0;
+          
+          // 뒤에서부터 탐색하여 마지막 AI 메시지 제거
+          for (let i = messages.length - 1; i >= 0 && removedCount < 2; i--) {
+            if (messages[i].role === 'ai') {
+              messages.splice(i, 1);
+              removedCount++;
+              break;
+            }
+          }
+          
+          // 뒤에서부터 탐색하여 마지막 사용자 메시지 제거
+          for (let i = messages.length - 1; i >= 0 && removedCount < 2; i--) {
+            if (messages[i].role === 'user') {
+              messages.splice(i, 1);
+              removedCount++;
+              break;
+            }
+          }
+          
           return { messages };
         }),
       }),

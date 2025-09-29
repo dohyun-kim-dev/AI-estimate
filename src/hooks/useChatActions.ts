@@ -141,13 +141,14 @@ interface UseChatActionsProps {
 export function useChatActions({ modelName, selectedPromptId }: UseChatActionsProps) {
   const { sendChat } = useAI(modelName);
   const { success, error } = useToast();
-  const { addMessage, updateLastMessage, chatSessionId, setChatSessionId, isProcessing, setIsProcessing } = useChatStore((s) => ({
+  const { addMessage, updateLastMessage, chatSessionId, setChatSessionId, isProcessing, setIsProcessing, removeLastUserAndAiMessage } = useChatStore((s) => ({
     addMessage: s.addMessage,
     updateLastMessage: s.updateLastMessage,
     chatSessionId: s.chatSessionId,
     setChatSessionId: s.setChatSessionId,
     isProcessing: s.isProcessing, // 추가: store에서 가져오기
     setIsProcessing: s.setIsProcessing, // 추가: store 설정 함수
+    removeLastUserAndAiMessage: s.removeLastUserAndAiMessage, // 추가: 메시지 제거 함수
   }));
   const { isAuthenticated } = useAuthStore();
 
@@ -366,6 +367,16 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
     setIsProcessing(true);
 
+    // AbortSignal이 감지되었을 때 정리하는 헬퍼 함수
+    const handleAbort = () => {
+      console.log('🛑 작업이 중단되었습니다. 메시지를 정리합니다.');
+      removeLastUserAndAiMessage();
+      setUploadedFiles([]);
+      setSelectedFiles([]);
+      setIsProcessing(false);
+      error('작업이 중단되었습니다.');
+    };
+
     // 사용자에게 보이는 메시지 생성 (간단한 버전)
     let userDisplayContent = displayMessage; // 이미 변환된 메시지 그대로 사용
     console.log('useChatActions - displayMessage:', displayMessage);
@@ -521,7 +532,18 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           throw new Error(createResponse.error?.message || '채팅방 생성에 실패했습니다.');
         }
       } catch (e) {
-        error(`채팅방 생성 실패: ${(e as Error).message}`);
+        console.log('❗ 채팅방 생성 중 오류 발생:', e);
+        
+        // 채팅방 생성 실패 시 추가된 메시지들 제거
+        removeLastUserAndAiMessage();
+        
+        // 토스트 에러 메시지 표시
+        error(`채팅방 생성에 실패했습니다. 다시 시도해주세요.`);
+        
+        // 파일 상태 초기화
+        setUploadedFiles([]);
+        setSelectedFiles([]);
+        
         setIsProcessing(false);
         return;
       }
@@ -542,10 +564,16 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       
       if (selectedFiles.length > 0) {
         console.log('📤 서버로 파일 업로드 시작...');
-          if (abortSignal?.aborted) return;
+          if (abortSignal?.aborted) {
+            handleAbort();
+            return;
+          }
 
         const uploadResponse = await uploadFiles(selectedFiles);
-          if (abortSignal?.aborted) return;
+          if (abortSignal?.aborted) {
+            handleAbort();
+            return;
+          }
 
         console.log('📥 서버 업로드 응답:', uploadResponse);
         
@@ -680,6 +708,9 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         onStream: (chunk) => {
         // 중지(abort) 상태면 메시지 업데이트 하지 않음
         if (abortSignal?.aborted || !useChatStore.getState().isProcessing) {
+          if (abortSignal?.aborted) {
+            handleAbort();
+          }
           return;
         }
         
@@ -697,14 +728,20 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       const reply = chatResult.text;
 
       // AI 응답이 성공했으므로 이제 DB에 사용자 메시지 저장
-      if (abortSignal?.aborted) return;
+      if (abortSignal?.aborted) {
+        handleAbort();
+        return;
+      }
 
       const userMessageResponse = await sendChatMessage(currentSessionId, {
         role: 'USER',
         content: messageContentForDB,
         uid: userId
       });
-      if (abortSignal?.aborted) return;
+      if (abortSignal?.aborted) {
+        handleAbort();
+        return;
+      }
 
       // Zustand 스토어에서 마지막 사용자 메시지를 업데이트하여 messageId 추가
       // 현재 messages 배열에서 뒤에서 두 번째가 사용자 메시지
@@ -754,7 +791,10 @@ if (estimateData) {
     estimateId = estimateData.uuid;
     const dataStr = buildFullEstimateData(reply, estimateId);
     console.log('견적 데이터 조립 완료, 업로드 시작', { estimateId, dataStr });
-    if (abortSignal?.aborted) return;
+    if (abortSignal?.aborted) {
+      handleAbort();
+      return;
+    }
 
     // sessionStorage에서 guestinfo 가져오기
     let userInfo = undefined;
@@ -820,7 +860,10 @@ if (estimateData) {
       uploadBody.amount // 실제 계산된 총 금액
     );
 
-    if (abortSignal?.aborted) return;
+    if (abortSignal?.aborted) {
+      handleAbort();
+      return;
+    }
     if (uploadResponse?.statusCode !== 200) {
       throw new Error(uploadResponse?.error?.message || '견적 저장 실패');
     }
@@ -832,14 +875,20 @@ if (estimateData) {
       }
 
       // AI 응답 메시지를 DB에 저장
-      if (abortSignal?.aborted) return;
+      if (abortSignal?.aborted) {
+        handleAbort();
+        return;
+      }
 
       const aiMessageResponse: ChatMessageResponseData = await sendChatMessage(currentSessionId, {
         role: 'AI',
         content: { type: 'text', value: finalReply, ...(estimateId && { estimateId }) },
         uid: userId
       });
-      if (abortSignal?.aborted) return;
+      if (abortSignal?.aborted) {
+        handleAbort();
+        return;
+      }
       const aiMessageId = aiMessageResponse?.data?._id;
       
       // 스토어의 마지막 AI 메시지 업데이트 (messageId와 estimateId 추가)
@@ -851,8 +900,17 @@ if (estimateData) {
       });
 
     } catch (e) {
-      // error(`메시지 전송 실패: ${(e as Error).message}`);
-    console.log('❗ 메시지 전송 중 오류 발생:', e);
+      console.log('❗ 메시지 전송 중 오류 발생:', e);
+      
+      // 에러 발생 시 마지막 사용자 메시지와 AI 메시지 제거
+      removeLastUserAndAiMessage();
+      
+      // 토스트 에러 메시지 표시
+      error(`메시지 전송에 실패했습니다. 다시 시도해주세요.`);
+      
+      // 파일 상태도 초기화
+      setUploadedFiles([]);
+      setSelectedFiles([]);
     } finally {
       setIsProcessing(false);
     }
@@ -864,6 +922,13 @@ if (estimateData) {
     if (useChatStore.getState().removeLastAiLoadingMessage) {
       useChatStore.getState().removeLastAiLoadingMessage();
     }
+    
+    // 처리 상태 중지
+    setIsProcessing(false);
+    
+    // 파일 상태 초기화
+    setUploadedFiles([]);
+    setSelectedFiles([]);
   };
 
   return {

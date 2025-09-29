@@ -134,3 +134,42 @@ export type AdminLoginParams = {
     memo?: string;
   };
 
+  // 고객사 생성 관련 타입
+  export type CompanyCreateParams = {
+    name: string;
+    companyName: string;
+    cellphone: string;
+    email: string;
+    companyCode: string;
+    dbName: string;
+    address: string;
+    detailAddress: string;
+    homepage?: string;
+    ciImage?: string;
+    businessImage?: string;
+    memo?: string;
+    category: string;
+    contractStartDate: string;
+    contractEndDate: string;
+    contractType: 'MONTH' | 'YEAR';
+  };
+
+  // 고객사 수정 관련 타입
+  export type CompanyUpdateParams = {
+    name?: string;
+    companyName?: string;
+    cellphone?: string;
+    email?: string;
+    dbName?: string;
+    address?: string;
+    detailAddress?: string;
+    homepage?: string;
+    ciImage?: string;
+    businessImage?: string;
+    memo?: string;
+    category?: string;
+    contractStartDate?: string;
+    contractEndDate?: string;
+    contractType?: 'MONTH' | 'YEAR';
+  };
+

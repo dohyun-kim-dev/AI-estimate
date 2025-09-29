@@ -369,7 +369,11 @@ const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClo
         {/* 등록/수정 팝업 */}
         <CategoryRegisterPopup
           isOpen={registerOpen}
-          onClose={() => { setRegisterOpen(false); loadCategories(); }}
+          onClose={() => { 
+            setRegisterOpen(false); 
+            setEditCategory(null); // editData 초기화
+            loadCategories(); 
+          }}
           editData={editCategory}
         />
       </BottomButtonRow>

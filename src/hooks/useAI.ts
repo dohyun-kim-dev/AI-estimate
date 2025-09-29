@@ -344,7 +344,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
             if (typeof candidate?.text === 'function') chunk = candidate.text()
             else if (typeof candidate?.text === 'string') chunk = candidate.text
             if (chunk) {
-              console.log('[useAI] streaming chunk:', chunk)
+              // console.log('[useAI] streaming chunk:', chunk)
               result += chunk
               options?.onStream?.(chunk)
               const trimmed = chunk.trim()

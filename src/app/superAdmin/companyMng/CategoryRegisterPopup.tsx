@@ -19,8 +19,11 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
 
   // editData가 변경될 때마다 값 초기화
   React.useEffect(() => {
-    setCategoryName(editData?.name ?? '');
-    setCategoryCode(editData?.code ?? '');
+    if (isOpen) {
+      setCategoryName(editData?.name ?? '');
+      setCategoryCode(editData?.code ?? '');
+      console.log('CategoryRegisterPopup 열림 - editData:', editData);
+    }
   }, [editData, isOpen]);
 
   const handleSave = async () => {
@@ -34,11 +37,13 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
     }
     try {
       if (editData) {
-        // 수정
+        // 수정 - ID 확인 로그 추가
+        console.log('카테고리 수정 - ID:', editData._id, '데이터:', { name: categoryName, code: categoryCode });
         await updateCategory(editData._id, { name: categoryName, code: categoryCode });
         toast.success('카테고리가 수정되었습니다.');
       } else {
         // 등록
+        console.log('카테고리 등록 - 데이터:', { name: categoryName, code: categoryCode });
         await createCategory({ name: categoryName, code: categoryCode });
         toast.success('카테고리가 등록되었습니다.');
       }
@@ -46,13 +51,14 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
       setCategoryCode('');
       onClose();
     } catch (error) {
+      console.error('카테고리 저장 오류:', error);
       toast.error('카테고리 저장 중 오류가 발생했습니다.');
     }
   };
 
   return (
     <CmsPopup
-      title="카테고리 등록"
+      title={editData ? "카테고리 수정" : "카테고리 등록"}
       isOpen={isOpen}
       onClose={onClose}
       height="auto"

@@ -14,6 +14,12 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import dayjs from "dayjs";
 
+// 파일 다운로드 URL 생성 함수
+function getDownloadEstimateUrl(companyCode: string, uuid: string) {
+  const filePath = `${companyCode}/${uuid}.pdf`;
+  return `/file/estimate/download/${filePath}`;
+}
+
 // 다음 우편번호 서비스를 사용한 주소 검색 모달 컴포넌트
 const AddressSearchModal: React.FC<{
   isOpen: boolean;
@@ -173,7 +179,7 @@ const ImageUploadBox = styled.div`
   border-radius: 8px;
   padding: 40px 20px;
   text-align: center;
-  background-color: #fafafa;
+  // background-color: #fafafa;
   margin-bottom: 16px;
   cursor: pointer;
   transition: border-color 0.2s ease;
@@ -199,7 +205,7 @@ const UploadButton = styled.button`
   padding: 8px 16px;
   background-color: #f0f0f0;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 20px;
   cursor: pointer;
   font-size: 14px;
   color: #333;
@@ -225,16 +231,18 @@ type Customer = {
   detailAddress: string;
   ciImage: string;
   businessImage: string;
-  contractType: string;
+  contractType: 'MONTH' | 'YEAR';
   contractStartDate: string;
   contractEndDate: string;
-  aiConfidence: string;
-  mode: string;
-  category: {name: string, code: string} | null;
-  businessNumber: string;
-  memo: string;
-  licence: string;
+  aiConfidence: string | null;
+  mode: 'LIGHT' | 'DARK';
+  category: string; // API에서는 ID만 오므로 string으로 변경
+  businessNumber?: string;
+  memo?: string;
+  licence?: string;
   createAt: string;
+  updateAt: string;
+  no: number;
 };
 
 interface CompanyFormPopupProps {
@@ -263,8 +271,9 @@ interface CompanyFormPopupProps {
     licence: string;
     contractStartDate: string;
     contractEndDate: string;
-    ciImage?: File | null;
-    businessImage?: File | null;
+    homepage?: string;
+    ciImage?: File | null | string;
+    businessImage?: File | null | string;
     errors?: {
       name?: string;
       companyName?: string;
@@ -309,6 +318,9 @@ interface CompanyFormPopupProps {
     setLicence: (value: string) => void;
     setContractStartDate: (value: string) => void;
     setContractEndDate: (value: string) => void;
+    setHomepage: (value: string) => void;
+    setCiImage: (value: string | undefined) => void;
+    setBusinessImage: (value: string | undefined) => void;
   };
   onFileUpload?: {
     onCiImageUpload: (file: File) => void;
@@ -395,29 +407,39 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
     setLicence: _setLicence,
     setContractStartDate: _setContractStartDate,
     setContractEndDate: _setContractEndDate,
-  } = onFormChange;
+  } = onFormChange || {};
 
-  // 컴포넌트 내부 상태로 관리하여 UI 반영
-  const [internalContractType, setInternalContractType] = React.useState(contractType || 'monthly');
-  const [internalMode, setInternalMode] = React.useState(mode || 'inactive');
+  // 컴포넌트 내부 상태로 관리하여 UI 반영 - 서버 데이터 형식에 맞게 변환
+  const [internalContractType, setInternalContractType] = React.useState(
+    contractType === 'MONTH' ? 'monthly' : contractType === 'YEAR' ? 'yearly' : 'monthly'
+  );
+  const [internalMode, setInternalMode] = React.useState(
+    mode === 'LIGHT' ? 'active' : mode === 'DARK' ? 'inactive' : 'active'
+  );
   const [internalLicence, setInternalLicence] = React.useState(licence || 'customer');
-  const [internalStartDate, setInternalStartDate] = React.useState(contractStartDate || dayjs().format('YYYY-MM-DD'));
+  const [internalStartDate, setInternalStartDate] = React.useState(
+    contractStartDate ? dayjs(contractStartDate).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD')
+  );
   const [internalEndDate, setInternalEndDate] = React.useState(
-    contractEndDate || 
+    contractEndDate ? dayjs(contractEndDate).format('YYYY-MM-DD') : 
     dayjs(contractStartDate || new Date()).add(internalContractType === 'monthly' ? 1 : 12, 'month').format('YYYY-MM-DD')
   );
   
-  // 방어 코드 추가 (로그 기록 + 내부 상태 동기화)
+  // 방어 코드 추가 (로그 기록 + 내부 상태 동기화) - 서버 형식으로 변환
   const setContractType = (v: string) => {
     console.log('setContractType called with:', v);
     setInternalContractType(v);
-    if (_setContractType) _setContractType(v);
+    // 서버 형식으로 변환하여 전달
+    const serverFormat = v === 'monthly' ? 'MONTH' : 'YEAR';
+    if (_setContractType) _setContractType(serverFormat);
   };
   
   const setMode = (v: string) => {
     console.log('setMode called with:', v);
     setInternalMode(v);
-    if (_setMode) _setMode(v);
+    // 서버 형식으로 변환하여 전달
+    const serverFormat = v === 'active' ? 'LIGHT' : 'DARK';
+    if (_setMode) _setMode(serverFormat);
   };
   
   const setLicence = (v: string) => {
@@ -429,13 +451,17 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
   const setContractStartDate = (v: string) => {
     console.log('setContractStartDate called with:', v);
     setInternalStartDate(v);
-    if (_setContractStartDate) _setContractStartDate(v);
+    // 서버 형식으로 변환하여 전달 (YYYY-MM-DD HH:mm:ss)
+    const serverFormat = dayjs(v).format('YYYY-MM-DD 00:00:00');
+    if (_setContractStartDate) _setContractStartDate(serverFormat);
   };
   
   const setContractEndDate = (v: string) => {
     console.log('setContractEndDate called with:', v);
     setInternalEndDate(v);
-    if (_setContractEndDate) _setContractEndDate(v);
+    // 서버 형식으로 변환하여 전달 (YYYY-MM-DD HH:mm:ss)
+    const serverFormat = dayjs(v).format('YYYY-MM-DD 00:00:00');
+    if (_setContractEndDate) _setContractEndDate(serverFormat);
   };
 
   // 등록/수정 모드 구분
@@ -509,11 +535,29 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
   const [ciPreview, setCiPreview] = React.useState<string>('');
   const [businessPreview, setBusinessPreview] = React.useState<string>('');
 
+  // 선택된 고객사 정보가 변경될 때 이미지 미리보기 업데이트
+  React.useEffect(() => {
+    if (selectedCustomer && isEditMode) {
+      // 수정 모드일 때 기존 이미지 정보 설정
+      if (selectedCustomer.ciImage && selectedCustomer.companyCode) {
+        setCiPreview(getDownloadEstimateUrl(selectedCustomer.companyCode, selectedCustomer.ciImage));
+      }
+      if (selectedCustomer.businessImage && selectedCustomer.companyCode) {
+        setBusinessPreview(getDownloadEstimateUrl(selectedCustomer.companyCode, selectedCustomer.businessImage));
+      }
+    } else {
+      // 신규 생성 모드일 때 초기화
+      setCiPreview('');
+      setBusinessPreview('');
+    }
+  }, [selectedCustomer, isEditMode]);
+
   // 카테고리 선택 핸들러
   const handleCategorySelect = (cat: {name: string, code: string}) => {
     setSelectedCategory(cat);
     setCategory(cat.name);
-    setCode(cat.code);
+    // 고객사코드는 자동으로 설정하지 않고 수동 입력 허용
+    // setCode(cat.code);
     setCategoryModalOpen(false);
   };
 
@@ -702,21 +746,24 @@ const RemoveImageButton = styled.button`
   top: -10px;
   right: -10px;
   width: 24px;
-  height: 24px;
   border-radius: 50%;
-  background-color: #ff4757;
+  background-color: #777777;
   color: white;
-  font-size: 18px;
+  font-size: 14px;
   line-height: 1;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   
   &:hover {
-    background-color: #ff6b81;
+    background-color: #555555;
+  }
+  
+  &:before {
+    content: "×";
+    font-weight: bold;
   }
 `;  return (
     <CmsPopup
@@ -844,27 +891,28 @@ const RemoveImageButton = styled.button`
         <SectionTitle>고객사 정보</SectionTitle>
         <CommonTextField
           id="name"
-          value={name}
+          value={name || ''}
           label="* 고객사명(KR)"
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => setName && setName(e.target.value)}
           placeholder="고객사명을 입력하세요"
-          errorMessage={errors.name}
+          errorMessage={errors?.name}
         />
         <CommonTextField
           id="companyName"
-          value={companyName}
+          value={companyName || ''}
           label="* 고객사명(EN)"
-          onChange={(e) => setCompanyName(e.target.value)}
+          onChange={(e) => setCompanyName && setCompanyName(e.target.value)}
           placeholder="고객사명(영문)을 입력하세요"
-          errorMessage={errors.companyName}
+          errorMessage={errors?.companyName}
         />
         <CommonTextField
           id="code"
-          value={code}
+          value={code || ''}
           label="* 고객사코드"
-          onChange={(e) => setCode(e.target.value)}
+          onChange={(e) => setCode && setCode(e.target.value)}
           placeholder="고객사코드를 입력하세요"
-          errorMessage={errors.code}
+          errorMessage={errors?.code}
+          readOnly={false}
         />
         <CommonTextField
           id="category"
@@ -932,11 +980,11 @@ const RemoveImageButton = styled.button`
         <SectionTitle>비고</SectionTitle>
         <TextArea
           id="memo"
-          value={memo}
+          value={memo || ''}
           label="비고"
-          onChange={(e) => setMemo(e.target.value)}
+          onChange={(e) => setMemo && setMemo(e.target.value)}
           placeholder="비고를 입력하세요"
-          errorMessage={errors.memo}
+          errorMessage={errors?.memo}
           height="120px"
         />
 
@@ -944,7 +992,7 @@ const RemoveImageButton = styled.button`
         <SectionTitle>이미지 첨부</SectionTitle>
         <ImageUploadSection>
           <ImageUploadTitle>* 고객사 CI</ImageUploadTitle>
-          {ciPreview && (
+          {ciPreview ? (
             <div style={{ marginBottom: '16px', textAlign: 'center', position: 'relative' }}>
               <img
                 src={ciPreview}
@@ -962,27 +1010,27 @@ const RemoveImageButton = styled.button`
                   setCiFileId('');
                   setCiPreview('');
                 }}
-              >
-                ×
-              </RemoveImageButton>
+              />
             </div>
+          ) : (
+            <ImageUploadBox onClick={() => document.getElementById('ci-upload')?.click()}>
+              <ImageUploadText>파일을 업로드해주세요</ImageUploadText>
+              <ImageUploadSubText>
+                <p style={{color: '#CA7575'}}>1장의 이미지만 첨부 가능합니다</p>
+                1MB 이내의 Jpg, Jpeg, Png 파일만 등록 가능
+              </ImageUploadSubText>
+              <UploadButton type="button">파일 열기</UploadButton>
+            </ImageUploadBox>
           )}
-          <ImageUploadBox onClick={() => document.getElementById('ci-upload')?.click()}>
-            <ImageUploadText>파일을 업로드해주세요</ImageUploadText>
-            <ImageUploadSubText>
-              1장의 이미지만 첨부 가능합니다<br />
-              1MB 이내의 Jpg, Jpeg, Png 파일만 등록 가능
-            </ImageUploadSubText>
-            <UploadButton type="button">파일 열기</UploadButton>
-          </ImageUploadBox>
           <HiddenInput
             id="ci-upload"
             type="file"
             accept="image/jpeg,image/jpg,image/png"
             onChange={handleCiImageUpload}
           />
-          <ImageUploadTitle>* 사업자등록증</ImageUploadTitle>
-          {businessPreview && (
+          
+          <ImageUploadTitle style={{ marginTop: '24px' }}>* 사업자등록증</ImageUploadTitle>
+          {businessPreview ? (
             <div style={{ marginBottom: '16px', textAlign: 'center', position: 'relative' }}>
               <img
                 src={businessPreview}
@@ -1000,19 +1048,18 @@ const RemoveImageButton = styled.button`
                   setBusinessFileId('');
                   setBusinessPreview('');
                 }}
-              >
-                ×
-              </RemoveImageButton>
+              />
             </div>
+          ) : (
+            <ImageUploadBox onClick={() => document.getElementById('business-upload')?.click()}>
+              <ImageUploadText>파일을 업로드해주세요</ImageUploadText>
+              <ImageUploadSubText>
+                <p style={{color: '#CA7575'}}>1장의 이미지만 첨부 가능합니다</p>
+                1MB 이내의 Jpg, Jpeg, Png 파일만 등록 가능
+              </ImageUploadSubText>
+              <UploadButton type="button">파일 열기</UploadButton>
+            </ImageUploadBox>
           )}
-          <ImageUploadBox onClick={() => document.getElementById('business-upload')?.click()}>
-            <ImageUploadText>파일을 업로드해주세요</ImageUploadText>
-            <ImageUploadSubText>
-              1장의 이미지만 첨부 가능합니다<br />
-              1MB 이내의 Jpg, Jpeg, Png 파일만 등록 가능
-            </ImageUploadSubText>
-            <UploadButton type="button">파일 열기</UploadButton>
-          </ImageUploadBox>
           <HiddenInput
             id="business-upload"
             type="file"

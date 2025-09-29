@@ -19,6 +19,8 @@ import {
   AIPromptUpdateParams,
   AIPromptDeleteParams,
   UserUpdateParams,
+  CompanyCreateParams,
+  CompanyUpdateParams,
 } from './adminApi.types';
 
 // API URL 생성 헬퍼 함수
@@ -331,6 +333,35 @@ export async function getAllUnitPrices(
 }
 
 // ***************** 고객사
+
+// 고객사 생성 API
+export async function createCompany(params: CompanyCreateParams) {
+  return callAdminApi({
+    title: '고객사 생성',
+    url: `${BASE_URL}/cms/company`,
+    method: 'POST',
+    body: params,
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// 고객사 수정 API
+export async function updateCompany(companyCode: string, params: CompanyUpdateParams) {
+  // undefined 값들을 제거한 body 객체 생성
+  const body = Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value !== undefined)
+  );
+
+  return callAdminApi({
+    title: '고객사 수정',
+    url: `${BASE_URL}/cms/company?companyCode=${companyCode}`,
+    method: 'PATCH',
+    body: body,
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
 
 // 고객 회원 목록 조회 API
 export async function getUserList(
