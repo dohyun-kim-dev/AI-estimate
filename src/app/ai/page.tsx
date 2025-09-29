@@ -445,13 +445,17 @@ const parseMessageContent = (content: string) => {
   };
 };
 
-export const AiMessageContent: React.FC<{ content: string; chatSessionId?: string; estimateDataForConsult?: ProjectEstimate }> = ({ content, chatSessionId, estimateDataForConsult }) => {
+export const AiMessageContent: React.FC<{ 
+  content: string; 
+  chatSessionId?: string; 
+  estimateDataForConsult?: ProjectEstimate;
+  onSubmit?: (value: string, options?: { displayMessage?: string; abortSignal?: AbortSignal }) => Promise<void>;
+}> = ({ content, chatSessionId, estimateDataForConsult, onSubmit }) => {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
   const [loadingStep, setLoadingStep] = useState(0); // 0: 생각 중, 1: 깊게 생각 중, 2: 더 좋은 답변 고민 중
   const [isEstimateGenerating, setIsEstimateGenerating] = useState(false); // 견적서 생성 중 상태
   const [estimateData, setEstimateData] = useState<ProjectEstimate | null>(() => extractEstimateData(content));
-  const { handleSubmit } = useChatActions({ modelName: 'gemini-2.5-flash', selectedPromptId: 'default' });
   const estimateId = estimateData?.uuid;
   const effectiveChatSessionId = chatSessionId || localStorage.getItem('chatSessionId') || '';
   const updateLastMessage = useChatStore((s) => s.updateLastMessage); // ⭐️ 추가: updateLastMessage 가져오기
@@ -875,7 +879,10 @@ const userId = getUserId() || '';
                   
                   console.log('최종 displayMessage:', displayMessage);
                   
-                  handleSubmit(aiPrompt, { displayMessage });
+                  // prop으로 받은 onSubmit 사용
+                  if (onSubmit) {
+                    onSubmit(aiPrompt, { displayMessage });
+                  }
                 }}
               />
             </SideContent>
@@ -1511,7 +1518,11 @@ useEffect(() => {
             return (
               <StyledAiMessage
                 key={idx}
-                content={<AiMessageContent content={m.content} chatSessionId={chatSessionId} />} 
+                content={<AiMessageContent 
+                  content={m.content} 
+                  chatSessionId={chatSessionId} 
+                  onSubmit={handleSubmit}
+                />} 
                 profileImage="/ai-estimate/pretty.png"
                 name="강유하"
                 isFullWidth={isEstimateMessage(m.content)}
