@@ -379,7 +379,7 @@ const SubMenuList = styled.ul<{ $isCollapsed?: boolean; $menuId?: string }>`
  
 const SubMenuItem = styled.li<{ $active?: boolean; $isCollapsed?: boolean }>`
   height: 40px;
-  display: flex;
+  display: flex;a
   align-items: center;
   color: ${({ $active }) => ($active ? '#fff' : '#797878')};
   font-size: 14px;

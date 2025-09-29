@@ -3,6 +3,7 @@ import useAI from './useAI';
 import { useToast } from '@/components/common/ToastProvider';
 import { useChatStore } from '@/store/chatStore';
 import { useAuthStore } from '@/store/authStore';
+import { useUsageStore } from '@/store/usageStore';
 import { combinePrompts } from '@/ai/promptTemplates';
 import { FileUploadData } from '@/firebase.functions';
 import type { SimpleModel } from './useAI';
@@ -420,43 +421,19 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         const crawlAbortController = new AbortController();
         let crawlCompleted = false;
         
-        // 30초 후 타임아웃 처리
-        const timeoutId = setTimeout(() => {
-          if (!crawlCompleted) {
-            console.log('URL 크롤링 30초 타임아웃, API 호출 중단');
-            crawlCompleted = true;
-            urlCrawlFailed = true; // 크롤링 실패 표시
-            crawlAbortController.abort(); // API 호출 중단
-            
-            // 타임아웃 시 사용자에게 알림 메시지 표시
-            updateLastMessage({
-              content: `URL 분석에 시간이 오래 걸려 건너뛰고 진행합니다.`,
-              isLoading: true,
-            });
-            // 2초 후 빈 상태로 변경하여 AI 응답 준비
-            setTimeout(() => {
-              updateLastMessage({
-                content: '',
-                isLoading: true,
-              });
-            }, 2000);
-          }
-        }, 30000);
-        
         try {
-          // crawlUrl이 AbortSignal을 지원한다면 전달, 아니면 Promise.race 사용
-          const crawlPromise = crawlUrl(firstUrl);
-          const timeoutPromise = new Promise<never>((_, reject) => {
-            crawlAbortController.signal.addEventListener('abort', () => {
-              reject(new Error('크롤링 타임아웃'));
-            });
-          });
-          
-          const crawlResponse = await Promise.race([crawlPromise, timeoutPromise]);
+          // 🔥 타임아웃과 함께 crawlUrl 호출 (30초 후 자동 중단)
+          const crawlResponse = await Promise.race([
+            crawlUrl(firstUrl),
+            new Promise<never>((_, reject) => {
+              setTimeout(() => {
+                reject(new Error('URL 크롤링 30초 타임아웃'));
+              }, 30000);
+            })
+          ]);
           
           if (!crawlCompleted) {
             crawlCompleted = true;
-            clearTimeout(timeoutId);
             
             if (crawlResponse?.statusCode === 200 && crawlResponse.data) {
               urlAnalysisForAI = crawlResponse.data;
@@ -478,12 +455,27 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           if (!crawlCompleted) {
             crawlCompleted = true;
             urlCrawlFailed = true; // 크롤링 실패 표시
-            clearTimeout(timeoutId);
             console.log('URL 크롤링 실패 또는 타임아웃, 원본 메시지로 진행:', error.message);
-            updateLastMessage({
-              content: '',
-              isLoading: true,
-            });
+            
+            // 🔥 타임아웃 에러인지 확인하고 사용자에게 알림
+            if (error.message.includes('타임아웃') || error.message.includes('timeout')) {
+              updateLastMessage({
+                content: 'URL 분석에 시간이 오래 걸려 건너뛰고 진행합니다.',
+                isLoading: true,
+              });
+              // 2초 후 빈 상태로 변경하여 AI 응답 준비
+              setTimeout(() => {
+                updateLastMessage({
+                  content: '',
+                  isLoading: true,
+                });
+              }, 2000);
+            } else {
+              updateLastMessage({
+                content: '',
+                isLoading: true,
+              });
+            }
           }
         }
       } catch (error) {
@@ -736,6 +728,32 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
       const reply = chatResult.text;
 
+      // 🔥 AI 응답 형식 검증 - 잘못된 형식으로 응답했는지 확인
+      const trimmedReply = reply?.trim() || '';
+      
+      // JSON 코드블록으로 응답한 경우 (```json ... ```)
+      if (trimmedReply.startsWith('```json') && trimmedReply.endsWith('```')) {
+        console.log('❌ AI가 JSON 코드블록 형식으로 잘못 응답함');
+        throw new Error('AI가 올바르지 않은 JSON 형식으로 응답했습니다.');
+      }
+      
+      // 순수 JSON 객체로만 응답한 경우 (텍스트 없이 { ... }만)
+      if (trimmedReply.startsWith('{') && trimmedReply.endsWith('}') && !trimmedReply.includes('<script')) {
+        try {
+          JSON.parse(trimmedReply); // JSON 파싱 가능하면
+          console.log('❌ AI가 순수 JSON으로만 응답함 (텍스트 없음)');
+          throw new Error('AI가 텍스트 없이 JSON으로만 응답했습니다.');
+        } catch (parseError) {
+          // JSON 파싱 실패하면 정상적인 텍스트로 간주
+        }
+      }
+      
+      // 일반 코드블록으로 응답한 경우 (``` ... ```)
+      if (trimmedReply.startsWith('```') && trimmedReply.endsWith('```') && !trimmedReply.includes('<script')) {
+        console.log('❌ AI가 코드블록 형식으로 잘못 응답함');
+        throw new Error('AI가 올바르지 않은 코드블록 형식으로 응답했습니다.');
+      }
+
       // AI 응답이 성공했으므로 이제 DB에 사용자 메시지 저장
       if (abortSignal?.aborted) {
         handleAbort();
@@ -914,12 +932,21 @@ if (estimateData) {
       // 에러 발생 시 마지막 사용자 메시지와 AI 메시지 제거
       removeLastUserAndAiMessage();
       
-      // 토스트 에러 메시지 표시
-      error(`메시지 전송에 실패했습니다. 다시 시도해주세요.`);
+      // 🔥 AI 오류 시 사용량 차감 복구 (비회원만)
+      if (!isAuthenticated()) {
+        const { remainingCount, setRemainingCount } = useUsageStore.getState();
+        setRemainingCount(remainingCount + 1); // 차감된 횟수 복구
+        console.log('🔄 AI 오류로 인한 사용량 복구 완료');
+      }
       
-      // 파일 상태도 초기화
-      setUploadedFiles([]);
-      setSelectedFiles([]);
+      // 토스트 에러 메시지 표시
+      error(`[AI오류] 잠시 후 재 시도 바랍니다`);
+      
+      // 🔥 에러를 throw하여 BottomInput에서 입력값 복원 처리 가능하도록 함
+      const errorWithInput = new Error('[AI오류] 잠시 후 재 시도 바랍니다');
+      (errorWithInput as any).originalInput = input; // 원본 입력값 저장
+      (errorWithInput as any).shouldRestoreInput = true; // 입력값 복원 필요 플래그
+      throw errorWithInput;
     } finally {
       setIsProcessing(false);
     }

@@ -260,19 +260,10 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
   const chatRef = useRef<ChatSession | null>(null)
   const initialized = useRef(false)
 
-  // 🔧 최적화: systemInstruction은 초기화 후 거의 변경되지 않으므로 세션 리셋 조건 완화
-  // thinkingBudget과 modelName 변경 시에만 세션 리셋 (systemInstruction 제외)
+  // thinkingBudget 또는 systemInstruction이 바뀌면 다음 전송 시 새 세션으로 시작되도록 리셋
   useEffect(() => {
     chatRef.current = null
-  }, [thinkingBudget, modelName])
-  
-  // systemInstruction 변경 시에는 경고만 출력 (개발 중에만 발생)
-  useEffect(() => {
-    if (initialized.current && chatRef.current) {
-      console.warn('[useAI] systemInstruction 변경 감지됨. 다음 메시지부터 새 세션이 생성됩니다.');
-      // 운영 환경에서는 systemInstruction이 자주 변경되지 않으므로 즉시 리셋하지 않음
-    }
-  }, [systemInstruction])
+  }, [thinkingBudget, systemInstruction, modelName])
 
   // 초기화 시 한 번만 시스템 프롬프트 설정
   useEffect(() => {
@@ -379,6 +370,8 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     files: FileUploadData[] = [],
     options?: SendChatOptions & { chatHistory?: Array<{ role: 'user' | 'model'; content: string }> },
   ): Promise<{ text: string, tokenUsage?: TokenUsage }> => {
+    // 🔥 AI 오류 테스트용 - 주석 해제하면 강제 에러 발생
+    // throw new Error('테스트용 AI 오류입니다.');
     const model = ensureModel();
     console.log(chatRef.current ? '[useAI] 기존 채팅 세션 재사용' : '[useAI] 새로운 채팅 세션 생성' , chatRef.current);
     // ✅ 첫 메시지부터 thinkingBudget 반영되도록 세션 생성 시 config 주입
@@ -610,7 +603,6 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
   }, [ensureModel, modelName, thinkingBudget])
 
   const resetChat = useCallback(() => {
-    console.log('[useAI] 채팅 세션 수동 리셋 - systemInstruction 재과금 발생');
     chatRef.current = null
   }, [])
 

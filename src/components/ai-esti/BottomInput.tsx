@@ -300,32 +300,53 @@ const BottomInput: React.FC<BottomInputProps> = ({
     // 항상 스토어의 히스토리를 사용하여 액션 버튼과 바텀 인풋이 동일하게 처리됨
     console.log("현재 메시지 개수:", messages.length);
 
-    if (isLoggedIn) {
-      await onSubmit(
-        lastInputRef.current.trim(),
-        {
-          abortSignal: newAbort.signal
-        }
-      );
-      return;
-    }
+    try {
+      if (isLoggedIn) {
+        await onSubmit(
+          lastInputRef.current.trim(),
+          {
+            abortSignal: newAbort.signal
+          }
+        );
+        return;
+      }
 
-    if (remainingCount > 0) {
-      await onSubmit(
-        lastInputRef.current.trim(),
-        {
-          abortSignal: newAbort.signal
+      if (remainingCount > 0) {
+        // 🔥 사용량을 먼저 차감하고 오류 시 복구하도록 변경
+        decreaseCount();
+        try {
+          await onSubmit(
+            lastInputRef.current.trim(),
+            {
+              abortSignal: newAbort.signal
+            }
+          );
+        } catch (submitError) {
+          // onSubmit에서 오류 발생 시 재throw하여 외부 catch에서 처리
+          throw submitError;
         }
-      );
-      decreaseCount();
-    } else {
-      setValue(lastInputRef.current);
-      if (hasUsedExtraCount) {
-        setLoginModalPurpose('limitExceeded');
-        setIsLoginModalOpen(true);
       } else {
-        setLoginModalPurpose('limitReached');
-        setIsLoginModalOpen(true);
+        setValue(lastInputRef.current);
+        if (hasUsedExtraCount) {
+          setLoginModalPurpose('limitExceeded');
+          setIsLoginModalOpen(true);
+        } else {
+          setLoginModalPurpose('limitReached');
+          setIsLoginModalOpen(true);
+        }
+      }
+    } catch (error: any) {
+      // 🔥 AI 오류 발생 시 입력값 복원 처리
+      if (error?.shouldRestoreInput && error?.originalInput) {
+        console.log('🔄 AI 오류로 인한 입력값 복원:', error.originalInput);
+        setValue(error.originalInput);
+        
+        // 비회원인 경우 차감된 사용량은 이미 useChatActions에서 복구됨
+        console.log('🔄 사용량은 자동으로 복구되었습니다.');
+      } else {
+        // 일반적인 에러의 경우 입력값 복원
+        console.log('🔄 일반 오류로 인한 입력값 복원:', lastInputRef.current);
+        setValue(lastInputRef.current);
       }
     }
   }
