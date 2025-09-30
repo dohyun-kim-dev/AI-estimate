@@ -788,7 +788,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
             isLoading: true,
           });
         },
-        onStream: (chunk) => {
+        onStream: async (chunk) => {
         // 중지(abort) 상태면 메시지 업데이트 하지 않음
         if (abortSignal?.aborted || !useChatStore.getState().isProcessing) {
           if (abortSignal?.aborted) {
@@ -811,12 +811,12 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           return;
         }
         
-        // JSON 형식 체크 로직 제거 - 이제 다양한 형태의 JSON을 모두 지원
-        
+        // 일반 텍스트 스트리밍 표시
         updateLastMessage({
           content: aiReply,
           isLoading: wasEmpty ? false : false,
         });
+        
         if (!firstChunkReceived && wasEmpty) firstChunkReceived = true;
       },
         abortSignal,

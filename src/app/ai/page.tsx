@@ -720,22 +720,43 @@ const userId = getUserId() || '';
   let textContent = content;
   let hasIncompleteJson = false;
   
+  // JSON 시작 직전의 불필요한 텍스트를 제거하는 함수
+  const cleanUnnecessaryText = (text: string): string => {
+    const unnecessaryPatterns = [
+      /\b[a-zA-Z0-9_]*uuid[a-zA-Z0-9_]*\b/gi,
+      /\b[a-zA-Z0-9_]*estimate[a-zA-Z0-9_]*\b/gi,
+      /\b[a-zA-Z0-9_]*recommended[a-zA-Z0-9_]*\b/gi,
+      /\b[a-zA-Z0-9_]*features?[a-zA-Z0-9_]*\b/gi,
+      /\b[a-zA-Z0-9_]*data[a-zA-Z0-9_]*\b/gi,
+      /\bnew_[a-zA-Z0-9_]+\b/gi,
+      /\b[a-zA-Z0-9_]+_for_[a-zA-Z0-9_]+\b/gi,
+      /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
+    ];
+    
+    let cleaned = text;
+    unnecessaryPatterns.forEach(pattern => {
+      cleaned = cleaned.replace(pattern, '').trim();
+    });
+    
+    return cleaned.replace(/\s+/g, ' ').trim();
+  };
+  
   // 1. <script> 태그 형태 처리
   const scriptMatch = content.match(/<script[^>]*id="invoiceData"[^>]*>[\s\S]*?<\/script>/);
   if (scriptMatch) {
-    textContent = content.replace(scriptMatch[0], '').replace(/\\n/g, '<br/>').trim();
+    textContent = cleanUnnecessaryText(content.replace(scriptMatch[0], '')).replace(/\\n/g, '<br/>').trim();
   } else {
     // 2. 마크다운 코드블록 형태 처리
     const codeBlockMatch = content.match(/```json\s*\n[\s\S]*?\n```/);
     if (codeBlockMatch) {
-      textContent = content.replace(codeBlockMatch[0], '').replace(/\\n/g, '<br/>').trim();
+      textContent = cleanUnnecessaryText(content.replace(codeBlockMatch[0], '')).replace(/\\n/g, '<br/>').trim();
     } else {
       // 3. 불완전한 <script> 태그 확인
       const jsonStartPattern = /<script[^>]*id="invoiceData"[^>]*>/;
       if (jsonStartPattern.test(content) && !content.includes('</script>')) {
         hasIncompleteJson = true;
         // 불완전한 JSON 부분을 제거하고 텍스트만 추출
-        textContent = content.replace(/<script[^>]*id="invoiceData"[^>]*>[\s\S]*$/, '').replace(/\\n/g, '<br/>').trim();
+        textContent = cleanUnnecessaryText(content.replace(/<script[^>]*id="invoiceData"[^>]*>[\s\S]*$/, '')).replace(/\\n/g, '<br/>').trim();
       } else {
         // 4. 순수 JSON 형태인지 확인 (전체 content가 JSON인 경우)
         try {
@@ -746,15 +767,15 @@ const userId = getUserId() || '';
               // 전체가 견적서 JSON이면 텍스트는 빈 문자열
               textContent = '';
             } else {
-              // 견적서 JSON이 아니면 원본 그대로
-              textContent = content.replace(/\\n/g, '<br/>').trim();
+              // 견적서 JSON이 아니면 원본을 정리해서 표시
+              textContent = cleanUnnecessaryText(content).replace(/\\n/g, '<br/>').trim();
             }
           } else {
-            textContent = content.replace(/\\n/g, '<br/>').trim();
+            textContent = cleanUnnecessaryText(content).replace(/\\n/g, '<br/>').trim();
           }
         } catch {
-          // JSON 파싱 실패하면 일반 텍스트로 처리
-          textContent = content.replace(/\\n/g, '<br/>').trim();
+          // JSON 파싱 실패하면 일반 텍스트로 처리 (불필요한 텍스트 제거 후)
+          textContent = cleanUnnecessaryText(content).replace(/\\n/g, '<br/>').trim();
         }
       }
     }

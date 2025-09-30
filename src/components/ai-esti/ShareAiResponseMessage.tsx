@@ -85,8 +85,30 @@ const ShareAiResponseMessage: React.FC<ShareAiResponseMessageProps> = ({
     }
 
     if (typeof content === 'string') {
-      // 일반 텍스트 메시지인 경우 <script> 태그 제거
-      const cleanContent = content.replace(/<script[^>]*>[\s\S]*?<\/script>/g, '').trim();
+      // 일반 텍스트 메시지인 경우 JSON 관련 태그 및 불필요한 텍스트 제거
+      let cleanContent = content
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/g, '')
+        .replace(/```json\s*\n[\s\S]*?\n```/g, '')
+        .trim();
+
+      // JSON 시작 직전의 불필요한 텍스트 패턴들 제거
+      const unnecessaryPatterns = [
+        /\b[a-zA-Z0-9_]*uuid[a-zA-Z0-9_]*\b/gi,
+        /\b[a-zA-Z0-9_]*estimate[a-zA-Z0-9_]*\b/gi,
+        /\b[a-zA-Z0-9_]*recommended[a-zA-Z0-9_]*\b/gi,
+        /\b[a-zA-Z0-9_]*features?[a-zA-Z0-9_]*\b/gi,
+        /\b[a-zA-Z0-9_]*data[a-zA-Z0-9_]*\b/gi,
+        /\bnew_[a-zA-Z0-9_]+\b/gi,
+        /\b[a-zA-Z0-9_]+_for_[a-zA-Z0-9_]+\b/gi,
+        /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
+      ];
+
+      unnecessaryPatterns.forEach(pattern => {
+        cleanContent = cleanContent.replace(pattern, '').trim();
+      });
+
+      // 연속된 공백 정리
+      cleanContent = cleanContent.replace(/\s+/g, ' ').trim();
       
       if (cleanContent) {
         return <p>{cleanContent}</p>;

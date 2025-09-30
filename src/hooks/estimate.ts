@@ -37,10 +37,38 @@ export function normalizeEstimate<T extends Record<string, any>>(est: T): T {
 
 /** reply 전체에서 <script> 블록과 마크다운 코드블록 제거한 "인트로"만 추출 */
 export function extractIntroFromReply(reply: string) {
-  return reply
+  let intro = reply
     .replace(/<script type="application\/json" id="invoiceData">[\s\S]*?<\/script>/g, '')
     .replace(/```json\s*\n[\s\S]*?\n```/g, '')
     .trim();
+
+  // JSON 시작 직전의 불필요한 텍스트 패턴들 제거
+  // 예: "new_uuid_for_recommended_features", "uuid_123", "estimate_data" 등
+  const unnecessaryPatterns = [
+    /\b[a-zA-Z0-9_]*uuid[a-zA-Z0-9_]*\b/gi, // uuid 관련 텍스트
+    /\b[a-zA-Z0-9_]*estimate[a-zA-Z0-9_]*\b/gi, // estimate 관련 텍스트
+    /\b[a-zA-Z0-9_]*recommended[a-zA-Z0-9_]*\b/gi, // recommended 관련 텍스트
+    /\b[a-zA-Z0-9_]*features?[a-zA-Z0-9_]*\b/gi, // feature 관련 텍스트
+    /\b[a-zA-Z0-9_]*data[a-zA-Z0-9_]*\b/gi, // data 관련 텍스트
+    /\bnew_[a-zA-Z0-9_]+\b/gi, // new_로 시작하는 패턴
+    /\b[a-zA-Z0-9_]+_for_[a-zA-Z0-9_]+\b/gi, // _for_ 패턴
+    /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, // UUID 패턴
+  ];
+
+  // 각 패턴을 제거
+  unnecessaryPatterns.forEach(pattern => {
+    intro = intro.replace(pattern, '').trim();
+  });
+
+  // 연속된 공백이나 줄바꿈 정리
+  intro = intro.replace(/\s+/g, ' ').trim();
+
+  // 빈 문자열이 되면 기본 메시지 반환
+  if (!intro || intro.length === 0) {
+    return '지금까지 논의된 내용을 바탕으로 주요 기능과 예상 비용을 정리한 견적서를 아래에 바로 제공드립니다.';
+  }
+
+  return intro;
 }
 
 /** 인트로 + 스크립트(JSON) 문자열 조립 */
