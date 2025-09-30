@@ -554,7 +554,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
             console.log('[IssuerInfoModal submit] purpose: limitReached', info);
           } else if (infoModalPurpose === 'limitExceeded') {
             console.log('[IssuerInfoModal submit] purpose: limitExceeded', info);
-            // ai-chat-storage에서 가장 최근 estimateId 추출
+            // ai-chat-storage에서 가장 최근 estimateId 추출 및 project_name 파싱
             try {
               const chatStorage = sessionStorage.getItem('ai-chat-storage');
               if (chatStorage) {
@@ -562,13 +562,41 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                 const messages = parsed?.state?.messages || [];
                 // 뒤에서부터 estimateId 있는 메시지 찾기
                 let lastEstimateId = null;
+                let projectTitle = '새로운 견적서'; // 기본값
+                
                 for (let i = messages.length - 1; i >= 0; i--) {
-                  if (messages[i]?.estimateId) {
+                  if (messages[i]?.estimateId && messages[i]?.content) {
                     lastEstimateId = messages[i].estimateId;
+                    
+                    // content에서 project_name 추출
+                    const content = messages[i].content;
+                    try {
+                      // <script type="application/json" id="invoiceData"> 태그 내용 추출
+                      const scriptMatch = content.match(/<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/);
+                      if (scriptMatch && scriptMatch[1]) {
+                        const invoiceData = JSON.parse(scriptMatch[1]);
+                        if (invoiceData.project_name) {
+                          projectTitle = invoiceData.project_name;
+                          console.log('추출된 프로젝트 제목:', projectTitle);
+                        }
+                      }
+                    } catch (parseError) {
+                      console.warn('견적서 데이터 파싱 실패:', parseError);
+                      // project_name 패턴 직접 매칭 시도
+                      const projectNameMatch = content.match(/"project_name"\s*:\s*"([^"]+)"/);
+                      if (projectNameMatch && projectNameMatch[1]) {
+                        projectTitle = projectNameMatch[1];
+                        console.log('패턴 매칭으로 추출된 프로젝트 제목:', projectTitle);
+                      }
+                    }
                     break;
                   }
                 }
+                
                 if (lastEstimateId) {
+                  // chatSessionId 가져오기 (localStorage -> sessionStorage 순서)
+                  let chatSessionId = localStorage.getItem('chatSessionId') || sessionStorage.getItem('chatSessionId');
+                  
                   // requestEstimateConsult 호출
                   const user = {
                     id: '', // 비회원이므로 id는 빈값
@@ -579,7 +607,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                   
                   try {
                     const { requestEstimateConsult } = await import('@/lib/api/user/userApi');
-                    const consultResponse = await requestEstimateConsult(lastEstimateId, '', '', user);
+                    const consultResponse = await requestEstimateConsult(lastEstimateId, projectTitle, chatSessionId || '', user);
                     
                     // API 에러 처리
                     const { data: consultData } = consultResponse as unknown as { data: any; headers: Headers };

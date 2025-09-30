@@ -963,6 +963,7 @@ export default function AiChatPage() {
     uploadProgress,
     isUploading,
     handleDragOver,
+    handleDragEnter,
     handleDragLeave,
     handleDrop,
     handleFileInput,
@@ -1450,6 +1451,7 @@ useEffect(() => {
   return (
     <Container
       onDragOver={handleDragOver}
+      onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >

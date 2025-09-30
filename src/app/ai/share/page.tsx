@@ -504,8 +504,8 @@ const SharePage: React.FC = () => {
         </TopNav>
         <Container>
           <LoadingContainer>
-            <LoadingSpinner />
-            <p>공유된 채팅 세션을 불러오는 중...</p>
+            {/* <LoadingSpinner />
+            <p>공유된 채팅 세션을 불러오는 중...</p> */}
           </LoadingContainer>
         </Container>
       </LayoutWrapper>

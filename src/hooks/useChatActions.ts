@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import useAI from './useAI';
 import { useToast } from '@/components/common/ToastProvider';
 import { useChatStore } from '@/store/chatStore';
@@ -178,6 +178,10 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
+  // 드래그 상태 관리를 위한 ref와 카운터 (윈도우 환경 깜빡임 방지)
+  const dragCounterRef = useRef(0);
+  const dragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // 파일을 즉시 업로드하지 않고 미리보기만 추가
   const handleFileUpload = (files: File[]) => {
     if (files.length === 0) return;
@@ -235,18 +239,62 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!isUploading && !isProcessing) {
       setIsDragOver(true);
     }
   };
 
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // 드래그 카운터 증가
+    dragCounterRef.current++;
+    
+    if (!isUploading && !isProcessing) {
+      setIsDragOver(true);
+    }
+    
+    // 기존 타이머가 있으면 취소
+    if (dragTimeoutRef.current) {
+      clearTimeout(dragTimeoutRef.current);
+      dragTimeoutRef.current = null;
+    }
+  };
+
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragOver(false);
+    e.stopPropagation();
+    
+    // 드래그 카운터 감소
+    dragCounterRef.current--;
+    
+    // 카운터가 0 이하가 되면 드래그 상태 해제 (디바운싱 적용)
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0;
+      
+      // 100ms 후에 드래그 상태 해제 (윈도우 환경에서의 깜빡임 방지)
+      dragTimeoutRef.current = setTimeout(() => {
+        if (dragCounterRef.current <= 0) {
+          setIsDragOver(false);
+        }
+        dragTimeoutRef.current = null;
+      }, 100);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    // 드래그 카운터 초기화 및 타이머 정리
+    dragCounterRef.current = 0;
+    if (dragTimeoutRef.current) {
+      clearTimeout(dragTimeoutRef.current);
+      dragTimeoutRef.current = null;
+    }
+    
     setIsDragOver(false);
 
     const files = Array.from(e.dataTransfer.files);
@@ -430,9 +478,9 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           const crawlResponse = await Promise.race([
             crawlUrl(firstUrl),
             new Promise<never>((_, reject) => {
-              // setTimeout(() => {
-              //   reject(new Error('URL 크롤링 30초 타임아웃'));
-              // }, 30000);
+              setTimeout(() => {
+                reject(new Error('URL 크롤링 120초 타임아웃'));
+              }, 120000);
             })
           ]);
           
@@ -995,6 +1043,7 @@ if (estimateData) {
     isDragOver,
     isUploading,
     handleDragOver,
+    handleDragEnter,
     handleDragLeave,
     handleDrop,
     handleFileInput,
