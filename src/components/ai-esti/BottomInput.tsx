@@ -57,31 +57,10 @@ const InputWrapper = styled.div`
     transform: translateX(-50%);
   }
 
-  /* iOS 전용 스타일 - 키보드로 인한 하단 공간 방지 */
+  /* iOS 전용 스타일 */
   @supports (-webkit-touch-callout: none) {
     /* iOS에서만 적용되는 스타일 */
     -webkit-overflow-scrolling: touch;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom));
-    /* 키보드가 올라올 때 하단 공간이 생기지 않도록 최소 높이 고정 */
-    min-height: env(keyboard-inset-height, 0px);
-    /* iOS에서 키보드로 인한 뷰포트 변화 무시 */
-    bottom: env(safe-area-inset-bottom, 0px);
-  }
-  
-  /* iPhone에서 키보드 올라올 때 추가 스크롤 방지 */
-  @media screen and (max-width: 767px) {
-    @supports (-webkit-touch-callout: none) {
-      /* iPhone에서만 적용 */
-      position: fixed;
-      bottom: 0;
-      transform: translateZ(0); /* 하드웨어 가속으로 고정 */
-      -webkit-transform: translateZ(0);
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-      /* 스크롤 방지 */
-      overscroll-behavior: none;
-      -webkit-overflow-scrolling: auto;
-    }
   }
 `;
 
@@ -102,12 +81,6 @@ const InputContainer = styled.div<{ $isIOS?: boolean }>`
     -webkit-user-select: text;
     -webkit-touch-callout: default;
     user-select: text;
-    /* iPhone에서 키보드로 인한 추가 스크롤 방지 */
-    position: relative;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    /* 하단 공간 방지를 위한 고정 */
-    margin-bottom: 0;
   `}
   
   /* 안드로이드 및 기타 플랫폼용 기본 설정 */
@@ -171,14 +144,6 @@ const AutoSizeInput = styled(TextareaAutosize)<{ $isIOS?: boolean }>`
     transform: translateZ(0);
     user-select: text;
     touch-action: manipulation;
-    /* iPhone에서 키보드로 인한 스크롤 이슈 방지 */
-    overflow: hidden;
-    overscroll-behavior: none;
-    -webkit-overflow-scrolling: auto;
-    /* 키보드 올라올 때 인풋이 아래로 밀리지 않도록 고정 */
-    position: relative;
-    margin-bottom: 0;
-    padding-bottom: 0;
   `}
 
   /* 안드로이드 및 기타 플랫폼용 기본 설정 */
@@ -550,47 +515,6 @@ const BottomInput: React.FC<BottomInputProps> = ({
 
   // iOS 감지
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-  // iOS에서 키보드로 인한 뷰포트 변화 처리
-  useEffect(() => {
-    if (!isIOS) return;
-
-    const handleVisualViewportChange = () => {
-      const visualViewport = window.visualViewport;
-      if (!visualViewport) return;
-
-      // 키보드가 올라왔을 때 (뷰포트 높이가 줄어들었을 때)
-      const keyboardHeight = window.innerHeight - visualViewport.height;
-      
-      if (keyboardHeight > 0) {
-        // 키보드가 올라왔을 때: 스크롤을 맨 아래로 고정
-        document.body.style.position = 'fixed';
-        document.body.style.top = `-${window.scrollY}px`;
-        document.body.style.width = '100%';
-      } else {
-        // 키보드가 내려갔을 때: 원래 상태로 복원
-        const scrollY = document.body.style.top;
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        if (scrollY) {
-          window.scrollTo(0, parseInt(scrollY || '0') * -1);
-        }
-      }
-    };
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleVisualViewportChange);
-      
-      return () => {
-        window.visualViewport?.removeEventListener('resize', handleVisualViewportChange);
-        // 컴포넌트 언마운트 시 상태 복원
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-      };
-    }
-  }, [isIOS]);
 
   return (
     <>
