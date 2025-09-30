@@ -8,6 +8,7 @@ export type ChatMessage = {
   isLoading?: boolean;
   messageId?: string;
   estimateId?: string;
+  title?: string;
 };
 
 
@@ -88,6 +89,7 @@ export const useChatStore = create<ChatState>()(
                 ...m,
                 ...payload,
                 estimateId: m.estimateId ?? payload.estimateId,
+                title: m.title ?? payload.title,
                 isLoading: false,
               };
             }

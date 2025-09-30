@@ -368,6 +368,13 @@ const BottomInput: React.FC<BottomInputProps> = ({
     // URL 크롤링 상태 해제
     setIsCrawlingUrl(false);
     
+    // 🔥 AI 스트리밍 중단 신호 전송
+    if (abortController) {
+      console.log('🛑 AI 스트리밍 중단 신호 전송');
+      abortController.abort();
+      setAbortController(null);
+    }
+    
     if (onStopStreaming) {
       onStopStreaming();
     }
@@ -398,12 +405,37 @@ const BottomInput: React.FC<BottomInputProps> = ({
     if (inputRef.current) {
       inputRef.current.blur();
     }
-    // 약간의 딜레이 후 파일 입력 클릭 (키보드가 완전히 내려간 후)
-    setTimeout(() => {
-      if (fileInputRef.current) {
-        fileInputRef.current.click();
-      }
-    }, 100);
+    
+    // iOS에서 키보드가 완전히 내려갈 때까지 대기 후 파일 선택 실행
+    if (isIOS && window.visualViewport) {
+      // visualViewport를 지원하는 경우 실제 뷰포트 변화 감지
+      const initialHeight = window.visualViewport.height;
+      
+      const checkKeyboardClosed = () => {
+        if (window.visualViewport && window.visualViewport.height >= initialHeight) {
+          // 키보드가 완전히 내려갔을 때
+          setTimeout(() => {
+            if (fileInputRef.current) {
+              fileInputRef.current.click();
+            }
+          }, 100);
+        } else {
+          // 아직 키보드가 내려가는 중이면 다시 체크
+          setTimeout(checkKeyboardClosed, 50);
+        }
+      };
+      
+      // 50ms 후에 체크 시작 (blur 이벤트 처리 후)
+      setTimeout(checkKeyboardClosed, 50);
+    } else {
+      // visualViewport를 지원하지 않거나 iOS가 아닌 경우 기존 방식 사용
+      const delay = isIOS ? 1000 : 100;
+      setTimeout(() => {
+        if (fileInputRef.current) {
+          fileInputRef.current.click();
+        }
+      }, delay);
+    }
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

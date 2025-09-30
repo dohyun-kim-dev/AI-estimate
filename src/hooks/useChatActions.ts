@@ -680,7 +680,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       // URL 크롤링 결과가 있으면 프롬프트에 추가
       let finalPrompt = combinedPrompt;
       if (urlAnalysisForAI) {
-        finalPrompt = `지능형 콘텐츠 분석 및 워크플로우 최적화 규칙에 따라주세요 URL 분석한 내용입니다 ${input} ${urlAnalysisForAI}`;
+        finalPrompt = `지능형 콘텐츠 분석 및 워크플로우 최적화 규칙에 따라주세요 URL 분석한 내용입니다 ${input} ${urlAnalysisForAI} 지능형 콘텐츠 분석 및 워크플로우 최적화 규칙에 따라주세요 URL 분석한 내용입니다`;
         console.log('URL 크롤링 결과가 AI 프롬프트에 포함됨');
       } else if (urlCrawlFailed && detectedUrls && detectedUrls.length > 0) {
         // URL 크롤링에 실패한 경우 AI에게 친절한 대응 요청
@@ -780,6 +780,34 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         
         const wasEmpty = aiReply.length === 0;
         aiReply += chunk;
+        
+        // 🔥 스트리밍 도중 잘못된 형식 감지 시 즉시 중단
+        const trimmedReply = aiReply.trim();
+        
+        // 빈 응답 체크 (충분한 청크가 쌓인 후에 체크)
+        if (aiReply.length > 10 && (trimmedReply === '' || trimmedReply === '""' || trimmedReply === "''")) {
+          console.log('❌ 스트리밍 도중 빈 응답 감지, 즉시 중단 및 원복');
+          handleAbort();
+          error('AI가 빈 응답을 했습니다. 다시 시도해주세요.');
+          return;
+        }
+        
+        // 잘못된 JSON 형식 체크
+        if (trimmedReply.startsWith('```json') || 
+            (trimmedReply.startsWith('```') && !trimmedReply.includes('<script')) ||
+            (trimmedReply.startsWith('{') && trimmedReply.endsWith('}') && !trimmedReply.includes('<script'))) {
+          console.log('❌ 스트리밍 도중 잘못된 형식 감지, 즉시 중단 및 원복');
+          
+          // 스트리밍 중단 - AbortSignal 자체는 abort() 메서드가 없으므로 handleAbort 호출로 처리
+          
+          // 메시지 원복
+          handleAbort();
+          
+          // 에러 메시지 표시
+          error('AI가 올바르지 않은 형식으로 응답을 시작했습니다. 다시 시도해주세요.');
+          return;
+        }
+        
         updateLastMessage({
           content: aiReply,
           isLoading: wasEmpty ? false : false,
@@ -793,6 +821,12 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
       // 🔥 AI 응답 형식 검증 - 잘못된 형식으로 응답했는지 확인
       const trimmedReply = reply?.trim() || '';
+      
+      // 빈 응답 체크
+      if (trimmedReply === '' || trimmedReply === '""' || trimmedReply === "''") {
+        console.log('❌ AI가 빈 응답으로 완료함');
+        throw new Error('AI가 빈 응답을 했습니다.');
+      }
       
       // JSON 코드블록으로 응답한 경우 (```json ... ```)
       if (trimmedReply.startsWith('```json') && trimmedReply.endsWith('```')) {

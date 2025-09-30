@@ -424,7 +424,9 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
 
       // 2) base64 없으면 fetch해서 보충 (대용량이면 비권장)
       if (file.fileUri) {
-        const response = await fetch(file.fileUri);
+        const response = await fetch(file.fileUri, { 
+          signal: options?.abortSignal 
+        });
         if (!response.ok) {
           console.warn(`Failed to fetch file from ${file.fileUri}:`, response.statusText);
           continue;
@@ -465,6 +467,12 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     const streaming = options?.streaming !== undefined ? options.streaming : true
 
     try {
+      // AbortSignal 체크 - API 호출 전
+      if (options?.abortSignal?.aborted) {
+        devLog('[useAI] sendChat: aborted before API call');
+        throw new Error('Request aborted by user');
+      }
+      
       if (streaming) {
         // 스트리밍 모드
         if (typeof chatRef.current!.sendMessageStream === 'function') {
@@ -558,6 +566,12 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
         }
       } else {
         // 비-스트리밍(일반) 모드
+        // AbortSignal 체크 - 비스트리밍 API 호출 전
+        if (options?.abortSignal?.aborted) {
+          devLog('[useAI] sendChat: aborted before non-streaming API call');
+          throw new Error('Request aborted by user');
+        }
+        
         const res = await chatRef.current!.sendMessage(parts)
         logUsageAndCost('sendChat', String(modelName), res)
         const text = res.response.text()

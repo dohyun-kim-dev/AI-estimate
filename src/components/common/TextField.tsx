@@ -60,8 +60,12 @@ const StyledInput = styled.input<{
   color: #111827;
   padding: 0 14px;
   padding-right: ${props => props.$hasSuffix ? '40px' : '14px'};
-  font-size: 14px;
+  font-size: 16px; /* iOS Safari 자동 확대 방지를 위해 16px로 변경 */
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  
+  /* iOS Safari 자동 확대 방지 추가 속성 */
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 
   &::placeholder {
     color: #666666;
@@ -103,10 +107,14 @@ const StyledTextarea = styled.textarea<{
   background: ${props => props.$inputBackgroundColor || '#ffffff'};
   color: #111827;
   padding: 14px;
-  font-size: 14px;
+  font-size: 16px; /* iOS Safari 자동 확대 방지를 위해 16px로 변경 */
   resize: vertical;
   font-family: inherit;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  
+  /* iOS Safari 자동 확대 방지 추가 속성 */
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 
   &::placeholder {
     color: #666666;
@@ -137,8 +145,12 @@ const StyledSelect = styled.select<{
   background: ${props => props.$inputBackgroundColor || '#ffffff'};
   color: #111827;
   padding: 0 14px;
-  font-size: 14px;
+  font-size: 16px; /* iOS Safari 자동 확대 방지를 위해 16px로 변경 */
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  
+  /* iOS Safari 자동 확대 방지 추가 속성 */
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 
   &:focus {
     outline: none;

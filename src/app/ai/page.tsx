@@ -1244,10 +1244,12 @@ useEffect(() => {
         try {
           const messagesResponse = await getChatSessionMessages(urlSessionId) as any;
           if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
-            const chatMessages = messagesResponse.data.map((msg: ChatMessage) => ({
+            const chatMessages = messagesResponse.data.map((msg: any) => ({
               role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
               content: msg.content.value || msg.content.content || '',
-              messageId: msg._id
+              messageId: msg._id,
+              title: msg.title,
+              estimateId: msg.content?.estimateId
             }));
             
             // AI 세션에 과거 대화 이력 전달
@@ -1280,10 +1282,12 @@ useEffect(() => {
             setChatSessionId(localChatSessionId);
             const messagesResponse = await getChatSessionMessages(localChatSessionId) as any;
             if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
-              const chatMessages = messagesResponse.data.map((msg: ChatMessage) => ({
+              const chatMessages = messagesResponse.data.map((msg: any) => ({
                 role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
                 content: msg.content.value || msg.content.content || '',
-                messageId: msg._id
+                messageId: msg._id,
+                title: msg.title,
+                estimateId: msg.content?.estimateId
               }));
               
               // AI 세션에 과거 대화 이력 전달
@@ -1316,10 +1320,12 @@ useEffect(() => {
               setChatSessionId(latestSession._id);
               const messagesResponse = await getChatSessionMessages(latestSession._id) as any;
               if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
-                const chatMessages = messagesResponse.data.map((msg: ChatMessage) => ({
+                const chatMessages = messagesResponse.data.map((msg: any) => ({
                   role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
                   content: msg.content.value || msg.content.content || '',
-                  messageId: msg._id
+                  messageId: msg._id,
+                  title: msg.title,
+                  estimateId: msg.content?.estimateId
                 }));
                 
                 // 기존 메시지가 있으면 clear하지 않고, 없을 때만 DB에서 로드
@@ -1342,10 +1348,12 @@ useEffect(() => {
             setChatSessionId(localChatSessionId);
             const messagesResponse = await getChatSessionMessages(localChatSessionId) as any;
             if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
-              const chatMessages = messagesResponse.data.map((msg: ChatMessage) => ({
+              const chatMessages = messagesResponse.data.map((msg: any) => ({
                 role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
                 content: msg.content.value || msg.content.content || '',
-                messageId: msg._id
+                messageId: msg._id,
+                title: msg.title,
+                estimateId: msg.content?.estimateId
               }));
               
               // 기존 메시지가 있으면 clear하지 않고, 없을 때만 DB에서 로드

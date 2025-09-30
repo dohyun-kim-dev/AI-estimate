@@ -19,6 +19,7 @@ import { googleLoginInitial, googleLoginUpdate, companyRegister } from '@/lib/ap
 import { setToken } from '@/lib/utils/tokenUtils';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useModalStore } from '@store/modalStore';
+import {requestEstimateConsult} from '@/lib/api/user/userApi';
 
 const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
@@ -606,7 +607,6 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                   };
                   
                   try {
-                    const { requestEstimateConsult } = await import('@/lib/api/user/userApi');
                     const consultResponse = await requestEstimateConsult(lastEstimateId, projectTitle, chatSessionId || '', user);
                     
                     // API 에러 처리

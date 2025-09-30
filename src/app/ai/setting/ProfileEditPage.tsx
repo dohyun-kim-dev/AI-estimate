@@ -216,11 +216,15 @@ const StyledInput = styled.input<{ $isDarkMode?: boolean; $hasError?: boolean }>
       : ($isDarkMode ? '#858A8E' : '#79747E')
   };
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 16px; /* iOS Safari 자동 확대 방지를 위해 16px로 변경 */
   background-color: ${({ $isDarkMode, theme }) => $isDarkMode ? '#000' : '#ffffff'};
   color: ${({ $isDarkMode, theme }) => $isDarkMode ? theme.text : '#000000'};
   transition: all 0.2s ease;
   box-sizing: border-box;
+  
+  /* iOS Safari 자동 확대 방지 추가 속성 */
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 
   &:focus {
     outline: none;
