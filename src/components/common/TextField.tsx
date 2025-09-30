@@ -86,6 +86,7 @@ const StyledInput = styled.input<{
     &:read-only {
     background: #ffffff; /* 리드온리일 때 배경색을 흰색으로 고정 */
     cursor: default; /* 마우스 커서를 기본으로 변경 */
+    color: #777676;
     &:focus {
       border-color: #79747E; /* 포커스 시 테두리 색을 일반 상태와 동일하게 유지 */
       box-shadow: none; /* 포커스 시 그림자 제거 */

@@ -162,6 +162,12 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -180,6 +186,7 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             $themeMode={themeMode}
+            onKeyDown={handleKeyDown}
           />
           <SearchButton onClick={handleSearch} $themeMode={themeMode}>
             조회
