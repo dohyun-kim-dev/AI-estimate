@@ -792,20 +792,21 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           return;
         }
         
-        // 잘못된 JSON 형식 체크
-        if (trimmedReply.startsWith('```json') || 
-            (trimmedReply.startsWith('```') && !trimmedReply.includes('<script')) ||
-            (trimmedReply.startsWith('{') && trimmedReply.endsWith('}') && !trimmedReply.includes('<script'))) {
-          console.log('❌ 스트리밍 도중 잘못된 형식 감지, 즉시 중단 및 원복');
-          
-          // 스트리밍 중단 - AbortSignal 자체는 abort() 메서드가 없으므로 handleAbort 호출로 처리
-          
-          // 메시지 원복
-          handleAbort();
-          
-          // 에러 메시지 표시
-          error('AI가 올바르지 않은 형식으로 응답을 시작했습니다. 다시 시도해주세요.');
-          return;
+        // 잘못된 JSON 형식 체크 - <script> 태그가 포함된 경우는 제외
+        if (!trimmedReply.includes('<script')) {
+          // ```json이 시작하거나 중간에 포함된 경우
+          if (trimmedReply.includes('```json') || 
+              (trimmedReply.includes('```') && !trimmedReply.includes('```json')) ||
+              (trimmedReply.startsWith('{') && trimmedReply.endsWith('}'))) {
+            console.log('❌ 스트리밍 도중 잘못된 형식 감지, 즉시 중단 및 원복');
+            
+            // 메시지 원복
+            handleAbort();
+            
+            // 에러 메시지 표시
+            error('AI가 올바르지 않은 형식으로 응답했습니다. 다시 시도해주세요.');
+            return;
+          }
         }
         
         updateLastMessage({
