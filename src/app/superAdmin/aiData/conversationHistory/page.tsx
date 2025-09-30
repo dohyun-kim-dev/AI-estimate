@@ -198,6 +198,10 @@ type ChatDetail = {
 const AiChatHistoryPage: React.FC = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedChat, setSelectedChat] = useState<Partial<ChatHistory> | null>(null);
+    const [dateRange, setDateRange] = useState<{
+      fromDate: string;
+      toDate: string;
+    } | null>(null);
 
   const listRef = useRef<{ refetch: () => void }>(null);
 
@@ -209,6 +213,71 @@ const AiChatHistoryPage: React.FC = () => {
   const closePopup = () => {
     setIsPopupOpen(false);
   };
+//이런 느낌으로 api 연동
+  // const fetchData = useCallback(
+  //   async (params: FetchParams): Promise<FetchResult<User>> => {
+  //     try {
+  //       // 키워드가 전달되면 현재 키워드 업데이트 (빈 문자열 포함)
+  //       let searchKeyword = '';
+  //       if (params.keyword !== undefined) {
+  //         setCurrentKeyword(params.keyword);
+  //         searchKeyword = params.keyword;
+  //       } else {
+  //         searchKeyword = currentKeyword;
+  //       }
+
+  //       const fromDate = params.fromDate || dateRange?.fromDate || dayjs().subtract(3, 'month').format('YYYY-MM-DD');
+  //       const toDate = params.toDate || dateRange?.toDate || dayjs().format('YYYY-MM-DD');
+        
+  //       devLog('🔍 [fetchData 호출]', { searchKeyword, fromDate, toDate, selectedCompanyCode });
+        
+  //       // API 호출
+  //       const response = await getUserList({
+  //         keyword: searchKeyword,
+  //         fromDate: fromDate,
+  //         toDate: toDate,
+  //         companyCode: selectedCompanyCode || '',
+  //       });
+        
+  //       devLog('✅ [fetchData 응답 받음]', response);
+        
+  //       // 응답 처리 (응답 구조에 맞게 수정)
+  //       if (response && typeof response === 'object') {
+  //         // 응답이 직접 API 응답 객체인 경우
+  //         if ('statusCode' in response && response.statusCode === 200) {
+  //           // 타입 단언으로 안전하게 처리
+  //           const responseWithData = response as { data?: any[]; metadata?: { totalCnt?: number; allCnt?: number } };
+  //           const userData = responseWithData.data || [];
+  //           const totalItems = responseWithData.metadata?.totalCnt || userData.length;
+  //           const allItems = responseWithData.metadata?.allCnt || totalItems;
+  //           return { data: userData, totalItems, allItems };
+  //         } 
+  //         // 응답이 배열로 감싸져 있는 경우 (callAdminApi 특성)
+  //         else if (Array.isArray(response) && response[0]) {
+  //           const firstItem = response[0];
+  //           if (firstItem && typeof firstItem === 'object' && 'data' in firstItem) {
+  //             const responseData = firstItem.data;
+  //             if (responseData && typeof responseData === 'object' && 'statusCode' in responseData) {
+  //               // 타입 단언으로 안전하게 처리
+  //               const typedResponseData = responseData as { data?: any[]; metadata?: { totalCnt?: number; allCnt?: number } };
+  //               const userData = typedResponseData.data || [];
+  //               const totalItems = typedResponseData.metadata?.totalCnt || userData.length;
+  //               const allItems = typedResponseData.metadata?.allCnt || totalItems;
+  //               return { data: userData, totalItems, allItems };
+  //             }
+  //           }
+  //         }
+  //       }
+        
+  //       console.error('유저 목록 응답 형식이 예상과 다릅니다:', response);
+  //       return { data: [], totalItems: 0, allItems: 0 };
+  //     } catch (error) {
+  //       console.error('고객 회원 조회 오류:', error);
+  //       return { data: [], totalItems: 0, allItems: 0 };
+  //     }
+  //   },
+  //   [currentKeyword, selectedCompanyCode, dateRange]
+  // );
 
   // 대화 상세 이력을 가져오는 함수
   const fetchChatDetails = useCallback(
@@ -417,6 +486,19 @@ const AiChatHistoryPage: React.FC = () => {
         enableDateFilter={true}
         onRowClick={handleRowClick}
         themeMode="light"
+          dateRangeOptions={['3개월', '6개월', '1년', '지정']}
+        onDateChange={(fromDate, toDate) => {
+          console.log('📅 고객 회원관리 - 날짜 변경:', { fromDate, toDate });
+          setDateRange({ fromDate, toDate });
+        }}
+        onInitialDateSet={(fromDate, toDate) => {
+          console.log('📅 고객 회원관리 - 초기 날짜 설정:', { fromDate, toDate });
+          setDateRange({ fromDate, toDate });
+        }}
+        onSearchChange={(keyword) => {
+          console.log('🔍 고객 회원관리 - 검색어 변경:', keyword);
+          setCurrentKeyword(keyword);
+        }}
       />
 
       {/* 대화 이력 상세 팝업 */}

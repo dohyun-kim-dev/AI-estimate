@@ -1296,6 +1296,7 @@ const PriceListPage: React.FC = () => {
         data={transformedTableData}
         columns={dynamicColumns}
         enableDateFilter={false}
+        isDynamicData={true} // 동적 데이터 테이블 사용
         enableCompanySearch={true}
         onCompanySelect={handleCompanySelect}
         selectedCompanyCode={selectedCompanyCode}

@@ -380,11 +380,23 @@ export default function AILayout() {
                 }
               }
               
-              // 3. 직접 JSON 파싱 시도
-              const invoiceData = JSON.parse(message.content);
-              if (invoiceData.uuid) {
-                estimateId = invoiceData.uuid;
-                break;
+              // 3. JSON 형태인지 먼저 확인 후 파싱 시도
+              const trimmedContent = message.content.trim();
+              
+              // JSON 형태일 가능성이 높은 패턴만 체크 (객체나 배열로 시작/끝)
+              if ((trimmedContent.startsWith('{') && trimmedContent.endsWith('}')) ||
+                  (trimmedContent.startsWith('[') && trimmedContent.endsWith(']'))) {
+                
+                try {
+                  const invoiceData = JSON.parse(trimmedContent);
+                  if (invoiceData.uuid) {
+                    estimateId = invoiceData.uuid;
+                    break;
+                  }
+                } catch (jsonErr) {
+                  // JSON 파싱 실패는 정상적인 경우 (일반 텍스트)이므로 에러 로그 없이 넘어감
+                  console.log("Raw JSON parsing failed - likely normal text content");
+                }
               }
             } catch (error) {
               console.log('JSON 파싱 실패:', error);

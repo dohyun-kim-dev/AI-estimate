@@ -13,6 +13,7 @@ import styled from "styled-components";
 import dayjs from "dayjs";
 import * as XLSX from "xlsx";
 import GenericDataTable, { ColumnDefinition } from "./GenericDataTable"; // 경로 확인
+import DynamicGenericDataTable from "./DynamicGenericDataTable"; // 동적 테이블 import
 import GenericDateRangePicker from "./GenericDateRangePicker"; // 경로 확인
 import DropdownCustom from "./DropdownCustom";
 import { THEME_COLORS, ThemeMode } from "@/styles/theme_colors";
@@ -92,6 +93,7 @@ interface GenericListUIProps<T extends BaseRecord> {
   totalItems: number; // 부모에서 전달받는 총 아이템 수
   allItems?: number; // 부모에서 전달받는 전체 아이템 수
   isLoading?: boolean; // 부모에서 관리하는 로딩 상태
+  isDynamicData?: boolean; // 동적 데이터 테이블 사용 여부
   
   excelFileName?: string;
   customLeftContent?: React.ReactNode;
@@ -155,8 +157,8 @@ const PrimaryButton = styled(ActionButton)<{ $themeMode: ThemeMode }>`
 const SecondaryButton = styled(ActionButton)<{ $themeMode: ThemeMode }>`
   width: 110px;
   height: 40px;
-  background: ${({ $themeMode }) => ($themeMode === "light" ? "#eeeeee" : "#333333")};
-  color: ${({ $themeMode }) => ($themeMode === "light" ? "#333333" : "#eeeeee")};
+  background: ${({ $themeMode }) => ($themeMode === "light" ? "#FFFFFF" : "#333333")};
+  color: ${({ $themeMode }) => ($themeMode === "light" ? "#214A72" : "#eeeeee")};
   border: none;
   &:hover:not(:disabled) {
     background-color: ${({ $themeMode }) => ($themeMode === "light" ? "#dddddd" : "#555555")};
@@ -195,6 +197,7 @@ const GenericListUIInner = <T extends BaseRecord>(
     totalItems, // 부모에서 전달받는 총 아이템 수
     allItems, // 부모에서 전달받는 전체 아이템 수
     isLoading = false, // 부모에서 관리하는 로딩 상태
+    isDynamicData = false, // 동적 데이터 테이블 사용 여부
     excelFileName = "DataExport",
     customLeftContent,
     totalAmountLabel,
@@ -771,20 +774,37 @@ const GenericListUIInner = <T extends BaseRecord>(
           )}
       </ControlHeader>
 
-        <TableContainer $themeMode={themeMode}>
-          <GenericDataTable
-            data={paginatedData}
-            columns={columns}
-            isLoading={isLoading}
-            // error={error}
-            onRowClick={handleRowClickInternal}
-            onHeaderClick={handleHeaderClick}
-            sortKey={sortKey}
-            sortOrder={sortOrder}
-            keyExtractor={internalKeyExtractor}
-            themeMode={themeMode}
-          />
-        </TableContainer>
+        {isDynamicData ? (
+          <DynamicTableContainer $themeMode={themeMode}>
+            <DynamicGenericDataTable
+              data={paginatedData}
+              columns={columns}
+              isLoading={isLoading}
+              // error={error}
+              onRowClick={handleRowClickInternal}
+              onHeaderClick={handleHeaderClick}
+              sortKey={sortKey}
+              sortOrder={sortOrder}
+              keyExtractor={internalKeyExtractor}
+              themeMode={themeMode}
+            />
+          </DynamicTableContainer>
+        ) : (
+          <TableContainer $themeMode={themeMode}>
+            <GenericDataTable
+              data={paginatedData}
+              columns={columns}
+              isLoading={isLoading}
+              // error={error}
+              onRowClick={handleRowClickInternal}
+              onHeaderClick={handleHeaderClick}
+              sortKey={sortKey}
+              sortOrder={sortOrder}
+              keyExtractor={internalKeyExtractor}
+              themeMode={themeMode}
+            />
+          </TableContainer>
+        )}
       {/* )} */}
     </Container>
   );
@@ -1180,5 +1200,45 @@ const StatusSelect = styled.select<{ $themeMode: ThemeMode }>`
     &[value='CANCELED'] {
       color: #f44336;
     }
+  }
+`;
+
+// 동적 테이블을 위한 컨테이너 스타일
+const DynamicTableContainer = styled.div<{ $themeMode: ThemeMode }>`
+  width: 100%;
+  min-width: 1000px;
+  max-width: 100%;
+  border: 1px solid
+    ${({ $themeMode }) =>
+      $themeMode === 'light' ? THEME_COLORS.light.borderColor : THEME_COLORS.dark.borderColor};
+  border-radius: 4px;
+  background: ${({ $themeMode }) =>
+    $themeMode === 'light'
+      ? THEME_COLORS.light.tableBackground
+      : THEME_COLORS.dark.tableBackground};
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  /* 스크롤바 스타일링 */
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
+
+  @media (max-width: 1400px) {
+    min-width: 1000px;
   }
 `;

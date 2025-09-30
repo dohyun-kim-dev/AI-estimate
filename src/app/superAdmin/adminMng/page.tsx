@@ -569,7 +569,7 @@ const AdminMngPage: React.FC = () => {
         themeMode="light"
         compactFieldCount={3} // 모바일 compact 모드에서 보여줄 필드 수
         defaultViewMode="detail" // 모바일 기본 보기 모드
-        enableDateFilter={true}
+        enableDateFilter={false}
         enableCompanySearch={true}
         onCompanySelect={handleCompanySelect}
         renderMiddleContent={() => (

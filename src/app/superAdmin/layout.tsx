@@ -101,22 +101,22 @@ const handleMenuToggle = (menuId: string) => {
       title: 'AI 데이터 관리',
       path: `/superadmin/ai-data`,
       subMenu: [
-        { id: 'ai-data-survey', title: '기초조사 관리', path: `/superadmin/ai-data/survey` },
+        // { id: 'ai-data-survey', title: '기초조사 관리', path: `/superadmin/ai-data/survey` },
         { id: 'ai-data-prompt', title: 'AI 프롬프트 관리', path: `/superadmin/ai-data/prompt` },
-        { id: 'ai-data-wrong', title: 'AI 동문서답 관리', path: `/superadmin/ai-data/wrong-answer` },
+        // { id: 'ai-data-wrong', title: 'AI 동문서답 관리', path: `/superadmin/ai-data/wrong-answer` },
         { id: 'ai-data-conv', title: 'AI 대화이력 관리', path: `/superadmin/ai-data/conversation-history` },
       ],
     },
-    {
-      id: 'ai-setting',
-      icon: <SettingsIcon />,
-      title: 'AI 설정',
-      path: `/superadmin/ai-setting`,
-      subMenu: [
-        { id: 'ai-setting-company', title: '회사정보 관리', path: `/superadmin/ai-setting/company-info` },
-        { id: 'ai-setting-mng', title: 'AI 설정관리', path: `/superadmin/ai-setting/management` },
-      ],
-    },
+    // {
+    //   id: 'ai-setting',
+    //   icon: <SettingsIcon />,
+    //   title: 'AI 설정',
+    //   path: `/superadmin/ai-setting`,
+    //   subMenu: [
+    //     { id: 'ai-setting-company', title: '회사정보 관리', path: `/superadmin/ai-setting/company-info` },
+    //     { id: 'ai-setting-mng', title: 'AI 설정관리', path: `/superadmin/ai-setting/management` },
+    //   ],
+    // },
     {
       id: 'user-data',
       icon: <StorageIcon />,
@@ -125,7 +125,7 @@ const handleMenuToggle = (menuId: string) => {
       subMenu: [
         { id: 'user-data-price', title: '단가표 관리', path: `/superadmin/user-data/price` },
         { id: 'user-data-proposal', title: '견적 다운로드 현황', path: `/superadmin/user-data/proposal` },
-        { id: 'user-data-inquiry', title: '견적 문의 관리', path: `/superadmin/user-data/inquiry` },
+        { id: 'user-data-inquiry', title: '상담 요청 관리', path: `/superadmin/user-data/inquiry` },
       ],
     },
     { id: 'terms', icon: <DescriptionIcon />, title: '이용 약관', path: `/superadmin/terms` },

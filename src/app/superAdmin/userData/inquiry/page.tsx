@@ -106,6 +106,10 @@ const InquiryPage: React.FC = () => {
   
   // 초기 로드 상태 플래그 (초기에는 API 호출하지 않기 위함)
   const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
+   const [dateRange, setDateRange] = useState<{
+      fromDate: string;
+      toDate: string;
+    } | null>(null);
 
   // 컴포넌트 마운트 시 isRoot 값 확인
   React.useEffect(() => {
@@ -370,7 +374,7 @@ const InquiryPage: React.FC = () => {
     <>
       <CmsResponsiveContainer<Inquiry>
         ref={listRef}
-        title="견적 문의 관리"
+        title="상담 요청 관리"
         data={[]} // 초기값, fetchData가 있으면 무시됨
         columns={columns}
         fetchData={fetchData}
@@ -384,6 +388,19 @@ const InquiryPage: React.FC = () => {
         onInitialDateSet={handleInitialDateSet} // 초기 날짜 설정 핸들러 추가
         onDateChange={handleDateChange} // 날짜 변경 핸들러 추가
         onSearchChange={handleSearchChange} // 검색 변경 핸들러 추가
+         dateRangeOptions={['3개월', '6개월', '1년', '지정']}
+        onDateChange={(fromDate, toDate) => {
+          console.log('📅 고객 회원관리 - 날짜 변경:', { fromDate, toDate });
+          setDateRange({ fromDate, toDate });
+        }}
+        onInitialDateSet={(fromDate, toDate) => {
+          console.log('📅 고객 회원관리 - 초기 날짜 설정:', { fromDate, toDate });
+          setDateRange({ fromDate, toDate });
+        }}
+        onSearchChange={(keyword) => {
+          console.log('🔍 고객 회원관리 - 검색어 변경:', keyword);
+          setCurrentKeyword(keyword);
+        }}
       />
       <CmsPopup title="문의 상세" isOpen={isPopupOpen} onClose={closePopup}>
         {selectedItem ? (

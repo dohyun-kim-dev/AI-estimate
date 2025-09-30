@@ -25,6 +25,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   compactFieldCount?: number; // 모바일용이지만 props 통일을 위해
   defaultViewMode?: 'detail' | 'compact' | 'large'; // 모바일용이지만 props 통일을 위해
   enableDateFilter?: boolean;
+  isDynamicData?: boolean; // 동적 데이터 테이블 사용 여부
   // 고객사 검색 관련 props
   enableCompanySearch?: boolean;
   onCompanySelect?: (company: { id: string; name: string }) => void;
@@ -41,6 +42,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   onInitialDateSet?: (fromDate: string, toDate: string) => void;
   onDateChange?: (fromDate: string, toDate: string) => void;
   onSearchChange?: (keyword: string) => void; // 검색 변경 콜백 추가
+  dateRangeOptions?: ('금월' | '지난달' | '3개월' | '6개월' | '1년' | '2년' | '지정')[];
 }
 
   const CmsDesktopView = forwardRef<{ refetch: () => void }, CmsDesktopViewProps<any>>(function CmsDesktopView<T extends BaseRecord>({
@@ -55,6 +57,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   fetchData,
   themeMode = "light",
   enableDateFilter,
+  isDynamicData = false, // 동적 데이터 테이블 사용 여부
   enableCompanySearch,
   onCompanySelect,
   selectedCompanyCode,
@@ -68,6 +71,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   onInitialDateSet, // 날짜 콜백 추가
   onDateChange, // 날짜 콜백 추가
   onSearchChange, // 검색 변경 콜백 추가
+  dateRangeOptions,
 }: CmsDesktopViewProps<T>, ref: React.Ref<{ refetch: () => void }>) {
   const [listData, setListData] = useState<T[]>([]);
   const [totalItems, setTotalItems] = useState(0);
@@ -162,6 +166,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
       data={listData}
       totalItems={totalItems}
       isLoading={isListLoading}
+      isDynamicData={isDynamicData} // 동적 데이터 테이블 사용 여부
       themeMode={themeMode}
       addButton={onAdd ? { label: addButtonLabel || "추가", onClick: onAdd } : undefined}
       deleteButton={deleteBtnCallBack ? { label: "삭제", onClick: deleteBtnCallBack } : undefined}
@@ -180,6 +185,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
       onStatusChange={handleStatusChange}
       onCompanyChange={handleCompanyChange}
       onInitialDateSet={onInitialDateSet} // 초기 날짜 설정 콜백 추가
+      dateRangeOptions={dateRangeOptions} // 날짜 옵션 배열 전달
     />
   );
 });

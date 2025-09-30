@@ -61,7 +61,7 @@ export function extractIntroFromReply(reply: string) {
   });
 
   // 연속된 공백이나 줄바꿈 정리
-  intro = intro.replace(/\s+/g, ' ').trim();
+  // intro = intro.replace(/[ \t]+/g, ' ').trim();
 
   // 빈 문자열이 되면 기본 메시지 반환
   if (!intro || intro.length === 0) {
@@ -164,14 +164,26 @@ export function extractEstimateData<T = any>(content: string, estimateId?: strin
       }
     }
     
-    // 3. 위 두 방법이 안되면 content 전체를 JSON으로 파싱 시도
-    const data = JSON.parse(content.trim());
-    if (data && typeof data === 'object') {
-      console.log("extractEstimateData data (from raw JSON):", data);
-      if (estimateId) {
-        data.uuid = estimateId;
+    // 3. 위 두 방법이 안되면 JSON 형태인지 먼저 확인 후 파싱 시도
+    const trimmedContent = content.trim();
+    
+    // JSON 형태일 가능성이 높은 패턴만 체크 (객체나 배열로 시작/끝)
+    if ((trimmedContent.startsWith('{') && trimmedContent.endsWith('}')) ||
+        (trimmedContent.startsWith('[') && trimmedContent.endsWith(']'))) {
+      
+      try {
+        const data = JSON.parse(trimmedContent);
+        if (data && typeof data === 'object') {
+          console.log("extractEstimateData data (from raw JSON):", data);
+          if (estimateId) {
+            data.uuid = estimateId;
+          }
+          return data as T;
+        }
+      } catch (jsonErr) {
+        // JSON 파싱 실패는 정상적인 경우 (일반 텍스트)이므로 에러 로그 없이 넘어감
+        console.log("Raw JSON parsing failed - likely normal text content");
       }
-      return data as T;
     }
     
     return null;
@@ -211,9 +223,23 @@ export function getEstimateIdFromContent(content: string): string | null {
       return json?.uuid || null;
     }
     
-    // 3. 위 두 방법이 안되면 content 전체를 JSON으로 파싱 시도
-    const json = JSON.parse(content.trim());
-    return json?.uuid || null;
+    // 3. 위 두 방법이 안되면 JSON 형태인지 먼저 확인 후 파싱 시도
+    const trimmedContent = content.trim();
+    
+    // JSON 형태일 가능성이 높은 패턴만 체크 (객체나 배열로 시작/끝)
+    if ((trimmedContent.startsWith('{') && trimmedContent.endsWith('}')) ||
+        (trimmedContent.startsWith('[') && trimmedContent.endsWith(']'))) {
+      
+      try {
+        const json = JSON.parse(trimmedContent);
+        return json?.uuid || null;
+      } catch (jsonErr) {
+        // JSON 파싱 실패는 정상적인 경우 (일반 텍스트)이므로 에러 로그 없이 넘어감
+        console.log("Raw JSON parsing failed - likely normal text content");
+      }
+    }
+    
+    return null;
   } catch {
     return null;
   }

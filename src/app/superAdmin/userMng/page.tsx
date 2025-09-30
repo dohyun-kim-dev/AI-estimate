@@ -226,6 +226,13 @@ const UserMngPage: React.FC = () => {
   const [currentKeyword, setCurrentKeyword] = useState<string>('');
   const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('');
   const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
+  
+  
+  // 날짜 상태 - 초기값은 null로 설정하고 UI에서 설정된 값을 받음
+  const [dateRange, setDateRange] = useState<{
+    fromDate: string;
+    toDate: string;
+  } | null>(null);
 
   const listRef = useRef<{ refetch: () => void }>(null);
 
@@ -394,8 +401,8 @@ const UserMngPage: React.FC = () => {
           searchKeyword = currentKeyword;
         }
 
-        const fromDate = params.fromDate || '2000-01-01';
-        const toDate = params.toDate || dayjs().format('YYYY-MM-DD');
+        const fromDate = params.fromDate || dateRange?.fromDate || dayjs().subtract(3, 'month').format('YYYY-MM-DD');
+        const toDate = params.toDate || dateRange?.toDate || dayjs().format('YYYY-MM-DD');
         
         devLog('🔍 [fetchData 호출]', { searchKeyword, fromDate, toDate, selectedCompanyCode });
         
@@ -444,7 +451,7 @@ const UserMngPage: React.FC = () => {
         return { data: [], totalItems: 0, allItems: 0 };
       }
     },
-    [currentKeyword, selectedCompanyCode]
+    [currentKeyword, selectedCompanyCode, dateRange]
   );
 
   const handleDropdownChange = useCallback(
@@ -553,11 +560,26 @@ const UserMngPage: React.FC = () => {
         columns={columns}
         fetchData={fetchData}
         enableDateFilter={true}
+        
         searchPlaceholder="이름, 이메일, 아이디 검색"
+        
         onRowClick={handleRowClick}
         themeMode="light"
         enableCompanySearch={true}
         onCompanySelect={handleCompanySelect}
+        dateRangeOptions={['3개월', '6개월', '1년', '지정']}
+        onDateChange={(fromDate, toDate) => {
+          console.log('📅 고객 회원관리 - 날짜 변경:', { fromDate, toDate });
+          setDateRange({ fromDate, toDate });
+        }}
+        onInitialDateSet={(fromDate, toDate) => {
+          console.log('📅 고객 회원관리 - 초기 날짜 설정:', { fromDate, toDate });
+          setDateRange({ fromDate, toDate });
+        }}
+        onSearchChange={(keyword) => {
+          console.log('🔍 고객 회원관리 - 검색어 변경:', keyword);
+          setCurrentKeyword(keyword);
+        }}
       />
 
 <CmsPopup

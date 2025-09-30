@@ -107,11 +107,11 @@ const ShareAiResponseMessage: React.FC<ShareAiResponseMessageProps> = ({
         cleanContent = cleanContent.replace(pattern, '').trim();
       });
 
-      // 연속된 공백 정리
-      cleanContent = cleanContent.replace(/\s+/g, ' ').trim();
+      // 연속된 공백 정리 (줄바꿈은 유지)
+      // cleanContent = cleanContent.replace(/[ \t]+/g, ' ').trim();
       
       if (cleanContent) {
-        return <p>{cleanContent}</p>;
+        return <p style={{ whiteSpace: 'pre-wrap' }}>{cleanContent}</p>;
       }
     }
 

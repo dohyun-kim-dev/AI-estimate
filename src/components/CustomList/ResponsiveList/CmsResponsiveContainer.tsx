@@ -31,6 +31,7 @@ interface CmsResponsiveContainerProps<T extends BaseRecord> {
   compactFieldCount?: number;
   defaultViewMode?: ViewMode; // 모바일에서 기본 보기   모드
   enableDateFilter: boolean;
+  isDynamicData?: boolean; // 동적 데이터 테이블 사용 여부
   // 고객사 검색 관련 props
   enableCompanySearch?: boolean;
   onCompanySelect?: (company: { id: string; name: string }) => void;
@@ -43,7 +44,7 @@ interface CmsResponsiveContainerProps<T extends BaseRecord> {
   // 중간 영역 커스텀 컨텐츠 prop 추가
   renderMiddleContent?: () => React.ReactNode;
   searchPlaceholder?: string;
-  
+  dateRangeOptions?: ('금월' | '지난달' | '3개월' | '6개월' | '1년' | '2년' | '지정')[];
   // 날짜 관련 콜백 추가
   onInitialDateSet?: (fromDate: string, toDate: string) => void;
   onDateChange?: (fromDate: string, toDate: string) => void;
@@ -68,6 +69,7 @@ const CmsResponsiveContainer = <T extends BaseRecord>(
     compactFieldCount = 3,
     defaultViewMode = 'detail',
     enableDateFilter,
+    isDynamicData = false, // 동적 데이터 테이블 사용 여부
     onCompanySelect,
     enableCompanySearch,
     selectedCompanyCode,
@@ -81,6 +83,7 @@ const CmsResponsiveContainer = <T extends BaseRecord>(
     onInitialDateSet, // 날짜 콜백 추가
     onDateChange, // 날짜 콜백 추가
     onSearchChange, // 검색 변경 콜백 추가
+    dateRangeOptions,
     ref,
   } = props;
   
@@ -99,6 +102,7 @@ const CmsResponsiveContainer = <T extends BaseRecord>(
     compactFieldCount,
     defaultViewMode,
     enableDateFilter,
+    isDynamicData, // 동적 데이터 테이블 사용 여부 추가
     enableCompanySearch,
     onCompanySelect,
     selectedCompanyCode,
@@ -112,6 +116,7 @@ const CmsResponsiveContainer = <T extends BaseRecord>(
     onInitialDateSet, // 날짜 콜백 추가
     onDateChange, // 날짜 콜백 추가
     onSearchChange, // 검색 변경 콜백 추가
+    dateRangeOptions,
   };
 
   return (
