@@ -37,6 +37,10 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   // 중간 영역 커스텀 컨텐츠 prop 추가
   renderMiddleContent?: () => React.ReactNode;
   searchPlaceholder?: string;
+  // 날짜 관련 콜백 추가
+  onInitialDateSet?: (fromDate: string, toDate: string) => void;
+  onDateChange?: (fromDate: string, toDate: string) => void;
+  onSearchChange?: (keyword: string) => void; // 검색 변경 콜백 추가
 }
 
   const CmsDesktopView = forwardRef<{ refetch: () => void }, CmsDesktopViewProps<any>>(function CmsDesktopView<T extends BaseRecord>({
@@ -60,7 +64,10 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   excelTemplateBtnCallBack,
   deleteBtnCallBack,
   renderMiddleContent,
-  searchPlaceholder
+  searchPlaceholder,
+  onInitialDateSet, // 날짜 콜백 추가
+  onDateChange, // 날짜 콜백 추가
+  onSearchChange, // 검색 변경 콜백 추가
 }: CmsDesktopViewProps<T>, ref: React.Ref<{ refetch: () => void }>) {
   const [listData, setListData] = useState<T[]>([]);
   const [totalItems, setTotalItems] = useState(0);
@@ -124,11 +131,19 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   const handleSearchChange = (keyword: string) => {
     const searchParams = { ...currentParams, keyword };
     handleFetchDataInternal(searchParams);
+    // 부모에게도 알림
+    if (onSearchChange) {
+      onSearchChange(keyword);
+    }
   };
 
   // 날짜 변경 콜백 - 상태만 저장 (API 호출 없음)
   const handleDateChange = (fromDate: string, toDate: string) => {
     setCurrentParams(prev => ({ ...prev, fromDate, toDate }));
+    // 부모에게도 알림
+    if (onDateChange) {
+      onDateChange(fromDate, toDate);
+    }
   };
 
   // 상태 변경 콜백 - 상태만 저장 (API 호출 없음)
@@ -164,6 +179,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
       onDateChange={handleDateChange}
       onStatusChange={handleStatusChange}
       onCompanyChange={handleCompanyChange}
+      onInitialDateSet={onInitialDateSet} // 초기 날짜 설정 콜백 추가
     />
   );
 });

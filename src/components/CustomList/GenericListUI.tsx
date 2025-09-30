@@ -123,6 +123,7 @@ interface GenericListUIProps<T extends BaseRecord> {
   onSearchChange?: (keyword: string) => void;
   onStatusChange?: (status: string) => void;
   onCompanyChange?: (companyCode: string | null, companyName: string) => void; // 고객사 변경 콜백 추가
+  onInitialDateSet?: (fromDate: string, toDate: string) => void; // 초기 날짜 설정 콜백 추가
 
   initialState?: InitialState;
   hasUrlParams?: boolean;
@@ -226,6 +227,7 @@ const GenericListUIInner = <T extends BaseRecord>(
     onSearchChange,
     onStatusChange,
     onCompanyChange,
+    onInitialDateSet, // 초기 날짜 설정 콜백 추가
   }: GenericListUIProps<T>,
   ref: React.Ref<{ refetch: () => void }>
 ) => {
@@ -316,6 +318,13 @@ const GenericListUIInner = <T extends BaseRecord>(
       setSelectedCompanyName(externalSelectedCompanyName);
     }
   }, [externalSelectedCompanyName]);
+
+  // 초기 날짜 설정 시 부모에게 알림
+  useEffect(() => {
+    if (onInitialDateSet) {
+      onInitialDateSet(fromDate, toDate);
+    }
+  }, []); // 컴포넌트 마운트 시에만 실행
 
   // --- 부모에게 전달할 콜백 함수들 ---
   const handleRefetch = useCallback(() => {
@@ -795,7 +804,7 @@ const Container = styled.div<{ $themeMode: ThemeMode }>`
   width: 100%;
   min-height: calc(100vh - 140px);
   box-sizing: border-box;
-  padding: 0px 20px 20px 20px;
+  padding: 20px 20px 20px 20px;
   overflow: visible; /* 드롭다운이 컨테이너를 벗어나서 보이도록 */
   color: ${({ $themeMode }) =>
     $themeMode === 'light' ? THEME_COLORS.light.text : THEME_COLORS.dark.text};
@@ -812,6 +821,7 @@ const HeaderMainRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: 0px;
   width: 100%;
 `;
 

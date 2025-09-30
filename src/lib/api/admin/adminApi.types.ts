@@ -173,3 +173,19 @@ export type AdminLoginParams = {
     contractType?: 'MONTH' | 'YEAR';
   };
 
+  // 상담요청 조회 관련 타입
+  export type EstimateRequestGetListParams = {
+    companyCode?: string;
+    keyword?: string;
+    fromDate?: string;
+    toDate?: string;
+  };
+
+  // 사이트관리자 상담요청 조회 관련 타입
+  export type SiteEstimateRequestGetListParams = {
+    keyword?: string;
+    fromDate?: string;
+    toDate?: string;
+    companyCode: string; // 헤더에 필요한 필수 값
+  };
+

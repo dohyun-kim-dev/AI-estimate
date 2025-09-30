@@ -52,6 +52,10 @@ interface CmsMobileViewProps<T extends BaseRecord> {
   isShowExcelTemplate?: boolean;
   excelUploadBtnCallBack?: () => void;
   excelTemplateBtnCallBack?: () => void;
+  // 날짜 관련 콜백 추가
+  onInitialDateSet?: (fromDate: string, toDate: string) => void;
+  onDateChange?: (fromDate: string, toDate: string) => void;
+  onSearchChange?: (keyword: string) => void; // 검색 변경 콜백 추가
 }
 
 export default function CmsMobileView<T extends BaseRecord>({
@@ -72,7 +76,10 @@ export default function CmsMobileView<T extends BaseRecord>({
   enableCompanySearch = false,
   onCompanySelect,
   selectedCompanyCode,
-  selectedCompanyName
+  selectedCompanyName,
+  onInitialDateSet, // 날짜 콜백 추가
+  onDateChange, // 날짜 콜백 추가
+  onSearchChange, // 검색 변경 콜백 추가
 }: CmsMobileViewProps<T>) {
   const [viewMode, setViewMode] = useState<ViewMode>(defaultViewMode);
   const [itemsPerPage, setItemsPerPage] = useState<number>(itemsPerPageOptions[0] ?? 10);
@@ -89,6 +96,13 @@ export default function CmsMobileView<T extends BaseRecord>({
       ? { id: selectedCompanyCode, name: selectedCompanyName }
       : null;
   }, [selectedCompanyCode, selectedCompanyName]);
+
+  // 초기 날짜 설정 시 부모에게 알림
+  useEffect(() => {
+    if (onInitialDateSet) {
+      onInitialDateSet(fromDate, toDate);
+    }
+  }, []); // 컴포넌트 마운트 시에만 실행
 
   // 고객사 선택 핸들러 추가
   const handleCompanySelect = (company: { id: string; name: string }) => {
@@ -277,6 +291,10 @@ export default function CmsMobileView<T extends BaseRecord>({
     setFromDate(newFrom);
     setToDate(newTo);
     setCurrentPage(1);
+    // 부모에게도 알림
+    if (onDateChange) {
+      onDateChange(newFrom, newTo);
+    }
   };
 
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -284,8 +302,13 @@ export default function CmsMobileView<T extends BaseRecord>({
   };
 
   const handleImmediateSearch = () => {
-    setSearchKeyword(searchTermInput.trim());
+    const keyword = searchTermInput.trim();
+    setSearchKeyword(keyword);
     setCurrentPage(1);
+    // 부모에게도 알림
+    if (onSearchChange) {
+      onSearchChange(keyword);
+    }
   };
 
   // 카드 클릭 핸들러

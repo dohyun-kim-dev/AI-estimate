@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1757314574230,
@@ -16,6 +16,10 @@
                 {
                     "date": 1757318634057,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -63,11 +63,11 @@\n         showMessage: (msg) => {\n           toast.error(msg);\n         },\n         onSuccess: (response) => {\n-          login(response.id);\n+          login(response.id, response.token);\n           toast.success('로그인 성공!');\n-          navigate(`/aiclient/${companyCode}/cms`);\n+          navigate(`/superadmin`);\n         },\n       });\n     } finally {\n       setIsLoading(false);\n"
+                },
+                {
+                    "date": 1759210093837,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -38,12 +38,12 @@\n     setIsLoading(true);\n \n     let hasError = false;\n \n-    // if (!userIdRegex.test(userId)) {\n-    //   setIdError('아이디는 영문자와 숫자를 포함한 6~20자여야 합니다.');\n-    //   hasError = true;\n-    // }\n+    if (!userIdRegex.test(userId)) {\n+      setIdError('아이디는 영문자와 숫자를 포함한 6~20자여야 합니다.');\n+      hasError = true;\n+    }\n \n     if (!passwordRegex.test(password)) {\n       setPwdError(\n         '비밀번호는 영문자, 숫자, 특수문자를 포함한 8자 이상이어야 합니다.'\n@@ -63,9 +63,9 @@\n         showMessage: (msg) => {\n           toast.error(msg);\n         },\n         onSuccess: (response) => {\n-          login(response.id, response.token);\n+          login(response.id, response.token, response.isRoot);\n           toast.success('로그인 성공!');\n           navigate(`/superadmin`);\n         },\n       });\n"
                 }
             ],
             "date": 1757314574230,

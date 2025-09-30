@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/store/authStorage.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1759210093834,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1759210611493,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -28,7 +28,20 @@\n  * 관리자 isRoot 값을 가져오기\n  */\n export function getAdminIsRoot(): boolean {\n   const isRoot = localStorage.getItem('admin_isRoot');\n-  return isRoot === 'true';\n+  const result = isRoot === 'true';\n+  \n+  console.log('📦 [authStorage] getAdminIsRoot 호출:', {\n+    localStorage_adminIsRoot: isRoot,\n+    parsedResult: result,\n+    typeOfStoredValue: typeof isRoot,\n+    allAdminItems: {\n+      adminId: localStorage.getItem('adminId'),\n+      adminToken: !!localStorage.getItem('admin_access_token'),\n+      adminIsRoot: localStorage.getItem('admin_isRoot'),\n+    }\n+  });\n+  \n+  return result;\n }\n   \n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1759210093834,
+            "name": "Commit-0",
+            "content": "type StoreAdminTokenProps = {\n  id: string;\n  accessToken: string;\n  isRoot?: boolean; // isRoot 추가\n};\n\n/**\n * 관리자 로그인 토큰 및 ID를 localStorage에 저장\n */\nexport function storeAdminToken({ id, accessToken, isRoot }: StoreAdminTokenProps) {\n  localStorage.setItem('adminId', id);\n  localStorage.setItem('admin_access_token', accessToken);\n  if (isRoot !== undefined) {\n    localStorage.setItem('admin_isRoot', isRoot.toString());\n  }\n}\n\n/**\n * 관리자 토큰 제거 (로그아웃 등)\n */\nexport function clearAdminToken() {\n  localStorage.removeItem('adminId');\n  localStorage.removeItem('admin_access_token');\n  localStorage.removeItem('admin_isRoot');\n}\n\n/**\n * 관리자 isRoot 값을 가져오기\n */\nexport function getAdminIsRoot(): boolean {\n  const isRoot = localStorage.getItem('admin_isRoot');\n  return isRoot === 'true';\n}\n  "
+        }
+    ]
+}

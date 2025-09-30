@@ -8,44 +8,61 @@ import styled from 'styled-components';
 import CmsPopup from '@/components/CmsPopup';
 import ActionButton from '@/components/ActionButton';
 import { THEME_COLORS } from '@/styles/theme_colors';
+import { getEstimateRequestListByRole } from '@/lib/utils/adminApiRouter';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import { toast } from 'react-toastify';
 
+// API 응답 타입 정의
+interface EstimateRequestUser {
+  id: string;
+  name: string;
+  cellphone: string;
+  email: string;
+  _id: string;
+}
+
+interface EstimateRequestItem {
+  _id: string;
+  user: EstimateRequestUser;
+  title: string;
+  chatSession?: string;
+  estimateId?: string;
+  estimateFile?: string;
+  createAt: string;
+}
+
+interface EstimateRequestResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    result: EstimateRequestItem[];
+    metadata: {
+      allCnt: number;
+      totalCnt: number;
+    };
+  };
+  metadata: null;
+  error: null;
+}
+
+// 화면에서 사용할 타입
 type Inquiry = {
   no: number;
+  _id: string;
   inquiryDate: string;
   name: string;
   userId: string;
-  profileImageUrl: string;
+  email: string;
   cellphone: string;
-  functionTitle: string;
-  functionContent: string; // ✅ 기능 내용 추가
-  status: '문의' | '처리중' | '완료'; // ✅ 처리 상태 추가
-  memo: string; // ✅ 메모 추가
-  chatHistoryPath: string; // ✅ 대화 이력 경로
-  proposalPdfPath: string; // ✅ 견적 PDF 경로
-  proposalXlsxPath: string; // ✅ 견적 XLSX 경로
+  title: string;
+  memo?: string;
+  status?: string;
+  chatSession?: string;
+  estimateId?: string;
+  estimateFile?: string;
 };
 
-const ProfileWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  @media (max-width: 768px) {
-    justify-content: flex-end;
-  }
-`;
-
-const ProfileHeader = styled.div<{ $imageUrl: string | null }>`
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-size: cover;
-  background-position: center;
-  background-image: url(${({ $imageUrl }) => $imageUrl || '/default-profile.png'});
-  border: 1px solid #ccc;
-  flex-shrink: 0;
-`;
-
-// ✅ 버튼 스타일 추가
+// 버튼 스타일
 const DetailActionButton = styled(ActionButton)`
   background-color: ${THEME_COLORS.light.primary};
   color: #fff;
@@ -70,21 +87,35 @@ const DownloadPdfButton = styled(ActionButton)`
   }
 `;
 
-const DownloadXlsxButton = styled(ActionButton)`
-  background-color: #4D7A55;
-  color: #fff;
-  width: 100px;
-  height: 30px;
-  font-size: 12px;
-  &:hover:not(:disabled) {
-    background-color: #3f6545;
-  }
-`;
-
 const InquiryPage: React.FC = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Partial<Inquiry> | null>(null);
   const listRef = useRef<{ refetch: () => void }>(null);
+  const { isRoot, ready } = useAdminAuth(); // ready 상태 추가
+  
+  // 고객사 선택 상태 추가
+  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('');
+  const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
+  
+  // 키워드 상태 추가 (userMng와 동일)
+  const [currentKeyword, setCurrentKeyword] = useState<string>('');
+  
+  // 날짜 상태 추가 - GenericUI에서 초기 설정된 값을 저장
+  const [currentFromDate, setCurrentFromDate] = useState<string>('');
+  const [currentToDate, setCurrentToDate] = useState<string>('');
+  
+  // 초기 로드 상태 플래그 (초기에는 API 호출하지 않기 위함)
+  const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
+
+  // 컴포넌트 마운트 시 isRoot 값 확인
+  React.useEffect(() => {
+    console.log('🔍 [InquiryPage] 컴포넌트 마운트 시 상태 확인:', {
+      isRoot,
+      localStorage_adminIsRoot: localStorage.getItem('admin_isRoot'),
+      localStorage_adminId: localStorage.getItem('adminId'),
+      localStorage_adminToken: !!localStorage.getItem('admin_access_token'),
+    });
+  }, [isRoot]);
 
   const handleRowClick = (item: Inquiry) => {
     setSelectedItem(item);
@@ -96,134 +127,242 @@ const InquiryPage: React.FC = () => {
     setSelectedItem(null);
   };
 
-  // ✅ 버튼 클릭 핸들러 추가
-  const handleChatHistoryClick = (path: string) => {
-    alert(`대화 이력 페이지로 이동: ${path}`);
+  // 대화 이력 보기 핸들러
+  const handleChatHistoryClick = (chatSession?: string) => {
+    if (chatSession) {
+      alert(`대화 이력 페이지로 이동: ${chatSession}`);
+    } else {
+      alert('대화 이력이 없습니다.');
+    }
   };
 
-  const handleDownloadPdf = (path: string) => {
-    alert(`견적 PDF 파일 다운로드: ${path}`);
+  // PDF 다운로드 핸들러
+  const handleDownloadPdf = (estimateId?: string) => {
+    if (estimateId) {
+      alert(`견적 PDF 파일 다운로드: ${estimateId}`);
+    } else {
+      alert('견적 PDF가 없습니다.');
+    }
   };
 
-  const handleDownloadXlsx = (path: string) => {
-    alert(`견적 XLSX 파일 다운로드: ${path}`);
+  // 파일 다운로드 핸들러 (사용하지 않지만 남겨둠)
+  const handleDownloadFile = (estimateFile?: string) => {
+    if (estimateFile) {
+      alert(`견적 파일 다운로드: ${estimateFile}`);
+    } else {
+      alert('견적 파일이 없습니다.');
+    }
   };
+
+  // 고객사 선택 핸들러
+  const handleCompanySelect = useCallback((company: { id: string; name: string }) => {
+    console.log('🏢 [고객사 선택]:', company);
+    setSelectedCompanyCode(company.id);
+    setSelectedCompanyName(company.name);
+    
+    // 고객사 변경 시 리스트 새로고침
+    setTimeout(() => {
+      listRef.current?.refetch();
+    }, 100);
+  }, []);
+
+  // 초기 날짜 설정 핸들러 (GenericUI에서 초기 날짜가 설정되었을 때 호출)
+  const handleInitialDateSet = useCallback((fromDate: string, toDate: string) => {
+    console.log('📅 [초기 날짜 설정]:', { fromDate, toDate });
+    setCurrentFromDate(fromDate);
+    setCurrentToDate(toDate);
+  }, []);
+
+  // 날짜 변경 핸들러 (GenericUI에서 날짜가 변경되었을 때 호출)
+  const handleDateChange = useCallback((fromDate: string, toDate: string) => {
+    console.log('📅 [날짜 변경]:', { fromDate, toDate });
+    setCurrentFromDate(fromDate);
+    setCurrentToDate(toDate);
+    // 날짜 변경 시에는 실제 조회이므로 초기 로드 플래그 해제
+    setIsInitialLoad(false);
+  }, []);
+
+  // 검색 변경 핸들러 (GenericUI에서 검색이 실행될 때 호출)
+  const handleSearchChange = useCallback((keyword: string) => {
+    console.log('🔍 [검색 변경]:', { keyword });
+    setCurrentKeyword(keyword);
+    // 검색 시에는 실제 조회이므로 초기 로드 플래그 해제
+    setIsInitialLoad(false);
+  }, []);
 
   const fetchData = useCallback(
     async (params: FetchParams): Promise<FetchResult<Inquiry>> => {
-      console.log('Mock Data fetching for Inquiry...', params);
-      const dummyProfileUrls = [
-        'https://i.pravatar.cc/150?img=9', 'https://i.pravatar.cc/150?img=10', 'https://i.pravatar.cc/150?img=11',
-      ];
+      try {
+        // 초기 로드 시에는 API 호출하지 않음
+        if (isInitialLoad) {
+          return { data: [], totalItems: 0, allItems: 0 };
+        }
 
-      // ✅ 목 데이터에 새로운 필드 추가
-      const mockData: Inquiry[] = [
-        {
-          no: 1, inquiryDate: '2025-08-14T11:00:00Z', name: '이하나', userId: 'lhn_user', profileImageUrl: dummyProfileUrls[0], cellphone: '01011112222', functionTitle: '로그인 페이지 문의',
-          functionContent: '로그인 페이지의 UX/UI 개선을 위한 문의입니다.',
-          status: '처리중',
-          memo: '담당자 배정 후 처리 예정',
-          chatHistoryPath: '/chat/1',
-          proposalPdfPath: '/proposal/1.pdf',
-          proposalXlsxPath: '/proposal/1.xlsx',
-        },
-        {
-          no: 2, inquiryDate: '2025-08-13T16:00:00Z', name: '김태호', userId: 'kth_user', profileImageUrl: dummyProfileUrls[1], cellphone: '01033334444', functionTitle: '회원가입 절차 문의',
-          functionContent: '소셜 로그인 연동 가능 여부를 알고 싶습니다.',
-          status: '완료',
-          memo: '견적 전달 완료',
-          chatHistoryPath: '/chat/2',
-          proposalPdfPath: '/proposal/2.pdf',
-          proposalXlsxPath: '/proposal/2.xlsx',
-        },
-        {
-          no: 3, inquiryDate: '2025-08-12T09:00:00Z', name: '박서연', userId: 'psy_user', profileImageUrl: dummyProfileUrls[2], cellphone: '01055556666', functionTitle: '상품 등록 페이지 관련',
-          functionContent: '대량 상품 등록 기능 문의',
-          status: '문의',
-          memo: '영업팀 전달',
-          chatHistoryPath: '/chat/3',
-          proposalPdfPath: '/proposal/3.pdf',
-          proposalXlsxPath: '/proposal/3.xlsx',
-        },
-      ];
+        // AuthContext가 아직 준비되지 않았으면 대기
+        if (!ready) {
+          console.log('🔄 [상담요청 조회] AuthContext 준비 중...');
+          return { data: [], totalItems: 0, allItems: 0 };
+        }
 
-      const filteredByDate = mockData.filter(item => {
-        const itemDate = dayjs(item.inquiryDate);
-        const fromDate = params.fromDate ? dayjs(params.fromDate) : null;
-        const toDate = params.toDate ? dayjs(params.toDate) : null;
-        if (fromDate && itemDate.isBefore(fromDate, 'day')) return false;
-        if (toDate && itemDate.isAfter(toDate, 'day')) return false;
-        return true;
-      });
+        // 고객사 코드 결정: 통합관리자는 선택된 고객사 코드, 사이트관리자는 기본값 또는 선택된 고객사 코드
+        const companyCode = isRoot 
+          ? selectedCompanyCode || undefined  // 통합관리자: 선택된 고객사 (없으면 전체)
+          : selectedCompanyCode || 'heredot'; // 사이트관리자: 선택된 고객사 또는 기본값
 
-      const filteredData = params.keyword
-        ? filteredByDate.filter(item =>
-            item.name.includes(params.keyword as string) ||
-            item.userId.includes(params.keyword as string) ||
-            item.cellphone.includes(params.keyword as string) ||
-            item.functionTitle.includes(params.keyword as string)
-          )
-        : filteredByDate;
+        // 통합관리자이고 회사가 선택되지 않은 경우 토스트 메시지 표시
+        if (isRoot && !selectedCompanyCode) {
+        toast.warn('회사를 먼저 선택해주세요.'); // TODO: 토스트 라이브러리로 교체
+          return { data: [], totalItems: 0, allItems: 0 };
+        }
 
-      return { data: filteredData, totalItems: filteredData.length, allItems: mockData.length };
+        // 키워드가 전달되면 현재 키워드 업데이트 (빈 문자열 포함)
+        let searchKeyword = '';
+        if (params.keyword !== undefined) {
+          setCurrentKeyword(params.keyword);
+          searchKeyword = params.keyword;
+        } else {
+          searchKeyword = currentKeyword;
+        }
+
+        const fromDate = params.fromDate || currentFromDate;
+        const toDate = params.toDate || currentToDate;
+        
+        console.log('🚀 [상담요청 조회] fetchData 시작:', {
+          params,
+          searchKeyword,
+          fromDate,
+          toDate,
+          isRoot,
+          ready,
+          selectedCompanyCode,
+          selectedCompanyName,
+          localStorage_adminIsRoot: localStorage.getItem('admin_isRoot'),
+          localStorage_adminIsRootParsed: localStorage.getItem('admin_isRoot') === 'true',
+          contextIsRoot: isRoot,
+          typeOfIsRoot: typeof isRoot,
+        });
+        
+        // API 파라미터 구성
+        const apiParams = {
+          keyword: searchKeyword,
+          fromDate: fromDate,
+          toDate: toDate,
+        };
+
+        console.log('📋 [상담요청 조회] API 호출 전 파라미터:', {
+          apiParams,
+          companyCode,
+          isRoot,
+          selectedCompanyCode,
+          willCallIntegratedAdmin: isRoot,
+          willCallSiteAdmin: !isRoot,
+        });
+        
+        const response = await getEstimateRequestListByRole(apiParams, companyCode);
+        
+        console.log('✅ [상담요청 조회] API 응답:', response);
+
+        // adminMng와 동일한 응답 처리 로직
+        // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+        const actualResponse = Array.isArray(response) ? response[0] : response;
+        console.log('actualResponse', actualResponse);
+
+        // actualResponse.data에서 실제 API 응답을 가져옴
+        const apiResponse = (actualResponse as any)?.data;
+        console.log('apiResponse', apiResponse);
+
+        if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
+          // API 응답 데이터를 Inquiry 타입에 맞게 매핑
+          const mappedData: Inquiry[] = (apiResponse.data || []).map((item: any, index: number) => ({
+            no: index + 1,
+            _id: item._id,
+            inquiryDate: item.createAt,
+            name: item.user.name,
+            userId: item.user.id,
+            email: item.user.email,
+            cellphone: item.user.cellphone,
+            title: item.title,
+            memo: item.memo,
+            status: item.status,
+            chatSession: item.chatSession,
+            estimateId: item.estimateId,
+            estimateFile: item.estimateFile,
+          }));
+
+          console.log('📋 [상담요청 조회] 매핑된 데이터:', mappedData);
+
+          return {
+            data: mappedData,
+            totalItems: apiResponse.metadata?.totalCnt || 0,
+            allItems: apiResponse.metadata?.allCnt || 0,
+          };
+        } else {
+          console.error('❌ [상담요청 조회] API 에러:', apiResponse);
+          return {
+            data: [],
+            totalItems: 0,
+            allItems: 0,
+          };
+        }
+      } catch (error) {
+        console.error('❌ [상담요청 조회] Fetch 에러:', error);
+        return {
+          data: [],
+          totalItems: 0,
+          allItems: 0,
+        };
+      }
     },
-    []
+    [isRoot, selectedCompanyCode, currentKeyword, ready, currentFromDate, currentToDate, isInitialLoad] // 초기 로드 플래그 의존성 추가
   );
 
   const columns: ColumnDefinition<Inquiry>[] = useMemo(
     () => [
       { header: 'No', accessor: 'no', sortable: true },
-      { header: '문의 일시', accessor: 'inquiryDate', sortable: true, formatter: (value) => dayjs(value).format('YYYY-MM-DD HH:mm') },
+      { 
+        header: '문의 일시', 
+        accessor: 'inquiryDate', 
+        sortable: true, 
+        formatter: (value) => dayjs(value).format('YYYY-MM-DD HH:mm') 
+      },
       { header: '이름', accessor: 'name', sortable: true },
       { header: '아이디', accessor: 'userId', sortable: true },
-      {
-        header: '프로필',
-        accessor: 'profileImageUrl',
-        formatter: (value, row) => (
-          <ProfileWrapper>
-            <ProfileHeader $imageUrl={row.profileImageUrl} />
-          </ProfileWrapper>
-        ),
-      },
+      { header: '이메일', accessor: 'email', sortable: true },
       { header: '전화번호', accessor: 'cellphone', sortable: true },
-      { header: '기능제목', accessor: 'functionTitle' },
-      // ✅ 추가된 컬럼들
-      { header: '기능 내용', accessor: 'functionContent', formatter: (value) => value.substring(0, 20) + (value.length > 20 ? '...' : '')},
-      { header: '처리 상태', accessor: 'status' },
-      { header: '메모', accessor: 'memo' },
-      // ✅ 추가된 버튼 컬럼
+      { header: '제목', accessor: 'title' },
+      { header: '메모', accessor: 'memo', formatter: (value) => value || '-' },
+      { header: '상태', accessor: 'status', formatter: (value) => value || '-' },
       {
-        header: '대화 이력 보기',
-        accessor: 'chatHistoryPath',
+        header: '대화 이력',
+        accessor: 'chatSession',
+        noPopup: true,
         formatter: (value, row) => (
           <div>
-            <DetailActionButton onClick={() => handleChatHistoryClick(row.chatHistoryPath)}>
+            <DetailActionButton 
+              $themeMode="light" 
+              onClick={() => handleChatHistoryClick(row.chatSession)}
+            >
               대화 이력 보기
             </DetailActionButton>
           </div>
         ),
       },
       {
-        header: '견적 PDF 다운',
-        accessor: 'chatHistoryPath2',
+        header: '견적 다운로드',
+        accessor: 'estimateId',
+        noPopup: true,
         formatter: (value, row) => (
           <div>
-           <DownloadPdfButton onClick={() => handleDownloadPdf(row.proposalPdfPath)}>
-            PDF 다운로드
-          </DownloadPdfButton>
+            <DownloadPdfButton 
+              $themeMode="light" 
+              onClick={() => handleDownloadPdf(row.estimateId)}
+            >
+              견적 다운로드
+            </DownloadPdfButton>
           </div>
         ),
-      },{
-        header: '견적 xlx 다운',
-        accessor: 'chatHistoryPath3',
-        formatter: (value, row) => (
-          <div>
-            <DownloadXlsxButton onClick={() => handleDownloadXlsx(row.proposalXlsxPath)}>
-            엑셀 다운로드
-          </DownloadXlsxButton>
-          </div>
-        ),
-      },    ],
+      },
+    ],
     []
   );
 
@@ -232,23 +371,33 @@ const InquiryPage: React.FC = () => {
       <CmsResponsiveContainer<Inquiry>
         ref={listRef}
         title="견적 문의 관리"
-        excelFileName="Inquiries"
+        data={[]} // 초기값, fetchData가 있으면 무시됨
         columns={columns}
         fetchData={fetchData}
-        enableSearch
-        enableDateFilter
-        searchPlaceholder="이름, 아이디, 전화번호, 기능제목 검색"
         onRowClick={handleRowClick}
         themeMode="light"
+        compactFieldCount={3}
+        defaultViewMode="detail"
+        enableDateFilter={true}
+        enableCompanySearch={true} // 고객사 선택 기능 활성화
+        onCompanySelect={handleCompanySelect} // 고객사 선택 핸들러 추가
+        onInitialDateSet={handleInitialDateSet} // 초기 날짜 설정 핸들러 추가
+        onDateChange={handleDateChange} // 날짜 변경 핸들러 추가
+        onSearchChange={handleSearchChange} // 검색 변경 핸들러 추가
       />
       <CmsPopup title="문의 상세" isOpen={isPopupOpen} onClose={closePopup}>
         {selectedItem ? (
           <div>
-            <h3>{selectedItem.functionTitle}</h3>
-            <p>이름: {selectedItem.name}</p>
-            <p>문의 내용: {selectedItem.functionContent}</p>
-            <p>처리 상태: {selectedItem.status}</p>
-            <p>메모: {selectedItem.memo}</p>
+            <h3>{selectedItem.title}</h3>
+            <p><strong>이름:</strong> {selectedItem.name}</p>
+            <p><strong>아이디:</strong> {selectedItem.userId}</p>
+            <p><strong>이메일:</strong> {selectedItem.email}</p>
+            <p><strong>전화번호:</strong> {selectedItem.cellphone}</p>
+            <p><strong>문의 일시:</strong> {selectedItem.inquiryDate ? dayjs(selectedItem.inquiryDate).format('YYYY-MM-DD HH:mm') : '-'}</p>
+            <p><strong>메모:</strong> {selectedItem.memo || '-'}</p>
+            <p><strong>상태:</strong> {selectedItem.status || '-'}</p>
+            <p><strong>채팅 세션:</strong> {selectedItem.chatSession || '-'}</p>
+            <p><strong>견적 ID:</strong> {selectedItem.estimateId || '-'}</p>
           </div>
         ) : null}
       </CmsPopup>
