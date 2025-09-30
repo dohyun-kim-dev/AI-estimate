@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore'
 import Icon from '@/components/ai-esti/Icon'
 
 
+
 const HeaderWrapper = styled.header`
   position: fixed;
   top: 0;

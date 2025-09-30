@@ -110,7 +110,7 @@ const BottomToggleButton = styled.div<{ $isVisible: boolean }>`
   margin-bottom: 4px;
   
   &:hover {
-    background-color: ${({ theme }) => theme.accent}1A;
+    background-color: ${({ theme }) => theme.accent};
   }
 
   svg {
