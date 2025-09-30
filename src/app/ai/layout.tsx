@@ -358,7 +358,7 @@ export default function AILayout() {
           const message = messages[i];
           if (message.content && typeof message.content === 'string') {
             try {
-              // content에서 JSON 부분 찾기
+              // 1. script 태그에서 JSON 추출
               const scriptMatch = message.content.match(/<script[^>]*id="invoiceData"[^>]*>(.*?)<\/script>/s);
               if (scriptMatch) {
                 const jsonStr = scriptMatch[1].trim();
@@ -367,6 +367,24 @@ export default function AILayout() {
                   estimateId = invoiceData.uuid;
                   break;
                 }
+              }
+              
+              // 2. 마크다운 코드 블록에서 JSON 추출
+              const markdownMatch = message.content.match(/```json\s*\n([\s\S]*?)\n```/);
+              if (markdownMatch) {
+                const jsonStr = markdownMatch[1].trim();
+                const invoiceData = JSON.parse(jsonStr);
+                if (invoiceData.uuid) {
+                  estimateId = invoiceData.uuid;
+                  break;
+                }
+              }
+              
+              // 3. 직접 JSON 파싱 시도
+              const invoiceData = JSON.parse(message.content);
+              if (invoiceData.uuid) {
+                estimateId = invoiceData.uuid;
+                break;
               }
             } catch (error) {
               console.log('JSON 파싱 실패:', error);

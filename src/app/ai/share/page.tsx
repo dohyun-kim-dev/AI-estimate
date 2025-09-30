@@ -328,6 +328,22 @@ const SharePage: React.FC = () => {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
 
+  // 견적서 메시지 감지 함수
+  const isEstimateMessage = (content: string) => {
+    if (typeof content !== 'string') return false;
+    
+    // 1. script 태그 형식
+    if (content.includes('<script type="application/json" id="invoiceData">')) return true;
+    
+    // 2. 마크다운 코드 블록 형식
+    if (/```json\s*\n[\s\S]*?"uuid"[\s\S]*?\n```/.test(content)) return true;
+    
+    // 3. 직접 JSON 형식 (uuid나 project_name 포함)
+    if (/^[\s]*{[\s\S]*"(uuid|project_name)"[\s\S]*}[\s]*$/.test(content.trim())) return true;
+    
+    return false;
+  };
+
   // 메시지에서 파일 정보를 파싱하는 함수
   // 유저 메시지에서 ai 프롬프트(견적 정보 등) 제거 및 액션별 메시지 변환
   const stripAiPrompt = (text: string) => {
@@ -630,7 +646,7 @@ const SharePage: React.FC = () => {
                   name="강유하"
                   chatSessionId={sessionId}
                   // estimateDataForConsult={estimateDataForConsult}
-                  isFullWidth={message.content.includes('<script type="application/json" id="invoiceData">')}
+                  isFullWidth={isEstimateMessage(message.content)}
                 />
               );
             }

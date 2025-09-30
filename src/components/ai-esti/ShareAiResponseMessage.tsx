@@ -65,7 +65,18 @@ const ShareAiResponseMessage: React.FC<ShareAiResponseMessageProps> = ({
   isLoading = false
 }) => {
   const isEstimateMessage = (content: string) => {
-    return typeof content === 'string' && content.includes('<script type="application/json" id="invoiceData">');
+    if (typeof content !== 'string') return false;
+    
+    // 1. script 태그 형식
+    if (content.includes('<script type="application/json" id="invoiceData">')) return true;
+    
+    // 2. 마크다운 코드 블록 형식
+    if (/```json\s*\n[\s\S]*?"uuid"[\s\S]*?\n```/.test(content)) return true;
+    
+    // 3. 직접 JSON 형식 (uuid나 project_name 포함)
+    if (/^[\s]*{[\s\S]*"(uuid|project_name)"[\s\S]*}[\s]*$/.test(content.trim())) return true;
+    
+    return false;
   };
 
   const renderContent = () => {

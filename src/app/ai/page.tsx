@@ -716,22 +716,47 @@ const userId = getUserId() || '';
     return null;
   }
   
-  // <script id="invoiceData"> 태그를 찾아서 텍스트와 분리
-  const scriptMatch = content.match(/<script[^>]*id="invoiceData"[^>]*>[\s\S]*?<\/script>/);
+  // JSON 데이터와 텍스트 분리 (다양한 형태 지원)
   let textContent = content;
   let hasIncompleteJson = false;
   
+  // 1. <script> 태그 형태 처리
+  const scriptMatch = content.match(/<script[^>]*id="invoiceData"[^>]*>[\s\S]*?<\/script>/);
   if (scriptMatch) {
     textContent = content.replace(scriptMatch[0], '').replace(/\\n/g, '<br/>').trim();
   } else {
-    // script 태그가 없지만 JSON 구조가 시작되었는지 확인
-    const jsonStartPattern = /<script[^>]*id="invoiceData"[^>]*>/;
-    if (jsonStartPattern.test(content) && !content.includes('</script>')) {
-      hasIncompleteJson = true;
-      // 불완전한 JSON 부분을 제거하고 텍스트만 추출
-      textContent = content.replace(/<script[^>]*id="invoiceData"[^>]*>[\s\S]*$/, '').replace(/\\n/g, '<br/>').trim();
+    // 2. 마크다운 코드블록 형태 처리
+    const codeBlockMatch = content.match(/```json\s*\n[\s\S]*?\n```/);
+    if (codeBlockMatch) {
+      textContent = content.replace(codeBlockMatch[0], '').replace(/\\n/g, '<br/>').trim();
     } else {
-      textContent = content.replace(/\\n/g, '<br/>').trim();
+      // 3. 불완전한 <script> 태그 확인
+      const jsonStartPattern = /<script[^>]*id="invoiceData"[^>]*>/;
+      if (jsonStartPattern.test(content) && !content.includes('</script>')) {
+        hasIncompleteJson = true;
+        // 불완전한 JSON 부분을 제거하고 텍스트만 추출
+        textContent = content.replace(/<script[^>]*id="invoiceData"[^>]*>[\s\S]*$/, '').replace(/\\n/g, '<br/>').trim();
+      } else {
+        // 4. 순수 JSON 형태인지 확인 (전체 content가 JSON인 경우)
+        try {
+          const trimmed = content.trim();
+          if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+            const parsed = JSON.parse(trimmed);
+            if (parsed && typeof parsed === 'object' && Array.isArray(parsed.categories)) {
+              // 전체가 견적서 JSON이면 텍스트는 빈 문자열
+              textContent = '';
+            } else {
+              // 견적서 JSON이 아니면 원본 그대로
+              textContent = content.replace(/\\n/g, '<br/>').trim();
+            }
+          } else {
+            textContent = content.replace(/\\n/g, '<br/>').trim();
+          }
+        } catch {
+          // JSON 파싱 실패하면 일반 텍스트로 처리
+          textContent = content.replace(/\\n/g, '<br/>').trim();
+        }
+      }
     }
   }
   
@@ -948,17 +973,30 @@ export default function AiChatPage() {
     const loadingMessage = messages.find(m => m.isLoading);
     if (!loadingMessage) return false;
     
-    // AI 메시지 중에 불완전한 invoiceData script 태그가 있는지 확인
+    // AI 메시지 중에 불완전한 견적서 데이터가 있는지 확인
     const aiMessages = messages.filter(m => m.role === 'ai' && !m.isLoading);
     return aiMessages.some(msg => {
       if (typeof msg.content !== 'string') return false;
       
-      // script 태그가 시작되었지만 끝나지 않은 경우
+      // 1. script 태그가 시작되었지만 끝나지 않은 경우
       const scriptStartPattern = /<script[^>]*id="invoiceData"[^>]*>/;
       const hasScriptStart = scriptStartPattern.test(msg.content);
       const hasScriptEnd = msg.content.includes('</script>');
+      if (hasScriptStart && !hasScriptEnd) return true;
       
-      return hasScriptStart && !hasScriptEnd;
+      // 2. 마크다운 코드 블록이 시작되었지만 끝나지 않은 경우
+      const markdownJsonPattern = /```json\s*\n/;
+      const hasMarkdownStart = markdownJsonPattern.test(msg.content);
+      const hasMarkdownEnd = msg.content.includes('\n```');
+      if (hasMarkdownStart && !hasMarkdownEnd) return true;
+      
+      // 3. 직접 JSON이 시작되었지만 끝나지 않은 경우
+      const jsonStartPattern = /[{"](?:.*"uuid"|.*"project_name")/;
+      const hasJsonStart = jsonStartPattern.test(msg.content);
+      const hasJsonEnd = msg.content.includes('}');
+      if (hasJsonStart && !hasJsonEnd) return true;
+      
+      return false;
     });
   };
   
@@ -1456,7 +1494,17 @@ useEffect(() => {
   const isEstimateMessage = (content: string) => {
     // console.log('content', content);
     if(typeof content !== 'string') return false;
-    return content.includes('<script type="application/json" id="invoiceData">');
+    
+    // 1. script 태그 형식
+    if (content.includes('<script type="application/json" id="invoiceData">')) return true;
+    
+    // 2. 마크다운 코드 블록 형식
+    if (/```json\s*\n[\s\S]*?"uuid"[\s\S]*?\n```/.test(content)) return true;
+    
+    // 3. 직접 JSON 형식 (uuid나 project_name 포함)
+    if (/^[\s]*{[\s\S]*"(uuid|project_name)"[\s\S]*}[\s]*$/.test(content.trim())) return true;
+    
+    return false;
   };
 
   const onTestModel = async () => {

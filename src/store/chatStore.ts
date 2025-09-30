@@ -75,10 +75,26 @@ export const useChatStore = create<ChatState>()(
           messages: state.messages.filter(msg => {
             if (msg.role !== 'ai') return true;
             if (typeof msg.content !== 'string') return true;
+            
+            // 1. script 태그 형식 체크
             const scriptStartPattern = /<script[^>]*id="invoiceData"[^>]*>/;
             const hasScriptStart = scriptStartPattern.test(msg.content);
             const hasScriptEnd = msg.content.includes('</script>');
-            return !(hasScriptStart && !hasScriptEnd);
+            if (hasScriptStart && !hasScriptEnd) return false; // 불완전한 script 태그
+            
+            // 2. 마크다운 코드 블록 형식 체크
+            const markdownJsonPattern = /```json\s*\n/;
+            const hasMarkdownStart = markdownJsonPattern.test(msg.content);
+            const hasMarkdownEnd = msg.content.includes('\n```');
+            if (hasMarkdownStart && !hasMarkdownEnd) return false; // 불완전한 마크다운 블록
+            
+            // 3. 직접 JSON 형식 체크 - uuid나 project_name이 있으면 JSON 시작으로 간주
+            const jsonStartPattern = /[{"](?:.*"uuid"|.*"project_name")/;
+            const hasJsonStart = jsonStartPattern.test(msg.content);
+            const hasJsonEnd = msg.content.includes('}');
+            if (hasJsonStart && !hasJsonEnd) return false; // 불완전한 JSON
+            
+            return true; // 완전한 메시지 또는 견적서가 아닌 메시지
           }),
         })),
         // 특정 messageId로 메시지를 찾아 업데이트합니다.
