@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1755959548648,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1759196209410,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -0,0 +1,20 @@\n+export const devLog = (...args: any[]) => {\n+  if (import.meta.env.NODE_ENV !== 'production') {\n+     \n+    console.log(...args)\n+  }\n+}\n+\n+export const devWarn = (...args: any[]) => {\n+  if (import.meta.env.NODE_ENV !== 'production') {\n+     \n+    console.warn(...args)\n+  }\n+}\n+\n+export const devError = (...args: any[]) => {\n+  if (import.meta.env.NODE_ENV !== 'production') {\n+      \n+      console.error(...args)\n+    }\n+}\n\\ No newline at end of file\n"
                 }
             ],
             "date": 1755959548648,

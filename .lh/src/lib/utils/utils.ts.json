@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/lib/utils/utils.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1758003821204,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1758003821204,
+            "name": "Commit-0",
+            "content": "// src/app/ai-estimate/utils.ts\n\n/**\n * \"4,000,000\" 같은 통화 문자열에서 쉼표를 제거하고 숫자로 변환합니다.\n * @param priceStr - 변환할 가격 문자열\n * @returns 숫자로 변환된 가격 (소수점 포함)\n */\nexport const parsePrice = (priceStr: string): number => {\n  if (!priceStr) return 0;\n  return parseFloat(priceStr.replace(/,/g, ''));\n};\n\n/**\n * 숫자를 \"4,000,000\" 같은 통화 형식의 문자열로 변환합니다.\n * @param number - 변환할 숫자\n * @returns 통화 형식의 문자열\n */\nexport const formatPrice = (number: number): string => {\n  return number.toLocaleString('ko-KR');\n};\n"
+        }
+    ]
+}

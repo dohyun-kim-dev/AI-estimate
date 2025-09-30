@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, forwardRef } from "react";
+import React, { useRef, forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import GenericListUI, { FetchParams, FetchResult } from "@/components/CustomList/GenericListUI";
 import { ColumnDefinition } from "@/components/CustomList/GenericDataTable";
 
@@ -39,7 +39,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   searchPlaceholder?: string;
 }
 
-const CmsDesktopView = forwardRef<{ refetch: () => void }, CmsDesktopViewProps<any>>(function CmsDesktopView<T extends BaseRecord>({
+  const CmsDesktopView = forwardRef<{ refetch: () => void }, CmsDesktopViewProps<any>>(function CmsDesktopView<T extends BaseRecord>({
   title,
   data,
   columns,
@@ -62,40 +62,108 @@ const CmsDesktopView = forwardRef<{ refetch: () => void }, CmsDesktopViewProps<a
   renderMiddleContent,
   searchPlaceholder
 }: CmsDesktopViewProps<T>, ref: React.Ref<{ refetch: () => void }>) {
-  const handleFetchData = async (params: FetchParams) => {
-    if (fetchData) {
-      return await fetchData(params);
+  const [listData, setListData] = useState<T[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
+  const [isListLoading, setIsListLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // 부모 컴포넌트에 refetch 함수 노출
+  useImperativeHandle(ref, () => ({
+    refetch: () => {
+      handleFetchDataInternal(currentParams);
+    },
+  }));
+
+  const [currentParams, setCurrentParams] = useState<FetchParams>({});
+
+  // API 호출 함수
+  const handleFetchDataInternal = async (params: FetchParams) => {
+    if (!fetchData) {
+      setListData(data);
+      setTotalItems(data.length);
+      return;
     }
-    // 기본 더미 데이터 반환
-    return {
-      data,
-      totalItems: data.length,
-      allItems: data.length,
-    };
+
+    // 현재 저장된 파라미터와 새로운 파라미터를 병합
+    const mergedParams = { ...currentParams, ...params };
+    setCurrentParams(mergedParams);
+
+    setIsListLoading(true);
+    try {
+      const result = await fetchData(mergedParams);
+      setListData(result.data);
+      setTotalItems(result.totalItems);
+    } catch (error) {
+      console.error('API 호출 오류:', error);
+      setListData([]);
+      setTotalItems(0);
+    } finally {
+      setIsListLoading(false);
+    }
   };
 
-  return (
+  // 초기 로딩 - 정확히 한 번만 실행되도록 보장
+  useEffect(() => {
+    if (!isInitialized) {
+      console.log('🚀 CmsDesktopView 초기 API 호출');
+      setIsInitialized(true);
+      handleFetchDataInternal({});
+    }
+  }, [isInitialized]); // isInitialized가 변경될 때만 실행
+
+  // data prop 변경 감지 - fetchData가 없을 때 직접 전달받은 data 사용
+  useEffect(() => {
+    if (!fetchData) {
+      console.log('🔄 CmsDesktopView data 변경 감지:', data.length);
+      setListData(data);
+      setTotalItems(data.length);
+    }
+  }, [data, fetchData]); // data 또는 fetchData가 변경될 때마다 실행
+
+  // 검색 콜백 - 현재 저장된 모든 파라미터와 함께 API 호출
+  const handleSearchChange = (keyword: string) => {
+    const searchParams = { ...currentParams, keyword };
+    handleFetchDataInternal(searchParams);
+  };
+
+  // 날짜 변경 콜백 - 상태만 저장 (API 호출 없음)
+  const handleDateChange = (fromDate: string, toDate: string) => {
+    setCurrentParams(prev => ({ ...prev, fromDate, toDate }));
+  };
+
+  // 상태 변경 콜백 - 상태만 저장 (API 호출 없음)
+  const handleStatusChange = (status: string) => {
+    setCurrentParams(prev => ({ ...prev, status }));
+  };
+
+  // 고객사 변경 콜백 - 상태만 저장 (API 호출 없음)
+  const handleCompanyChange = (companyCode: string | null, companyName: string) => {
+    setCurrentParams(prev => ({ ...prev, companyCode: companyCode || undefined }));
+  };  return (
     <GenericListUI<T>
-      ref={ref}
       title={title}
       excelFileName="데이터 목록"
       columns={columns}
-      fetchData={handleFetchData}
+      data={listData}
+      totalItems={totalItems}
+      isLoading={isListLoading}
       themeMode={themeMode}
-      onAdd={onAdd}
-      addButtonLabel={addButtonLabel}
+      addButton={onAdd ? { label: addButtonLabel || "추가", onClick: onAdd } : undefined}
+      deleteButton={deleteBtnCallBack ? { label: "삭제", onClick: deleteBtnCallBack } : undefined}
+      excelTemplateButton={excelTemplateBtnCallBack ? { label: "엑셀 템플릿", onClick: excelTemplateBtnCallBack } : undefined}
+      excelUploadButton={excelUploadBtnCallBack ? { label: "엑셀 업로드", onClick: excelUploadBtnCallBack } : undefined}
       onRowClick={onRowClick}
       enableDateFilter={enableDateFilter}
       enableCompanySearch={enableCompanySearch}
       onCompanySelect={onCompanySelect}
       selectedCompanyCode={selectedCompanyCode}
       selectedCompanyName={selectedCompanyName}
-      isShowExcelTemplate={isShowExcelTemplate}
-      excelUploadBtnCallBack={excelUploadBtnCallBack}
-      excelTemplateBtnCallBack={excelTemplateBtnCallBack}
-      deleteBtnCallBack={deleteBtnCallBack}
       renderMiddleContent={renderMiddleContent}
       searchPlaceholder={searchPlaceholder}
+      onSearchChange={handleSearchChange}
+      onDateChange={handleDateChange}
+      onStatusChange={handleStatusChange}
+      onCompanyChange={handleCompanyChange}
     />
   );
 });

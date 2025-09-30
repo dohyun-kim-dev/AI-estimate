@@ -11,3 +11,10 @@ export const devWarn = (...args: any[]) => {
     console.warn(...args)
   }
 }
+
+export const devError = (...args: any[]) => {
+  if (import.meta.env.NODE_ENV !== 'production') {
+      
+      console.error(...args)
+    }
+}

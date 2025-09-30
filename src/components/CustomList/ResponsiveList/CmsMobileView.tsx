@@ -90,6 +90,13 @@ export default function CmsMobileView<T extends BaseRecord>({
       : null;
   }, [selectedCompanyCode, selectedCompanyName]);
 
+  // 고객사 선택 핸들러 추가
+  const handleCompanySelect = (company: { id: string; name: string }) => {
+    if (onCompanySelect) {
+      onCompanySelect(company);
+    }
+  };
+
   // Fetching state (aligns with GenericListUI behavior)
   const [allData, setAllData] = useState<T[]>([]);
   const [totalItemsMeta, setTotalItemsMeta] = useState<number>(0);
@@ -100,15 +107,15 @@ export default function CmsMobileView<T extends BaseRecord>({
   // Keep allData in sync when static data prop changes (no fetcher)
   useEffect(() => {
     if (!fetchData && data) {
+      console.log('🔄 CmsMobileView data 변경 감지:', data.length);
       const list = Array.isArray(data) ? data : [];
       setAllData(list);
       setTotalItemsMeta(list.length);
       setAllItemsMeta(list.length);
-      if (currentPage > 1) {
-        setCurrentPage(1);
-      }
+      // 데이터가 변경되면 첫 페이지로 이동
+      setCurrentPage(1);
     }
-  }, [data, fetchData]); // currentPage 의존성 제거
+  }, [data, fetchData]);
 
   // Server fetching similar to GenericListUI (의존성 최적화)
   const fetchDataCallback = useCallback(async () => {
@@ -417,9 +424,8 @@ export default function CmsMobileView<T extends BaseRecord>({
             isOpen={isCompanyModalOpen}
             onClose={() => setIsCompanyModalOpen(false)}
             onSelect={(company) => {
-              if (onCompanySelect) {
-                onCompanySelect({ id: company.companyCode, name: company.companyName });
-              }
+              handleCompanySelect({ id: company.companyCode, name: company.companyName });
+              setIsCompanyModalOpen(false);
             }}
             themeMode="light"
           />
