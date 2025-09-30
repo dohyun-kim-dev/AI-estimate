@@ -35,10 +35,11 @@ export function normalizeEstimate<T extends Record<string, any>>(est: T): T {
   return est;
 }
 
-/** reply 전체에서 <script> 블록 제거한 "인트로"만 추출 */
+/** reply 전체에서 <script> 블록과 마크다운 코드블록 제거한 "인트로"만 추출 */
 export function extractIntroFromReply(reply: string) {
   return reply
     .replace(/<script type="application\/json" id="invoiceData">[\s\S]*?<\/script>/g, '')
+    .replace(/```json\s*\n[\s\S]*?\n```/g, '')
     .trim();
 }
 
@@ -106,17 +107,46 @@ export function extractInvoiceJSON(html: string) {
 /** 메시지 content에서 invoiceData JSON을 파싱해서 객체로 반환 */
 export function extractEstimateData<T = any>(content: string, estimateId?: string): T | null {
   try {
-    const m = content.match(
+    // 1. 먼저 <script> 태그에서 JSON 찾기 (기존 로직)
+    const scriptMatch = content.match(
       /<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/
     );
-    if (!m) return null;
-    const data = JSON.parse(m[1]);
-    if (!data || typeof data !== 'object') return null;
-    console.log("extractEstimateData data:", data);
-    if (estimateId) {
-      data.uuid = estimateId;
+    
+    if (scriptMatch) {
+      const data = JSON.parse(scriptMatch[1]);
+      if (data && typeof data === 'object') {
+        console.log("extractEstimateData data (from script):", data);
+        if (estimateId) {
+          data.uuid = estimateId;
+        }
+        return data as T;
+      }
     }
-    return data as T;
+    
+    // 2. <script> 태그가 없으면 마크다운 코드블록에서 JSON 찾기
+    const codeBlockMatch = content.match(/```json\s*\n([\s\S]*?)\n```/);
+    if (codeBlockMatch) {
+      const data = JSON.parse(codeBlockMatch[1]);
+      if (data && typeof data === 'object') {
+        console.log("extractEstimateData data (from markdown):", data);
+        if (estimateId) {
+          data.uuid = estimateId;
+        }
+        return data as T;
+      }
+    }
+    
+    // 3. 위 두 방법이 안되면 content 전체를 JSON으로 파싱 시도
+    const data = JSON.parse(content.trim());
+    if (data && typeof data === 'object') {
+      console.log("extractEstimateData data (from raw JSON):", data);
+      if (estimateId) {
+        data.uuid = estimateId;
+      }
+      return data as T;
+    }
+    
+    return null;
   } catch {
     return null;
   }
@@ -136,11 +166,25 @@ export function getOrEnsureEstimateFromContent<T = any>(content: string) {
 /** 문자열 content에서 uuid만 바로 추출하고 싶을 때 */
 export function getEstimateIdFromContent(content: string): string | null {
   try {
-    const m = content.match(
+    // 1. 먼저 <script> 태그에서 JSON 찾기 (기존 로직)
+    const scriptMatch = content.match(
       /<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/
     );
-    if (!m) return null;
-    const json = JSON.parse(m[1]);
+    
+    if (scriptMatch) {
+      const json = JSON.parse(scriptMatch[1]);
+      return json?.uuid || null;
+    }
+    
+    // 2. <script> 태그가 없으면 마크다운 코드블록에서 JSON 찾기
+    const codeBlockMatch = content.match(/```json\s*\n([\s\S]*?)\n```/);
+    if (codeBlockMatch) {
+      const json = JSON.parse(codeBlockMatch[1]);
+      return json?.uuid || null;
+    }
+    
+    // 3. 위 두 방법이 안되면 content 전체를 JSON으로 파싱 시도
+    const json = JSON.parse(content.trim());
     return json?.uuid || null;
   } catch {
     return null;

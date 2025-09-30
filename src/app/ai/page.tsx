@@ -383,19 +383,32 @@ function ensureClientUuid(estimate: any) {
 const extractEstimateData = (content: string): ProjectEstimate | null => {
   try {
     if(typeof content !== 'string') { console.log('string이 아닌 content', typeof content,content);}
-    const match = content.match(/<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/);
-    if (!match) return null;
-    // console.log('match', match);
-    const jsonStr = match[1];
-    const data = JSON.parse(jsonStr);
-    // console.log('파싱된 견적 데이터:', data);
-
-    if (!data || typeof data !== 'object' || !Array.isArray(data.categories)) {
-      console.error('Invalid estimate data structure:', data);
-      return null;
+    
+    // 1. 먼저 <script> 태그에서 JSON 찾기 (기존 로직)
+    const scriptMatch = content.match(/<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/);
+    if (scriptMatch) {
+      const data = JSON.parse(scriptMatch[1]);
+      if (data && typeof data === 'object' && Array.isArray(data.categories)) {
+        return data as ProjectEstimate;
+      }
     }
-
-    return data as ProjectEstimate;
+    
+    // 2. <script> 태그가 없으면 마크다운 코드블록에서 JSON 찾기
+    const codeBlockMatch = content.match(/```json\s*\n([\s\S]*?)\n```/);
+    if (codeBlockMatch) {
+      const data = JSON.parse(codeBlockMatch[1]);
+      if (data && typeof data === 'object' && Array.isArray(data.categories)) {
+        return data as ProjectEstimate;
+      }
+    }
+    
+    // 3. 위 두 방법이 안되면 content 전체를 JSON으로 파싱 시도
+    const data = JSON.parse(content.trim());
+    if (data && typeof data === 'object' && Array.isArray(data.categories)) {
+      return data as ProjectEstimate;
+    }
+    
+    return null;
   } catch (error) {
     console.error('Failed to parse estimate data:', error);
     return null;

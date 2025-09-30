@@ -24,18 +24,37 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
   if (typeof content !== 'string') return null;
 
   try {
-    const match = content.match(
+    // 1. 먼저 <script> 태그에서 JSON 찾기 (기존 로직)
+    const scriptMatch = content.match(
       /<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/
     );
-    if (!match) return null;
-    console.log("extractEstimateData match[1]:", match[1]);
-
-    const data = JSON.parse(match[1]);
-    if (!data || typeof data !== 'object' || !Array.isArray(data.categories)) {
-      return null;
+    
+    if (scriptMatch) {
+      const data = JSON.parse(scriptMatch[1]);
+      if (data && typeof data === 'object' && Array.isArray(data.categories)) {
+        console.log("extractEstimateData data (from script):", data);
+        return data as ProjectEstimate;
+      }
     }
-    console.log("extractEstimateData data:", data);
-    return data as ProjectEstimate;
+    
+    // 2. <script> 태그가 없으면 마크다운 코드블록에서 JSON 찾기
+    const codeBlockMatch = content.match(/```json\s*\n([\s\S]*?)\n```/);
+    if (codeBlockMatch) {
+      const data = JSON.parse(codeBlockMatch[1]);
+      if (data && typeof data === 'object' && Array.isArray(data.categories)) {
+        console.log("extractEstimateData data (from markdown):", data);
+        return data as ProjectEstimate;
+      }
+    }
+    
+    // 3. 위 두 방법이 안되면 content 전체를 JSON으로 파싱 시도
+    const data = JSON.parse(content.trim());
+    if (data && typeof data === 'object' && Array.isArray(data.categories)) {
+      console.log("extractEstimateData data (from raw JSON):", data);
+      return data as ProjectEstimate;
+    }
+    
+    return null;
   } catch (err) {
     console.error('Failed to parse estimate data:', err);
     return null;
@@ -792,22 +811,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           return;
         }
         
-        // 잘못된 JSON 형식 체크 - <script> 태그가 포함된 경우는 제외
-        if (!trimmedReply.includes('<script')) {
-          // ```json이 시작하거나 중간에 포함된 경우
-          if (trimmedReply.includes('```json') || 
-              (trimmedReply.includes('```') && !trimmedReply.includes('```json')) ||
-              (trimmedReply.startsWith('{') && trimmedReply.endsWith('}'))) {
-            console.log('❌ 스트리밍 도중 잘못된 형식 감지, 즉시 중단 및 원복');
-            
-            // 메시지 원복
-            handleAbort();
-            
-            // 에러 메시지 표시
-            error('AI가 올바르지 않은 형식으로 응답했습니다. 다시 시도해주세요.');
-            return;
-          }
-        }
+        // JSON 형식 체크 로직 제거 - 이제 다양한 형태의 JSON을 모두 지원
         
         updateLastMessage({
           content: aiReply,
@@ -829,28 +833,11 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         throw new Error('AI가 빈 응답을 했습니다.');
       }
       
-      // JSON 코드블록으로 응답한 경우 (```json ... ```)
-      if (trimmedReply.startsWith('```json') && trimmedReply.endsWith('```')) {
-        console.log('❌ AI가 JSON 코드블록 형식으로 잘못 응답함');
-        throw new Error('AI가 올바르지 않은 JSON 형식으로 응답했습니다.');
-      }
-      
-      // 순수 JSON 객체로만 응답한 경우 (텍스트 없이 { ... }만)
-      if (trimmedReply.startsWith('{') && trimmedReply.endsWith('}') && !trimmedReply.includes('<script')) {
-        try {
-          JSON.parse(trimmedReply); // JSON 파싱 가능하면
-          console.log('❌ AI가 순수 JSON으로만 응답함 (텍스트 없음)');
-          throw new Error('AI가 텍스트 없이 JSON으로만 응답했습니다.');
-        } catch (parseError) {
-          // JSON 파싱 실패하면 정상적인 텍스트로 간주
-        }
-      }
-      
-      // 일반 코드블록으로 응답한 경우 (``` ... ```)
-      if (trimmedReply.startsWith('```') && trimmedReply.endsWith('```') && !trimmedReply.includes('<script')) {
-        console.log('❌ AI가 코드블록 형식으로 잘못 응답함');
-        throw new Error('AI가 올바르지 않은 코드블록 형식으로 응답했습니다.');
-      }
+      // JSON 형식 검증 로직 제거 - 이제 모든 형태의 JSON 응답을 지원합니다.
+      // - ```json ... ``` (마크다운 코드블록)
+      // - { ... } (순수 JSON)
+      // - <script type="application/json">...</script> (기존 방식)
+      // 모두 extractEstimateData 함수에서 정상 처리됩니다.
 
       // AI 응답이 성공했으므로 이제 DB에 사용자 메시지 저장
       if (abortSignal?.aborted) {

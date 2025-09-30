@@ -569,21 +569,33 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                   if (messages[i]?.estimateId && messages[i]?.content) {
                     lastEstimateId = messages[i].estimateId;
                     
-                    // content에서 project_name 추출
+                    // content에서 project_name 추출 (개선된 로직)
                     const content = messages[i].content;
                     try {
-                      // <script type="application/json" id="invoiceData"> 태그 내용 추출
+                      let invoiceData = null;
+                      
+                      // 1. 먼저 <script> 태그에서 JSON 찾기
                       const scriptMatch = content.match(/<script type="application\/json" id="invoiceData">([\s\S]*?)<\/script>/);
                       if (scriptMatch && scriptMatch[1]) {
-                        const invoiceData = JSON.parse(scriptMatch[1]);
-                        if (invoiceData.project_name) {
-                          projectTitle = invoiceData.project_name;
-                          console.log('추출된 프로젝트 제목:', projectTitle);
+                        invoiceData = JSON.parse(scriptMatch[1]);
+                      } else {
+                        // 2. 마크다운 코드블록에서 JSON 찾기
+                        const codeBlockMatch = content.match(/```json\s*\n([\s\S]*?)\n```/);
+                        if (codeBlockMatch) {
+                          invoiceData = JSON.parse(codeBlockMatch[1]);
+                        } else {
+                          // 3. 전체 content를 JSON으로 파싱 시도
+                          invoiceData = JSON.parse(content.trim());
                         }
+                      }
+                      
+                      if (invoiceData && invoiceData.project_name) {
+                        projectTitle = invoiceData.project_name;
+                        console.log('추출된 프로젝트 제목:', projectTitle);
                       }
                     } catch (parseError) {
                       console.warn('견적서 데이터 파싱 실패:', parseError);
-                      // project_name 패턴 직접 매칭 시도
+                      // fallback: project_name 패턴 직접 매칭 시도
                       const projectNameMatch = content.match(/"project_name"\s*:\s*"([^"]+)"/);
                       if (projectNameMatch && projectNameMatch[1]) {
                         projectTitle = projectNameMatch[1];
