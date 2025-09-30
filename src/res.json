@@ -1,108 +1,25 @@
 {
     "statusCode": 200,
     "message": "success",
-    "data": {
-        "columns": [
-            {
-                "name": "id",
-                "type": "string",
-                "required": false,
-                "orderNo": 0
+    "data": [
+        {
+            "_id": "68d6162381c0a324cf5f4200",
+            "user": {
+                "id": "27dd7039-5972-4ae8-8e3f-bc4509829c61",
+                "name": "김도현",
+                "cellphone": "01020625344",
+                "email": "daehyeon@heredotcorp.com",
+                "_id": "68d6162381c0a324cf5f4201"
             },
-            {
-                "name": "코드",
-                "type": "string",
-                "required": true,
-                "orderNo": 1
-            },
-            {
-                "name": "대분류명",
-                "type": "string",
-                "required": true,
-                "orderNo": 2
-            },
-            {
-                "name": "소분류명",
-                "type": "string",
-                "required": false,
-                "orderNo": 3
-            },
-            {
-                "name": "기능명",
-                "type": "string",
-                "required": true,
-                "orderNo": 4
-            },
-            {
-                "name": "설명",
-                "type": "string",
-                "required": false,
-                "orderNo": 5
-            },
-            {
-                "name": "메모",
-                "type": "string",
-                "required": false,
-                "orderNo": 6
-            },
-            {
-                "name": "프론트엔드_기간",
-                "type": "number",
-                "required": false,
-                "orderNo": 7
-            },
-            {
-                "name": "백엔드_기간",
-                "type": "number",
-                "required": false,
-                "orderNo": 8
-            },
-            {
-                "name": "금액",
-                "type": "number",
-                "required": true,
-                "orderNo": 9
-            },
-            {
-                "name": "추가",
-                "type": "string",
-                "required": true,
-                "orderNo": 10
-            }
-        ],
-        "data": [
-            {
-                "no": 2,
-                "id": "68c7bac789bdff30bd60a813",
-                "코드": "예시_코드",
-                "대분류명": "예시_대분류명",
-                "소분류명": "예시_소분류명",
-                "기능명": "예시_기능명",
-                "설명": "예시_설명",
-                "메모": "예시_메모",
-                "프론트엔드_기간": 1,
-                "백엔드_기간": 1,
-                "금액": 100000,
-                "추가": "추가"
-            },
-            {
-                "no": 1,
-                "id": "68c7ba8c4b393f0aff0ea85d",
-                "코드": "예시_코드",
-                "대분류명": "예시_대분류명",
-                "소분류명": "예시_소분류명",
-                "기능명": "예시_기능명",
-                "설명": "예시_설명",
-                "메모": "예시_메모",
-                "프론트엔드_기간": 1,
-                "백엔드_기간": 1,
-                "금액": 100000
-            }
-        ]
-    },
+            "title": "미술관 티켓 웹사이트",
+            "chatSession": "38ece760-2d7d-48d2-a993-81c6143729d7",
+            "estimateId": "201b2a9f-3e6f-47a8-8e6d-53609805e3f3",
+            "createAt": "2025-09-26 13:27:15"
+        }
+    ],
     "metadata": {
-        "allCnt": 2,
-        "totalCnt": 2
+        "allCnt": 49,
+        "totalCnt": 1
     },
     "error": null
 }

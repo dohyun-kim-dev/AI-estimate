@@ -1276,7 +1276,7 @@ const PriceListPage: React.FC = () => {
 
   return (
     <>
-        <ToastContainer
+        {/* <ToastContainer
             position="top-center"
             autoClose={3000}
             newestOnTop={false}
@@ -1287,7 +1287,7 @@ const PriceListPage: React.FC = () => {
             pauseOnHover
             theme="light"
             style={{ zIndex: 10000 }}
-          ></ToastContainer>
+          ></ToastContainer> */}
           
       <CmsResponsiveContainer<any>
         ref={genericListRef}

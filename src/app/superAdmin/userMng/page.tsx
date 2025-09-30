@@ -534,7 +534,7 @@ const UserMngPage: React.FC = () => {
 
   return (
     <>
-      <ToastContainer
+      {/* <ToastContainer
         position="top-center"
         autoClose={3000}
         newestOnTop={false}
@@ -545,7 +545,7 @@ const UserMngPage: React.FC = () => {
         pauseOnHover
         theme="light"
         style={{ zIndex: 10000 }}
-      ></ToastContainer>
+      ></ToastContainer> */}
       <CmsResponsiveContainer<User>
         ref={listRef}
         title="고객 회원관리"

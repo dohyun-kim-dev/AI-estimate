@@ -22,6 +22,8 @@ import {
   UserUpdateParams,
   CompanyCreateParams,
   CompanyUpdateParams,
+  EstimateRequestGetListParams,
+  SiteEstimateRequestGetListParams,
 } from './adminApi.types';
 
 // API URL 생성 헬퍼 함수
@@ -639,4 +641,88 @@ export async function updateUser(params: UserUpdateParams) {
     isCallPageLoader: true,
     isWithToken: true,
   });
+}
+
+// ***************** 상담요청 관리
+
+// 통합관리자 상담요청 조회
+export async function getEstimateRequestList(
+  params: EstimateRequestGetListParams = {}
+) {
+  const queryParams = new URLSearchParams();
+  
+  // 선택적 파라미터들
+  if (params.companyCode) queryParams.append('companyCode', params.companyCode);
+  if (params.keyword) queryParams.append('keyword', params.keyword);
+  if (params.fromDate) queryParams.append('fromDate', params.fromDate);
+  if (params.toDate) queryParams.append('toDate', params.toDate);
+
+  const queryString = queryParams.toString();
+  const url = `${BASE_URL}/cms/company/estimate-requests${queryString ? `?${queryString}` : ''}`;
+
+  try {
+    devLog('🚀 [getEstimateRequestList API 호출]', { params, url });
+    
+    const result = await callAdminApi({
+      title: '통합관리자 상담요청 조회',
+      url: url,
+      method: 'GET',
+      isCallPageLoader: true,
+      isWithToken: true,
+    });
+    
+    devLog('✅ [getEstimateRequestList API 응답]', result);
+    return result;
+  } catch (error) {
+    devLog('❌ [getEstimateRequestList API 에러]', error);
+    throw error;
+  }
+}
+
+// 사이트관리자 상담요청 조회
+export async function getSiteEstimateRequestList(
+  params: SiteEstimateRequestGetListParams
+) {
+  const queryParams = new URLSearchParams();
+  
+  // 선택적 파라미터들
+  if (params.keyword) queryParams.append('keyword', params.keyword);
+  if (params.fromDate) queryParams.append('fromDate', params.fromDate);
+  if (params.toDate) queryParams.append('toDate', params.toDate);
+
+  const queryString = queryParams.toString();
+  const url = `${BASE_URL}/company/cms/estimate-requests${queryString ? `?${queryString}` : ''}`;
+  
+  // 환경에 따른 URL 설정
+  let fullUrl = url;
+  if (import.meta.env.VITE_ENV_NAME !== 'dev' && !url.startsWith('http')) {
+    fullUrl = `${import.meta.env.VITE_API_HOST}${url}`;
+  }
+
+  try {
+    devLog('🚀 [getSiteEstimateRequestList API 호출]', { params, url });
+
+    const response = await fetch(fullUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'x-company-code': params.companyCode,
+        'Authorization': `Bearer ${localStorage.getItem('admin_access_token')}`,
+      },
+      credentials: 'include',
+      mode: 'cors',
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    devLog('✅ [getSiteEstimateRequestList API 응답]', result);
+    return result;
+  } catch (error) {
+    devLog('❌ [getSiteEstimateRequestList API 에러]', error);
+    throw error;
+  }
 }

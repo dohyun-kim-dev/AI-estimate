@@ -458,7 +458,7 @@ const adminDeleteClick = useCallback(
 
   return (
     <>
-      <ToastContainer
+      {/* <ToastContainer
         position="top-center"
         autoClose={3000}
         newestOnTop={false}
@@ -469,7 +469,7 @@ const adminDeleteClick = useCallback(
         pauseOnHover
         theme="light"
         style={{ zIndex: 10000 }}
-      ></ToastContainer>
+      ></ToastContainer> */}
 
 <CmsResponsiveContainer<AdminUser>
   ref={genericListRef}

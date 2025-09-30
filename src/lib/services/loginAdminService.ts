@@ -7,7 +7,7 @@ type LoginAdminServiceParams = {
   id: string;
   password: string;
   showMessage?: (msg: string) => void;
-  onSuccess?: (result: { id: string; token?: string }) => void;
+  onSuccess?: (result: { id: string; token?: string; isRoot?: boolean }) => void;
 };
 
 interface LoginResponse {
@@ -17,6 +17,7 @@ interface LoginResponse {
     adminId?: string;
     token?: string;
     accessToken?: string;
+    isRoot?: boolean; // isRoot 추가
     [key: string]: unknown;
   };
 }
@@ -58,15 +59,27 @@ export async function loginAdminService({
       token = responseData.data.token || responseData.data.accessToken;
     }
 
+    // 3. isRoot 값 추출
+    const isRoot = responseData?.data?.isRoot;
+
     console.log('🔍 [loginAdminService] 토큰 추출 결과:', {
       hasResponseData: !!responseData,
       hasData: !!responseData?.data,
       hasToken: !!token,
       tokenPrefix: token ? token.substring(0, 10) + '...' : 'null',
+      isRoot: isRoot,
+      isRootType: typeof isRoot,
       authHeader: !!authHeader,
       adminTokenHeader: !!adminTokenHeader,
       dataKeys: responseData?.data ? Object.keys(responseData.data) : [],
       status: response.status
+    });
+
+    console.log('📋 [loginAdminService] onSuccess 콜백 호출 예정:', {
+      id,
+      hasToken: !!token,
+      isRoot,
+      isRootType: typeof isRoot
     });
 
     handleLoginStatus({
@@ -75,7 +88,7 @@ export async function loginAdminService({
       showMessage,
       onSuccess: () => {
         // ✅ 외부로 로그인 정보 전달 (context login에서 처리)
-        onSuccess?.({ id, token });
+        onSuccess?.({ id, token, isRoot });
       },
       onFail: () => {
         devWarn('로그인 실패:', message);

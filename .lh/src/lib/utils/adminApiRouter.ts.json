@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/lib/utils/adminApiRouter.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1759210093834,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1759210611492,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -17,8 +17,16 @@\n   companyCode?: string\n ) {\n   const isRoot = getAdminIsRoot();\n   \n+  console.log('🔧 [adminApiRouter] getEstimateRequestListByRole 호출:', {\n+    params,\n+    companyCode,\n+    isRoot,\n+    localStorage_adminIsRoot: localStorage.getItem('admin_isRoot'),\n+    getAdminIsRoot_result: getAdminIsRoot(),\n+  });\n+  \n   if (isRoot) {\n     // 통합관리자인 경우\n     const apiParams: EstimateRequestGetListParams = {\n       ...params,\n"
+                }
+            ],
+            "date": 1759210093834,
+            "name": "Commit-0",
+            "content": "import { getEstimateRequestList, getSiteEstimateRequestList } from '@/lib/api/admin/adminApi';\nimport { EstimateRequestGetListParams, SiteEstimateRequestGetListParams } from '@/lib/api/admin/adminApi.types';\nimport { getAdminIsRoot } from '@/store/authStorage';\n\n/**\n * 관리자 권한에 따라 적절한 상담요청 조회 API를 호출하는 함수\n * @param params 공통 파라미터 (keyword, fromDate, toDate)\n * @param companyCode 회사 코드 (사이트관리자의 경우 필수)\n * @returns API 응답\n */\nexport async function getEstimateRequestListByRole(\n  params: {\n    keyword?: string;\n    fromDate?: string;\n    toDate?: string;\n  },\n  companyCode?: string\n) {\n  const isRoot = getAdminIsRoot();\n  \n  if (isRoot) {\n    // 통합관리자인 경우\n    const apiParams: EstimateRequestGetListParams = {\n      ...params,\n      companyCode, // 통합관리자는 companyCode를 쿼리 파라미터로 사용\n    };\n    \n    console.log('🔧 [통합관리자] 상담요청 조회 API 호출:', apiParams);\n    return await getEstimateRequestList(apiParams);\n  } else {\n    // 사이트관리자인 경우\n    if (!companyCode) {\n      throw new Error('사이트관리자는 companyCode가 필수입니다.');\n    }\n    \n    const apiParams: SiteEstimateRequestGetListParams = {\n      ...params,\n      companyCode, // 사이트관리자는 companyCode를 헤더로 사용\n    };\n    \n    console.log('🔧 [사이트관리자] 상담요청 조회 API 호출:', apiParams);\n    return await getSiteEstimateRequestList(apiParams);\n  }\n}\n\n/**\n * 현재 로그인한 관리자가 통합관리자인지 확인하는 함수\n * @returns 통합관리자 여부\n */\nexport function isIntegratedAdmin(): boolean {\n  return getAdminIsRoot();\n}\n\n/**\n * 현재 로그인한 관리자가 사이트관리자인지 확인하는 함수\n * @returns 사이트관리자 여부\n */\nexport function isSiteAdmin(): boolean {\n  return !getAdminIsRoot();\n}\n"
+        }
+    ]
+}

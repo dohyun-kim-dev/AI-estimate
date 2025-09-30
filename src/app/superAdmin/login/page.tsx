@@ -64,7 +64,7 @@ export default function LoginPage() {
           toast.error(msg);
         },
         onSuccess: (response) => {
-          login(response.id, response.token);
+          login(response.id, response.token, response.isRoot);
           toast.success('로그인 성공!');
           navigate(`/superadmin`);
         },

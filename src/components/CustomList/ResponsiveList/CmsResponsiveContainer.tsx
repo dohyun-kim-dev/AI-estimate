@@ -44,6 +44,11 @@ interface CmsResponsiveContainerProps<T extends BaseRecord> {
   renderMiddleContent?: () => React.ReactNode;
   searchPlaceholder?: string;
   
+  // 날짜 관련 콜백 추가
+  onInitialDateSet?: (fromDate: string, toDate: string) => void;
+  onDateChange?: (fromDate: string, toDate: string) => void;
+  onSearchChange?: (keyword: string) => void; // 검색 변경 콜백 추가
+  
 }
 
 const CmsResponsiveContainer = <T extends BaseRecord>(
@@ -73,6 +78,9 @@ const CmsResponsiveContainer = <T extends BaseRecord>(
     deleteBtnCallBack,
     renderMiddleContent,
     searchPlaceholder,
+    onInitialDateSet, // 날짜 콜백 추가
+    onDateChange, // 날짜 콜백 추가
+    onSearchChange, // 검색 변경 콜백 추가
     ref,
   } = props;
   
@@ -101,6 +109,9 @@ const CmsResponsiveContainer = <T extends BaseRecord>(
     deleteBtnCallBack,
     renderMiddleContent,
     searchPlaceholder,
+    onInitialDateSet, // 날짜 콜백 추가
+    onDateChange, // 날짜 콜백 추가
+    onSearchChange, // 검색 변경 콜백 추가
   };
 
   return (
