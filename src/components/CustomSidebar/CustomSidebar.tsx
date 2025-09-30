@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled, { css } from 'styled-components';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, ChevronUp } from 'lucide-react';
@@ -7,8 +7,14 @@ export interface MenuItemConfig {
   icon: React.ReactElement;
   title: string;
   path: string;
-  subMenu?: MenuItemConfig[] | null;
+  subMenu?: SubMenuItemConfig[] | null;
   id: string; // 각 메뉴별 고유 ID 필요
+}
+
+export interface SubMenuItemConfig {
+  title: string;
+  path: string;
+  id: string;
 }
 
 interface CustomSidebarProps {
@@ -31,27 +37,64 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
+  const sidebarRef = useRef<HTMLDivElement>(null);
+
+  // 외부 클릭 감지하여 접힌 상태의 서브메뉴 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isCollapsed && sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
+        setOpenMenus({});
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isCollapsed]);
 
   const isActive = (path: string) => location.pathname === path;
   
-  // ⭐️ 부모 메뉴의 경로로 시작하는지 확인하는 함수
+  // ⭐️ 부모 메뉴의 활성화 상태 확인 (서브메뉴 중 하나가 활성화되었거나 열려있는 상태)
   const isParentActive = (item: MenuItemConfig) => {
-    return item.subMenu?.some(subItem => location.pathname.startsWith(subItem.path)) || location.pathname.startsWith(item.path);
+    if (!item.subMenu) return false;
+    return item.subMenu?.some(subItem => location.pathname === subItem.path);
   };
 
-  const handleMenuToggle = (id: string, path: string | undefined, hasSubMenu: boolean) => {
-    setOpenMenus((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-    // ⭐️ 서브메뉴가 없는 경우에만 페이지 이동
-    if (!hasSubMenu && path) {
-      navigate(path);
+  // ⭐️ 서브메뉴가 있는 메뉴의 기본 경로를 첫 번째 서브메뉴 경로로 설정
+  const getEffectivePath = (item: MenuItemConfig) => {
+    if (item.subMenu && item.subMenu.length > 0) {
+      return item.subMenu[0].path;
+    }
+    return item.path;
+  };
+
+  const handleMenuToggle = (id: string, item: MenuItemConfig, hasSubMenu: boolean) => {
+    if (hasSubMenu) {
+      // 서브메뉴가 있는 경우: 클릭한 메뉴만 토글하고 나머지는 모두 닫기
+      setOpenMenus((prev) => {
+        const newState: { [key: string]: boolean } = {};
+        const wasOpen = prev[id];
+        newState[id] = !wasOpen;
+        
+        // 메뉴를 열 때만 첫 번째 서브메뉴로 이동
+        if (!wasOpen && item.subMenu && item.subMenu.length > 0) {
+          navigate(item.subMenu[0].path);
+        }
+        
+        return newState;
+      });
+    } else {
+      // 서브메뉴가 없는 경우: 모든 메뉴를 닫고 페이지 이동
+      setOpenMenus({});
+      if (item.path) {
+        navigate(item.path);
+      }
     }
   };
 
   return (
-    <SidebarContainer $isCollapsed={isCollapsed}>
+    <SidebarContainer $isCollapsed={isCollapsed} ref={sidebarRef}>
       {children}
 
       <ToggleButton
@@ -75,14 +118,18 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({
           const active = isActive(item.path);
 
           return (
-            <React.Fragment key={item.id}>
+            <MenuItemContainer key={item.id}>
               {hasSubMenu ? (
                 <MenuItem
-                  as="div"
                   $isCollapsed={isCollapsed}
-                  // ⭐️ isParentActive 함수를 사용하도록 수정
-                  $active={isParentActive(item)}
-                  onClick={() => handleMenuToggle(item.id, item.path, hasSubMenu)}
+                  // 서브메뉴가 열려있을 때도 활성화 상태로 표시
+                  $active={isParentActive(item) || expanded}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleMenuToggle(item.id, item, hasSubMenu);
+                  }}
+                  style={{ cursor: 'pointer' }}
                 >
                   <Center $isCollapsed={isCollapsed}>
                     <IconWrapper $isCollapsed={isCollapsed}>
@@ -104,7 +151,7 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({
                   to={item.path}
                   $isCollapsed={isCollapsed}
                   $active={active}
-                  onClick={() => handleMenuToggle(item.id, item.path, hasSubMenu)}
+                  onClick={() => handleMenuToggle(item.id, item, hasSubMenu)}
                 >
                   <Center $isCollapsed={isCollapsed}>
                     <IconWrapper $isCollapsed={isCollapsed}>
@@ -116,21 +163,24 @@ const CustomSidebar: React.FC<CustomSidebarProps> = ({
               )}
 
               {hasSubMenu && expanded && item.subMenu && (
-                <SubMenuList>
+                <SubMenuList 
+                  $isCollapsed={isCollapsed} 
+                  $menuId={item.id}
+                >
                   {item.subMenu.map((subItem) => (
                     <SubMenuItem
                       key={subItem.id}
                       as={Link}
                       to={subItem.path}
                       $active={isActive(subItem.path)}
+                      $isCollapsed={isCollapsed}
                     >
-                      <IconWrapper>{subItem.icon}</IconWrapper>
                       {subItem.title}
                     </SubMenuItem>
                   ))}
                 </SubMenuList>
               )}
-            </React.Fragment>
+            </MenuItemContainer>
           );
         })}
       </MenuList>
@@ -153,7 +203,7 @@ const SidebarContainer = styled.div<{ $isCollapsed: boolean }>`
   top: 56px;
   width: ${({ $isCollapsed }) => ($isCollapsed ? '80px' : '250px')};
   height: calc(100vh - 56px);
-  overflow: hidden;
+  overflow: visible; /* hidden에서 visible로 변경 */
   background: #2c2e3c;
   color: white;
   display: flex;
@@ -203,7 +253,7 @@ const MenuList = styled.ul<{ $isCollapsed: boolean }>`
   padding: 0;
   margin: 0;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: visible; /* hidden에서 visible로 변경 */
   flex-grow: 1;
 
   &::-webkit-scrollbar {
@@ -218,7 +268,13 @@ const MenuList = styled.ul<{ $isCollapsed: boolean }>`
       display: flex;
       flex-direction: column;
       align-items: center;
+      overflow: visible; /* 추가 */
     `}
+`;
+
+const MenuItemContainer = styled.div`
+  position: relative;
+  width: 100%;
 `;
 
 const MenuItem = styled.li<{ $active?: boolean; $isCollapsed: boolean }>`
@@ -239,6 +295,9 @@ const MenuItem = styled.li<{ $active?: boolean; $isCollapsed: boolean }>`
   width: 100%;
   text-decoration: none;
   position: relative;
+  border: none;
+  font-family: inherit;
+  overflow: visible; /* 추가 */
 
   &:hover {
     background-color: #3a3f4e;
@@ -308,13 +367,32 @@ const FooterText = styled.span`
   text-overflow: ellipsis;
 `;
 
-const SubMenuList = styled.ul`
+const SubMenuList = styled.ul<{ $isCollapsed?: boolean; $menuId?: string }>`
   list-style: none;
   padding: 0;
   margin: 0;
+  
+  ${({ $isCollapsed }) =>
+    $isCollapsed
+      ? css`
+          position: absolute;
+          left: 100%; /* 부모 MenuItem의 오른쪽에 위치 */
+          top: 0; /* 부모 MenuItem의 상단과 정렬 */
+          background: #2c2e3c;
+          border: 1px solid #444;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+          z-index: 9999;
+          min-width: 200px;
+          overflow: visible;
+          margin-left: 5px; /* 약간의 간격 추가 */
+        `
+      : css`
+          position: relative;
+        `}
 `;
 
-const SubMenuItem = styled.li<{ $active?: boolean }>`
+const SubMenuItem = styled.li<{ $active?: boolean; $isCollapsed?: boolean }>`
   height: 40px;
   display: flex;
   align-items: center;
@@ -322,8 +400,20 @@ const SubMenuItem = styled.li<{ $active?: boolean }>`
   font-size: 14px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
-  padding-left: 80px;
+  padding-left: ${({ $isCollapsed }) => ($isCollapsed ? '15px' : '80px')};
+  padding-right: ${({ $isCollapsed }) => ($isCollapsed ? '15px' : '20px')};
   background-color: ${({ $active }) => ($active ? '#3a3f4e' : 'transparent')};
+  white-space: nowrap;
+
+  &:first-child {
+    border-top-left-radius: ${({ $isCollapsed }) => ($isCollapsed ? '8px' : '0')};
+    border-top-right-radius: ${({ $isCollapsed }) => ($isCollapsed ? '8px' : '0')};
+  }
+
+  &:last-child {
+    border-bottom-left-radius: ${({ $isCollapsed }) => ($isCollapsed ? '8px' : '0')};
+    border-bottom-right-radius: ${({ $isCollapsed }) => ($isCollapsed ? '8px' : '0')};
+  }
 
   &:hover {
     background-color: #3a3f4e;

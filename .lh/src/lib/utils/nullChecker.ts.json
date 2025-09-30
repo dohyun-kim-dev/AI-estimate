@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/lib/utils/nullChecker.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1758004991259,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1758004991259,
+            "name": "Commit-0",
+            "content": "// src/lib/utils/nullCheck.ts\n\nexport function callNullCheck(raw: any): any[] {\n    if (!Array.isArray(raw)) throw new Error('Expected an array');\n  \n    return raw.map(item => cleanValue(item));\n  }\n  \n  function cleanValue(value: any): any {\n    if (value === null || value === 'null') return '';\n    if (typeof value === 'number') return value; // 숫자는 그대로 유지 (소숫점 보존)\n    if (Array.isArray(value)) return value.map(v => cleanValue(v));\n    if (typeof value === 'object') return cleanObject(value);\n    return value;\n  }\n  \n  function cleanObject(obj: Record<string, any>): Record<string, any> {\n    const cleaned: Record<string, any> = {};\n    for (const key in obj) {\n      cleaned[key] = cleanValue(obj[key]);\n    }\n    return cleaned;\n  }"
+        }
+    ]
+}

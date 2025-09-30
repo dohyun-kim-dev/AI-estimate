@@ -397,6 +397,8 @@ const UserMngPage: React.FC = () => {
         const fromDate = params.fromDate || '2000-01-01';
         const toDate = params.toDate || dayjs().format('YYYY-MM-DD');
         
+        devLog('🔍 [fetchData 호출]', { searchKeyword, fromDate, toDate, selectedCompanyCode });
+        
         // API 호출
         const response = await getUserList({
           keyword: searchKeyword,
@@ -405,7 +407,7 @@ const UserMngPage: React.FC = () => {
           companyCode: selectedCompanyCode || '',
         });
         
-        console.log('고객 회원 조회 응답:', response);
+        devLog('✅ [fetchData 응답 받음]', response);
         
         // 응답 처리 (응답 구조에 맞게 수정)
         if (response && typeof response === 'object') {
@@ -456,12 +458,12 @@ const UserMngPage: React.FC = () => {
     setSelectedCompanyCode(company.id);
     setSelectedCompanyName(company.name);
     
-    // 고객사 변경 시 리스트 새로고침
-    setTimeout(() => {
-      if (listRef.current) {
-        listRef.current.refetch();
-      }
-    }, 100);
+    // 고객사 변경 시 자동 새로고침 제거 - 사용자가 조회 버튼을 클릭하도록 유도
+    // setTimeout(() => {
+    //   if (listRef.current) {
+    //     listRef.current.refetch();
+    //   }
+    // }, 100);
   }, []);
 
   const columns: ColumnDefinition<User>[] = useMemo(
@@ -556,15 +558,6 @@ const UserMngPage: React.FC = () => {
         themeMode="light"
         enableCompanySearch={true}
         onCompanySelect={handleCompanySelect}
-        renderMiddleContent={() => (
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            {selectedCompanyName && (
-              <div style={{ color: '#666', fontSize: '14px' }}>
-                선택된 고객사: {selectedCompanyName}
-              </div>
-            )}
-          </div>
-        )}
       />
 
 <CmsPopup

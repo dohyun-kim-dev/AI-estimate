@@ -1,4 +1,5 @@
 import { callAdminApi } from './callAdminApi';
+import { devLog } from '@/lib/utils/devLogger';
 import {
   AdminLoginParams,
   AdminGetListParams,
@@ -378,6 +379,8 @@ export async function getUserList(
   const url = `${BASE_URL}/cms/users${queryString ? `?${queryString}` : ''}`;
 
   try {
+    devLog('🚀 [getUserList API 호출]', { params, url });
+    
     const result = await callAdminApi({
       title: '고객 회원 목록 조회',
       url: url,
@@ -386,10 +389,10 @@ export async function getUserList(
       isWithToken: true,
     });
     
-    console.log('getUserList 응답:', result);
+    devLog('✅ [getUserList API 응답]', result);
     return result;
   } catch (error) {
-    console.error('getUserList 에러:', error);
+    devLog('❌ [getUserList API 에러]', error);
     throw error;
   }
 }

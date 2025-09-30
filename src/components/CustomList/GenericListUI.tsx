@@ -1,6 +1,14 @@
 "use client";
 
-import React, {useImperativeHandle, forwardRef,  useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, {
+  useImperativeHandle,
+  forwardRef,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import styled from "styled-components";
 import dayjs from "dayjs";
 import * as XLSX from "xlsx";
@@ -10,9 +18,15 @@ import DropdownCustom from "./DropdownCustom";
 import { THEME_COLORS, ThemeMode } from "@/styles/theme_colors";
 import ActionButton from "../ActionButton";
 import CompanySearchModal from "./CompanySearchModal";
+import { devError, devWarn } from "@/utils/devLogger";
 
 
 
+
+interface ButtonProp {
+  label: string;
+  onClick: () => void;
+}
 
 // Helper: getPropertyValue (기존 유지, UserListPage 버전 개선 적용)
 const getPropertyValue = <T extends object>(obj: T, path: keyof T | string): any => {
@@ -49,6 +63,7 @@ export interface FetchParams {
   fromDate?: string; // Optional
   toDate?: string; // Optional
   keyword?: string; // Optional
+  status?: string; // 상태 필터 값 추가
   companyCode?: string; // Optional - 고객사 코드
 }
 
@@ -73,31 +88,53 @@ interface InitialState {
 interface GenericListUIProps<T extends BaseRecord> {
   title: React.ReactNode;
   columns: ColumnDefinition<T>[];
-  fetchData: (params: FetchParams) => Promise<FetchResult<T>>;
+  data: T[]; // 부모에서 직접 전달받는 데이터
+  totalItems: number; // 부모에서 전달받는 총 아이템 수
+  allItems?: number; // 부모에서 전달받는 전체 아이템 수
+  isLoading?: boolean; // 부모에서 관리하는 로딩 상태
+  
   excelFileName?: string;
-  onAdd?: () => void;
-  addButtonLabel?: string;
-  deleteBtnCallBack?: () => void;
-  isShowExcelTemplate?: boolean;
-  excelTemplateBtnCallBack?: (() => void); 
-  excelUploadBtnCallBack?: (() => void);
-  // 고객사 검색 관련 props
+  customLeftContent?: React.ReactNode;
+  totalAmountLabel?: string;
+  totalAmount?: string;
+  dualAmounts?: {
+    first: { label: string; value: string };
+    second: { label: string; value: string };
+  };
+
+  statusFilter?: {
+    options: { label: string; value: string }[];
+    defaultValue?: string;
+  };
+
+  addButton?: ButtonProp;
+  deleteButton?: ButtonProp;
+  customButtons?: ButtonProp[];
+  excelTemplateButton?: ButtonProp;
+  excelUploadButton?: ButtonProp;
+
   enableCompanySearch?: boolean;
   onCompanySelect?: (company: { id: string; name: string }) => void;
-  selectedCompanyCode?: string | null; // 외부에서 관리되는 선택된 고객사 코드
-  selectedCompanyName?: string; // 외부에서 관리되는 선택된 고객사명
+  selectedCompanyCode?: string | null;
+  selectedCompanyName?: string;
+
+  // 부모에게 전달할 콜백들
+  onDateChange?: (fromDate: string, toDate: string) => void;
+  onSearchChange?: (keyword: string) => void;
+  onStatusChange?: (status: string) => void;
+  onCompanyChange?: (companyCode: string | null, companyName: string) => void; // 고객사 변경 콜백 추가
 
   initialState?: InitialState;
+  hasUrlParams?: boolean;
   keyExtractor?: (item: T, index: number) => string | number;
   enableSearch?: boolean;
   searchPlaceholder?: string;
   enableDateFilter?: boolean;
-  dateRangeOptions?: string[];
+  dateRangeOptions?: ('금월' | '지난달' | '3개월' | '6개월' | '1년' | '2년' | '지정')[];
   itemsPerPageOptions?: number[];
   themeMode?: ThemeMode;
   onRowClick?: (item: T, rowIndex: number) => void;
   renderTabs?: () => React.ReactNode;
-  // 중간 영역 커스텀 컨텐츠 prop 추가
   renderMiddleContent?: () => React.ReactNode;
 }
 
@@ -105,13 +142,12 @@ interface GenericListUIProps<T extends BaseRecord> {
 const PrimaryButton = styled(ActionButton)<{ $themeMode: ThemeMode }>`
   width: 110px;
   height: 40px;
-  background: ${({ $themeMode }) =>
-    $themeMode === 'light'
-      ? THEME_COLORS.light.primary
-      : THEME_COLORS.dark.buttonText};
-  color: ${({ $themeMode }) =>
-    $themeMode === 'light' ? '#f8f8f8' : THEME_COLORS.dark.primary};
+  background: #214a72;
+  color: #ffffff;
   border: none;
+  &:hover:not(:disabled) {
+    background-color: ${({ $themeMode }) => ($themeMode === 'light' ? '#1a3c5e' : '#1a3c5e')};
+  }
 `;
 
 // 삭제, 업로드 버튼 (어두운 톤)
@@ -121,6 +157,9 @@ const SecondaryButton = styled(ActionButton)<{ $themeMode: ThemeMode }>`
   background: ${({ $themeMode }) => ($themeMode === "light" ? "#eeeeee" : "#333333")};
   color: ${({ $themeMode }) => ($themeMode === "light" ? "#333333" : "#eeeeee")};
   border: none;
+  &:hover:not(:disabled) {
+    background-color: ${({ $themeMode }) => ($themeMode === "light" ? "#dddddd" : "#555555")};
+  }
 `;
 
 // 다운로드 버튼 (특정 색)
@@ -128,108 +167,223 @@ const DownloadButton = styled(ActionButton)`
   width: 110px;
   height: 40px;
   background: #51815a;
-  color: white;
+  color: #ffffff;
   border: none;
+  &:hover:not(:disabled) {
+    background-color: #446b4c;
+    color: #ffffff;
+  }
 `;
 
+// 상태별 색상 정의 추가
+const STATUS_COLORS = {
+  '': '#887e67', // 전체
+  ONGOING: '#4CAF50', // 진행중 - 초록색
+  ENDED: '#2196F3', // 종료 - 파란색
+  WAITING: '#FF9800', // 대기중 - 주황색
+  CANCELED: '#F44336', // 취소 - 빨간색
+};
 
-// --- The Component --- (상태 및 로직 대폭 수정)
+
+// --- The Component --- (완전히 단순화)
 const GenericListUIInner = <T extends BaseRecord>(
   {
     title,
     columns,
-    fetchData,
+    data, // 부모에서 직접 전달받는 데이터
+    totalItems, // 부모에서 전달받는 총 아이템 수
+    allItems, // 부모에서 전달받는 전체 아이템 수
+    isLoading = false, // 부모에서 관리하는 로딩 상태
     excelFileName = "DataExport",
+    customLeftContent,
+    totalAmountLabel,
+    totalAmount,
+    dualAmounts,
     initialState = {},
+    hasUrlParams = false,
     keyExtractor,
     enableSearch = true,
     searchPlaceholder = "검색어를 입력해주세요",
     enableDateFilter = true,
+    dateRangeOptions = ['금월', '지난달', '1년', '지정'],
     itemsPerPageOptions = [12, 30, 50, 100],
     themeMode = "light",
     onRowClick,
-    onAdd,
     renderTabs,
-    addButtonLabel = "추가",
-    isShowExcelTemplate,
-    excelTemplateBtnCallBack, // ⭐️ 추가된 prop
-    deleteBtnCallBack,
-    excelUploadBtnCallBack,
+    addButton,
+    deleteButton,
+    customButtons = [],
+    excelTemplateButton,
+    excelUploadButton,
+    statusFilter,
     enableCompanySearch,
     onCompanySelect,
     selectedCompanyCode: externalSelectedCompanyCode,
     selectedCompanyName: externalSelectedCompanyName,
-    renderMiddleContent // 중간 영역 커스텀 컨텐츠 prop
+    renderMiddleContent,
+    // 부모에게 전달할 콜백들
+    onDateChange,
+    onSearchChange,
+    onStatusChange,
+    onCompanyChange,
   }: GenericListUIProps<T>,
   ref: React.Ref<{ refetch: () => void }>
 ) => {
 
-  // --- 내부 상태 --- (데이터 상태 추가, API 호출 관련 상태 제거)
-  const [allData, setAllData] = useState<T[]>([]); // API로부터 받은 전체 데이터
-  const [totalItems, setTotalItems] = useState(0); // 필터링된 아이템 수 (API 메타데이터 기준)
-  const [allItems, setAllItems] = useState<number | undefined>(undefined); // 전체 아이템 수 (API 메타데이터 기준)
-  const [isLoading, setIsLoading] = useState(false);
+  // --- 내부 상태 --- (API 관련 상태 제거, UI 상태만 유지)
   const [error, setError] = useState<string | null>(null);
+
+  // 초기 날짜 설정 함수
+  const getInitialDates = useCallback(() => {
+    if (initialState.fromDate && initialState.toDate) {
+      return {
+        fromDate: initialState.fromDate,
+        toDate: initialState.toDate,
+      };
+    }
+    const today = dayjs();
+    const firstOption = dateRangeOptions[0];
+
+    switch (firstOption) {
+      case '금월':
+        return {
+          fromDate: today.startOf('month').format('YYYY-MM-DD'),
+          toDate: today.format('YYYY-MM-DD'),
+        };
+      case '지난달':
+        return {
+          fromDate: today.subtract(1, 'month').startOf('month').format('YYYY-MM-DD'),
+          toDate: today.subtract(1, 'month').endOf('month').format('YYYY-MM-DD'),
+        };
+      case '3개월':
+        return {
+          fromDate: today.subtract(3, 'month').format('YYYY-MM-DD'),
+          toDate: today.format('YYYY-MM-DD'),
+        };
+      case '6개월':
+        return {
+          fromDate: today.subtract(6, 'month').format('YYYY-MM-DD'),
+          toDate: today.format('YYYY-MM-DD'),
+        };
+      case '1년':
+        return {
+          fromDate: today.subtract(1, 'year').format('YYYY-MM-DD'),
+          toDate: today.format('YYYY-MM-DD'),
+        };
+      case '2년':
+        return {
+          fromDate: today.subtract(2, 'year').format('YYYY-MM-DD'),
+          toDate: today.format('YYYY-MM-DD'),
+        };
+      default:
+        return {
+          fromDate: today.startOf('month').format('YYYY-MM-DD'),
+          toDate: today.format('YYYY-MM-DD'),
+        };
+    }
+  }, [dateRangeOptions, initialState.fromDate, initialState.toDate]);
+
+  const initialDates = useMemo(() => getInitialDates(), [getInitialDates]);
 
   // UI 제어 상태 (페이지네이션, 정렬, 필터)
   const [currentPage, setCurrentPage] = useState(initialState.page ?? 1);
-  const [itemsPerPage, setItemsPerPage] = useState(initialState.size ?? itemsPerPageOptions[0] ?? 12);
-  const [sortKey, setSortKey] = useState<string | null>(initialState.sortKey ?? null); // 기본 정렬 없음
+  const [itemsPerPage, setItemsPerPage] = useState(
+    initialState.size ?? itemsPerPageOptions[0] ?? 12
+  );
+  const [sortKey, setSortKey] = useState<string | null>(initialState.sortKey ?? null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">(initialState.sortOrder ?? "asc");
-  const [fromDate, setFromDate] = useState(initialState.fromDate ?? dayjs().subtract(6, "month").format("YYYY-MM-DD"));
-  const [toDate, setToDate] = useState(initialState.toDate ?? dayjs().format("YYYY-MM-DD"));
-  const [searchTermInput, setSearchTermInput] = useState(initialState.keyword ?? ""); // 검색 "입력" 상태
-  const [searchKeyword, setSearchKeyword] = useState(initialState.keyword ?? ""); // 실제 "적용된" 검색어
+  const [fromDate, setFromDate] = useState(initialDates.fromDate);
+  const [toDate, setToDate] = useState(initialDates.toDate);
+  const [searchTermInput, setSearchTermInput] = useState(initialState.keyword ?? "");
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   
-  // 외부에서 관리되는 고객사 정보 사용 (내부 상태 제거)
-  const selectedCompanyCode = externalSelectedCompanyCode;
-  const selectedCompanyName = externalSelectedCompanyName || "";
+  // 상태 필터 state 추가
+  const [selectedStatus, setSelectedStatus] = useState(statusFilter?.defaultValue || '');
 
-  // --- 데이터 로딩 콜백 --- (API 호출 시점 변경)
-  const fetchDataCallback = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const params: FetchParams = {
-        keyword: searchKeyword || undefined,
-        companyCode: selectedCompanyCode || undefined,
-      };
-      if (enableDateFilter) {
-        params.fromDate = fromDate;
-        params.toDate = toDate;
-      }
-      const result = await fetchData(params); // 페이지/정렬 파라미터 없이 호출
+  // 고객사 정보를 내부 상태로 관리 (날짜처럼)
+  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string | null>(externalSelectedCompanyCode || null);
+  const [selectedCompanyName, setSelectedCompanyName] = useState<string>(externalSelectedCompanyName || "");
 
-      setAllData(result.data); // 전체 데이터 저장
-      setTotalItems(result.totalItems); // 메타데이터 저장
-      setAllItems(result.allItems); // 메타데이터 저장
-      setCurrentPage(1); // 데이터 로드 시 항상 1페이지로 리셋
-    } catch (err: any) {
-      console.error("Error fetching data:", err);
-      setError(err.message || "데이터를 불러오는 중 오류가 발생했습니다.");
-      setAllData([]); // 에러 시 데이터 초기화
-      setTotalItems(0);
-      setAllItems(undefined);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [searchKeyword, selectedCompanyCode, fromDate, toDate, enableDateFilter, fetchData]); // selectedCompanyCode 의존성 추가
-  
-  useImperativeHandle(ref, () => ({
-    refetch: () => {
-      fetchDataCallback(); // 내부 API 호출
-    },
-  }));
-  
-  // 초기 로딩
+  // 외부에서 전달받은 고객사 정보가 변경되면 내부 상태도 업데이트
   useEffect(() => {
-    fetchDataCallback();
-  }, []); // 마운트 시 1회 호출
+    if (externalSelectedCompanyCode !== undefined) {
+      setSelectedCompanyCode(externalSelectedCompanyCode);
+    }
+  }, [externalSelectedCompanyCode]);
+
+  useEffect(() => {
+    if (externalSelectedCompanyName !== undefined) {
+      setSelectedCompanyName(externalSelectedCompanyName);
+    }
+  }, [externalSelectedCompanyName]);
+
+  // --- 부모에게 전달할 콜백 함수들 ---
+  const handleRefetch = useCallback(() => {
+    // 현재 상태를 부모에게 전달하여 API 호출 요청
+    if (onDateChange) {
+      onDateChange(fromDate, toDate);
+    }
+    if (onSearchChange) {
+      onSearchChange(searchTermInput.trim());
+    }
+    if (onStatusChange) {
+      onStatusChange(selectedStatus);
+    }
+    if (onCompanyChange) {
+      onCompanyChange(selectedCompanyCode, selectedCompanyName);
+    }
+  }, [fromDate, toDate, searchTermInput, selectedStatus, selectedCompanyCode, selectedCompanyName, onDateChange, onSearchChange, onStatusChange, onCompanyChange]);
+
+  useImperativeHandle(ref, () => ({
+    refetch: handleRefetch,
+  }));
+
+  // 날짜 변경 시 상태 업데이트 및 콜백 호출
+  const handleDateChangeInternal = (newFrom: string, newTo: string) => {
+    setFromDate(newFrom);
+    setToDate(newTo);
+    if (onDateChange) {
+      onDateChange(newFrom, newTo);
+    }
+  };
+
+  // 상태 변경 핸들러 (콜백 방식)
+  const handleStatusChange = (newStatus: string) => {
+    setSelectedStatus(newStatus);
+    setCurrentPage(1); // 상태 변경시 1페이지로 이동
+    if (onStatusChange) {
+      onStatusChange(newStatus);
+    }
+  };
+
+  // 고객사 선택 핸들러 (내부 상태 업데이트)
+  const handleCompanySelect = (company: { id: string; name: string }) => {
+    setSelectedCompanyCode(company.id);
+    setSelectedCompanyName(company.name);
+    setIsCompanyModalOpen(false);
+    
+    // 부모에게도 알림 (필요한 경우)
+    if (onCompanySelect) {
+      onCompanySelect(company);
+    }
+    
+    // 고객사 변경 콜백 호출 (조회 버튼 클릭 시 사용될 데이터)
+    if (onCompanyChange) {
+      onCompanyChange(company.id, company.name);
+    }
+  };
+
+  // --- 데이터 변경 감지 및 페이지 리셋 ---
+  useEffect(() => {
+    // 데이터가 변경되면 첫 페이지로 이동 (단, 정렬이나 페이지 변경으로 인한 것이 아닌 경우만)
+    setCurrentPage(1);
+  }, [data]); // data가 변경될 때마다 실행
 
   // --- 클라이언트 측 데이터 처리 --- (정렬, 페이지네이션)
   const sortedData = useMemo(() => {
-    const sortableData = [...allData]; // 전체 데이터 복사
+    if (!data || data.length === 0) return [];
+    
+    const sortableData = [...data]; // 부모에서 이미 필터링된 데이터 사용
     if (sortKey) {
       sortableData.sort((a, b) => {
         const valA = getPropertyValue(a, sortKey);
@@ -237,23 +391,28 @@ const GenericListUIInner = <T extends BaseRecord>(
         let comparison = 0;
         if (valA === null || valA === undefined) comparison = -1;
         else if (valB === null || valB === undefined) comparison = 1;
-        else if (dayjs.isDayjs(valA) && dayjs.isDayjs(valB)) comparison = valA.valueOf() - valB.valueOf();
-        else if (typeof valA === "string" && typeof valB === "string") comparison = valA.localeCompare(valB);
+        else if (dayjs.isDayjs(valA) && dayjs.isDayjs(valB))
+          comparison = valA.valueOf() - valB.valueOf();
+        else if (typeof valA === "string" && typeof valB === "string")
+          comparison = valA.localeCompare(valB);
         else if (typeof valA === "number" && typeof valB === "number") comparison = valA - valB;
         else comparison = String(valA).localeCompare(String(valB));
         return sortOrder === "asc" ? comparison : comparison * -1;
       });
     }
     return sortableData;
-  }, [allData, sortKey, sortOrder]);
+  }, [data, sortKey, sortOrder]);
 
   const paginatedData = useMemo(() => {
+    if (!sortedData || sortedData.length === 0) return [];
+    
     const startIndex = (currentPage - 1) * itemsPerPage;
     return sortedData.slice(startIndex, startIndex + itemsPerPage);
   }, [sortedData, currentPage, itemsPerPage]);
 
   // --- 파생 상태 (페이지네이션) ---
-  // totalItems는 API 결과의 메타데이터 사용 (필터링된 개수)
+  // --- 파생 상태 (페이지네이션) ---
+  // totalItems는 부모에서 전달받은 값 사용 (이미 필터링된 개수)
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const displayTotalItems = totalItems;
   const displayAllItems = allItems ?? totalItems;
@@ -280,118 +439,67 @@ const GenericListUIInner = <T extends BaseRecord>(
     setCurrentPage(1); // 정렬 시 1페이지로
   };
 
-  // 날짜 변경: 상태 업데이트 + API 호출
-  const handleDateChangeInternal = (newFrom: string, newTo: string) => {
-    setFromDate(newFrom);
-    setToDate(newTo);
-    
-    // 새로운 날짜로 즉시 API 호출
-    setIsLoading(true);
-    setError(null);
-    const params: FetchParams = {
-      keyword: searchKeyword || undefined,
-      companyCode: selectedCompanyCode || undefined,
-    };
-    if (enableDateFilter) {
-      params.fromDate = newFrom;
-      params.toDate = newTo;
-    }
-    
-    fetchData(params).then(result => {
-      setAllData(result.data);
-      setTotalItems(result.totalItems);
-      setAllItems(result.allItems);
-      setCurrentPage(1);
-    }).catch(err => {
-      console.error("Error fetching data:", err);
-      setError(err.message || "데이터를 불러오는 중 오류가 발생했습니다.");
-      setAllData([]);
-      setTotalItems(0);
-      setAllItems(undefined);
-    }).finally(() => {
-      setIsLoading(false);
-    });
-  };
-
   // 검색어 입력: 입력 상태만 업데이트 (API 호출 없음)
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTermInput(e.target.value);
   };
-  // 조회 버튼 클릭: 적용된 검색어 업데이트 + API 호출
+  // 조회 버튼 클릭: 부모에게 검색 콜백
   const handleImmediateSearch = () => {
     const newKeyword = searchTermInput.trim();
-    setSearchKeyword(newKeyword);
-    
-    // 새로운 키워드로 즉시 API 호출
-    setIsLoading(true);
-    setError(null);
-    const params: FetchParams = {
-      keyword: newKeyword || undefined,
-      companyCode: selectedCompanyCode || undefined,
-    };
-    if (enableDateFilter) {
-      params.fromDate = fromDate;
-      params.toDate = toDate;
+    if (onSearchChange) {
+      onSearchChange(newKeyword);
     }
-    
-    fetchData(params).then(result => {
-      setAllData(result.data);
-      setTotalItems(result.totalItems);
-      setAllItems(result.allItems);
-      setCurrentPage(1);
-    }).catch(err => {
-      console.error("Error fetching data:", err);
-      setError(err.message || "데이터를 불러오는 중 오류가 발생했습니다.");
-      setAllData([]);
-      setTotalItems(0);
-      setAllItems(undefined);
-    }).finally(() => {
-      setIsLoading(false);
-    });
   };
 
 
-  
-
   // 엑셀 다운로드 핸들러 (수정: 클라이언트 데이터 사용)
   const handleDownloadClick = () => {
-    setIsLoading(true); // 로딩 표시 (데이터 준비 중)
     try {
       // 정렬된 전체 데이터 사용 (페이지네이션 전)
       const dataToDownload = sortedData;
 
       if (!dataToDownload || dataToDownload.length === 0) {
-        console.warn("다운로드할 데이터가 없습니다.");
-        alert("다운로드할 데이터가 없습니다."); // 임시
+        devWarn('다운로드할 데이터가 없습니다.');
+        alert('다운로드할 데이터가 없습니다.'); // 임시
         return;
       }
 
-      // 컬럼 정보를 사용하여 데이터 포맷팅 (기존 로직 유지)
-      const formattedData = dataToDownload.map((item) => {
+      // 컬럼 정보를 사용하여 데이터 포맷팅 (showColumn이 false인 컬럼은 제외)
+      const formattedData = dataToDownload.map(item => {
         const row: { [key: string]: any } = {};
-        columns.forEach((col) => {
+        columns.forEach(col => {
+          // showColumn이 false인 경우 엑셀에서 제외 (기본값은 true)
+          if (col.showColumn === false) {
+            return;
+          }
+          
           if (col.accessor) {
             let value = getPropertyValue(item, col.accessor);
-            if (col.formatter && typeof col.formatter === "function") {
-              const formattedVal = col.formatter(value, item, -1);
-              if (
-                typeof formattedVal === "string" ||
-                typeof formattedVal === "number" ||
-                typeof formattedVal === "boolean"
-              ) {
-                value = formattedVal;
-              } else if (value instanceof Date || dayjs.isDayjs(value)) {
-                value = dayjs(value).format("YYYY-MM-DD HH:mm:ss");
-              } else if (typeof value === "boolean") {
-                value = value ? "Y" : "N";
-              }
-            } else {
-              if (value instanceof Date) value = dayjs(value).format("YYYY-MM-DD HH:mm:ss");
-              else if (typeof value === "boolean") value = value ? "Y" : "N";
-              else if (value === null || value === undefined) value = "";
+            
+            // Excel 전용 포맷터가 있는 경우 사용
+            if (col.excelFormatter && typeof col.excelFormatter === 'function') {
+              value = col.excelFormatter(value, item);
             }
-            const headerName = typeof col.header === "string" ? col.header.replace(/\n/g, " ") : String(col.accessor);
-            row[headerName] = value;
+            // Excel 전용 포맷터가 없는 경우, 원본 값 사용 (기본 포맷팅만 적용)
+            else {
+              // 기본 데이터 타입 포맷팅만 적용
+              if (value instanceof Date) value = dayjs(value).format('YYYY-MM-DD HH:mm:ss');
+              else if (typeof value === 'boolean') value = value ? 'Y' : 'N';
+              else if (value === null || value === undefined) value = '';
+              // formatter가 있어도 Excel에서는 원본 값 사용
+            }
+            
+            const headerName =
+              typeof col.header === 'string'
+                ? col.header.replace(/\n/g, ' ')
+                : String(col.accessor);
+            
+            // URL 패턴을 감지하여 하이퍼링크로 변환
+            if (typeof value === 'string' && (value.startsWith('http://') || value.startsWith('https://'))) {
+              row[headerName] = { t: 's', v: value, l: { Target: value } };
+            } else {
+              row[headerName] = value;
+            }
           }
         });
         return row;
@@ -399,14 +507,12 @@ const GenericListUIInner = <T extends BaseRecord>(
 
       const ws = XLSX.utils.json_to_sheet(formattedData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-      XLSX.writeFile(wb, `${excelFileName}_${dayjs().format("YYYYMMDD")}.xlsx`);
-      alert("엑셀이 다운로드되었습니다."); // 임시
+      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+      XLSX.writeFile(wb, `${excelFileName}_${dayjs().format('YYYYMMDD')}.xlsx`);
+      alert('엑셀이 다운로드되었습니다.'); // 임시
     } catch (err) {
-      console.error("Excel download failed:", err);
-      alert("엑셀 다운로드 중 오류가 발생했습니다."); // 임시
-    } finally {
-      setIsLoading(false);
+      devError('Excel download failed:', err);
+      alert('엑셀 다운로드 중 오류가 발생했습니다.'); // 임시
     }
   };
 
@@ -431,177 +537,237 @@ const GenericListUIInner = <T extends BaseRecord>(
   return (
     <Container $themeMode={themeMode}>
       <TopHeader>
-        <TitleContainer>
-          {typeof title === "string" ? (
-            <CMSTitle $themeMode={themeMode}>{title}</CMSTitle>
-          ) : (
-            title /* ReactNode 직접 렌더링 */
-          )}
-        </TitleContainer>
-        {renderTabs && <TabsWrapper>{renderTabs()}</TabsWrapper>}
+        <HeaderMainRow>
+          <TitleContainer>
+            {typeof title === "string" ? (
+              <CMSTitle $themeMode={themeMode}>{title}</CMSTitle>
+            ) : (
+              title /* ReactNode 직접 렌더링 */
+            )}
+          </TitleContainer>
           {enableCompanySearch && (
-                  <Flex>
-                    <CompanySearchInput
-                      type="text"
-                      placeholder="고객사를 선택하세요"
-                      value={selectedCompanyName || ''}
-                      readOnly
-                      onClick={() => setIsCompanyModalOpen(true)}
-                      $themeMode={themeMode}
-                    />
-                    <SearchButton onClick={() => setIsCompanyModalOpen(true)} $themeMode={themeMode}>
-                      검색
-                    </SearchButton>
-                  </Flex>
-                )}
+            <CompanySearchContainer>
+              <Flex>
+                <CompanySearchInput
+                  type="text"
+                  placeholder="고객사를 선택하세요"
+                  value={selectedCompanyName || ''}
+                  readOnly
+                  onClick={() => setIsCompanyModalOpen(true)}
+                  $themeMode={themeMode}
+                />
+                <SearchButton onClick={() => setIsCompanyModalOpen(true)} $themeMode={themeMode}>
+                  검색
+                </SearchButton>
+              </Flex>
+            </CompanySearchContainer>
+          )}
+        </HeaderMainRow>
+        {renderTabs && <TabsWrapper>{renderTabs()}</TabsWrapper>}
       </TopHeader>
 
       <ControlHeader>
-      <APIControls $hasDateFilter={enableDateFilter}>
-          {enableDateFilter && (
-            <DateRangePickerContainer>
-              <GenericDateRangePicker
-                initialFromDate={fromDate}
-                initialToDate={toDate}
-                onDateChange={handleDateChangeInternal}
+        <APIControls>
+          <LeftFilterControls>
+            {enableDateFilter && (
+              <DateRangePickerContainer>
+                <GenericDateRangePicker
+                  initialFromDate={fromDate}
+                  initialToDate={toDate}
+                  onDateChange={handleDateChangeInternal}
+                  themeMode={themeMode}
+                  rangeOptions={dateRangeOptions}
+                  hasUrlParams={hasUrlParams}
+                />
+              </DateRangePickerContainer>
+            )}
+          </LeftFilterControls>
+          
+          <RightFilterControls>
+            {statusFilter && (
+              <StatusFilterContainer>
+                <StatusSelect
+                  value={selectedStatus}
+                  onChange={e => handleStatusChange(e.target.value)}
+                  $themeMode={themeMode}
+                  style={{
+                    color:
+                      STATUS_COLORS[selectedStatus as keyof typeof STATUS_COLORS] ||
+                      STATUS_COLORS[''],
+                  }}
+                >
+                  {statusFilter.options.map(option => (
+                    <option
+                      key={option.value}
+                      value={option.value}
+                      style={{
+                        color:
+                          STATUS_COLORS[option.value as keyof typeof STATUS_COLORS] ||
+                          STATUS_COLORS[''],
+                      }}
+                    >
+                      {option.label}
+                    </option>
+                  ))}
+                </StatusSelect>
+              </StatusFilterContainer>
+            )}
+            {enableSearch && (
+              <SearchContainer>
+                <SearchInput
+                  type="text"
+                  placeholder={searchPlaceholder}
+                  value={searchTermInput}
+                  onChange={handleSearchInputChange}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleImmediateSearch();
+                  }}
+                  $themeMode={themeMode}
+                />
+                <SearchButton onClick={handleImmediateSearch} $themeMode={themeMode}>
+                  조회
+                </SearchButton>
+              </SearchContainer>
+            )}
+          </RightFilterControls>
+        </APIControls>
+
+        <EventControls>
+          <LeftControls>
+            {customLeftContent ? (
+              <>
+                {customLeftContent}
+                {addButton && (
+                  <div style={{ marginLeft: '20px' }}>
+                    <PrimaryButton $themeMode={themeMode} onClick={addButton.onClick}>
+                      {addButton.label}
+                    </PrimaryButton>
+                  </div>
+                )}
+              </>
+            ) : dualAmounts ? (
+              <DualAmountsContainer>
+                <TotalAmount>
+                  <TotalAmountLabel>{dualAmounts.first.label}</TotalAmountLabel>
+                  <TotalAmountValue>{dualAmounts.first.value}</TotalAmountValue>
+                </TotalAmount>
+                <TotalAmount>
+                  <TotalAmountLabel>{dualAmounts.second.label}</TotalAmountLabel>
+                  <TotalAmountValue>{dualAmounts.second.value}</TotalAmountValue>
+                </TotalAmount>
+              </DualAmountsContainer>
+            ) : totalAmountLabel && totalAmount ? (
+              <TotalAmount>
+                <TotalAmountLabel>{totalAmountLabel}</TotalAmountLabel>
+                <TotalAmountValue>{totalAmount}</TotalAmountValue>
+              </TotalAmount>
+            ) : null}
+
+            {!customLeftContent && !totalAmount && !dualAmounts && addButton && (
+              <PrimaryButton $themeMode={themeMode} onClick={addButton.onClick}>
+                {addButton.label}
+              </PrimaryButton>
+            )}
+
+            {deleteButton && (
+              <SecondaryButton $themeMode={themeMode} onClick={deleteButton.onClick}>
+                {deleteButton.label}
+              </SecondaryButton>
+            )}
+          </LeftControls>
+
+          {renderMiddleContent && (
+            <MiddleControls>
+              {renderMiddleContent()}
+            </MiddleControls>
+          )}
+
+          <RightControls>
+            {/* totalAmount 또는 dualAmounts가 있을 때는 addButton을 여기에 표시 */}
+            {(totalAmount || dualAmounts) && addButton && (
+              <PrimaryButton $themeMode={themeMode} onClick={addButton.onClick}>
+                {addButton.label}
+              </PrimaryButton>
+            )}
+            {/* 커스텀 버튼들 렌더링 */}
+            {customButtons.map((button, index) => (
+              <PrimaryButton key={index} $themeMode={themeMode} onClick={button.onClick}>
+                {button.label}
+              </PrimaryButton>
+            ))}
+            {excelTemplateButton && (
+              <PrimaryButton $themeMode={themeMode} onClick={excelTemplateButton.onClick}>
+                {excelTemplateButton.label}
+              </PrimaryButton>
+            )}
+            {excelUploadButton && (
+              <SecondaryButton $themeMode={themeMode} onClick={excelUploadButton.onClick}>
+                {excelUploadButton.label}
+              </SecondaryButton>
+            )}
+
+            <DownloadButton
+              onClick={handleDownloadClick}
+              $themeMode={themeMode}
+              disabled={isLoading}
+            >
+              {isLoading ? '다운로드 중...' : '엑셀 다운로드'}
+            </DownloadButton>
+
+            <PaginationControls>
+              <InfoText $themeMode={themeMode} style={{ marginRight: '16px' }}>
+                총 {displayAllItems.toLocaleString()}개 중 {displayTotalItems.toLocaleString()}개
+              </InfoText>
+              <NavButton
+                onClick={() => handlePageNumChange(currentPage - 1)}
+                disabled={currentPage <= 1 || isLoading}
+                $themeMode={themeMode}
+              >
+                &lt;
+              </NavButton>
+              <PageBox $themeMode={themeMode}>
+                {currentPage} / {totalPages > 0 ? totalPages : 1}
+              </PageBox>
+              <NavButton
+                onClick={() => handlePageNumChange(currentPage + 1)}
+                disabled={currentPage >= totalPages || isLoading}
+                $themeMode={themeMode}
+              >
+                &gt;
+              </NavButton>
+              <DropdownCustom
+                value={itemsPerPage}
+                onChange={handleItemsPerPageChange}
+                options={itemsPerPageOptions}
                 themeMode={themeMode}
               />
-            </DateRangePickerContainer>
-          )}{
-            (enableCompanySearch || enableSearch) && (
-              <SearchContainer>
-              
-                {enableSearch && (
-                  <Flex>
-                    <SearchInput
-                      type="text"
-                      placeholder={searchPlaceholder}
-                      value={searchTermInput}
-                      onChange={handleSearchInputChange}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleImmediateSearch();
-                      }}
-                      $themeMode={themeMode}
-                    />
-                    <SearchButton onClick={handleImmediateSearch} $themeMode={themeMode}>
-                      조회
-                    </SearchButton>
-                  </Flex>
-                )}
-              </SearchContainer>
-            )
-          }
-          
+              <InfoText $themeMode={themeMode} style={{ marginLeft: '5px' }}>
+                개씩 보기
+              </InfoText>
+            </PaginationControls>
+          </RightControls>
+        </EventControls>
+
           {/* 고객사 검색 모달 */}
           {enableCompanySearch && (
             <CompanySearchModal
               isOpen={isCompanyModalOpen}
               onClose={() => setIsCompanyModalOpen(false)}
               onSelect={(company) => {
-                // 외부 콜백으로 고객사 선택 처리 위임
-                if (onCompanySelect) {
-                  onCompanySelect({ id: company.companyCode, name: company.companyName });
-                }
-                // 자동 데이터 재로드는 외부에서 처리하므로 제거
+                // 내부 핸들러 사용 (날짜처럼 내부 상태 관리)
+                handleCompanySelect({ id: company.companyCode, name: company.companyName });
               }}
               themeMode={themeMode}
             />
           )}
-        </APIControls>
-
-        <EventControls>
-  <LeftControls>
-
-  {onAdd && (
-      <PrimaryButton $themeMode={themeMode} onClick={onAdd}>
-        {addButtonLabel}
-      </PrimaryButton>
-    )}
-    
-    {deleteBtnCallBack && (
-      <SecondaryButton $themeMode={themeMode} onClick={deleteBtnCallBack}>삭제</SecondaryButton>
-    )}
-
-  </LeftControls>
-
-  {renderMiddleContent && (
-    <MiddleControls>
-      {renderMiddleContent()}
-    </MiddleControls>
-  )}
-
-  <RightControls>
-
-    {isShowExcelTemplate && (
-      <PrimaryButton $themeMode={themeMode} onClick={excelTemplateBtnCallBack}>
-        엑셀 템플릿
-      </PrimaryButton>
-    )}
-    {excelUploadBtnCallBack && (
-      <SecondaryButton $themeMode={themeMode} onClick={excelUploadBtnCallBack}>
-        엑셀 업로드
-      </SecondaryButton>
-    )}
-    <DownloadButton onClick={handleDownloadClick} $themeMode={themeMode} disabled={isLoading}>
-      {isLoading ? "다운로드 중..." : "엑셀 다운로드"}
-    </DownloadButton>
-
-    <PaginationControls>
-      전체 {displayTotalItems}건 중 {displayAllItems}건
-      <ItemsPage>
-      <NavButton
-        onClick={() => handlePageNumChange(currentPage - 1)}
-        disabled={currentPage <= 1 || isLoading}
-        $themeMode={themeMode}>
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="25" viewBox="0 0 24 25" fill="none" style={{ transform: 'rotate(180deg)' }}>
-          <g clipPath="url(#clip0_1131_2271_left)">
-            <path fillRule="evenodd" clipRule="evenodd" d="M15.7064 11.7931C15.8938 11.9806 15.9992 12.2349 15.9992 12.5001C15.9992 12.7652 15.8938 13.0195 15.7064 13.2071L10.0494 18.8641C9.95712 18.9596 9.84678 19.0358 9.72477 19.0882C9.60277 19.1406 9.47155 19.1682 9.33877 19.1693C9.20599 19.1705 9.07431 19.1452 8.95141 19.0949C8.82852 19.0446 8.71686 18.9703 8.62297 18.8765C8.52908 18.7826 8.45483 18.6709 8.40454 18.548C8.35426 18.4251 8.32896 18.2934 8.33012 18.1607C8.33127 18.0279 8.35886 17.8967 8.41126 17.7747C8.46367 17.6526 8.53986 17.5423 8.63537 17.4501L13.5854 12.5001L8.63537 7.55006C8.45321 7.36146 8.35241 7.10885 8.35469 6.84666C8.35697 6.58446 8.46214 6.33365 8.64755 6.14824C8.83296 5.96283 9.08377 5.85766 9.34597 5.85538C9.60816 5.85311 9.86076 5.9539 10.0494 6.13606L15.7064 11.7931Z" fill="currentColor"/>
-          </g>
-          <defs>
-            <clipPath id="clip0_1131_2271_left">
-              <rect width="24" height="24" fill="white" transform="translate(0 0.5)"/>
-            </clipPath>
-          </defs>
-        </svg>
-      </NavButton>
-      <PageBox $themeMode={themeMode}>
-        {currentPage} / {totalPages > 0 ? totalPages : 1}
-      </PageBox>
-      <NavButton
-        onClick={() => handlePageNumChange(currentPage + 1)}
-        disabled={currentPage >= totalPages || isLoading}
-        $themeMode={themeMode}>
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="25" viewBox="0 0 24 25" fill="none">
-          <g clipPath="url(#clip0_1131_2271_right)">
-            <path fillRule="evenodd" clipRule="evenodd" d="M15.7064 11.7931C15.8938 11.9806 15.9992 12.2349 15.9992 12.5001C15.9992 12.7652 15.8938 13.0195 15.7064 13.2071L10.0494 18.8641C9.95712 18.9596 9.84678 19.0358 9.72477 19.0882C9.60277 19.1406 9.47155 19.1682 9.33877 19.1693C9.20599 19.1705 9.07431 19.1452 8.95141 19.0949C8.82852 19.0446 8.71686 18.9703 8.62297 18.8765C8.52908 18.7826 8.45483 18.6709 8.40454 18.548C8.35426 18.4251 8.32896 18.2934 8.33012 18.1607C8.33127 18.0279 8.35886 17.8967 8.41126 17.7747C8.46367 17.6526 8.53986 17.5423 8.63537 17.4501L13.5854 12.5001L8.63537 7.55006C8.45321 7.36146 8.35241 7.10885 8.35469 6.84666C8.35697 6.58446 8.46214 6.33365 8.64755 6.14824C8.83296 5.96283 9.08377 5.85766 9.34597 5.85538C9.60816 5.85311 9.86076 5.9539 10.0494 6.13606L15.7064 11.7931Z" fill="currentColor"/>
-          </g>
-          <defs>
-            <clipPath id="clip0_1131_2271_right">
-              <rect width="24" height="24" fill="white" transform="translate(0 0.5)"/>
-            </clipPath>
-          </defs>
-        </svg>
-      </NavButton>
-      </ItemsPage>
-      <DropdownCustom
-        value={itemsPerPage}
-        onChange={handleItemsPerPageChange}
-        options={itemsPerPageOptions}
-        themeMode={themeMode}
-      />
-      <ItemsPerPageText $themeMode={themeMode}>개씩 보기</ItemsPerPageText>
-    </PaginationControls>
-  </RightControls>
-</EventControls>
-
       </ControlHeader>
 
         <TableContainer $themeMode={themeMode}>
           <GenericDataTable
             data={paginatedData}
             columns={columns}
-            isLoading={false}
-            error={null}
+            isLoading={isLoading}
+            // error={error}
             onRowClick={handleRowClickInternal}
             onHeaderClick={handleHeaderClick}
             sortKey={sortKey}
@@ -624,30 +790,34 @@ export default GenericListUI;
 
 // --- 스타일 컴포넌트 (레이아웃 관련 수정) ---
 
-
-
 const Container = styled.div<{ $themeMode: ThemeMode }>`
   min-width: 1200px;
   width: 100%;
-  min-height: 100%;
+  min-height: calc(100vh - 140px);
   box-sizing: border-box;
-  padding: 2px 30px 100px 30px;
-  background-color: ${({ $themeMode }) =>
-    $themeMode === "light" ? THEME_COLORS.light.background : THEME_COLORS.dark.background};
+  padding: 0px 20px 20px 20px;
+  overflow: visible; /* 드롭다운이 컨테이너를 벗어나서 보이도록 */
   color: ${({ $themeMode }) =>
-    $themeMode === "light" ? THEME_COLORS.light.text : THEME_COLORS.dark.text};
-  overflow-x: auto;
-  overflow-y: auto;
+    $themeMode === 'light' ? THEME_COLORS.light.text : THEME_COLORS.dark.text};
 `;
-
-
 
 const TopHeader = styled.div`
   display: flex;
-  // flex-direction: column;
-  justify-content: space-between;
+  flex-direction: column;
   margin-bottom: 20px;
   gap: 15px;
+`;
+
+const HeaderMainRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+`;
+
+const CompanySearchContainer = styled.div`
+  display: flex;
+  align-items: center;
 `;
 
 const TitleContainer = styled.div`
@@ -655,34 +825,75 @@ const TitleContainer = styled.div`
 `;
 
 const ControlHeader = styled.div`
+  width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  /* background-color: #f0ede6; */
   margin: 20px 0;
   gap: 20px;
+  overflow: visible; /* 드롭다운이 보이도록 */
+  position: relative; /* 상대 위치 설정 */
 `;
 
-const APIControls = styled.div<{ $hasDateFilter: boolean }>`
+const APIControls = styled.div`
   display: flex;
-  justify-content: ${({ $hasDateFilter }) => ($hasDateFilter ? 'space-between' : 'flex-end')};
-  align-items: start;
+  justify-content: space-between;
+  align-items: center;
+  /* background-color: #756b55; */
   flex-wrap: wrap;
+  /* padding: 10px; */
+  border-radius: 8px;
   gap: 15px;
+`;
+
+const LeftFilterControls = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 15px;
+`;
+
+const RightFilterControls = styled.div`
+  display: flex;
+  align-items: center;
+  /* gap: 15px; */
 `;
 
 const EventControls = styled.div`
   display: flex;
   justify-content: space-between;
-
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 20px;
+  min-width: min-content;
+  overflow-x: auto;
+  overflow-y: visible; /* 수직 overflow를 visible로 설정 */
+  position: relative; /* 상대 위치 설정 */
+
+  /* 스크롤바 숨기기 */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 `;
 
 const LeftControls = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+`;
+
+const RightControls = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  overflow: visible; /* 드롭다운이 보이도록 설정 */
+  position: relative; /* 상대 위치 설정 */
 `;
 
 const MiddleControls = styled.div`
@@ -694,20 +905,13 @@ const MiddleControls = styled.div`
   justify-content: center;
 `;
 
-const RightControls = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-`;
-
 const Flex = styled.div`
 display:flex;
 margin-bottom : 8px;
-`
+`;
 
 const SearchContainer = styled.div`
   display: flex;
-  flex-direction: column;
   align-items: center;
 `;
 
@@ -761,16 +965,12 @@ const CompanySearchInput = styled(BaseInput)`
 `;
 
 const SearchButton = styled.button<{ $themeMode: ThemeMode }>`
-  width: 65px;
+  width: 60px;
   height: 40px;
-  margin-left: 10px;
-  background: ${({ $themeMode }) =>
-    $themeMode === "light" ? THEME_COLORS.light.primary : THEME_COLORS.dark.buttonBackground};
-  color: ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.buttonText : THEME_COLORS.dark.buttonText)};
-  border: 1px solid
-    ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.borderColor : THEME_COLORS.dark.borderColor)};
-  border-left: none;
+  background: #214a72;
+  border: none;
   border-radius: 0;
+  color: #fff;
   font-weight: 500;
   font-size: 14px;
   cursor: pointer;
@@ -781,120 +981,56 @@ const SearchButton = styled.button<{ $themeMode: ThemeMode }>`
   }
 `;
 
-const ListInfo = styled.div<{ $themeMode: ThemeMode }>`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  margin-right: 10px;
-  color: ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.text : THEME_COLORS.dark.text)};
-  font-size: 14px;
-`;
-
-
-
-const ExcelButton = styled(ActionButton)`
-  background: ${({ $themeMode }) => ($themeMode === "light" ? "#f8f8f8" : THEME_COLORS.dark.primary)};
-  color: ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.primary : THEME_COLORS.dark.buttonText)};
-  border: none;
-  &:hover:not(:disabled) {
-    background-color: ${({ $themeMode }) => ($themeMode === "light" ? "#e8e8e8" : "#424451")};
-  }
-`;
-
 const PaginationControls = styled.div`
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: #555555;
-`;
-
-const Cnt = styled.div<{ $themeMode: ThemeMode }>`
-  font-size: 14px;
-  color: ${({ $themeMode }) => ($themeMode === "light" ? "#555555" : THEME_COLORS.dark.text)};
-  white-space: nowrap;
+  gap: 8px;
+  overflow: visible; /* 드롭다운이 보이도록 설정 */
+  position: relative; /* 상대 위치 설정 */
 `;
 
 const PageBox = styled.div<{ $themeMode: ThemeMode }>`
   margin: 0 5px;
   font-size: 14px;
-  color: ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.text : THEME_COLORS.dark.text)};
+  color: #887e67;
   white-space: nowrap;
 `;
 
-const ItemsPerPageText = styled.p<{ $themeMode: ThemeMode }>`
+const InfoText = styled.p<{ $themeMode: ThemeMode }>`
   margin: 0;
-  margin-left: 5px;
   font-size: 14px;
-  color: ${({ $themeMode }) => ($themeMode === "light" ? "#555555" : THEME_COLORS.dark.text)};
+  color: #887e67;
   white-space: nowrap;
 `;
 
 const TableContainer = styled.div<{ $themeMode: ThemeMode }>`
   width: 100%;
   min-width: 1000px;
+  max-width: 100%; /* 컨테이너를 벗어나지 않도록 최대 너비 제한 */
   border: 1px solid
-    ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.borderColor : THEME_COLORS.dark.borderColor)};
+    ${({ $themeMode }) =>
+      $themeMode === 'light' ? THEME_COLORS.light.borderColor : THEME_COLORS.dark.borderColor};
   border-radius: 4px;
   background: ${({ $themeMode }) =>
-    $themeMode === "light" ? THEME_COLORS.light.tableBackground : THEME_COLORS.dark.tableBackground};
-  overflow: visible; /* 가로/세로 스크롤 방지 */
+    $themeMode === 'light'
+      ? THEME_COLORS.light.tableBackground
+      : THEME_COLORS.dark.tableBackground};
+  overflow: hidden; /* 테이블이 컨테이너를 벗어나지 않도록 */
+  table-layout: fixed; /* 테이블 레이아웃을 고정하여 컬럼 너비 제어 */
+
+  /* 내부 테이블 요소들도 너비 제한 */
+  table {
+    width: 100%;
+    table-layout: fixed;
+  }
 
   @media (max-width: 1400px) {
     min-width: 1000px;
   }
 `;
 
-
-const LoadingContainer = styled.div<{ $themeMode: ThemeMode }>`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 300px;
-  width: 100%;
-  background-color: ${({ $themeMode }) =>
-    $themeMode === "light" ? THEME_COLORS.light.tableBackground : THEME_COLORS.dark.tableBackground};
-`;
-
-const LoadingSpinner = styled.div<{ $themeMode: ThemeMode }>`
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top: 4px solid
-    ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.primary : THEME_COLORS.dark.accent)};
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
-  }
-`;
-
-const ErrorContainer = styled.div<{ $themeMode: ThemeMode }>`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 300px;
-  width: 100%;
-  background-color: ${({ $themeMode }) =>
-    $themeMode === "light" ? THEME_COLORS.light.tableBackground : THEME_COLORS.dark.tableBackground};
-`;
-
-const ErrorMessage = styled.p<{ $themeMode: ThemeMode }>`
-  color: #d32f2f;
-  font-size: 16px;
-  text-align: center;
-`;
-
-
 const DateRangePickerContainer = styled.div`
-display: flex;  
-align-items: flex-start;
+  /* 특별한 스타일 불필요 */
 `;
 
 const TabsWrapper = styled.div`
@@ -906,45 +1042,133 @@ const CMSTitle = styled.h1<{ $themeMode: ThemeMode }>`
   font-weight: bold;
   margin: 0;
   margin-bottom: 0;
-  color: ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.titleColor : THEME_COLORS.dark.titleColor)};
-`;
-
-const ItemsPage = styled.div`
-  display: flex;
-  margin: 0 16px;
-  gap: 8px;
+  color: ${({ $themeMode }) =>
+    $themeMode === 'light' ? THEME_COLORS.light.titleColor : THEME_COLORS.dark.titleColor};
 `;
 
 const NavButton = styled.button<{ $themeMode: ThemeMode }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   cursor: pointer;
   border: 1px solid
-    ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.borderColor : THEME_COLORS.dark.borderColor)};
-  background-color: ${({ $themeMode }) => ($themeMode === "light" ? "#FFFFFF" : THEME_COLORS.dark.secondary)};
-  color: ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.text : THEME_COLORS.dark.text)};
+    ${({ $themeMode }) =>
+      $themeMode === 'light' ? THEME_COLORS.light.borderColor : THEME_COLORS.dark.borderColor};
+  background-color: #ddd8c7;
+  color: ${({ $themeMode }) =>
+    $themeMode === 'light' ? THEME_COLORS.light.text : THEME_COLORS.dark.text};
   border-radius: 4px;
-  padding: 0;
-  transition: background-color 0.2s, border-color 0.2s;
-
-  svg {
-    width: 24px;
-    height: 24px;
-  }
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
 
   &:hover:not(:disabled) {
     opacity: 0.8;
-    border-color: ${({ $themeMode }) => ($themeMode === "light" ? "#999" : "#AAAAAA")};
-    background-color: ${({ $themeMode }) => ($themeMode === "light" ? "#f8f8f8" : "#424451")};
+    border-color: ${({ $themeMode }) => ($themeMode === 'light' ? '#999' : '#AAAAAA')};
+    background-color: ${({ $themeMode }) => ($themeMode === 'light' ? '#f8f8f8' : '#424451')};
   }
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    border-color: ${({ $themeMode }) => ($themeMode === "light" ? "#EEEEEE" : "#555555")};
-    color: ${({ $themeMode }) => ($themeMode === "light" ? "#AAAAAA" : "#777777")};
+    border-color: ${({ $themeMode }) => ($themeMode === 'light' ? '#EEEEEE' : '#555555')};
+    color: ${({ $themeMode }) => ($themeMode === 'light' ? '#AAAAAA' : '#777777')};
+  }
+`;
+
+const DualAmountsContainer = styled.div`
+  display: flex;
+  gap: 24px;
+  align-items: center;
+`;
+
+const TotalAmount = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  color: #97601a;
+  font-weight: 500;
+`;
+
+const TotalAmountLabel = styled.span`
+  font-size: 24px;
+  color: black;
+  font-weight: 600;
+  margin-right: 10px;
+`;
+
+const TotalAmountValue = styled.span`
+  font-size: 24px;
+  color: #db6220;
+  font-weight: 600;
+`;
+
+// 스타일 컴포넌트 추가
+const StatusFilterContainer = styled.div`
+  margin: 0 10px;
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 16px;
+    background-image: url('/icon_burger.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    transform: translateY(-50%) rotate(270deg);
+    pointer-events: none;
+  }
+`;
+
+const StatusSelect = styled.select<{ $themeMode: ThemeMode }>`
+  width: 150px;
+  height: 40px;
+  padding: 11px 14px;
+  padding-right: 30px; // 아이콘을 위한 여백
+  border: 1px solid #e0e0e0;
+  border-radius: 0px;
+  background-color: #fbf9f2;
+  font-size: 14px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  &:focus {
+    outline: none;
+    border-color: #97601a;
+  }
+
+  option {
+    padding: 8px;
+    background-color: white;
+
+    &[value=''] {
+      color: #887e67;
+    }
+    &[value='ONGOING'] {
+      color: #4caf50;
+    }
+    &[value='ENDED'] {
+      color: #2196f3;
+    }
+    &[value='WAITING'] {
+      color: #ff9800;
+    }
+    &[value='CANCELED'] {
+      color: #f44336;
+    }
   }
 `;

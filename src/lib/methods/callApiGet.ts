@@ -20,8 +20,7 @@ export async function callApiGet<T = unknown>({
   }
 
   devLog(`🌐 [${title}]`, fullUrl);
-  console.log(`🌐 [${title}] 요청 URL:`, fullUrl);
-  console.log(`📋 [${title}] 요청 헤더:`, headers);
+  devLog(`📋 [${title}] 요청 헤더:`, headers);
   
   if (isCallPageLoader) pageLoaderController.open();
 
@@ -38,7 +37,6 @@ export async function callApiGet<T = unknown>({
     const response = await fetch(fullUrl, fetchOptions);
 
     devLog(`📱 [${title}] 응답 상태:`, response.status, response.statusText);
-    console.log(`📱 [${title}] 응답 상태:`, response.status, response.statusText);
     
     if (response.status === 401) {
       devLog(`❌ [${title}] 인증 오류:`, response.status, response.statusText);
@@ -50,21 +48,18 @@ export async function callApiGet<T = unknown>({
     }
     returnValue = await response.text();
     devLog(`📱 [${title}] 응답 내용:`, returnValue);
-    console.log(`📱 [${title}] 응답 내용:`, returnValue);
 
     let parsedData;
     try {
       parsedData = JSON.parse(returnValue);
     } catch (e) {
       devWarn(`⚠️ [${title}] JSON 파싱 실패`, e);
-      console.log(`⚠️ [${title}] JSON 파싱 실패`, e);
       parsedData = {};
     }
 
     return { data: parsedData, headers: response.headers };
   } catch (error) {
     devLog(`❌ [${title}] API 요청 에러: 네트워크 문제 또는 CORS 정책 위반이 원인일 수 있습니다.`, error);
-    console.log(`❌ [${title}] API 요청 에러: 네트워크 문제 또는 CORS 정책 위반이 원인일 수 있습니다.`, error);
     return { data: {}, headers: new Headers() };
   } finally {
     if (isCallPageLoader) pageLoaderController.close();

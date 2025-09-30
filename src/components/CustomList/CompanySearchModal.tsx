@@ -133,24 +133,26 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
     await loadCompanyList(term);
   };
 
-  // 모달이 열릴 때 초기 데이터 로드
+  // 모달이 열릴 때 상태 초기화
   useEffect(() => {
     if (isOpen) {
-      loadCompanyList();
+      setCompanies([]);
+      setSearchTerm('');
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (searchTerm.length >= 2) {
-      const debounce = setTimeout(() => {
-        searchCompanies(searchTerm);
-      }, 300);
-      return () => clearTimeout(debounce);
-    } else if (searchTerm.length === 0) {
-      // 검색어가 없으면 전체 목록 다시 로드
-      loadCompanyList();
-    }
-  }, [searchTerm]);
+  // 자동 검색 기능 비활성화 - 조회 버튼으로만 검색
+  // useEffect(() => {
+  //   if (searchTerm.length >= 2) {
+  //     const debounce = setTimeout(() => {
+  //       searchCompanies(searchTerm);
+  //     }, 300);
+  //     return () => clearTimeout(debounce);
+  //   } else if (searchTerm.length === 0) {
+  //     // 검색어가 없으면 전체 목록 다시 로드
+  //     loadCompanyList();
+  //   }
+  // }, [searchTerm]);
 
   const handleSearch = () => {
     if (searchTerm.trim()) {
@@ -222,7 +224,7 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
                 <tr>
                   <td colSpan={4}>
                     <NoResults $themeMode={themeMode}>
-                      {searchTerm.length > 0 ? '검색 결과가 없습니다.' : '고객사 목록을 불러오는 중...'}
+                      {searchTerm.length > 0 ? '검색 결과가 없습니다.' : '고객사명을 입력하고 조회 버튼을 클릭하세요.'}
                     </NoResults>
                   </td>
                 </tr>

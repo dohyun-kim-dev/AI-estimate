@@ -32,9 +32,7 @@ export async function callAdminApi<T = unknown>({
   }
 
 devLog('🔍 [API 요청]', { title, method, url });  
-devLog('📄 [요청 body]:', JSON.stringify(body, null, 2));
-console.log('🔍 [API 요청]', { title, method, url });
-console.log('📄 [요청 body]:', JSON.stringify(body, null, 2));
+devLog('📄 [요청 body]:', body);
 
   
 
@@ -48,14 +46,6 @@ console.log('📄 [요청 body]:', JSON.stringify(body, null, 2));
   // 로컬/HTTP 환경에서 토큰이 필요한 경우 localStorage에서 가져오기
   if (isWithToken && (import.meta.env.VITE_ENV_NAME === 'dev' || window.location.protocol === 'http:')) {
     const adminToken = localStorage.getItem('admin_access_token');
-    console.log('🔑 [callAdminApi 토큰 체크]', {
-      title,
-      url,
-      isWithToken,
-      envName: import.meta.env.VITE_ENV_NAME,
-      protocol: window.location.protocol,
-      adminToken: adminToken ? 'exists' : 'not found'
-    });
     devLog('🔑 [callAdminApi 토큰 체크]', {
       title,
       url,
@@ -68,7 +58,6 @@ console.log('📄 [요청 body]:', JSON.stringify(body, null, 2));
     if (adminToken) {
       // 서버가 기대하는 헤더명 사용 (admin_token으로 수정)
       headers['admin_token'] = adminToken;
-      console.log('🔑 [admin_token 토큰 추가됨]', { admin_token: adminToken });
       devLog('🔑 [admin_token 토큰 추가됨]', { admin_token: adminToken });
     } else {
       devLog('⚠️ [토큰 없음] localStorage에 admin_access_token이 없습니다');

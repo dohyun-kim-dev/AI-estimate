@@ -198,8 +198,6 @@ const AdminMngPage: React.FC = () => {
           cellphone,
           description,
           email,
-          emailYn,
-          smsYn,
           // companyCode는 슈퍼 관리자이므로 전달하지 않음
         };
   
