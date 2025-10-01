@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { useAuthStore } from '@/store/authStore';
 import { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import { calculateEstimatedPeriod } from '@/utils/estimateCalculator';
+import { devLog } from '@/utils/devLogger'
 
 const PrintableInvoiceWrapper = styled.div`
   width: 780px;
@@ -63,18 +64,18 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
     )
   );
 
-  console.log('All items length:', allItems.length);
-  console.log('All items:', allItems);
+  devLog('All items length:', allItems.length);
+  devLog('All items:', allItems);
 
   // 총 금액 계산 (is_deleted가 false인 항목만)
   const totalPrice = allItems.reduce((sum, item) => {
     const price = parseInt(item.price.replace(/[^\d]/g, '')) || 0;
-    console.log('Item price:', item.price, 'Parsed price:', price);
+    devLog('Item price:', item.price, 'Parsed price:', price);
     return sum + price;
   }, 0);
 
-  console.log('Total price calculated:', totalPrice);
-  console.log('All items:', allItems);
+  devLog('Total price calculated:', totalPrice);
+  devLog('All items:', allItems);
 
   // 부가세 포함 금액 계산 (10% 부가세)
   const vatIncludedPrice = Math.round(totalPrice * 1.1);

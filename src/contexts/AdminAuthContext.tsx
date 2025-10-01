@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
+import { devLog } from '@/utils/devLogger'
 
 type AdminAuthContextType = {
   isLoggedIn: boolean;
@@ -39,7 +40,7 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
   }, []);
 
   const login = (id: string, token?: string, isRoot?: boolean) => {
-    console.log('🚀 [AdminAuthContext] login 함수 호출됨:', {
+    devLog('🚀 [AdminAuthContext] login 함수 호출됨:', {
       id,
       tokenProvided: !!token,
       tokenPrefix: token?.substring(0, 10) + '...',
@@ -53,7 +54,7 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
     // 토큰이 제공된 경우 저장
     if (token) {
       localStorage.setItem('admin_access_token', token);
-      console.log('🔑 [AdminAuthContext] 토큰 저장됨:', {
+      devLog('🔑 [AdminAuthContext] 토큰 저장됨:', {
         id,
         tokenPrefix: token.substring(0, 10) + '...',
         tokenLength: token.length
@@ -64,7 +65,7 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
     if (isRoot !== undefined) {
       localStorage.setItem('admin_isRoot', isRoot.toString());
       setIsRoot(isRoot);
-      console.log('👑 [AdminAuthContext] isRoot 저장됨:', {
+      devLog('👑 [AdminAuthContext] isRoot 저장됨:', {
         isRoot,
         stored: localStorage.getItem('admin_isRoot')
       });

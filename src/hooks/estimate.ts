@@ -1,5 +1,6 @@
 // src/hooks/estimate.ts
 import { v4 as uuidv4 } from 'uuid';
+import { devLog } from '@/utils/devLogger'
 
 /** 견적 객체에 uuid가 없으면 생성해서 채워줌 */
 export function ensureEstimateUuid(est: any) {
@@ -10,13 +11,13 @@ export function ensureEstimateUuid(est: any) {
 
 /** 견적 객체 정규화: uuid 보장, is_deleted 기본값, item_id 기본값 부여 */
 export function normalizeEstimate<T extends Record<string, any>>(est: T): T {
-  console.log("normalizeEstimate called with:", est);
+  devLog("normalizeEstimate called with:", est);
   
   // ✅ 기존 UUID가 있으면 보존, 없으면 생성
   const existingUuid = est.uuid;
   ensureEstimateUuid(est);
   
-  console.log("normalizeEstimate UUID 처리:", {
+  devLog("normalizeEstimate UUID 처리:", {
     existingUuid,
     finalUuid: est.uuid,
     preserved: existingUuid === est.uuid
@@ -31,7 +32,7 @@ export function normalizeEstimate<T extends Record<string, any>>(est: T): T {
     )
   );
   
-  console.log("normalizeEstimate 결과:", est);
+  devLog("normalizeEstimate 결과:", est);
   return est;
 }
 
@@ -77,11 +78,11 @@ export function buildFullEstimateData(input: any, estimateIdOrIntro?: string, pr
     // content인 경우
     const intro = extractIntroFromReply(input);
     const estimate = extractEstimateData(input, estimateIdOrIntro); //uuid 있음?
-    console.log("buildFullEstimateData extracted estimate:", estimate);
+    devLog("buildFullEstimateData extracted estimate:", estimate);
     if (!estimate) return input; // 견적서가 없으면 원본 반환
-    console.log("buildFullEstimateData input (string):", input);
+    devLog("buildFullEstimateData input (string):", input);
     const prepared = normalizeEstimate(JSON.parse(JSON.stringify(estimate)));
-    console.log("buildFullEstimateData:", prepared);
+    devLog("buildFullEstimateData:", prepared);
     const json = JSON.stringify(prepared, null, 2);
     const headline =
       (intro && intro.length > 0)
@@ -95,9 +96,9 @@ ${json}
 </script>`;
   } else {
     // estimate 객체인 경우 (하위 호환성)
-    console.log("buildFullEstimateData input:", input);
+    devLog("buildFullEstimateData input:", input);
     const prepared = normalizeEstimate(JSON.parse(JSON.stringify(input || {})));
-    console.log("buildFullEstimateData:", prepared);
+    devLog("buildFullEstimateData:", prepared);
     const json = JSON.stringify(prepared, null, 2);
     
     // providedIntro가 있으면 사용, 아니면 estimateIdOrIntro가 인트로인지 확인, 둘 다 없으면 기본값
@@ -143,7 +144,7 @@ export function extractEstimateData<T = any>(content: string, estimateId?: strin
     if (scriptMatch) {
       const data = JSON.parse(scriptMatch[1]);
       if (data && typeof data === 'object') {
-        console.log("extractEstimateData data (from script):", data);
+        devLog("extractEstimateData data (from script):", data);
         if (estimateId) {
           data.uuid = estimateId;
         }
@@ -156,7 +157,7 @@ export function extractEstimateData<T = any>(content: string, estimateId?: strin
     if (codeBlockMatch) {
       const data = JSON.parse(codeBlockMatch[1]);
       if (data && typeof data === 'object') {
-        console.log("extractEstimateData data (from markdown):", data);
+        devLog("extractEstimateData data (from markdown):", data);
         if (estimateId) {
           data.uuid = estimateId;
         }
@@ -174,7 +175,7 @@ export function extractEstimateData<T = any>(content: string, estimateId?: strin
       try {
         const data = JSON.parse(trimmedContent);
         if (data && typeof data === 'object') {
-          console.log("extractEstimateData data (from raw JSON):", data);
+          devLog("extractEstimateData data (from raw JSON):", data);
           if (estimateId) {
             data.uuid = estimateId;
           }
@@ -182,7 +183,7 @@ export function extractEstimateData<T = any>(content: string, estimateId?: strin
         }
       } catch (jsonErr) {
         // JSON 파싱 실패는 정상적인 경우 (일반 텍스트)이므로 에러 로그 없이 넘어감
-        console.log("Raw JSON parsing failed - likely normal text content");
+        devLog("Raw JSON parsing failed - likely normal text content");
       }
     }
     
@@ -197,9 +198,9 @@ export function getOrEnsureEstimateFromContent<T = any>(content: string) {
   const est = extractEstimateData<T>(content);
   if (!est) return { estimate: null as T | null };
   // 깊은 복사 후 정규화(= uuid/flags/id 보장)
-  console.log("extractEstimateData est:", est);
+  devLog("extractEstimateData est:", est);
   const ensured = normalizeEstimate(JSON.parse(JSON.stringify(est)));
-  console.log("getOrEnsureEstimateFromContent:", ensured);
+  devLog("getOrEnsureEstimateFromContent:", ensured);
   return { estimate: ensured as T };
 }
 
@@ -235,7 +236,7 @@ export function getEstimateIdFromContent(content: string): string | null {
         return json?.uuid || null;
       } catch (jsonErr) {
         // JSON 파싱 실패는 정상적인 경우 (일반 텍스트)이므로 에러 로그 없이 넘어감
-        console.log("Raw JSON parsing failed - likely normal text content");
+        devLog("Raw JSON parsing failed - likely normal text content");
       }
     }
     

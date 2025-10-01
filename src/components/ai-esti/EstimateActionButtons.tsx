@@ -13,6 +13,7 @@ import { useLocation } from 'react-router-dom';
 import IssuerInfoModal, { IssuerInfo } from '@/components/ai-esti/IssuerInfoModal';
 import { SocialLoginModal } from '@/components/ai-esti/SocialLoginModal';
 import { ProjectEstimate } from '../../app/ai-estimate/types/projectEstimate';
+import { devLog } from '@/utils/devLogger'
 
 const ButtonsContainer = styled.div`
   display: flex;
@@ -210,7 +211,7 @@ const [isMobile, setIsMobile] = useState(false);
   // 공유 페이지 여부
   const isSharePage = useMemo(() => {
     const url = `${location.pathname}${location.search}${location.hash}`.toLowerCase();
-    return url.includes('share');
+    return url.includes('share')|| url.includes('superadmin')|| url.includes('cms');
   }, [location]);
 
 
@@ -348,11 +349,11 @@ useEffect(() => {
     // );
     // const estimateData = match ? JSON.parse(match[1]) : null;
 
-    console.log("액션버튼 아이디: ", estimate.uuid);
+    devLog("액션버튼 아이디: ", estimate.uuid);
 
     if (!estimate.uuid) {
       error('견적서 정보를 찾을 수 없습니다.');
-      console.log('❗ 견적서 데이터 누락:', { "estimateData": estimate.uuid, "lastMessage": estimate.uuid });
+      devLog('❗ 견적서 데이터 누락:', { "estimateData": estimate.uuid, "lastMessage": estimate.uuid });
       setIsInfoModalOpen(false);
       return;
     }
@@ -378,7 +379,7 @@ useEffect(() => {
     const chatSessionId = getEffectiveSessionId();
 
     if (!userId || !userName || !userEmail || !userPhone || !chatSessionId) {
-      console.log("userId,userName,userEmail,userPhone,chatSessionId", { userId, userName, userEmail, userPhone, chatSessionId });
+      devLog("userId,userName,userEmail,userPhone,chatSessionId", { userId, userName, userEmail, userPhone, chatSessionId });
       error('필수 정보가 누락되었습니다. 다시 시도해 주세요.');
       setIsInfoModalOpen(false);
       return;

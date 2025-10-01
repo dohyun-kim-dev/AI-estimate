@@ -6,6 +6,7 @@ import LanguageSelector from '@/components/common/LanguageSelector'
 import { useNavigate } from "react-router-dom";
 import TermsModal from '@/components/ai-esti/TermsModal'     
 import { useAuthStore } from '@/store/authStore'
+import { devLog } from '@/utils/devLogger'
 
 const Container = styled.div`
   // min-height: 100vh;
@@ -109,7 +110,7 @@ export default function SettingsPage() {
   }
 
   const handleViewTerms = () => {
-    console.log("check")
+    devLog("check")
     setIsModalOpen(true);
   };
 

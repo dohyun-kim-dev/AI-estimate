@@ -281,7 +281,7 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
 
   const isSharePage = useMemo(() => {
     const url = `${location.pathname}${location.search}${location.hash}`.toLowerCase();
-    return url.includes('share');
+    return url.includes('share')|| url.includes('superadmin')|| url.includes('cms');
   }, [location]);
 
 

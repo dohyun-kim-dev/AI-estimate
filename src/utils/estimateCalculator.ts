@@ -73,12 +73,12 @@ export function calculatePlanningDesignPeriod(totalPages: number): number {
  * 모든 기능의 FE/BE 개발일을 각각 합산
  */
 export function calculateDevelopmentDays(categories: Category[]): { totalFeDays: number; totalBeDays: number } {
-  console.log('💻 기능별 개발 기간 합산 시작');
+  devLog('💻 기능별 개발 기간 합산 시작');
   let totalFeDays = 0;
   let totalBeDays = 0;
 
   categories.forEach(category => {
-    console.log(`   📁 카테고리: ${category.category_name}`);
+    devLog(`   📁 카테고리: ${category.category_name}`);
     category.sub_categories.forEach(subCategory => {
       devLog(`     📂 하위 카테고리: ${subCategory.sub_category_name}`);
         subCategory.items.forEach(item => {

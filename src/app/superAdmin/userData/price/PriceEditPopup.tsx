@@ -8,6 +8,7 @@ import TextField from '@/components/common/TextField';
 import { AppColors } from '@/styles/colors';
 import { useToast } from '@/components/common/ToastProvider';
 import { deleteUnitPrice } from '@/lib/api/admin/adminApi';
+import { devLog } from '@/utils/devLogger'
 
 const FormContainer = styled.div`
   display: flex;
@@ -345,9 +346,9 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
     
     setIsLoading(true);
     try {
-      console.log('=== PriceEditPopup handleSave START ===');
+      devLog('=== PriceEditPopup handleSave START ===');
       await onSave(formData);
-      console.log('=== PriceEditPopup onSave completed ===');
+      devLog('=== PriceEditPopup onSave completed ===');
       
       // 테이블 새로고침이 완료된 후 팝업 닫기 (약간의 지연)
       setTimeout(() => {
@@ -380,7 +381,7 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
 
     setIsLoading(true);
     try {
-      console.log('=== 삭제 API 호출 START ===', { id: selectedItem.id, companyCode: selectedCompanyCode });
+      devLog('=== 삭제 API 호출 START ===', { id: selectedItem.id, companyCode: selectedCompanyCode });
       
       const response = await deleteUnitPrice(selectedItem.id, selectedCompanyCode);
       
@@ -388,7 +389,7 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
       const actualResponse = Array.isArray(response) ? response[0] : response;
       const apiResponse = (actualResponse as any)?.data;
       
-      console.log('삭제 API 응답:', apiResponse);
+      devLog('삭제 API 응답:', apiResponse);
       
       if (apiResponse && (apiResponse.statusCode === 200 || apiResponse.statusCode === "200") && apiResponse.message === 'success') {
         showToast('삭제되었습니다.', 'success');

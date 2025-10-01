@@ -101,14 +101,14 @@ function findMessageIdForEstimate(estimateId?: string | null) {
     const storageState: { state } = JSON.parse(raw);
     const messages = storageState.state.messages;
     
-    console.log("Parsed messages array:", messages);
-    console.log("Looking for estimateId:", estimateId);
+    devLog("Parsed messages array:", messages);
+    devLog("Looking for estimateId:", estimateId);
     
     if (!Array.isArray(messages)) return null;
     
     // 배열을 순회하며 estimateId가 일치하는 메시지 객체를 찾습니다.
     const hit = messages.find((it: ChatMessage) => {
-      console.log("Checking message:", it?.messageId, "estimateId:", it?.estimateId);
+      devLog("Checking message:", it?.messageId, "estimateId:", it?.estimateId);
       
       // 1. 먼저 기존 방식으로 estimateId 필드 확인
       if (it?.estimateId && String(it.estimateId) === String(estimateId)) {
@@ -123,7 +123,7 @@ function findMessageIdForEstimate(estimateId?: string | null) {
           if (scriptMatch && scriptMatch[1]) {
             const jsonData = JSON.parse(scriptMatch[1]);
             if (jsonData.uuid && String(jsonData.uuid) === String(estimateId)) {
-              console.log("Found matching uuid in content:", jsonData.uuid);
+              devLog("Found matching uuid in content:", jsonData.uuid);
               return true;
             }
           }
@@ -131,7 +131,7 @@ function findMessageIdForEstimate(estimateId?: string | null) {
           // 직접 JSON 파싱 시도 (스크립트 태그 없는 경우)
           const jsonMatch = it.content.match(/"uuid"\s*:\s*"([^"]+)"/);
           if (jsonMatch && jsonMatch[1] && String(jsonMatch[1]) === String(estimateId)) {
-            console.log("Found matching uuid in content (regex):", jsonMatch[1]);
+            devLog("Found matching uuid in content (regex):", jsonMatch[1]);
             return true;
           }
         } catch (e) {
@@ -142,7 +142,7 @@ function findMessageIdForEstimate(estimateId?: string | null) {
       return false;
     });
     
-    console.log("Found message with estimateId:", hit?.messageId);
+    devLog("Found message with estimateId:", hit?.messageId);
     
     // 찾은 메시지 객체에서 messageId를 반환합니다.
     return hit?.messageId ?? null;
@@ -316,7 +316,7 @@ useEffect(() => {
 useEffect(() => {
   if (!chatSessionId || !userId || isInitialUpdate) return;
 
-  // console.log("견적 데이터 변경 감지, 자동 가격 업데이트 시작...");
+  // devLog("견적 데이터 변경 감지, 자동 가격 업데이트 시작...");
   
   // 화면설계/UI디자인 가격 업데이트
   const totalPages = calculateTotalPages(data.categories);
@@ -326,7 +326,7 @@ useEffect(() => {
   const hasChanges = JSON.stringify(updatedEstimate) !== JSON.stringify(data);
   
   if (hasChanges) {
-    // console.log("가격 업데이트 변경사항 발견, 서버 저장 시작...");
+    // devLog("가격 업데이트 변경사항 발견, 서버 저장 시작...");
     setEstimate(updatedEstimate);
     
     const effectiveEstimateId = estimateId || updatedEstimate.uuid || data.uuid;
@@ -491,10 +491,10 @@ useEffect(() => {
         });
         
         // ⭐️ 아이템 삭제/복구 후 총 페이지 수 재계산 및 화면설계/UI디자인 가격 업데이트
-        console.log("아이템 변경 후 화면설계/UI디자인 가격 재계산 시작...");
+        devLog("아이템 변경 후 화면설계/UI디자인 가격 재계산 시작...");
         const newTotalPages = calculateTotalPages(next.categories);
         const finalUpdatedEst = updateDesignItemPrices(next, newTotalPages);
-        console.log(`페이지 수 변경: ${newTotalPages}페이지 → 화면설계/UI디자인 가격 업데이트 완료`);
+        devLog(`페이지 수 변경: ${newTotalPages}페이지 → 화면설계/UI디자인 가격 업데이트 완료`);
         
         // next를 최종 업데이트된 데이터로 교체
         Object.assign(next, finalUpdatedEst);
@@ -537,7 +537,7 @@ useEffect(() => {
           }
         }
         
-        console.log("toggleDeletedFlag - 견적서 ID 추적:", {
+        devLog("toggleDeletedFlag - 견적서 ID 추적:", {
           target: target.name,
           action: to ? '삭제' : '복구',
           passedEstimateId,

@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { getDownloadEstimateUrlWithUserInfo, googleLoginInitial, googleLoginUpdate, uploadEstimatePdf } from '@/lib/api/user/userApi';
 import { buildFullEstimateData, extractEstimateData } from '@/hooks/estimate';
 import IssuerInfoModal, { IssuerInfo } from '@/components/ai-esti/IssuerInfoModal';
+import { devLog } from '@/utils/devLogger'
 
 const CardWrapper = styled.div`
   background-color: ${({ theme }) => theme.surface1};
@@ -201,7 +202,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
 
       // estimateObj._id가 없을 때: 세션스토리지에서 project_name과 total_price가 일치하는 메시지 중 estimateId가 있는 가장 최근 메시지를 찾아 반환
       let effectiveId = estimateObj.uuid;
-      console.log("estimateObj.estimateId:", estimateObj.uuid);
+      devLog("estimateObj.estimateId:", estimateObj.uuid);
       //todo 수정
       // let effectiveId = null;
       if (!effectiveId && estimateObj?.project_name) {
@@ -210,7 +211,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
           if (raw) {
             const storageState = JSON.parse(raw);
             const messages = storageState.state?.messages || [];
-            console.log("세션스토리지 메시지:", messages);
+            devLog("세션스토리지 메시지:", messages);
             // 메시지를 역순으로 순회하여 가장 최근의 일치하는 estimateId 찾기
             const reversedMessages = messages.slice().reverse();
             let foundId = null;
@@ -218,7 +219,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
               if (typeof m.content === 'string' && m.content.includes(estimateObj.project_name)) {
                 if (m.estimateId) {
                   foundId = m.estimateId;
-                  console.log("세션스토리지에서 추출한 estimateId:", foundId);
+                  devLog("세션스토리지에서 추출한 estimateId:", foundId);
                   break;
                 }
               }
@@ -240,19 +241,19 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       );
       try {
         await fetch(url, { method: 'GET' });
-        console.log("다운로드 카운트 성공")
+        devLog("다운로드 카운트 성공")
       } catch (e) {
-        console.log("다운로드 카운트 실패 ")
+        devLog("다운로드 카운트 실패 ")
       }
 
       if (!effectiveId) throw new Error('uuid 보장 실패');
-      console.log("estimateObj._id(effectiveId):", effectiveId);
+      devLog("estimateObj._id(effectiveId):", effectiveId);
       return effectiveId as string;
     }
   
 
   const uploadEstimateForGuest = async (estimateObj: any) => {
-    console.log('[uploadEstimateForGuest] estimateObj:', estimateObj);
+    devLog('[uploadEstimateForGuest] estimateObj:', estimateObj);
     
     // 비회원이고 URL에 share가 없을 때만 실행
     const isGuest = !isAuthenticated();
@@ -263,7 +264,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
         // 게스트 정보 가져오기
         const guestInfoStr = sessionStorage.getItem('guestinfo');
         if (!guestInfoStr) {
-          console.log('guestinfo 없음, 업로드 건너뛰기');
+          devLog('guestinfo 없음, 업로드 건너뛰기');
           return;
         }
         
@@ -299,9 +300,9 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
             discountedPrice // amount 파라미터로 총합계 금액 전달
           );
           
-          console.log('✅ 비회원 견적서 업로드 완료');
+          devLog('✅ 비회원 견적서 업로드 완료');
         } else {
-          console.log('❌ 필수 데이터 누락:', { chatSessionId, estimateId });
+          devLog('❌ 필수 데이터 누락:', { chatSessionId, estimateId });
         }
       } catch (error) {
         console.error('❌ 견적서 업로드 실패:', error);
@@ -310,13 +311,13 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
   };
 
   const ensureUuidAndGetUrl = async () => {
-    console.log("ensureUuidAndGetUrl 함수 호출 직전 estimate:", estimate);
+    devLog("ensureUuidAndGetUrl 함수 호출 직전 estimate:", estimate);
     
     // 비회원일 때 견적서 업로드 실행
     await uploadEstimateForGuest(estimate);
     
     const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
-    console.log("ensuredUuid:", ensuredUuid); 
+    devLog("ensuredUuid:", ensuredUuid); 
     return `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
   };
 
@@ -324,7 +325,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
   // 미리보기 새탭 오픈 (다운로드/공유 공용)
   const openPreviewTab = async () => {
     try {
-      console.log("openPreviewTab 함수 호출 직전 estimate:", estimate);
+      devLog("openPreviewTab 함수 호출 직전 estimate:", estimate);
           await uploadEstimateForGuest(estimate);
       const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
       const previewUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
@@ -335,7 +336,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
           window.location.href = previewUrl;
         }
       }, 100);
-      console.log("estimate:", estimate);
+      devLog("estimate:", estimate);
       success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
     } catch (err) {
       console.error('PDF 미리보기 오픈 중 오류:', err);
@@ -430,7 +431,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
         return;
       }
 
-      console.log('복사하려는 shareUrl:', shareUrl); // 디버깅용
+      devLog('복사하려는 shareUrl:', shareUrl); // 디버깅용
 
       const textToCopy = `${shareUrl}
 
@@ -449,7 +450,7 @@ https://heredotcorp.com
  
  `;
 
-      console.log('복사하려는 텍스트:', textToCopy); // 디버깅용
+      devLog('복사하려는 텍스트:', textToCopy); // 디버깅용
 
       // fallback 방법을 먼저 시도 (더 안정적)
       const copyWithFallback = () => {
@@ -482,7 +483,7 @@ https://heredotcorp.com
           return;
         }
       } catch (fallbackErr) {
-        console.log('Fallback 복사 실패, Clipboard API 시도:', fallbackErr);
+        devLog('Fallback 복사 실패, Clipboard API 시도:', fallbackErr);
       }
 
       // fallback이 실패하면 Clipboard API 시도
@@ -493,7 +494,7 @@ https://heredotcorp.com
           setOpenShare(false);
           return;
         } catch (clipboardErr) {
-          console.log('Clipboard API 실패:', clipboardErr);
+          devLog('Clipboard API 실패:', clipboardErr);
         }
       }
 

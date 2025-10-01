@@ -45,6 +45,8 @@ img:focus-visible {
   box-shadow: none !important;
 }
 
+
+
 /* 클릭 시 나타나는 파란색 선택 영역 제거 */
 *::selection {
   background: transparent;

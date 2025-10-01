@@ -1,9 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
+import { devLog } from '@/utils/devLogger'
 
 export function normalizeEstimateForSave(est: any) {
   if (!est) return est;
   if (!est.uuid) est.uuid = uuidv4();
-  console.log("normalizeEstimateForSave:", est);
+  devLog("normalizeEstimateForSave:", est);
 
   est.categories?.forEach((c: any, ci: number) => {
     c.sub_categories?.forEach((sc: any, si: number) => {
@@ -23,8 +24,8 @@ export function buildFullEstimateData(estimate: any, aiIntro?: string) {
 
   const prepared = normalizeEstimateForSave({ ...(estimate ?? {}) });
   const json = JSON.stringify(prepared, null, 2);
-console.log("buildFullEstimateData prepared:", prepared);
-  console.log("buildFullEstimateData json:", json);
+devLog("buildFullEstimateData prepared:", prepared);
+  devLog("buildFullEstimateData json:", json);
   return `${intro}
 
 <script type="application/json" id="invoiceData">

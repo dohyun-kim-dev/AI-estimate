@@ -29,6 +29,7 @@ import { transformMessageForDisplay } from '@/utils/messageTransform';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
+import { usePathname } from 'next/navigation';
 import styled, { keyframes } from 'styled-components';
 // --- Gradient Text Animation ---
 const gradientText = keyframes`
@@ -262,14 +263,14 @@ const TopSection = styled.div`
   }
 `;
 
-const MainContent = styled.div`
+const MainContent = styled.div<{ $isWideLayout?: boolean }>`
   flex: 1;
   min-width: 320px;
   width: 100%;
   padding-bottom: 20px;
 
   @media (min-width: 1024px) {
-    width: 560px;
+    width: ${({ $isWideLayout }) => $isWideLayout ? '860px' : '560px'};
   }
 `;
 
@@ -416,7 +417,7 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
         }
       } catch (jsonErr) {
         // JSON 파싱 실패는 정상적인 경우 (일반 텍스트)이므로 에러 로그 없이 넘어감
-        console.log("Raw JSON parsing failed - likely normal text content");
+        devLog("Raw JSON parsing failed - likely normal text content");
       }
     }
     
@@ -470,6 +471,15 @@ const parseMessageContent = (content: string) => {
   };
 };
 
+// URL 체크 함수
+const checkWideLayout = () => {
+  if (typeof window !== 'undefined') {
+    const url = `${window.location.pathname}${window.location.search}${window.location.hash}`.toLowerCase();
+    return url.includes('share') || url.includes('superadmin') || url.includes('cms');
+  }
+  return false;
+};
+
 export const AiMessageContent: React.FC<{ 
   content: string; 
   chatSessionId?: string; 
@@ -485,6 +495,11 @@ export const AiMessageContent: React.FC<{
   const effectiveChatSessionId = chatSessionId || localStorage.getItem('chatSessionId') || '';
   const updateLastMessage = useChatStore((s) => s.updateLastMessage); // ⭐️ 추가: updateLastMessage 가져오기
   const messages = useChatStore((s) => s.messages); // ⭐️ 추가: messages 배열 가져오기
+  
+  // URL에 superadmin이 포함되면 항상 다크모드, 그렇지 않으면 테마 스토어 값 사용
+  const pathname = usePathname();
+  const { isDarkMode: themeIsDarkMode } = useThemeStore();
+  const isDarkMode = pathname?.includes('superadmin') ? true : themeIsDarkMode;
 
   // content 변경 시 estimateData 업데이트
   useEffect(() => {
@@ -552,7 +567,7 @@ const userId = getUserId() || '';
   }
   
   // 디버깅용 로그
-  console.log('🔍 계산 결과:', {
+  devLog('🔍 계산 결과:', {
     totalPages: calculationResult.totalPages,
     planningDesignWeeks: calculationResult.planningDesignWeeks,
     totalFeDays: calculationResult.totalFeDays,
@@ -719,7 +734,7 @@ const userId = getUserId() || '';
 
   // 견적 데이터 변경 핸들러
   const handleEstimateChange = useCallback((updatedEstimate: ProjectEstimate) => {
-    console.log('견적 데이터 변경됨:', updatedEstimate);
+    devLog('견적 데이터 변경됨:', updatedEstimate);
     setEstimateData(updatedEstimate);
   }, []);
 
@@ -842,7 +857,7 @@ const userId = getUserId() || '';
       {hasEstimate && (
         <EstimateContainer>
           <TopSection>
-            <MainContent>
+            <MainContent $isWideLayout={checkWideLayout()}>
               <EstimateCard 
                 estimate={updatedEstimateData || estimateData} 
                 discountedPrice={discountedPrice || 0} 
@@ -933,22 +948,22 @@ const userId = getUserId() || '';
                     : action;
                   
                   // 디버깅용 로그
-                  console.log('EstimateActionButtons - estimateData:', estimateData);
-                  console.log('EstimateActionButtons - project_name:', estimateData?.project_name);
-                  console.log('EstimateActionButtons - project_name type:', typeof estimateData?.project_name);
-                  console.log('EstimateActionButtons - project_name length:', estimateData?.project_name?.length);
-                  console.log('EstimateActionButtons - action:', action);
+                  devLog('EstimateActionButtons - estimateData:', estimateData);
+                  devLog('EstimateActionButtons - project_name:', estimateData?.project_name);
+                  devLog('EstimateActionButtons - project_name type:', typeof estimateData?.project_name);
+                  devLog('EstimateActionButtons - project_name length:', estimateData?.project_name?.length);
+                  devLog('EstimateActionButtons - action:', action);
                   
                   // 사용자 메시지는 프로젝트명과 액션으로 직접 생성
                   const projectName = estimateData?.project_name;
-                  console.log('projectName 확인:', projectName);
-                  console.log('조건 확인:', !!projectName);
+                  devLog('projectName 확인:', projectName);
+                  devLog('조건 확인:', !!projectName);
                   
                   const displayMessage = projectName 
                     ? `${projectName} - ${action}`
                     : transformMessageForDisplay(aiPrompt);
                   
-                  console.log('최종 displayMessage:', displayMessage);
+                  devLog('최종 displayMessage:', displayMessage);
                   
                   // prop으로 받은 onSubmit 사용
                   if (onSubmit) {
@@ -980,7 +995,11 @@ export default function AiChatPage() {
   const updateLastMessage = useChatStore((s) => s.updateLastMessage);
   const isCrawlingUrl = useChatStore((s) => s.isCrawlingUrl); // 추가: URL 크롤링 상태 가져오기
   const { isAuthenticated, user } = useAuthStore(); // user 상태도 가져오기
-  const { isDarkMode } = useThemeStore(); // 테마 상태 가져오기
+  
+  // URL에 superadmin이 포함되면 항상 다크모드, 그렇지 않으면 테마 스토어 값 사용
+  const pathname = usePathname();
+  const { isDarkMode: themeIsDarkMode } = useThemeStore();
+  const isDarkMode = pathname?.includes('superadmin') ? true : themeIsDarkMode;
 
   const [isFirebaseChecking, setIsFirebaseChecking] = useState(true);
   const [globalLoadingStep, setGlobalLoadingStep] = useState(0); // 글로벌 로딩 단계
@@ -1121,14 +1140,13 @@ export default function AiChatPage() {
   
   const [estimateDataForConsult, setEstimateDataForConsult] = useState<ProjectEstimate | null>(null);
   const [chatSessionId, setChatSessionId] = useState('');
-  const location = useLocation();
 
 // 페이지 진입 시 단가표 불러와서 promptStore에 저장
 useEffect(() => {
   (async () => {
     try {
       const aiPromptsResponse = await getAiPrompts();
-      console.log('AI 프롬프트 API 응답:', aiPromptsResponse);
+      devLog('AI 프롬프트 API 응답:', aiPromptsResponse);
 
       if (aiPromptsResponse && aiPromptsResponse.statusCode === 200 && aiPromptsResponse.data.length > 0) {
         ('AI 프롬프트 데이터를 불러왔습니다.');
@@ -1140,7 +1158,7 @@ useEffect(() => {
         }
         
         const instructionItem = promptsData.find(item => item.name === 'INSTRUCTION');
-        console.log('instructionItem', instructionItem);
+        devLog('instructionItem', instructionItem);
         const otherPrompts = promptsData.filter(item => item.name !== 'GREETING' && item.name !== 'INSTRUCTION' && item.content);
         const aiPromptsContent = [
           ...(instructionItem && instructionItem.content ? [instructionItem.content] : []),
@@ -1148,13 +1166,13 @@ useEffect(() => {
         ].join('\n\n');
         
         usePromptStore.getState().setAiPrompts(aiPromptsContent);
-        console.log('AI 프롬프트 데이터를 불러왔습니다.',aiPromptsContent);
+        devLog('AI 프롬프트 데이터를 불러왔습니다.',aiPromptsContent);
       } else {
         console.warn('AI 프롬프트 데이터를 불러오는데 실패했습니다.');
       }
 
       const res = await getAllUnitPrices();
-      console.log('단가표 API 응답:', res);
+      devLog('단가표 API 응답:', res);
 
       if (res && res.statusCode === 200 && res.data && Array.isArray(res.data.data)) {
         const priceList = res.data.data;
@@ -1304,7 +1322,7 @@ useEffect(() => {
 견적 발행을 위해 프로젝트의 큰 그림을 한 줄로 알려주시겠어요?`)
 //   `AI 컨설턴트 강유하 입니다 만나 뵙게 되어 반갑습니다
 // 어떤 종류의 프로젝트를 만들고 싶으신가요?
-// console.log('initialAiMessage', initialAiMessage);
+// devLog('initialAiMessage', initialAiMessage);
 //   프로젝트의 큰 그림을 알려주세요
 //   <ul style="padding-left: 30px;"><li>프로젝트의 핵심 목표는 무엇인가요?</li><li>주요 사용자층은 누구인가요?
 // </li><li>꼭 필요한 핵심 기능은 무엇인가요?</li></ul>
@@ -1362,7 +1380,7 @@ useEffect(() => {
         if (localChatSessionId) {
           try {
             await transferChatSessionToUser(localChatSessionId);
-            console.log("방 소유권 이전 성공, 세션 ID:", localChatSessionId);
+            devLog("방 소유권 이전 성공, 세션 ID:", localChatSessionId);
             setChatSessionId(localChatSessionId);
             const messagesResponse = await getChatSessionMessages(localChatSessionId) as any;
             if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {

@@ -3,6 +3,7 @@
 import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
 import dayjs from "dayjs";
+import { devLog } from '@/utils/devLogger'
 
 // Import GenericListUI and related types.
 import GenericListUI, { FetchParams, FetchResult } from "./GenericListUI";
@@ -67,7 +68,7 @@ const GenericListGuide: React.FC = () => {
    * so this function is primarily used to return the *entire* filtered data (by date, search keyword).
    */
   const fetchData = useCallback(async (params: FetchParams): Promise<FetchResult<MockItem>> => {
-    console.log("Mock fetchData called with params:", params);
+    devLog("Mock fetchData called with params:", params);
     // Simulate asynchronous loading with setTimeout instead of an actual API call.
     await new Promise((resolve) => setTimeout(resolve, 300)); // 300ms delay
 

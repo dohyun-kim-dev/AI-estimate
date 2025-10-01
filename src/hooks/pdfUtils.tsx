@@ -1,5 +1,6 @@
 // pdf.ts (발췌)
 import { uploadEstimatePdf } from '@/lib/api/user/userApi';
+import { devLog } from '@/utils/devLogger'
 
 // 공통: AI 전문 생성 유틸 — 아래 3) 참고
 import { buildFullEstimateData } from '@/hooks/buildFullEstimateData';
@@ -152,7 +153,7 @@ export async function generatePDF(
 
 //위에거 안쓰고 이것으로 로직변경 서버에서 견적서 text 받아와서 pdf 보여줌
 export async function previewPdfFromServerData(html: string) {
-  console.log("html",html)
+  devLog("html",html)
   const estimateJson = extractInvoiceJSON(html);
   if (!estimateJson) throw new Error('invoiceData가 없습니다.');
 
@@ -240,7 +241,7 @@ export async function previewPdfFromServerData(html: string) {
 // 서버 응답 데이터로 PDF 생성 후 바로 다운로드
 export async function downloadPdfFromServerData(html: string, filename: string = '견적서') {
   try {
-    console.log("다운로드용 PDF 생성 시작", html);
+    devLog("다운로드용 PDF 생성 시작", html);
     const estimateJson = extractInvoiceJSON(html);
     if (!estimateJson) throw new Error('invoiceData가 없습니다.');
 
@@ -338,7 +339,7 @@ export async function downloadPdfFromServerData(html: string, filename: string =
     reactRoot.unmount();
     document.body.removeChild(tempDiv);
 
-    console.log("PDF 다운로드 완료");
+    devLog("PDF 다운로드 완료");
     return true;
   } catch (error) {
     console.error('PDF 다운로드 실패:', error);

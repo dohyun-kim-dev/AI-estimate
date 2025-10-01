@@ -13,6 +13,7 @@ import EstimateAccordion from '@/components/ai-esti/EstimateAccordion';
 import DetailModal from '@/components/ai-esti/DetailModal';
 import EstimateActionButtons from '@/components/ai-esti/EstimateActionButtons';
 import { useChatActions} from '@/hooks/useChatActions';
+import { devLog } from '@/utils/devLogger'
 
 const PageWrapper = styled.div`
   background-color: ${({ theme }) => theme.body};
@@ -138,7 +139,7 @@ const AiEstimatePage: React.FC<AiEstimatePageProps> = () => {
               </MainContent>
               <SideContent>
                 <EstimateActionButtons 
-                  onConsult={() => console.log('문의하기')}
+                  onConsult={() => devLog('문의하기')}
                   onSubmit={() => handleSubmit('AI 예산 줄이기')}
                 />
               </SideContent>

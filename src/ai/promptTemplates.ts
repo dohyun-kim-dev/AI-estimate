@@ -1,3 +1,4 @@
+import { devLog } from '../utils/devLogger';
 import { combineSystemPrompts } from './prompts';
 import { discountPrompt } from './prompts/discount';
 import { logPromptInfo, estimateTokens } from '@/utils/promptLogger';
@@ -47,10 +48,10 @@ export const combinePrompts = async (templateId: string, userInput: string): Pro
   const promptTokens = estimateTokens(combinedPrompt);
 
   // 로그 출력 (토큰 정보는 실제 사용량으로 나중에 업데이트)
-  console.log(`🤖 프롬프트 조합 완료:`);
-  console.log(`템플릿 ID: ${templateId}`);
-  console.log(`사용자 입력: ${userInput}`);
-  console.log(`예상 입력 토큰: ${promptTokens.toLocaleString()}`);
+  devLog(`🤖 프롬프트 조합 완료:`);
+  devLog(`템플릿 ID: ${templateId}`);
+  devLog(`사용자 입력: ${userInput}`);
+  devLog(`예상 입력 토큰: ${promptTokens.toLocaleString()}`);
 
   return combinedPrompt;
 };

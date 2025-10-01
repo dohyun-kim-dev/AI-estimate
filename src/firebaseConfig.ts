@@ -15,14 +15,14 @@ const firebaseConfig: FirebaseOptions = {
 }
 
 // 환경 변수가 제대로 로드되었는지 확인
-console.log('Firebase Config:', {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? '설정됨' : '설정되지 않음',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ? '설정됨' : '설정되지 않음',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ? '설정됨' : '설정되지 않음',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ? '설정됨' : '설정되지 않음',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ? '설정됨' : '설정되지 않음',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID ? '설정됨' : '설정되지 않음',
-})
+// console.log('Firebase Config:', {
+//   apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? '설정됨' : '설정되지 않음',
+//   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ? '설정됨' : '설정되지 않음',
+//   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ? '설정됨' : '설정되지 않음',
+//   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ? '설정됨' : '설정되지 않음',
+//   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ? '설정됨' : '설정되지 않음',
+//   appId: import.meta.env.VITE_FIREBASE_APP_ID ? '설정됨' : '설정되지 않음',
+// })
 
 let app
 devLog('>>>> Firebase Config: Attempting initialization...')
@@ -33,9 +33,9 @@ const missingKeys = Object.entries(firebaseConfig)
   .map(([key]) => key)
 
 if (missingKeys.length > 0) {
-  console.error("❌ Firebase 환경 변수 누락됨:", missingKeys)
+  // console.error("❌ Firebase 환경 변수 누락됨:", missingKeys)
 } else {
-  console.log("✅ 모든 Firebase 환경 변수가 정상적으로 설정됨")
+  // console.log("✅ 모든 Firebase 환경 변수가 정상적으로 설정됨")
 }
 
 if (!getApps().length) {
@@ -43,7 +43,7 @@ if (!getApps().length) {
     app = initializeApp(firebaseConfig)
     devLog('>>>> Firebase Config: Initialized successfully:', app.name)
   } catch (error) {
-    console.error('>>>> Firebase Config: Error during initializeApp:', error)
+    // console.error('>>>> Firebase Config: Error during initializeApp:', error)
     throw error
   }
 } else {

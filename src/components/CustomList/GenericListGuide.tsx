@@ -3,6 +3,7 @@
 import React, { useCallback, useMemo } from "react";
 import styled from "styled-components";
 import dayjs from "dayjs";
+import { devLog } from '@/utils/devLogger'
 
 // GenericListUI와 관련 타입들을 import 합니다.
 import GenericListUI, { FetchParams, FetchResult } from "./GenericListUI";
@@ -67,7 +68,7 @@ const GenericListGuide: React.FC = () => {
    * 이 함수는 주로 필터링(날짜, 검색어)된 *전체* 데이터를 반환하는 데 사용됩니다.
    */
   const fetchData = useCallback(async (params: FetchParams): Promise<FetchResult<MockItem>> => {
-    console.log("Mock fetchData called with params:", params);
+    devLog("Mock fetchData called with params:", params);
     // 실제 API 호출 대신 setTimeout으로 비동기 로딩을 시뮬레이션합니다.
     await new Promise((resolve) => setTimeout(resolve, 300)); // 300ms 딜레이
 

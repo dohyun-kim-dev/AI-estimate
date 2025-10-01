@@ -6,6 +6,7 @@ import GenericListUI, {
 } from '@/components/CustomList/GenericListUI';
 import { ColumnDefinition } from '@/components/CustomList/GenericDataTable';
 import dayjs from 'dayjs';
+import 'dayjs/locale/ko';
 import styled from 'styled-components';
 import { THEME_COLORS } from '@/styles/theme_colors';
 import { AppColors } from '@/styles/colors';
@@ -14,6 +15,8 @@ import { devLog } from '@/lib/utils/devLogger';
 import CmsPopup from '@/components/CmsPopup';
 import CmsResponsiveContainer from '@/components/CustomList/ResponsiveList/CmsResponsiveContainer';
 import SimpleGenericList from '@/components/CustomList/SimpleGenericList';
+import ChatHistoryModal from '@/components/ChatHistoryModal';
+import { getChatRoomList } from '@/lib/api/admin/adminApi';
 
 // 아이콘 컴포넌트들
 const PersonIcon = () => (
@@ -38,14 +41,24 @@ const EmailIcon = () => (
 // AI 대화 이력 데이터 타입 정의
 type ChatHistory = {
   no: number;
-  id: string;
+  _id: string; // 채팅방 ID
+  title: string; // 채팅방 제목
+  isGuest: boolean;
+  userInfo?: {
+    _id: string;
+    name: string;
+    email: string;
+    cellphone: string;
+    profileImage?: string;
+  };
+  createAt: string;
+  updateAt: string;
+  // 표시용 필드들
   name: string;
   profileImageUrl: string;
-  adminId: string;
   email: string;
   cellphone: string;
-  chatCount: number;
-  lastChatTime: string;
+  chatSessionId: string;
 };
 
 // --- 스타일 컴포넌트 (PromptPage에서 재사용 가능) ---
@@ -198,21 +211,41 @@ type ChatDetail = {
 const AiChatHistoryPage: React.FC = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedChat, setSelectedChat] = useState<Partial<ChatHistory> | null>(null);
-    const [dateRange, setDateRange] = useState<{
-      fromDate: string;
-      toDate: string;
-    } | null>(null);
+  const [dateRange, setDateRange] = useState<{
+    fromDate: string;
+    toDate: string;
+  } | null>(null);
+  const [currentKeyword, setCurrentKeyword] = useState(''); // 검색 키워드 상태 추가
+  const [isChatHistoryModalOpen, setIsChatHistoryModalOpen] = useState(false); // 채팅 이력 모달 상태
+  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('');
+  const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
 
   const listRef = useRef<{ refetch: () => void }>(null);
+dayjs.locale('ko'); 
 
   const handleRowClick = (item: ChatHistory) => {
     setSelectedChat(item);
-    setIsPopupOpen(true);
+    setIsChatHistoryModalOpen(true); // 채팅 이력 모달 열기
   };
   
   const closePopup = () => {
     setIsPopupOpen(false);
   };
+
+  const closeChatHistoryModal = () => {
+    setIsChatHistoryModalOpen(false);
+    setSelectedChat(null);
+  };
+
+  const handleCompanySelect = useCallback((company: { id: string; name: string }) => {
+    setSelectedCompanyCode(company.id);
+    setSelectedCompanyName(company.name);
+    
+    // 고객사 선택 시 즉시 데이터 다시 조회
+    if (listRef.current) {
+      listRef.current.refetch();
+    }
+  }, []);
 //이런 느낌으로 api 연동
   // const fetchData = useCallback(
   //   async (params: FetchParams): Promise<FetchResult<User>> => {
@@ -282,7 +315,7 @@ const AiChatHistoryPage: React.FC = () => {
   // 대화 상세 이력을 가져오는 함수
   const fetchChatDetails = useCallback(
     async (params: FetchParams): Promise<FetchResult<ChatDetail>> => {
-      console.log('Fetching chat details for user:', selectedChat?.id);
+      devLog('Fetching chat details for user:', selectedChat?._id);
 
       // 더미 대화 상세 데이터
       const mockChatDetails: ChatDetail[] = [
@@ -290,7 +323,7 @@ const AiChatHistoryPage: React.FC = () => {
           no: 1,
           timestamp: '2025-08-14T10:30:00Z',
           userMessage: '안녕하세요, AI에게 견적 문의드리고 싶습니다.',
-          aiResponse: '안녕하세요! 견적 문의에 대해 도와드리겠습니다. 어떤 프로젝트에 대한 견적을 원하시나요?',
+          aiResponse: '안녕하세요! 견적 문의에 대해 도움드리겠습니다. 어떤 프로젝트에 대한 견적을 원하시나요?',
           chatType: '일반 문의'
         },
         {
@@ -315,7 +348,7 @@ const AiChatHistoryPage: React.FC = () => {
         allItems: mockChatDetails.length,
       };
     },
-    [selectedChat?.id]
+    [selectedChat?._id]
   );
 
   // 대화 상세 이력 컬럼 정의
@@ -351,112 +384,128 @@ const AiChatHistoryPage: React.FC = () => {
     []
   );
 
-  // ✅ 목 데이터로 동작하는 fetchData 함수
+  // 실제 API 호출로 채팅방 목록 가져오기
   const fetchData = useCallback(
     async (params: FetchParams): Promise<FetchResult<ChatHistory>> => {
-      console.log('Fetching AI Chat History with params:', params);
+      try {
+        // 키워드가 전달되면 현재 키워드 업데이트 (빈 문자열 포함)
+        let searchKeyword = '';
+        if (params.keyword !== undefined) {
+          setCurrentKeyword(params.keyword);
+          searchKeyword = params.keyword;
+        } else {
+          searchKeyword = currentKeyword;
+        }
 
-      // 더미 프로필 이미지 URL
-      const dummyProfileUrls = [
-        'https://i.pravatar.cc/150?img=1',
-        'https://i.pravatar.cc/150?img=2',
-        'https://i.pravatar.cc/150?img=3',
-        'https://i.pravatar.cc/150?img=4',
-        'https://i.pravatar.cc/150?img=5',
-      ];
-
-      const mockData: ChatHistory[] = [
-        {
-          no: 1,
-          id: 'user123',
-          name: '김철수',
-          profileImageUrl: dummyProfileUrls[0],
-          adminId: 'kimcs',
-          email: 'kimcs@example.com',
-          cellphone: '01012345678',
-          chatCount: 15,
-          lastChatTime: '2025-08-14T10:30:00Z',
-        },
-        {
-          no: 2,
-          id: 'user456',
-          name: '박영희',
-          profileImageUrl: dummyProfileUrls[1],
-          adminId: 'pyh_22',
-          email: 'pyh@example.com',
-          cellphone: '01098765432',
-          chatCount: 8,
-          lastChatTime: '2025-08-13T14:45:00Z',
-        },
-        {
-          no: 3,
-          id: 'user789',
-          name: '이민호',
-          profileImageUrl: dummyProfileUrls[2],
-          adminId: 'lmh_user',
-          email: 'lmh@example.com',
-          cellphone: '01055554444',
-          chatCount: 22,
-          lastChatTime: '2025-08-14T09:00:00Z',
-        },
-        // 여기에 더 많은 목 데이터를 추가할 수 있습니다.
-      ];
-
-      // 날짜 필터링
-      const filteredByDate = mockData.filter(item => {
-        const itemDate = dayjs(item.lastChatTime);
-        const fromDate = params.fromDate ? dayjs(params.fromDate) : null;
-        const toDate = params.toDate ? dayjs(params.toDate) : null;
+        const fromDate = params.fromDate || dateRange?.fromDate || dayjs().subtract(3, 'month').format('YYYY-MM-DD');
+        const toDate = params.toDate || dateRange?.toDate || dayjs().format('YYYY-MM-DD');
         
-        if (fromDate && itemDate.isBefore(fromDate, 'day')) return false;
-        if (toDate && itemDate.isAfter(toDate, 'day')) return false;
+        devLog('🔍 [fetchData 호출]', { searchKeyword, fromDate, toDate });
         
-        return true;
-      });
+        // API 호출
+        const response = await getChatRoomList({
+          keyword: searchKeyword,
+          fromDate: fromDate,
+          toDate: toDate,
+          companyCode: selectedCompanyCode || 'heredot',
+        });
+        
+        devLog('✅ [fetchData 응답 받음]', response);
+        
+        // 응답 처리 (userMng 페이지와 동일한 패턴 적용)
+        let chatRooms: any[] = [];
+        
+        if (response && typeof response === 'object') {
+          // 응답이 직접 API 응답 객체인 경우
+          if ('statusCode' in response && response.statusCode === 200) {
+            const responseWithData = response as { data?: any[]; statusCode: number };
+            chatRooms = Array.isArray(responseWithData.data) ? responseWithData.data : [];
+          } 
+          // 응답이 배열로 감싸져 있는 경우 (callAdminApi 특성)
+          else if (Array.isArray(response) && response[0]) {
+            const firstItem = response[0];
+            if (firstItem && typeof firstItem === 'object' && 'data' in firstItem) {
+              const responseData = firstItem.data;
+              if (responseData && typeof responseData === 'object' && 'statusCode' in responseData) {
+                const typedResponseData = responseData as { data?: any[]; statusCode: number };
+                if (typedResponseData.statusCode === 200) {
+                  chatRooms = Array.isArray(typedResponseData.data) ? typedResponseData.data : [];
+                }
+              }
+            }
+          }
+        }
 
-      // 키워드 필터링
-      const filteredData = params.keyword
-        ? filteredByDate.filter(item =>
-            item.name.includes(params.keyword as string) ||
-            item.adminId.includes(params.keyword as string) ||
-            item.email.includes(params.keyword as string) ||
-            item.cellphone.includes(params.keyword as string)
-          )
-        : filteredByDate;
+        devLog('파싱된 채팅방 데이터:', chatRooms);
 
-      return {
-        data: filteredData,
-        totalItems: filteredData.length,
-        allItems: mockData.length,
-      };
+        // API 응답 데이터를 ChatHistory 타입으로 변환
+        const transformedData: ChatHistory[] = chatRooms.map((room: any) => ({
+          no: room.no || 0,
+          _id: room._id,
+          title: room.title || '제목 없음',
+          isGuest: room.isGuest || false,
+          userInfo: room.userInfo,
+          createAt: room.createAt,
+          updateAt: room.updateAt,
+          // 표시용 필드들
+          name: room.userInfo?.name || '게스트 사용자',
+          profileImageUrl: room.isGuest 
+            ? '/cms/guest.png' 
+            : (room.userInfo?.profileImage || '/ai-estimate/no_profile.png'),
+          email: room.userInfo?.email || '-',
+          cellphone: room.userInfo?.cellphone || '-',
+          chatSessionId: room._id, // 채팅방 ID를 세션 ID로 사용
+        }));
+
+        return {
+          data: transformedData,
+          totalItems: transformedData.length,
+          allItems: transformedData.length,
+        };
+      } catch (error) {
+        console.error('채팅방 목록 조회 오류:', error);
+        return { data: [], totalItems: 0, allItems: 0 };
+      }
     },
-    []
+    [currentKeyword, selectedCompanyCode, dateRange]
   );
 
   // ✅ AI 대화 이력에 맞는 컬럼 정의
   const columns: ColumnDefinition<ChatHistory>[] = useMemo(
     () => [
-      { header: 'No', accessor: 'no', sortable: true },
+      { header: 'No', accessor: 'no', width: 60, sortable: true },
+      {
+        header: '채팅방 생성일시',
+        accessor: 'createAt',
+        sortable: true,
+        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD (ddd) HH:mm ') : '-'),
+      },
       {
         header: '프로필',
         accessor: 'profileImageUrl',
+        width: 60,
         formatter: (value, row) => (
           <ProfileWrapper>
             <ProfileHeader $imageUrl={row.profileImageUrl} />
           </ProfileWrapper>
         ),
       },
-      { header: '이름', accessor: 'name', sortable: true },
-      { header: '아이디', accessor: 'adminId', sortable: true },
+      { header: '이름', accessor: 'name',width:100, sortable: true },
+      { header: '채팅방제목', accessor: 'title', sortable: true },
+      { 
+        header: '채팅방ID', 
+        accessor: 'chatSessionId', 
+        sortable: true,
+        formatter: (value) => (
+          <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#666' }}>
+            {value || '-'}
+          </span>
+        )
+      },
       { header: '이메일', accessor: 'email', sortable: true },
+      { header: '국가', accessor: 'nation',width:100, formatter: (value) => '대한민국' },
       { header: '전화번호', accessor: 'cellphone', sortable: true },
-      // { header: '대화수', accessor: 'chatCount', sortable: true },
-      // {
-      //   header: '최근 대화',
-      //   accessor: 'lastChatTime',
-      //   sortable: true,
-      //   formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD HH:mm') : '-'),
-      // },
+      
     ],
     []
   );
@@ -486,77 +535,29 @@ const AiChatHistoryPage: React.FC = () => {
         enableDateFilter={true}
         onRowClick={handleRowClick}
         themeMode="light"
-          dateRangeOptions={['3개월', '6개월', '1년', '지정']}
+        onCompanySelect={handleCompanySelect}
+        dateRangeOptions={['3개월', '6개월', '1년', '지정']}
         onDateChange={(fromDate, toDate) => {
-          console.log('📅 고객 회원관리 - 날짜 변경:', { fromDate, toDate });
+          devLog('📅 고객 회원관리 - 날짜 변경:', { fromDate, toDate });
           setDateRange({ fromDate, toDate });
         }}
         onInitialDateSet={(fromDate, toDate) => {
-          console.log('📅 고객 회원관리 - 초기 날짜 설정:', { fromDate, toDate });
+          devLog('📅 고객 회원관리 - 초기 날짜 설정:', { fromDate, toDate });
           setDateRange({ fromDate, toDate });
         }}
         onSearchChange={(keyword) => {
-          console.log('🔍 고객 회원관리 - 검색어 변경:', keyword);
+          devLog('🔍 고객 회원관리 - 검색어 변경:', keyword);
           setCurrentKeyword(keyword);
         }}
       />
 
-      {/* 대화 이력 상세 팝업 */}
-      <CmsPopup
-        title="AI 대화 이력 상세"
-        isOpen={isPopupOpen}
-        onClose={closePopup}
-        isWide
-        backgroundColor="#FFF"
-      >
-        <PopupContent>
-          <Title>회원 정보</Title>
-          
-          <UserInfoSection>
-            <ProfileImage src={selectedChat?.profileImageUrl || "/ai-estimate/no_profile.png"} alt="Profile" />
-            <UserDetails>
-              <DetailItem>
-                <DetailIcon><PersonIcon /></DetailIcon>
-                <NameText>{selectedChat?.name || '-'}</NameText>
-              </DetailItem>
-              <DetailItem>
-                <DetailIcon>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 14 11" fill="none">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M0.332031 0.166992V10.8337H13.6653V0.166992H0.332031ZM6.21744 8.16699V2.63184H7.74869C8.39973 2.63184 8.92056 2.69434 9.31119 2.81934C9.8216 2.9834 10.2122 3.28809 10.4831 3.7334C10.7539 4.17611 10.8893 4.7321 10.8893 5.40137C10.8893 6.08887 10.7539 6.65006 10.4831 7.08496C10.1445 7.63444 9.62108 7.96777 8.91275 8.08496C8.58723 8.13965 8.17056 8.16699 7.66275 8.16699H6.21744ZM7.46353 7.19043H7.70181C8.26952 7.19043 8.69009 7.09798 8.96353 6.91309C9.20311 6.75423 9.37629 6.50814 9.48306 6.1748C9.56119 5.92743 9.60025 5.66441 9.60025 5.38574C9.60025 5.08628 9.55468 4.80894 9.46353 4.55371C9.37239 4.29852 9.24739 4.0993 9.08853 3.95605C8.93749 3.82064 8.76561 3.72949 8.57291 3.68262C8.3802 3.63314 8.08983 3.6084 7.70181 3.6084H7.46353V7.19043ZM3.65494 2.63184V8.16699H4.90103V2.63184H3.65494Z" fill="#AAAAAA"/>
-                  </svg>
-                </DetailIcon>
-                <span>ID: {selectedChat?.adminId || '-'}</span>
-              </DetailItem>
-              <DetailItem>
-                <DetailIcon><PhoneIcon /></DetailIcon>
-                <span>{selectedChat?.cellphone || '-'}</span>
-              </DetailItem>
-              <DetailItem>
-                <DetailIcon><EmailIcon /></DetailIcon>
-                <span>{selectedChat?.email || '-'}</span>
-              </DetailItem>
-            </UserDetails>
-          </UserInfoSection>
-
-          <ListSection>
-            <SimpleGenericList
-              title="대화 이력"
-              columns={chatDetailColumns}
-              fetchData={fetchChatDetails}
-              themeMode="light"
-              fixedLayout={true}
-              initialState={{
-                sortKey: 'no',
-                sortOrder: 'desc'
-              }}
-            />
-          </ListSection>
-
-          <CloseButton onClick={closePopup}>
-            닫기
-          </CloseButton>
-        </PopupContent>
-      </CmsPopup>
+      {/* 채팅 이력 모달 */}
+      <ChatHistoryModal
+        isOpen={isChatHistoryModalOpen}
+        onClose={closeChatHistoryModal}
+        chatSessionId={selectedChat?.chatSessionId || ''}
+        userName={selectedChat?.name}
+      />
     </>
   );
 };

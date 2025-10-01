@@ -9,6 +9,7 @@ import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
 import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import type { EstimateItem } from '@/app/ai-estimate/types';
 import { useChatActions} from '@/hooks/useChatActions';
+import { devLog } from '@/utils/devLogger'
 
 // 메인 페이지와 동일한 스타일 컴포넌트들
 const EstimateContainer = styled.div`
@@ -128,7 +129,7 @@ const EstimateRenderer: React.FC<{ content: string }> = ({ content }) => {
           }
         } catch (jsonErr) {
           // JSON 파싱 실패는 정상적인 경우 (일반 텍스트)이므로 에러 로그 없이 넘어감
-          console.log("Raw JSON parsing failed - likely normal text content");
+          devLog("Raw JSON parsing failed - likely normal text content");
         }
       }
       
@@ -182,7 +183,7 @@ const EstimateRenderer: React.FC<{ content: string }> = ({ content }) => {
           </MainContent>
           <SideContent>
             <EstimateActionButtons
-              onConsult={() => console.log('문의하기')}
+              onConsult={() => devLog('문의하기')}
               onSubmit={handleSubmit}
             />
           </SideContent>

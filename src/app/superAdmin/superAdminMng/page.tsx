@@ -203,7 +203,7 @@ const AdminMngPage: React.FC = () => {
   
         const response = await adminUpdate(updatePayload);
         
-        console.log('adminUpdate response:', response);
+        devLog('adminUpdate response:', response);
         
         // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
         const actualResponse = Array.isArray(response) ? response[0] : response;
@@ -235,10 +235,10 @@ const AdminMngPage: React.FC = () => {
           // companyCode는 통합관리자 생성이므로 제외
         };
   
-        console.log('Creating admin with payload:', createPayload);
+        devLog('Creating admin with payload:', createPayload);
         const response = await adminCreate(createPayload);
         
-        console.log('Create response:', response);
+        devLog('Create response:', response);
         
         // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
         const actualResponse = Array.isArray(response) ? response[0] : response;
@@ -286,15 +286,15 @@ const AdminMngPage: React.FC = () => {
           toDate: toDate, 
         });
 
-        console.log('response', response);
+        devLog('response', response);
         
         // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
         const actualResponse = Array.isArray(response) ? response[0] : response;
-        console.log('actualResponse', actualResponse);
+        devLog('actualResponse', actualResponse);
         
         // actualResponse.data에서 실제 API 응답을 가져옴
         const apiResponse = (actualResponse as any)?.data as ApiResponse<AdminUser>;
-        console.log('apiResponse', apiResponse);
+        devLog('apiResponse', apiResponse);
         
         if (apiResponse && apiResponse.message === 'success') {
           // API 응답 데이터를 AdminUser 타입에 맞게 매핑
@@ -312,7 +312,7 @@ const AdminMngPage: React.FC = () => {
             no: item.no, // 번호는 나중에 설정
           }));
 
-          console.log('Mapped data:', mappedData);
+          devLog('Mapped data:', mappedData);
 
           return {
             data: mappedData,
@@ -343,10 +343,10 @@ const AdminMngPage: React.FC = () => {
 const adminDeleteClick = useCallback(
   async (_id: string) => {
     try {
-      console.log('adminDelete 호출 - _id:', _id);
+      devLog('adminDelete 호출 - _id:', _id);
       const response = await adminDelete(_id); 
 
-      console.log('adminDelete response:', response);
+      devLog('adminDelete response:', response);
       
       // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
       const actualResponse = Array.isArray(response) ? response[0] : response;
@@ -389,7 +389,7 @@ const adminDeleteClick = useCallback(
     async (_id: string, type: 'emailYn' | 'smsYn', newValue: 'Y' | 'N') => {
       try {
 
-        console.log('handleDropdownChange', _id, type, newValue);
+        devLog('handleDropdownChange', _id, type, newValue);
 
         const updateParams: AdminUpdateParams = {
           _id: _id, // adminId를 _id로 사용 (API에서는 targetAdminId를 URL에 사용)
@@ -400,7 +400,7 @@ const adminDeleteClick = useCallback(
 
         const response = await adminUpdate(updateParams);
 
-        console.log('adminUpdate response:', response);
+        devLog('adminUpdate response:', response);
         
         // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
         const actualResponse = Array.isArray(response) ? response[0] : response;

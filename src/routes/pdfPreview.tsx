@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { fetchEstimateById } from '../lib/api/user/userApi';
 import { previewPdfFromServerData, downloadPdfFromServerData } from '../hooks/pdfUtils';
+import { devLog } from '@/utils/devLogger'
 
 const PreviewContainer = styled.div`
   width: 100vw;
@@ -210,14 +211,14 @@ const PDFPreview: React.FC = () => {
 
       // 서버가 내려준 원본(표시용)
       setEstimateMeta(res.data); // 메타데이터 저장
-      console.log("res값",res)
-      console.log("res.data 타입:", typeof res.data)
-      console.log("res.data.data 타입:", typeof res.data.data)
+      devLog("res값",res)
+      devLog("res.data 타입:", typeof res.data)
+      devLog("res.data.data 타입:", typeof res.data.data)
       // 2) 미리보기 PDF 생성 (응답의 data(HTML) 기반)
       const htmlContent = res.data.data || '';
       const { blobUrl,pdfBlob } = await previewPdfFromServerData(htmlContent);
-      console.log('PDF blobUrl:', blobUrl);
-      console.log('PDF pdfBlob:', pdfBlob);
+      devLog('PDF blobUrl:', blobUrl);
+      devLog('PDF pdfBlob:', pdfBlob);
       setPdfBlobUrl(blobUrl);
 
       setLoading(false);
@@ -269,11 +270,11 @@ const PDFPreview: React.FC = () => {
   };
 
   const handleIframeLoad = () => {
-    console.log('PDF iframe 로드 완료');
+    devLog('PDF iframe 로드 완료');
   };
 
   const handleIframeError = () => {
-    console.log('PDF iframe 로드 실패');
+    devLog('PDF iframe 로드 실패');
     setError('PDF를 표시할 수 없습니다.');
   };
   

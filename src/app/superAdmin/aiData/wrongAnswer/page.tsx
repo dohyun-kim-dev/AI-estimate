@@ -3,6 +3,7 @@
 import GenericTreeListUI from "@/components/CustomList/GenericTreeListUI";
 import React from "react";
 import CmsResponsiveContainer from "../../../../components/CustomList/ResponsiveList/CmsResponsiveContainer";
+import { devLog } from '@/utils/devLogger'
 
 // 🔷 인터페이스 정의 (GenericTreeListUI가 요구하는 구조)
 interface TreeNode {
@@ -107,7 +108,7 @@ const columns = [
 
 // 🔷 fetchData 구현
 const fetchData = async (params: FetchParams): Promise<FetchResult> => {
-  console.log("📦 fetchData called with params:", params);
+  devLog("📦 fetchData called with params:", params);
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve({
@@ -121,7 +122,7 @@ const fetchData = async (params: FetchParams): Promise<FetchResult> => {
 // 🔷 페이지 컴포넌트
 export default function TreeGridPage() {
   const handleCellChange = (id: string | number, key: string, value: any) => {
-    console.log("✅ 셀 변경:", { id, key, value });
+    devLog("✅ 셀 변경:", { id, key, value });
   };
 
   return (

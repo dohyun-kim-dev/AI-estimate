@@ -10,6 +10,7 @@ import { getAIPromptHistory, updateAIPrompt } from '@/lib/api/admin/adminApi';
 import { FetchParams, FetchResult } from '@/components/CustomList/GenericListUI';
 import SimpleGenericList from '@/components/CustomList/SimpleGenericList';
 import { toast } from 'react-toastify';
+import { devLog } from '@/utils/devLogger'
 
 type PromptHistory = {
   _id: string;
@@ -86,7 +87,7 @@ const PromptPopup: React.FC<PromptPopupProps> = ({ isOpen, onClose, selectedProm
         companyCode: companyCode
       });
 
-      console.log('프롬프트 히스토리 응답:', response);
+      devLog('프롬프트 히스토리 응답:', response);
 
       // 응답 처리 단순화
       let historyData = [];
@@ -94,7 +95,7 @@ const PromptPopup: React.FC<PromptPopupProps> = ({ isOpen, onClose, selectedProm
       // 직접 응답인 경우
       if (response && typeof response === 'object' && 'statusCode' in response && response.statusCode === 200) {
         historyData = (response as any).data || [];
-        console.log('직접 응답 처리:', historyData);
+        devLog('직접 응답 처리:', historyData);
       }
       // 배열로 감싸진 응답인 경우
       else if (Array.isArray(response) && response[0]) {
@@ -103,13 +104,13 @@ const PromptPopup: React.FC<PromptPopupProps> = ({ isOpen, onClose, selectedProm
           const innerData = responseData.data;
           if (innerData && typeof innerData === 'object' && 'statusCode' in innerData && innerData.statusCode === 200) {
             historyData = (innerData as any).data || [];
-            console.log('배열 응답 처리:', historyData);
+            devLog('배열 응답 처리:', historyData);
           }
         }
       }
 
       setHistoryList(historyData);
-      console.log('최종 히스토리 데이터:', historyData, '길이:', historyData.length);
+      devLog('최종 히스토리 데이터:', historyData, '길이:', historyData.length);
       return { data: historyData, totalItems: historyData.length, allItems: historyData.length };
 
       return { data: [], totalItems: 0, allItems: 0 };
@@ -150,7 +151,7 @@ const PromptPopup: React.FC<PromptPopupProps> = ({ isOpen, onClose, selectedProm
         content: content,
       });
 
-      console.log('프롬프트 수정 응답:', response);
+      devLog('프롬프트 수정 응답:', response);
 
       const responseData = Array.isArray(response) ? response[0] : response;
       

@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import { THEME_COLORS, ThemeMode } from "@/styles/theme_colors";
 import { getCompanyList } from '@/lib/api/admin/adminApi';
 import CmsPopup from '@/components/CmsPopup';
+import { devLog } from '@/utils/devLogger'
 
 interface Company {
   _id: string;
@@ -67,32 +68,32 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
         toDate: today // 오늘 날짜
       };
       
-      console.log('🔍 고객사 조회 시작');
-      console.log('📅 API 호출 파라미터:', params);
+      devLog('🔍 고객사 조회 시작');
+      devLog('📅 API 호출 파라미터:', params);
       
       // 토큰 상태 확인
       const adminToken = localStorage.getItem('admin_access_token');
-      console.log('🔑 localStorage에서 토큰 확인:', adminToken ? 'exists' : 'not found');
-      console.log('🌍 현재 환경:', import.meta.env.VITE_ENV_NAME);
-      console.log('🌐 현재 프로토콜:', window.location.protocol);
+      devLog('🔑 localStorage에서 토큰 확인:', adminToken ? 'exists' : 'not found');
+      devLog('🌍 현재 환경:', import.meta.env.VITE_ENV_NAME);
+      devLog('🌐 현재 프로토콜:', window.location.protocol);
       
       const response = await getCompanyList(params);
       
-      console.log('✅ 고객사 조회 API 응답 성공:', response);
-      console.log('📊 응답 타입:', typeof response, Array.isArray(response));
+      devLog('✅ 고객사 조회 API 응답 성공:', response);
+      devLog('📊 응답 타입:', typeof response, Array.isArray(response));
       
       // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
       const actualResponse = Array.isArray(response) ? response[0] : response;
-      console.log('📋 실제 응답 데이터:', actualResponse);
+      devLog('📋 실제 응답 데이터:', actualResponse);
       
       // actualResponse.data에서 실제 API 응답을 가져옴
       const apiData = (actualResponse as any)?.data as ApiResponse;
-      console.log('📋 API 데이터:', apiData);
+      devLog('📋 API 데이터:', apiData);
       
       // API 응답 구조에 맞게 data 필드에서 배열을 추출
       if (apiData && apiData.data && Array.isArray(apiData.data)) {
-        console.log('📋 고객사 목록 설정:', apiData.data.length, '개');
-        console.log('📋 첫 번째 고객사 데이터:', apiData.data[0]);
+        devLog('📋 고객사 목록 설정:', apiData.data.length, '개');
+        devLog('📋 첫 번째 고객사 데이터:', apiData.data[0]);
         setCompanies(apiData.data);
       } else {
         // 401 인증 실패 응답 구조일 때 catch로 넘김
@@ -101,10 +102,10 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
           apiData?.message === 'unauthorized' ||
           apiData?.error?.customMessage === '시스템 관리자 인증이 필요합니다.'
         ) {
-          console.log('🚫 401 Unauthorized - catch로 에러 전파');
+          devLog('🚫 401 Unauthorized - catch로 에러 전파');
           throw apiData;
         }
-        console.log('⚠️ API 응답이 예상된 구조가 아님:', apiData);
+        devLog('⚠️ API 응답이 예상된 구조가 아님:', apiData);
         setCompanies([]);
       }
     } catch (error: any) {
@@ -116,7 +117,7 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
         error?.response?.error?.customMessage === '시스템 관리자 인증이 필요합니다.'
       ) {
         localStorage.removeItem('adminId');
-        console.log('🚫 401 Unauthorized - 자동 로그아웃 및 superadmin/login 이동');
+        devLog('🚫 401 Unauthorized - 자동 로그아웃 및 superadmin/login 이동');
         window.location.replace('/superadmin/login');
         return;
       }

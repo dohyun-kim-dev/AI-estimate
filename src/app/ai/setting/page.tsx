@@ -113,7 +113,7 @@ export default function SettingsPage() {
   }
 
   const handleViewTerms = () => {
-    console.log("check")
+    devLog("check")
     setIsModalOpen(true); // 👈 모달 열기 함수
   };
 

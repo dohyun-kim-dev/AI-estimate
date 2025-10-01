@@ -2,6 +2,7 @@ import { adminLogin, adminLoginWithHeaders } from '@/lib/api/admin';
 import { getLoginStatus } from '@/lib/utils/apiLoginStatus';
 import { handleLoginStatus } from '@/lib/utils/handleLoginStatus';
 import { devError, devWarn } from '@lib/utils/devLogger';
+import { devLog } from '@/utils/devLogger'
 
 type LoginAdminServiceParams = {
   id: string;
@@ -62,7 +63,7 @@ export async function loginAdminService({
     // 3. isRoot 값 추출
     const isRoot = responseData?.data?.isRoot;
 
-    console.log('🔍 [loginAdminService] 토큰 추출 결과:', {
+    devLog('🔍 [loginAdminService] 토큰 추출 결과:', {
       hasResponseData: !!responseData,
       hasData: !!responseData?.data,
       hasToken: !!token,
@@ -75,7 +76,7 @@ export async function loginAdminService({
       status: response.status
     });
 
-    console.log('📋 [loginAdminService] onSuccess 콜백 호출 예정:', {
+    devLog('📋 [loginAdminService] onSuccess 콜백 호출 예정:', {
       id,
       hasToken: !!token,
       isRoot,

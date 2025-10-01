@@ -329,7 +329,7 @@ const UserMngPage: React.FC = () => {
         devLog('회원 정보 수정 응답', response);
         
         const responseData = Array.isArray(response) ? response[0] : response;
-        console.log("응답데이터 ",responseData);
+        devLog("응답데이터 ",responseData);
       if (responseData && responseData.data.statusCode === 200 && responseData.data.message === 'success') {
           toast.success('회원 정보가 수정되었습니다.');
           setIsPopupOpen(false);
@@ -456,7 +456,7 @@ const UserMngPage: React.FC = () => {
 
   const handleDropdownChange = useCallback(
     (adminId: string, type: 'emailYn' | 'smsYn', newValue: 'Y' | 'N') => {
-      console.log(`Changed ${type} for ${adminId} to ${newValue}`);
+      devLog(`Changed ${type} for ${adminId} to ${newValue}`);
     },
     []
   );
@@ -569,15 +569,15 @@ const UserMngPage: React.FC = () => {
         onCompanySelect={handleCompanySelect}
         dateRangeOptions={['3개월', '6개월', '1년', '지정']}
         onDateChange={(fromDate, toDate) => {
-          console.log('📅 고객 회원관리 - 날짜 변경:', { fromDate, toDate });
+          devLog('📅 고객 회원관리 - 날짜 변경:', { fromDate, toDate });
           setDateRange({ fromDate, toDate });
         }}
         onInitialDateSet={(fromDate, toDate) => {
-          console.log('📅 고객 회원관리 - 초기 날짜 설정:', { fromDate, toDate });
+          devLog('📅 고객 회원관리 - 초기 날짜 설정:', { fromDate, toDate });
           setDateRange({ fromDate, toDate });
         }}
         onSearchChange={(keyword) => {
-          console.log('🔍 고객 회원관리 - 검색어 변경:', keyword);
+          devLog('🔍 고객 회원관리 - 검색어 변경:', keyword);
           setCurrentKeyword(keyword);
         }}
       />

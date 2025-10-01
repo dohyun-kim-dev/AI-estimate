@@ -156,7 +156,7 @@ async function executeWithRetry<T>(
       
       // 대기 시간 계산 및 대기
       const delay = calculateRetryDelay(attempt, baseDelay);
-      console.log(`[useAI] Waiting ${delay}ms before retry...`);
+      devLog(`[useAI] Waiting ${delay}ms before retry...`);
       
       await new Promise(resolve => setTimeout(resolve, delay));
     }
@@ -202,14 +202,14 @@ function logUsageAndCost(where: string, modelName: string, anyResponse: unknown)
   const totalCostKRW = totalCostUSD * usdKrw
 
   // 실제 토큰 수 계산 결과 로깅
-  console.log(`🔢 [${modelName}] 실제 토큰 계산 결과:`)
-  console.log(`   입력 토큰: ${promptT.toLocaleString()} tokens`)
-  console.log(`   출력 토큰: ${candidatesT.toLocaleString()} tokens`)
-  console.log(`   캐시 토큰: ${cachedT.toLocaleString()} tokens`)
-  console.log(`   사고 토큰: ${thoughtsT.toLocaleString()} tokens`)
-  console.log(`   총 토큰: ${totalT.toLocaleString()} tokens`)
-  console.log(`💰 비용 (KRW): ₩${totalCostKRW.toFixed(2)} (입력: ₩${inputCostKRW.toFixed(2)}, 출력: ₩${outputCostKRW.toFixed(2)})`)
-  console.log(`💱 환율: ${usdKrw.toLocaleString()} KRW/USD`)
+  devLog(`🔢 [${modelName}] 실제 토큰 계산 결과:`)
+  devLog(`   입력 토큰: ${promptT.toLocaleString()} tokens`)
+  devLog(`   출력 토큰: ${candidatesT.toLocaleString()} tokens`)
+  devLog(`   캐시 토큰: ${cachedT.toLocaleString()} tokens`)
+  devLog(`   사고 토큰: ${thoughtsT.toLocaleString()} tokens`)
+  devLog(`   총 토큰: ${totalT.toLocaleString()} tokens`)
+  devLog(`💰 비용 (KRW): ₩${totalCostKRW.toFixed(2)} (입력: ₩${inputCostKRW.toFixed(2)}, 출력: ₩${outputCostKRW.toFixed(2)})`)
+  devLog(`💱 환율: ${usdKrw.toLocaleString()} KRW/USD`)
 
   devLog(
     `[useAI] ${where} tokens → input(prompt): ${promptT}, output(candidates): ${candidatesT}, cached: ${cachedT}, thoughts: ${thoughtsT}, total: ${totalT}`
@@ -272,7 +272,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
         try {
           const { combineSystemPrompts } = await import('@/ai/prompts');
           const systemPrompt = await combineSystemPrompts();
-          console.log('[useAI] 시스템 프롬프트 초기화 완료, 길이:', systemPrompt.length);
+          devLog('[useAI] 시스템 프롬프트 초기화 완료, 길이:', systemPrompt.length);
           setSystemInstruction(systemPrompt);
         } catch (error) {
           console.error('[useAI] 시스템 프롬프트 초기화 실패:', error);
@@ -346,26 +346,26 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     // 🔥 AI 오류 테스트용 - 주석 해제하면 강제 에러 발생
     // throw new Error('테스트용 AI 오류입니다.');
     const model = ensureModel();
-    console.log(chatRef.current ? '[useAI] 기존 채팅 세션 재사용' : '[useAI] 새로운 채팅 세션 생성' , chatRef.current);
+    devLog(chatRef.current ? '[useAI] 기존 채팅 세션 재사용' : '[useAI] 새로운 채팅 세션 생성' , chatRef.current);
     // ✅ 첫 메시지부터 thinkingBudget 반영되도록 세션 생성 시 config 주입
     //세션스토리지에 ai-chat-storage.state.message < 2 면 새 채팅으로 간주
     const chatStorage = sessionStorage.getItem('ai-chat-storage');
     if (chatStorage) {
       const parsed = JSON.parse(chatStorage);
       const messages = parsed?.state?.messages || [];
-      console.log('[useAI] 세션스토리지 메시지 수:', messages);
+      devLog('[useAI] 세션스토리지 메시지 수:', messages);
       if (messages.length < 4) {
         chatRef.current = null;
       }
     }
-    console.log(chatRef.current ? '[useAI] 채팅 세션 유지' : '[useAI] 채팅 세션 초기화', chatRef.current);
+    devLog(chatRef.current ? '[useAI] 채팅 세션 유지' : '[useAI] 채팅 세션 초기화', chatRef.current);
     if (!chatRef.current) {
       // 과거 대화 이력이 있으면 history와 함께 세션 시작
       const history = options?.chatHistory?.map(msg => ({
         role: msg.role,
         parts: [{ text: msg.content }]
       })) || [];
-    console.log('[useAI] 새로운 채팅 세션 시작, thinkingBudget:', thinkingBudget, '이력 메시지 수:', history);
+    devLog('[useAI] 새로운 채팅 세션 시작, thinkingBudget:', thinkingBudget, '이력 메시지 수:', history);
       chatRef.current = model.startChat({
         history,
         generationConfig: {
@@ -374,7 +374,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
       } as any)
       
       if (history.length > 0) {
-        console.log('[useAI] 과거 대화 이력과 함께 세션 시작:', history.length, '개 메시지');
+        devLog('[useAI] 과거 대화 이력과 함께 세션 시작:', history.length, '개 메시지');
       }
     }
 
@@ -460,7 +460,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
             if (typeof candidate?.text === 'function') chunk = candidate.text()
             else if (typeof candidate?.text === 'string') chunk = candidate.text
             if (chunk) {
-              // console.log('[useAI] streaming chunk:', chunk)
+              // devLog('[useAI] streaming chunk:', chunk)
               result += chunk
               options?.onStream?.(chunk)
               const trimmed = chunk.trim()
@@ -503,7 +503,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
           // fallback: 일반 sendMessage
           const res = await chatRef.current!.sendMessage(parts)
           const text = res.response.text()
-          console.log('[useAI] streaming fallback text:', text)
+          devLog('[useAI] streaming fallback text:', text)
           logUsageAndCost('sendChat(streaming-fallback)', String(modelName), res)
           
           // 토큰 정보 추출
@@ -548,7 +548,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
         const res = await chatRef.current!.sendMessage(parts)
         logUsageAndCost('sendChat', String(modelName), res)
         const text = res.response.text()
-        console.log('[useAI] non-streaming text:', text)
+        devLog('[useAI] non-streaming text:', text)
         
         // 토큰 정보 추출
         const usage = (res as any)?.response?.usageMetadata || (res as any)?.usageMetadata
@@ -601,14 +601,14 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
   // 과거 대화 이력과 함께 새 채팅 세션 시작
   const startChatWithHistory = useCallback((history: Array<{ role: 'user' | 'model'; content: string }>) => {
     chatRef.current = null; // 기존 세션 리셋
-    console.log('[useAI] startChatWithHistory 호출됨, 이력 개수:', history.length);
-    console.log('chatRef.current:', chatRef.current);
+    devLog('[useAI] startChatWithHistory 호출됨, 이력 개수:', history.length);
+    devLog('chatRef.current:', chatRef.current);
   }, [])
 
 const startNewChat = useCallback(() => {
     chatRef.current = null; // 기존 세션 리셋
-    console.log('[useAI] startNewChat 호출됨, 새 세션 시작');
-        console.log('chatRef:', chatRef);
+    devLog('[useAI] startNewChat 호출됨, 새 세션 시작');
+        devLog('chatRef:', chatRef);
   }, [])
   
   const testModel = useCallback(async (): Promise<{ ok: boolean; message: string }> => {
@@ -630,9 +630,9 @@ const startNewChat = useCallback(() => {
   }, [ensureModel, modelName, thinkingBudget])
 
   // const clearChatHistory = useCallback(() => {
-  //         console.log('[useAI] clearChatHistory 호출됨', chatRef);
+  //         devLog('[useAI] clearChatHistory 호출됨', chatRef);
   //   if (chatRef.current) {
-  //     console.log('[useAI] clearChatHistory 호출됨', chatRef.current);
+  //     devLog('[useAI] clearChatHistory 호출됨', chatRef.current);
   //     chatRef.current.history = [];
   //   }
   // }, []);

@@ -1,5 +1,6 @@
 // src/hooks/useUrlAnalyzer.ts
 // URL 분석 관련 유틸리티 함수들
+import { devLog } from '@/utils/devLogger'
 
 // URL 감지 및 처리 유틸리티 함수
 export const detectUrls = (text: string): string[] => {
@@ -127,11 +128,11 @@ export const fetchUrlContent = async (url: string): Promise<{ title: string; con
         }
       });
     } catch (corsError) {
-      console.log('CORS 오류 감지:', url);
+      devLog('CORS 오류 감지:', url);
 
       // CORS 친화적인 사이트가 아니면 바로 검색 기반 정보 제공
       if (!isCorsFriendly) {
-        console.log('CORS 제한 사이트, 검색 기반 정보로 대체');
+        devLog('CORS 제한 사이트, 검색 기반 정보로 대체');
         return await getSearchBasedInfo(url);
       }
 
@@ -144,7 +145,7 @@ export const fetchUrlContent = async (url: string): Promise<{ title: string; con
 
       for (const proxyUrl of proxies) {
         try {
-          console.log('프록시 시도:', proxyUrl.split('/')[2]);
+          devLog('프록시 시도:', proxyUrl.split('/')[2]);
           const proxyResponse = await fetch(proxyUrl);
 
           if (proxyResponse.ok) {
@@ -164,7 +165,7 @@ export const fetchUrlContent = async (url: string): Promise<{ title: string; con
                 text: () => Promise.resolve(responseData)
               } as any;
               usedProxy = true;
-              console.log('프록시 사용 성공:', proxyUrl.split('/')[2]);
+              devLog('프록시 사용 성공:', proxyUrl.split('/')[2]);
               break; // 성공하면 루프 종료
             } catch (parseError) {
               console.warn('프록시 응답 파싱 실패:', parseError);

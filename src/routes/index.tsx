@@ -31,6 +31,7 @@ import InquiryPage from '../app/superAdmin/userData/inquiry/page';
 import PriceListPage from '../app/superAdmin/userData/price/page';
 import ProposalDownloadPage from '../app/superAdmin/userData/proposal/page';
 import PDFPreview from './pdfPreview';
+import ExcelPreview from './excelPreview';
 import CompletedPage from '@app/completed/page';
 
 export default function AppRoutes() {
@@ -63,6 +64,7 @@ export default function AppRoutes() {
         </Route>
 
         <Route path="pdf-preview" element={<PDFPreview />} />
+        <Route path="excel-preview" element={<ExcelPreview />} />
         <Route path="completed" element={<CompletedPage />} />
 
         <Route element={<CMSLayout />}>
@@ -136,6 +138,8 @@ export default function AppRoutes() {
           <Route path="superadmin/company-settings" element={<CompanyInfoSettingsPage />} />
           <Route path="superadmin/aigo-settings" element={<AigoSettingsPage />} />
           <Route path="superadmin/terms" element={<CMSTerms />} />
+          <Route path="superadmin/pdf-preview" element={<PDFPreview />} />
+          <Route path="superadmin/excel-preview" element={<ExcelPreview />} />
         </Route>
     </Routes>
   )

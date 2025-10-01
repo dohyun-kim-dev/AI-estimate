@@ -13,7 +13,7 @@ const isLocalDev =
 
 export const devLog = (...args: any[]) => {
   if (isLocalDev) {
-    console.log(...args);
+    devLog(...args);
   }
 };
 

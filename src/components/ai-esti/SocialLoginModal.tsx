@@ -20,6 +20,7 @@ import { setToken } from '@/lib/utils/tokenUtils';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useModalStore } from '@store/modalStore';
 import {requestEstimateConsult} from '@/lib/api/user/userApi';
+import { devLog } from '@/utils/devLogger'
 
 const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
@@ -258,7 +259,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
             const updateToken = updateResponseData?.headers?.get ? updateResponseData.headers.get('user_token') : null;
             if (updateToken) {
               setToken('user', updateToken);
-              console.log('[신규유저] user_access_token 저장:', updateToken);
+              devLog('[신규유저] user_access_token 저장:', updateToken);
             }
 
             // 메모리상에만 사용자 정보 세팅 (아직 로컬 퍼시스트는 하지 않음)
@@ -278,7 +279,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
             // 기존 유저: initialResponse 헤더에서 user_token 추출해 저장
             if (initialToken) {
               setToken('user', initialToken);
-              console.log('[기존유저] user_access_token 저장:', initialToken);
+              devLog('[기존유저] user_access_token 저장:', initialToken);
             }
             const userData = initialResponse.data;
             // 메모리상에 사용자 정보 세팅 (퍼시스트는 조건에 따라 수행)
@@ -539,9 +540,9 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
         onSubmit={async (info: IssuerInfo) => {
           // infoModalPurpose를 기준으로 분기 처리
           if (infoModalPurpose === 'contact') {
-            console.log('[IssuerInfoModal submit] purpose: contact', info);
+            devLog('[IssuerInfoModal submit] purpose: contact', info);
           } else if (infoModalPurpose === 'download') {
-            console.log('[IssuerInfoModal submit] purpose: download', info);
+            devLog('[IssuerInfoModal submit] purpose: download', info);
             // 비회원 정보를 sessionStorage에 저장
             sessionStorage.setItem('guestInfo', JSON.stringify({
               name: info.name,
@@ -549,12 +550,12 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
             }));
             props.onDownload && props.onDownload();
           } else if (infoModalPurpose === 'share') {
-            console.log('[IssuerInfoModal submit] purpose: share', info);
+            devLog('[IssuerInfoModal submit] purpose: share', info);
             props.onShare && props.onShare();
           } else if (infoModalPurpose === 'limitReached') {
-            console.log('[IssuerInfoModal submit] purpose: limitReached', info);
+            devLog('[IssuerInfoModal submit] purpose: limitReached', info);
           } else if (infoModalPurpose === 'limitExceeded') {
-            console.log('[IssuerInfoModal submit] purpose: limitExceeded', info);
+            devLog('[IssuerInfoModal submit] purpose: limitExceeded', info);
             // ai-chat-storage에서 가장 최근 estimateId 추출 및 project_name 파싱
             try {
               const chatStorage = sessionStorage.getItem('ai-chat-storage');
@@ -591,7 +592,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                       
                       if (invoiceData && invoiceData.project_name) {
                         projectTitle = invoiceData.project_name;
-                        console.log('추출된 프로젝트 제목:', projectTitle);
+                        devLog('추출된 프로젝트 제목:', projectTitle);
                       }
                     } catch (parseError) {
                       console.warn('견적서 데이터 파싱 실패:', parseError);
@@ -599,7 +600,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                       const projectNameMatch = content.match(/"project_name"\s*:\s*"([^"]+)"/);
                       if (projectNameMatch && projectNameMatch[1]) {
                         projectTitle = projectNameMatch[1];
-                        console.log('패턴 매칭으로 추출된 프로젝트 제목:', projectTitle);
+                        devLog('패턴 매칭으로 추출된 프로젝트 제목:', projectTitle);
                       }
                     }
                     break;
@@ -640,16 +641,16 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
               console.error('limitExceeded 상담 요청 처리 오류:', e);
             }
           } else if (infoModalPurpose === 'shareChat') {
-            console.log('[IssuerInfoModal submit] purpose: shareChat', infoModalPurpose, info);
+            devLog('[IssuerInfoModal submit] purpose: shareChat', infoModalPurpose, info);
             openShareChatModal();
           } else if (infoModalPurpose === 'consult') {
-            console.log('[IssuerInfoModal submit] purpose: consult', infoModalPurpose, info);
+            devLog('[IssuerInfoModal submit] purpose: consult', infoModalPurpose, info);
             // 문의 API 호출
             props.onIssuerInfoSubmit && props.onIssuerInfoSubmit(info);
           } else if (infoModalPurpose === 'default') {
-            console.log('[IssuerInfoModal submit] purpose: default', info);
+            devLog('[IssuerInfoModal submit] purpose: default', info);
           } else {
-            console.log('[IssuerInfoModal submit] purpose: unknown', infoModalPurpose, info);
+            devLog('[IssuerInfoModal submit] purpose: unknown', infoModalPurpose, info);
           }
           setIsInfoModalOpen(false);
         }}

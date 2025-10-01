@@ -7,6 +7,7 @@ import TextArea from '@/components/common/TextArea';
 import { SwitchInput } from '@/components/SwitchInput';
 import { AppColors } from '@/styles/colors';
 import CompanySearchModal from '@/components/CustomList/CompanySearchModal';
+import { devLog } from '@/utils/devLogger'
 
 const PopupFooter = styled.div`
   display: flex;
@@ -17,7 +18,21 @@ const PopupFooter = styled.div`
   padding: 0 14px;
 `;
 
+const Flex = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  `;
+
+  const SwitchForm = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left : 20px;
+  `;
+
 const Title = styled.h2`
+  width: 100%;
   margin: 10px 0 ;
   padding: 0;
   font-size: 16px;
@@ -40,6 +55,10 @@ const CancelButton = styled(FooterButton)`
   color: ${AppColors.onSurface};
   border: 1px solid ${AppColors.border};
   border-radius: 4px;
+
+  &:hover{
+    border: 1px solid ${AppColors.border};
+  }
 `;
 
 const SaveButton = styled(FooterButton)`
@@ -55,6 +74,10 @@ const PwdChangeButton = styled(FooterButton)`
   border: 1px solid ${AppColors.border};
   height: 48px;
   width: 160px !important; /* !important를 추가하여 강제로 덮어쓰기 */
+
+  &:hover{
+    border: 1px solid ${AppColors.border};
+  }
 `;
 
 const FormContainer = styled.div`
@@ -226,29 +249,35 @@ const AdminFormPopup: React.FC<AdminFormPopupProps> = ({
     >
       <FormContainer>
         {/* 문자 · 메일 수신 섹션 */}
-        <Title>문자 · 메일 수신</Title>
-        
-        <SwitchInput
-          label="SMS 수신"
-          value={receiveAlimtalk}
-          onChange={(newValue) => {
-            console.log('📱 SMS 수신 변경:', receiveAlimtalk, '->', newValue);
+        <Flex>
+          <Title>문자 · 메일 수신</Title>
+          <SwitchForm>
+            <div style={{ width: '80px', color: 'black', marginTop: '4px' }}>알림톡</div>
+            <SwitchInput
+              // label="알림톡 수신"
+              value={receiveAlimtalk}
+              onChange={(newValue) => {
+                devLog('📱 알림톡 수신 변경:', receiveAlimtalk, '->', newValue);
             setReceiveAlimtalk(newValue);
           }}
           $labelPosition="horizontal"
           labelColor="white"
         />
+        </SwitchForm>
+           <SwitchForm>
+            <div style={{ width: '80px', color: 'black', marginTop: '4px' }}>메일</div>
         <SwitchInput
-          label="이메일 수신"
+          // label="이메일 수신"
           value={receiveEmail}
           onChange={(newValue) => {
-            console.log('📧 이메일 수신 변경:', receiveEmail, '->', newValue);
+            devLog('📧 이메일 수신 변경:', receiveEmail, '->', newValue);
             setReceiveEmail(newValue);
           }}
           $labelPosition="horizontal"
           labelColor="white"
         />
-
+        </SwitchForm>
+        </Flex>
 
         {/* 관리자 정보 섹션 */}
         <Title>관리자 정보</Title>

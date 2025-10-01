@@ -126,7 +126,7 @@ devLog('📄 [요청 body]:', body);
       responseArray[0]?.error?.customMessage === '시스템 관리자 인증이 필요합니다.'
     )
   ) {
-    console.log('🚫 [callAdminApi] 401 Unauthorized - 자동 로그아웃 처리', localStorage.getItem('adminId'));
+    devLog('🚫 [callAdminApi] 401 Unauthorized - 자동 로그아웃 처리', localStorage.getItem('adminId'));
     triggerAdminLogout();
     localStorage.removeItem('adminId');
     return [];

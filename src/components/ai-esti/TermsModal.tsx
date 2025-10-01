@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { AppColors } from '@/styles/colors';
 import Modal from '@/components/common/Modal';
 import { termsGetList } from '@/lib/api/user/userApi';
+import { devLog } from '@/utils/devLogger'
 
 const TermsContent = styled.div`
   white-space: pre-wrap;
@@ -85,7 +86,7 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
     const check = () => {
       const width = window.innerWidth;
       const narrow = width <= 386;
-      console.log("window.innerWidth:", width, "isNarrow:", narrow);
+      devLog("window.innerWidth:", width, "isNarrow:", narrow);
       setIsNarrow(narrow);
     };
     check(); // 초기 체크
@@ -100,12 +101,12 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
         setIsLoading(true);
         try {
           const termsResponse = await termsGetList();
-          console.log('Terms API Response:', termsResponse);
-          console.log('Terms data type:', typeof termsResponse?.data);
-          console.log('Terms data:', termsResponse?.data);
+          devLog('Terms API Response:', termsResponse);
+          devLog('Terms data type:', typeof termsResponse?.data);
+          devLog('Terms data:', termsResponse?.data);
           
           const termsList = Array.isArray(termsResponse?.data) ? termsResponse.data : [];
-          console.log('Terms list:', termsList);
+          devLog('Terms list:', termsList);
           
           if (termsList.length > 0) {
             const sortedList = termsList.sort((a: any, b: any) => a._id - b._id);

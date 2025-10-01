@@ -1,4 +1,5 @@
 // 전역 인증 에러 처리 유틸리티
+import { devLog } from '@/utils/devLogger'
 
 export function handleAuthError(statusCode: number, errorMessage?: string): boolean {
   const isAuthError = 
@@ -24,7 +25,7 @@ export function handleAuthError(statusCode: number, errorMessage?: string): bool
     const currentPath = window.location.pathname + window.location.search;
     localStorage.setItem('redirectAfterLogin', currentPath);
     
-    console.log('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+    devLog('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
     
     // aiclient/{companyCode}로 리다이렉트
     setTimeout(() => {

@@ -148,6 +148,7 @@ export type AdminLoginParams = {
     ciImage?: string;
     businessImage?: string;
     memo?: string;
+    businessNumber?: string;
     category: string;
     contractStartDate: string;
     contractEndDate: string;
@@ -167,6 +168,7 @@ export type AdminLoginParams = {
     ciImage?: string;
     businessImage?: string;
     memo?: string;
+    businessNumber?: string;
     category?: string;
     contractStartDate?: string;
     contractEndDate?: string;

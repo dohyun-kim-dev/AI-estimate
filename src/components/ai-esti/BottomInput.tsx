@@ -11,6 +11,7 @@ import { SocialLoginModal } from './SocialLoginModal';
 import FileUploadSection from './FileUploadSection';
 import { FileUploadData } from '@/firebase.functions';
 import IssuerInfoModal, { IssuerInfo } from "@/components/ai-esti/IssuerInfoModal";
+import { devLog } from '@/utils/devLogger'
 
 
 export interface ProjectEstimate {
@@ -298,7 +299,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
     const { messages } = useChatStore.getState();
 
     // 항상 스토어의 히스토리를 사용하여 액션 버튼과 바텀 인풋이 동일하게 처리됨
-    console.log("현재 메시지 개수:", messages.length);
+    devLog("현재 메시지 개수:", messages.length);
 
     try {
       if (isLoggedIn) {
@@ -338,14 +339,14 @@ const BottomInput: React.FC<BottomInputProps> = ({
     } catch (error: any) {
       // 🔥 AI 오류 발생 시 입력값 복원 처리
       if (error?.shouldRestoreInput && error?.originalInput) {
-        console.log('🔄 AI 오류로 인한 입력값 복원:', error.originalInput);
+        devLog('🔄 AI 오류로 인한 입력값 복원:', error.originalInput);
         setValue(error.originalInput);
         
         // 비회원인 경우 차감된 사용량은 이미 useChatActions에서 복구됨
-        console.log('🔄 사용량은 자동으로 복구되었습니다.');
+        devLog('🔄 사용량은 자동으로 복구되었습니다.');
       } else {
         // 일반적인 에러의 경우 입력값 복원
-        console.log('🔄 일반 오류로 인한 입력값 복원:', lastInputRef.current);
+        devLog('🔄 일반 오류로 인한 입력값 복원:', lastInputRef.current);
         setValue(lastInputRef.current);
       }
     }
@@ -370,7 +371,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
     
     // 🔥 AI 스트리밍 중단 신호 전송
     if (abortController) {
-      console.log('🛑 AI 스트리밍 중단 신호 전송');
+      devLog('🛑 AI 스트리밍 중단 신호 전송');
       abortController.abort();
       setAbortController(null);
     }
@@ -480,13 +481,13 @@ const BottomInput: React.FC<BottomInputProps> = ({
   
   const handleIssuerInfoSubmit = (info: IssuerInfo) => {
     onInfoSubmit(info, estimateDataForConsult, chatSessionId);
-    console.log("정보 입력 후 견적 요청:", info);
+    devLog("정보 입력 후 견적 요청:", info);
     setIsInfoModalOpen(false);
   };
 
   const handleGoogleLoginSuccess = async (tokenResponse: any) => {
     try {
-      console.log('Google login success:', tokenResponse);
+      devLog('Google login success:', tokenResponse);
     } catch (error) {
       console.error('Google login error:', error);
     }

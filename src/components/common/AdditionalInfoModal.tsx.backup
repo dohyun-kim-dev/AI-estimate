@@ -9,7 +9,7 @@ import Modal from '@co  const handleSubmit = async (e) => {
       return;
     }
 
-    console.log('AdditionalInfoModal handleSubmit:', {
+    devLog('AdditionalInfoModal handleSubmit:', {
       additionalInfoUser,
       user,
       providerId: additionalInfoUser?.providerId || user?.providerId || ''
@@ -256,9 +256,9 @@ useEffect(() => {
           const needsCompanyRegistration = !userServices.includes(currentCompanyCode);
           if (needsCompanyRegistration) {
             await companyRegister();
-            console.log(`고객사 등록 완료: ${currentCompanyCode}`);
+            devLog(`고객사 등록 완료: ${currentCompanyCode}`);
           } else {
-            console.log(`이미 고객사 등록됨: ${currentCompanyCode}`);
+            devLog(`이미 고객사 등록됨: ${currentCompanyCode}`);
           }
         } catch (err) {
           console.error('고객사 등록 중 오류:', err);

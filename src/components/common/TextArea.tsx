@@ -27,7 +27,6 @@ const StyledTextArea = styled.textarea<{ $height?: string }>`
 
   &:focus {
     outline: none;
-    border-color: #3391FF;
     box-shadow: 0 0 0 2px rgba(51, 145, 255, 0.12);
   }
 

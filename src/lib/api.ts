@@ -7,13 +7,13 @@ const createApiUrl = (endpoint: string) => {
   const apiPath = cleanEndpoint.startsWith('/api') ? cleanEndpoint : `/api${cleanEndpoint}`
   
   if (import.meta.env.DEV) {
-    console.log('Development API Request:', apiPath)
+    devLog('Development API Request:', apiPath)
     return apiPath
   }
   
   const API_HOST = (import.meta.env.VITE_PUBLIC_API_HOST || 'http://121.157.229.40:8535').replace(/\/$/, '')
   const fullUrl = `${API_HOST}${apiPath}`
-  console.log('Production API Request:', fullUrl)
+  devLog('Production API Request:', fullUrl)
   return fullUrl
 }
 

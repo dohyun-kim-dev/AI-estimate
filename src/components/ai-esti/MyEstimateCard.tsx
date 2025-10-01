@@ -13,6 +13,7 @@ import { buildFullEstimateData } from '@/hooks/estimate';
 import { v4 as uuidv4 } from 'uuid';
 import Modal from '../common/Modal';
 import { es } from 'date-fns/locale';
+import { devLog } from '@/utils/devLogger'
 
 const CardWrapper = styled.div`
   background-color: ${({ theme }) => theme.card};
@@ -219,14 +220,14 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
           if (raw) {
             const storageState = JSON.parse(raw);
             const messages = storageState.state?.messages || [];
-            console.log("세션스토리지 메시지:", messages);
+            devLog("세션스토리지 메시지:", messages);
             // project_name이 content에 포함된 메시지 중 estimateId가 있는 첫 메시지 찾기
             let foundId = null;
             for (const m of messages) {
               if (typeof m.content === 'string' && m.content.includes(estimateObj.project_name)) {
                 if (m.estimateId) {
                   foundId = m.estimateId;
-                  console.log("세션스토리지에서 추출한 estimateId:", foundId);
+                  devLog("세션스토리지에서 추출한 estimateId:", foundId);
                   break;
                 }
               }
@@ -249,19 +250,19 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
     try {
       await fetch(url, { method: 'GET' });
 
-      console.log("다운로드 카운트 성공")
-      console.log("estimateObj",estimateObj); 
-      console.log("url",url);
+      devLog("다운로드 카운트 성공")
+      devLog("estimateObj",estimateObj); 
+      devLog("url",url);
     } catch (e) {
       // 실패해도 무시 (카운트/내역 목적)
-      console.log("다운로드 카운트 실패 ")
+      devLog("다운로드 카운트 실패 ")
     }
 
 
-  console.log(estimateObj);
+  devLog(estimateObj);
 
     if (!estimateObj._id) throw new Error('uuid 보장 실패');
-    console.log("estimateObj._id:", estimateObj._id);
+    devLog("estimateObj._id:", estimateObj._id);
     return estimateObj._id as string;
   }
 
@@ -283,7 +284,7 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
           window.location.href = previewUrl;
         }
       }, 100);
-      console.log("estimate:", estimate);
+      devLog("estimate:", estimate);
       success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
     } catch (err) {
       console.error('PDF 미리보기 오픈 중 오류:', err);
@@ -312,7 +313,7 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
         return;
       }
 
-      console.log('복사하려는 shareUrl:', shareUrl); // 디버깅용
+      devLog('복사하려는 shareUrl:', shareUrl); // 디버깅용
 
       const textToCopy = `${shareUrl}
 
@@ -331,7 +332,7 @@ https://heredotcorp.com
  
  `;
 
-      console.log('복사하려는 텍스트:', textToCopy); // 디버깅용
+      devLog('복사하려는 텍스트:', textToCopy); // 디버깅용
 
       // fallback 방법을 먼저 시도 (더 안정적)
       const copyWithFallback = () => {
@@ -364,7 +365,7 @@ https://heredotcorp.com
           return;
         }
       } catch (fallbackErr) {
-        console.log('Fallback 복사 실패, Clipboard API 시도:', fallbackErr);
+        devLog('Fallback 복사 실패, Clipboard API 시도:', fallbackErr);
       }
 
       // fallback이 실패하면 Clipboard API 시도
@@ -375,7 +376,7 @@ https://heredotcorp.com
           setOpenShare(false);
           return;
         } catch (clipboardErr) {
-          console.log('Clipboard API 실패:', clipboardErr);
+          devLog('Clipboard API 실패:', clipboardErr);
         }
       }
 

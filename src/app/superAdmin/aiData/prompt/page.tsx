@@ -206,7 +206,7 @@ const PromptPage: React.FC = () => {
           keyword: searchKeyword,
         });
         
-        console.log('AI 프롬프트 조회 응답:', response);
+        devLog('AI 프롬프트 조회 응답:', response);
         
         // 응답 처리 (응답 구조에 맞게 수정)
         if (response && typeof response === 'object') {

@@ -10,24 +10,25 @@ import { PDF_EXTRACTION_INSTRUCTION } from './PDF_EXTRACTION_INSTRUCTION';
 import { JsonFeatures } from './priceDataToJson';
 import { getAllUnitPrices, getAiPrompts } from '@/lib/api/user/userApi';
 import { usePromptStore } from '@/store/promptStore';
+import { devLog } from '../../utils/devLogger';
 
 // Zustand 스토어 객체 직접 가져오기
 const promptStore = usePromptStore.getState();
 
 // 단가표 데이터를 마크다운 형식으로 변환하는 함수
 const convertPriceListToMarkdown = (priceList: any[], columns?: any[]): string => {
-  console.log('[convertPriceListToMarkdown] 변환 시작, 데이터 개수:', priceList?.length || 0);
+  devLog('[convertPriceListToMarkdown] 변환 시작, 데이터 개수:', priceList?.length || 0);
   
   if (!priceList || priceList.length === 0) {
-    console.log("[convertPriceListToMarkdown] ❌ 빈 데이터이므로 변환 실패");
-    console.log("priceList", priceList);
+    devLog("[convertPriceListToMarkdown] ❌ 빈 데이터이므로 변환 실패");
+    devLog("priceList", priceList);
     return '단가표 데이터를 불러오는데 실패했습니다.';
   }
 
-  console.log('[convertPriceListToMarkdown] ✅ 데이터 확인됨, 변환 진행');
-  console.log('[convertPriceListToMarkdown] 첫 번째 데이터 샘플:', priceList[0]);
-  console.log('[convertPriceListToMarkdown] columns 정보:', columns);
-  
+  devLog('[convertPriceListToMarkdown] ✅ 데이터 확인됨, 변환 진행');
+  devLog('[convertPriceListToMarkdown] 첫 번째 데이터 샘플:', priceList[0]);
+  devLog('[convertPriceListToMarkdown] columns 정보:', columns);
+
   let markdown = `# 단가표 정보
 
 다음은 프로젝트 견적 산출에 사용되는 단가표 정보입니다.
@@ -57,7 +58,7 @@ const convertPriceListToMarkdown = (priceList: any[], columns?: any[]): string =
         if (col.name === '금액' || col.name.includes('기간')) {
           return { ...col, type: 'number' };
         }
-        console.log("col",col);
+        devLog("col",col);
         return col;
       });
     } else {
@@ -67,8 +68,8 @@ const convertPriceListToMarkdown = (priceList: any[], columns?: any[]): string =
   } else {
     activeColumns = defaultColumns;
   }
-  
-  console.log('[convertPriceListToMarkdown] 표시할 컬럼들:', activeColumns.map(col => col.name));
+
+  devLog('[convertPriceListToMarkdown] 표시할 컬럼들:', activeColumns.map(col => col.name));
 
   // 카테고리별로 그룹화하여 처리 (분류 필드 사용)
   const categories = priceList.reduce((acc, item) => {
@@ -80,11 +81,11 @@ const convertPriceListToMarkdown = (priceList: any[], columns?: any[]): string =
     return acc;
   }, {} as Record<string, any[]>);
 
-  console.log('[convertPriceListToMarkdown] 카테고리별 그룹화 결과:', Object.keys(categories));
+  devLog('[convertPriceListToMarkdown] 카테고리별 그룹화 결과:', Object.keys(categories));
 
   Object.entries(categories).forEach(([categoryName, items]) => {
-    console.log(`[convertPriceListToMarkdown] 카테고리 "${categoryName}" 처리 중, 항목 수: ${(items as any[]).length}`);
-    
+    devLog(`[convertPriceListToMarkdown] 카테고리 "${categoryName}" 처리 중, 항목 수: ${(items as any[]).length}`);
+
     markdown += `## ${categoryName}
 
 `;
@@ -119,7 +120,7 @@ const convertPriceListToMarkdown = (priceList: any[], columns?: any[]): string =
       
       // 첫 번째 항목만 샘플로 로깅
       if (index === 0) {
-        console.log(`[convertPriceListToMarkdown] 샘플 항목 변환:`, {
+        devLog(`[convertPriceListToMarkdown] 샘플 항목 변환:`, {
           original: item,
           formatted: rowData
         });
@@ -138,25 +139,25 @@ const convertPriceListToMarkdown = (priceList: any[], columns?: any[]): string =
 - 기간은 프론트엔드(FE)와 백엔드(BE) 개발 기간을 합산한 기준입니다.
 `;
 
-  console.log('[convertPriceListToMarkdown] ✅ 마크다운 변환 완료, 최종 길이:', markdown.length);
+  devLog('[convertPriceListToMarkdown] ✅ 마크다운 변환 완료, 최종 길이:', markdown.length);
   return markdown;
 };
 
 export const combineSystemPrompts = async () => {
-  console.log('[combineSystemPrompts] 시작');
+  devLog('[combineSystemPrompts] 시작');
 
   // 데이터 준비 상태 확인
   const isDataReady = promptStore.getIsPriceDataReady();
-  console.log('[combineSystemPrompts] 데이터 준비 상태:', isDataReady);
+  devLog('[combineSystemPrompts] 데이터 준비 상태:', isDataReady);
 
   // 데이터가 준비되지 않았다면 준비될 때까지 기다림
   if (!isDataReady) {
-    console.log('[combineSystemPrompts] 데이터가 준비되지 않아 로딩 시작');
+    devLog('[combineSystemPrompts] 데이터가 준비되지 않아 로딩 시작');
 
     try {
       // API 호출로 데이터 준비
       const response = await getAllUnitPrices();
-      console.log('[combineSystemPrompts] API 응답:', response);
+      devLog('[combineSystemPrompts] API 응답:', response);
 
       if (response && response.statusCode === 200 && response.data && (response.data as any).data && Array.isArray((response.data as any).data)) {
         const priceList = (response.data as any).data;
@@ -165,37 +166,37 @@ export const combineSystemPrompts = async () => {
         // promptStore에 데이터 저장
         promptStore.setPriceList(priceList);
         promptStore.setPriceListColumns(columns);
-        console.log('[combineSystemPrompts] 단가표 데이터 저장 완료, 길이:', priceList.length);
-        console.log('[combineSystemPrompts] 컬럼 정보 저장 완료, 개수:', columns.length);
+        devLog('[combineSystemPrompts] 단가표 데이터 저장 완료, 길이:', priceList.length);
+        devLog('[combineSystemPrompts] 컬럼 정보 저장 완료, 개수:', columns.length);
 
         // 마크다운 형식으로 변환하여 저장 (컬럼 정보 포함)
         const priceListMarkdown = convertPriceListToMarkdown(priceList, columns);
         
         // 마크다운 생성 결과 확인 및 콘솔 출력
         if (priceListMarkdown && priceListMarkdown !== '단가표 데이터를 불러오는데 실패했습니다.') {
-          console.log('[combineSystemPrompts] ✅ 마크다운 생성 성공!');
-          console.log('[combineSystemPrompts] 📄 생성된 마크다운 내용:');
-          console.log('='.repeat(50));
-          console.log(priceListMarkdown);
-          console.log('='.repeat(50));
+          devLog('[combineSystemPrompts] ✅ 마크다운 생성 성공!');
+          devLog('[combineSystemPrompts] 📄 생성된 마크다운 내용:');
+          devLog('='.repeat(50));
+          devLog(priceListMarkdown);
+          devLog('='.repeat(50));
         } else {
-          console.log('[combineSystemPrompts] ❌ 마크다운 생성 실패!');
-          console.log('[combineSystemPrompts] 실패한 마크다운 내용:', priceListMarkdown);
+          devLog('[combineSystemPrompts] ❌ 마크다운 생성 실패!');
+          devLog('[combineSystemPrompts] 실패한 마크다운 내용:', priceListMarkdown);
         }
         
         promptStore.setPriceListMarkdown(priceListMarkdown);
-        console.log('[combineSystemPrompts] 마크다운 변환 및 저장 완료');
+        devLog('[combineSystemPrompts] 마크다운 변환 및 저장 완료');
 
         // 데이터 준비 완료 표시
         promptStore.setPriceDataReady(true);
-        console.log('[combineSystemPrompts] 데이터 준비 완료');
+        devLog('[combineSystemPrompts] 데이터 준비 완료');
       } else {
-        console.warn('[combineSystemPrompts] API 응답이 올바르지 않음:', response);
+        devLog('[combineSystemPrompts] API 응답이 올바르지 않음:', response);
         // 실패 시에도 빈 데이터로 준비 완료 표시 (재시도 방지)
         promptStore.setPriceDataReady(true);
       }
     } catch (error) {
-      console.warn('[combineSystemPrompts] 단가표 데이터를 불러오는데 실패했습니다:', error);
+      devLog('[combineSystemPrompts] 단가표 데이터를 불러오는데 실패했습니다:', error);
       // 실패 시에도 준비 완료 표시 (무한 루프 방지)
       promptStore.setPriceDataReady(true);
     }
@@ -207,7 +208,7 @@ export const combineSystemPrompts = async () => {
   const priceListMarkdown = promptStore.getPriceListMarkdown();
   const aiPromptsContent = promptStore.getAiPrompts();
 
-  console.log('[combineSystemPrompts] 최종 데이터 상태:', {
+  devLog('[combineSystemPrompts] 최종 데이터 상태:', {
     priceListLength: priceList?.length || 0,
     columnsLength: priceListColumns?.length || 0,
     hasMarkdown: !!priceListMarkdown,
@@ -219,32 +220,31 @@ export const combineSystemPrompts = async () => {
   // AI 프롬프트 content와 priceListMarkdown을 결합
   const finalPrompt = `${aiPromptsContent}\n\n${priceListMarkdown}`;
 
-  console.log('[combineSystemPrompts] 최종 프롬프트 생성 완료, 길이:', finalPrompt.length);
-  console.log('[combineSystemPrompts] AI 프롬프트 포함 여부:', finalPrompt.includes(aiPromptsContent.substring(0, 50)));
-  console.log('[combineSystemPrompts] 단가표 마크다운 포함 여부:', finalPrompt.includes('# 단가표 정보'));
-  console.log('priceListMarkdown', priceListMarkdown);
-  console.log('priceList', priceList);
-  
+  devLog('[combineSystemPrompts] 최종 프롬프트 생성 완료, 길이:', finalPrompt.length);
+  devLog('[combineSystemPrompts] AI 프롬프트 포함 여부:', finalPrompt.includes(aiPromptsContent.substring(0, 50)));
+  devLog('[combineSystemPrompts] 단가표 마크다운 포함 여부:', finalPrompt.includes('# 단가표 정보'));
+  devLog('priceListMarkdown', priceListMarkdown);
+  devLog('priceList', priceList);
 
   // 최종 프롬프트에 마크다운이 포함되었는지 상세 확인
   if (finalPrompt.includes('# 단가표 정보')) {
-    console.log('[combineSystemPrompts] ✅ 최종 프롬프트에 단가표 마크다운이 정상 포함됨');
-    
+    devLog('[combineSystemPrompts] ✅ 최종 프롬프트에 단가표 마크다운이 정상 포함됨');
+
     // 마크다운 부분만 추출해서 확인
     const markdownStart = finalPrompt.indexOf('# 단가표 정보');
     const markdownEnd = finalPrompt.indexOf('---', markdownStart);
     if (markdownEnd > markdownStart) {
       const markdownSection = finalPrompt.substring(markdownStart, markdownEnd + 3);
-      console.log('[combineSystemPrompts] 📋 포함된 마크다운 섹션:');
-      console.log('-'.repeat(30));
-      console.log(markdownSection);
-      console.log('-'.repeat(30));
+      devLog('[combineSystemPrompts] 📋 포함된 마크다운 섹션:');
+      devLog('-'.repeat(30));
+      devLog(markdownSection);
+      devLog('-'.repeat(30));
     }
   } else {
-    console.log('[combineSystemPrompts] ❌ 최종 프롬프트에 단가표 마크다운이 포함되지 않음');
-    console.log('[combineSystemPrompts] ⚠️  가능한 원인: 마크다운 생성 실패 또는 데이터 누락');
+    devLog('[combineSystemPrompts] ❌ 최종 프롬프트에 단가표 마크다운이 포함되지 않음');
+    devLog('[combineSystemPrompts] ⚠️  가능한 원인: 마크다운 생성 실패 또는 데이터 누락');
   }
-  
-  // console.log('[combineSystemPrompts] 최종 프롬프트 내용:', finalPrompt);
+
+  // devLog('[combineSystemPrompts] 최종 프롬프트 내용:', finalPrompt);
   return finalPrompt;
 };

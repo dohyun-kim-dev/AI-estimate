@@ -3,6 +3,7 @@ type StoreAdminTokenProps = {
   accessToken: string;
   isRoot?: boolean; // isRoot 추가
 };
+import { devLog } from '@/utils/devLogger'
 
 /**
  * 관리자 로그인 토큰 및 ID를 localStorage에 저장
@@ -31,7 +32,7 @@ export function getAdminIsRoot(): boolean {
   const isRoot = localStorage.getItem('admin_isRoot');
   const result = isRoot === 'true';
   
-  console.log('📦 [authStorage] getAdminIsRoot 호출:', {
+  devLog('📦 [authStorage] getAdminIsRoot 호출:', {
     localStorage_adminIsRoot: isRoot,
     parsedResult: result,
     typeOfStoredValue: typeof isRoot,

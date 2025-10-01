@@ -16,6 +16,7 @@ import {
   ViewModule as CompactViewIcon,
   ViewComfy as LargeViewIcon
 } from "@mui/icons-material";
+import { devLog } from '@/utils/devLogger'
 
 // BaseRecord 타입 정의
 interface BaseRecord {
@@ -121,7 +122,7 @@ export default function CmsMobileView<T extends BaseRecord>({
   // Keep allData in sync when static data prop changes (no fetcher)
   useEffect(() => {
     if (!fetchData && data) {
-      console.log('🔄 CmsMobileView data 변경 감지:', data.length);
+      devLog('🔄 CmsMobileView data 변경 감지:', data.length);
       const list = Array.isArray(data) ? data : [];
       setAllData(list);
       setTotalItemsMeta(list.length);

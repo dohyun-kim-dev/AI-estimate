@@ -1,5 +1,5 @@
 'use client';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import CmsResponsiveContainer from '@/components/CustomList/ResponsiveList/CmsResponsiveContainer';
 import { ColumnDefinition } from '@/components/CustomList/GenericDataTable';
 import { FetchParams, FetchResult } from '@/components/CustomList/GenericListUI';
@@ -11,37 +11,64 @@ import { THEME_COLORS } from '@/styles/theme_colors';
 import { getEstimateRequestListByRole } from '@/lib/utils/adminApiRouter';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { toast } from 'react-toastify';
+import { downloadEstimate, downloadEstimateExcel } from '@/lib/api/admin/adminApi';
+import ChatHistoryModal from '@/components/ChatHistoryModal';
+import EstimateInquiryModal from '@/components/EstimateInquiryModal';
+import { devLog } from '@/utils/devLogger'
 
-// API 응답 타입 정의
-interface EstimateRequestUser {
-  id: string;
-  name: string;
-  cellphone: string;
-  email: string;
+// 프로필 스타일 컴포넌트 (대화 이력 관리와 동일)
+const ProfileWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  @media (max-width: 768px) {
+    justify-content: flex-end;
+  }
+`;
+
+const ProfileHeader = styled.div<{ $imageUrl: string | null }>`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  background-image: url(${({ $imageUrl }) => $imageUrl || '/default-profile.png'});
+  border: 1px solid #ccc;
+  flex-shrink: 0;
+`;
+
+// API 응답 타입 정의 (새로운 응답 형식에 맞게 수정)
+interface EstimateRequestUserInfo {
   _id: string;
+  name: string;
+  email: string;
+  cellphone: string;
+  profileImage?: string; // 프로필 이미지 추가
 }
 
 interface EstimateRequestItem {
   _id: string;
-  user: EstimateRequestUser;
+  user: string; // 사용자 ID
+  userInfo: EstimateRequestUserInfo;
+  company: string;
   title: string;
-  chatSession?: string;
-  estimateId?: string;
-  estimateFile?: string;
+  chatSession: string;
+  estimateId: string;
   createAt: string;
+  memo?: string;
+  status?: string; // 서버에서 올 예정인 상태 필드
 }
 
 interface EstimateRequestResponse {
   statusCode: number;
   message: string;
-  data: {
-    result: EstimateRequestItem[];
-    metadata: {
-      allCnt: number;
-      totalCnt: number;
-    };
+  data: EstimateRequestItem[];
+  metadata: {
+    allCnt: number;
+    totalCnt: number;
   };
-  metadata: null;
   error: null;
 }
 
@@ -52,6 +79,7 @@ type Inquiry = {
   inquiryDate: string;
   name: string;
   userId: string;
+  profileImageUrl: string; // 프로필 이미지 URL 추가
   email: string;
   cellphone: string;
   title: string;
@@ -66,10 +94,11 @@ type Inquiry = {
 const DetailActionButton = styled(ActionButton)`
   background-color: ${THEME_COLORS.light.primary};
   color: #fff;
-  width: 100px;
-  height: 30px;
+  width: 90px;
+  height: 32px;
   font-size: 12px;
-  margin-right: 5px;
+  padding: 0px;
+  margin: 0px;
   &:hover:not(:disabled) {
     background-color: #1e3a5f;
   }
@@ -78,18 +107,197 @@ const DetailActionButton = styled(ActionButton)`
 const DownloadPdfButton = styled(ActionButton)`
   background-color: #214A72;
   color: #fff;
-  width: 100px;
-  height: 30px;
+  width: 90px;
+  height: 32px;
+  padding: 0px;
+  margin: 0px;
   font-size: 12px;
-  margin-right: 5px;
   &:hover:not(:disabled) {
     background-color: #1a395c;
   }
 `;
 
+// 상태 드롭다운 컴포넌트
+interface StatusDropdownProps {
+  currentStatus: string;
+  onStatusChange: (newStatus: string) => void;
+}
+
+const StatusDropdown: React.FC<StatusDropdownProps> = ({ currentStatus, onStatusChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLUListElement>(null);
+
+  const statusOptions = [
+    { value: '접수', color: '#2196F3' },
+    { value: '연락불가', color: '#FF9800' },
+    { value: '불발', color: '#F44336' },
+    { value: '완료', color: '#4CAF50' },
+  ];
+
+  const getCurrentStatusColor = () => {
+    const option = statusOptions.find(opt => opt.value === currentStatus);
+    return option?.color || '#2196F3';
+  };
+
+  const updatePosition = () => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+      });
+    }
+  };
+
+  const handleToggle = () => {
+    if (!isOpen) {
+      updatePosition();
+    }
+    setIsOpen(!isOpen);
+  };
+
+  const handleSelect = (value: string) => {
+    onStatusChange(value);
+    setIsOpen(false);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen]);
+
+  return (
+    <>
+      <StatusDropdownContainer ref={containerRef}>
+        <StatusDropdownHeader onClick={handleToggle}>
+          <StatusText>{currentStatus}</StatusText>
+          <DropdownIcon $isOpen={isOpen}>▼</DropdownIcon>
+        </StatusDropdownHeader>
+      </StatusDropdownContainer>
+
+      {isOpen && (
+        <StatusDropdownList
+          ref={dropdownRef}
+          style={{
+            position: 'fixed',
+            top: position.top,
+            left: position.left,
+          }}
+        >
+          {statusOptions.map((option) => (
+            <StatusDropdownItem
+              key={option.value}
+              onClick={() => handleSelect(option.value)}
+              $statusColor={option.color}
+              $isSelected={currentStatus === option.value}
+            >
+              {option.value}
+            </StatusDropdownItem>
+          ))}
+        </StatusDropdownList>
+      )}
+    </>
+  );
+};
+
+// 상태 드롭다운 스타일
+const StatusDropdownContainer = styled.div`
+  position: relative;
+  width: 80px;
+  font-size: 12px;
+`;
+
+const StatusDropdownHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  color: black;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  user-select: none;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.9;
+  }
+`;
+
+const StatusText = styled.span`
+  flex: 1;
+  text-align: center;
+`;
+
+const DropdownIcon = styled.span<{ $isOpen: boolean }>`
+  font-size: 10px;
+  margin-left: 4px;
+  transform: ${({ $isOpen }) => ($isOpen ? 'rotate(180deg)' : 'rotate(0deg)')};
+  transition: transform 0.2s ease;
+`;
+
+const StatusDropdownList = styled.ul`
+  position: fixed;
+  width: 80px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  z-index: 99999;
+  margin-top: 4px;
+`;
+
+const StatusDropdownItem = styled.li<{ $statusColor: string; $isSelected: boolean }>`
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  background-color: ${({ $isSelected }) => ($isSelected ? '#f0f4f8' : 'white')};
+  border-bottom: 1px solid #f0f0f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: ${({ $isSelected }) => ($isSelected ? '#e8f0f6' : '#f8f9fa')};
+  }
+
+  &:first-child {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+
+  &:last-child {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+`;
+
 const InquiryPage: React.FC = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<Partial<Inquiry> | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Inquiry | null>(null);
+  const [isChatHistoryModalOpen, setIsChatHistoryModalOpen] = useState(false);
+  const [selectedChatSession, setSelectedChatSession] = useState<string>('');
+  const [selectedUserName, setSelectedUserName] = useState<string>('');
   const listRef = useRef<{ refetch: () => void }>(null);
   const { isRoot, ready } = useAdminAuth(); // ready 상태 추가
   
@@ -113,7 +321,7 @@ const InquiryPage: React.FC = () => {
 
   // 컴포넌트 마운트 시 isRoot 값 확인
   React.useEffect(() => {
-    console.log('🔍 [InquiryPage] 컴포넌트 마운트 시 상태 확인:', {
+    devLog('🔍 [InquiryPage] 컴포넌트 마운트 시 상태 확인:', {
       isRoot,
       localStorage_adminIsRoot: localStorage.getItem('admin_isRoot'),
       localStorage_adminId: localStorage.getItem('adminId'),
@@ -131,21 +339,93 @@ const InquiryPage: React.FC = () => {
     setSelectedItem(null);
   };
 
+  // 견적문의 상태 업데이트 핸들러
+  const handleInquiryStatusSave = async (inquiryId: string, newStatus: string, newMemo: string) => {
+    try {
+      // TODO: API 호출로 상태 업데이트
+      devLog('견적문의 상태 업데이트:', { inquiryId, newStatus, newMemo });
+      
+      // 임시로 성공 처리 (실제 API 연동 필요)
+      toast.success('견적문의 상태가 업데이트되었습니다.');
+      
+      // 리스트 새로고침
+      listRef.current?.refetch();
+    } catch (error) {
+      console.error('견적문의 상태 업데이트 오류:', error);
+      throw error;
+    }
+  };
+
+  // 테이블에서 상태 변경 핸들러
+  const handleStatusChange = async (inquiryId: string, newStatus: string) => {
+    try {
+      // TODO: API 호출로 상태만 업데이트 (메모는 기존 값 유지)
+      devLog('테이블에서 상태 변경:', { inquiryId, newStatus });
+      
+      // 임시로 성공 처리 (실제 API 연동 필요)
+      toast.success('처리상태가 변경되었습니다.');
+      
+      // 리스트 새로고침
+      listRef.current?.refetch();
+    } catch (error) {
+      console.error('상태 변경 오류:', error);
+      toast.error('상태 변경에 실패했습니다.');
+    }
+  };
+
+  // 상태 텍스트 변환 함수 (서버 영어 상태 -> 한글 상태)
+  const getStatusText = (status?: string) => {
+    switch (status) {
+      case 'received': return '접수';
+      case 'contact_failed': return '연락불가';
+      case 'canceled': return '불발';
+      case 'completed': return '완료';
+      default: return status || '-';
+    }
+  };
+
   // 대화 이력 보기 핸들러
-  const handleChatHistoryClick = (chatSession?: string) => {
+  const handleChatHistoryClick = (chatSession?: string, userName?: string) => {
     if (chatSession) {
-      alert(`대화 이력 페이지로 이동: ${chatSession}`);
+      setSelectedChatSession(chatSession);
+      setSelectedUserName(userName || '사용자');
+      setIsChatHistoryModalOpen(true);
     } else {
       alert('대화 이력이 없습니다.');
     }
   };
 
+  // 채팅 이력 모달 닫기 핸들러
+  const closeChatHistoryModal = () => {
+    setIsChatHistoryModalOpen(false);
+    setSelectedChatSession('');
+    setSelectedUserName('');
+  };
+
   // PDF 다운로드 핸들러
-  const handleDownloadPdf = (estimateId?: string) => {
-    if (estimateId) {
-      alert(`견적 PDF 파일 다운로드: ${estimateId}`);
-    } else {
+  const handleDownloadPdf = async (estimateId?: string) => {
+    if (!estimateId) {
       alert('견적 PDF가 없습니다.');
+      return;
+    }
+    
+    try {
+      devLog(`Downloading PDF for estimate: ${estimateId}`);
+      
+      // 새 탭에서 PDF 미리보기 페이지 열기 (EstimateCard의 openPreviewTab과 동일한 방식)
+      const previewUrl = `/superadmin/pdf-preview?uuid=${estimateId}`;
+      const newWindow = window.open(previewUrl, '_blank');
+      
+      setTimeout(() => {
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          window.location.href = previewUrl;
+        }
+      }, 100);
+      
+      devLog('PDF 미리보기 페이지가 새 탭에서 열립니다.');
+    } catch (error) {
+      console.error('PDF 다운로드 오류:', error);
+      alert('PDF 다운로드 중 오류가 발생했습니다.');
     }
   };
 
@@ -158,9 +438,34 @@ const InquiryPage: React.FC = () => {
     }
   };
 
+  // 엑셀 다운로드 핸들러 (adminApi.ts의 downloadEstimateExcel 함수 사용)
+  const handleDownloadExcel = async (estimateId?: string) => {
+    if (!estimateId) {
+      alert('견적 ID가 없습니다.');
+      return;
+    }
+    
+    try {
+      devLog(`Downloading Excel for estimate: ${estimateId}`);
+      
+      // adminApi.ts의 downloadEstimateExcel 함수를 직접 사용
+      const result = await downloadEstimateExcel(estimateId);
+      
+      if (result.success) {
+        devLog(`엑셀 다운로드 완료: ${result.filename}`);
+        toast.success('엑셀 파일이 성공적으로 다운로드되었습니다.');
+      } else {
+        throw new Error('엑셀 파일 생성에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('엑셀 다운로드 오류:', error);
+      toast.error('엑셀 다운로드 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.');
+    }
+  };
+
   // 고객사 선택 핸들러
   const handleCompanySelect = useCallback((company: { id: string; name: string }) => {
-    console.log('🏢 [고객사 선택]:', company);
+    devLog('🏢 [고객사 선택]:', company);
     setSelectedCompanyCode(company.id);
     setSelectedCompanyName(company.name);
     
@@ -172,14 +477,14 @@ const InquiryPage: React.FC = () => {
 
   // 초기 날짜 설정 핸들러 (GenericUI에서 초기 날짜가 설정되었을 때 호출)
   const handleInitialDateSet = useCallback((fromDate: string, toDate: string) => {
-    console.log('📅 [초기 날짜 설정]:', { fromDate, toDate });
+    devLog('📅 [초기 날짜 설정]:', { fromDate, toDate });
     setCurrentFromDate(fromDate);
     setCurrentToDate(toDate);
   }, []);
 
   // 날짜 변경 핸들러 (GenericUI에서 날짜가 변경되었을 때 호출)
   const handleDateChange = useCallback((fromDate: string, toDate: string) => {
-    console.log('📅 [날짜 변경]:', { fromDate, toDate });
+    devLog('📅 [날짜 변경]:', { fromDate, toDate });
     setCurrentFromDate(fromDate);
     setCurrentToDate(toDate);
     // 날짜 변경 시에는 실제 조회이므로 초기 로드 플래그 해제
@@ -188,7 +493,7 @@ const InquiryPage: React.FC = () => {
 
   // 검색 변경 핸들러 (GenericUI에서 검색이 실행될 때 호출)
   const handleSearchChange = useCallback((keyword: string) => {
-    console.log('🔍 [검색 변경]:', { keyword });
+    devLog('🔍 [검색 변경]:', { keyword });
     setCurrentKeyword(keyword);
     // 검색 시에는 실제 조회이므로 초기 로드 플래그 해제
     setIsInitialLoad(false);
@@ -197,14 +502,21 @@ const InquiryPage: React.FC = () => {
   const fetchData = useCallback(
     async (params: FetchParams): Promise<FetchResult<Inquiry>> => {
       try {
-        // 초기 로드 시에는 API 호출하지 않음
-        if (isInitialLoad) {
+        // 검색이나 날짜 변경 등으로 인한 호출이 아닌 초기 로드 시에는 API 호출하지 않음
+        // params에 값이 있으면 실제 조회이므로 API 호출
+        const hasSearchParams = params.keyword !== undefined || params.fromDate || params.toDate;
+        if (isInitialLoad && !hasSearchParams) {
           return { data: [], totalItems: 0, allItems: 0 };
+        }
+        
+        // 검색이나 날짜 변경 등의 실제 조회 시에는 초기 로드 플래그 해제
+        if (hasSearchParams) {
+          setIsInitialLoad(false);
         }
 
         // AuthContext가 아직 준비되지 않았으면 대기
         if (!ready) {
-          console.log('🔄 [상담요청 조회] AuthContext 준비 중...');
+          devLog('🔄 [상담요청 조회] AuthContext 준비 중...');
           return { data: [], totalItems: 0, allItems: 0 };
         }
 
@@ -231,7 +543,7 @@ const InquiryPage: React.FC = () => {
         const fromDate = params.fromDate || currentFromDate;
         const toDate = params.toDate || currentToDate;
         
-        console.log('🚀 [상담요청 조회] fetchData 시작:', {
+        devLog('🚀 [상담요청 조회] fetchData 시작:', {
           params,
           searchKeyword,
           fromDate,
@@ -253,7 +565,7 @@ const InquiryPage: React.FC = () => {
           toDate: toDate,
         };
 
-        console.log('📋 [상담요청 조회] API 호출 전 파라미터:', {
+        devLog('📋 [상담요청 조회] API 호출 전 파라미터:', {
           apiParams,
           companyCode,
           isRoot,
@@ -264,36 +576,37 @@ const InquiryPage: React.FC = () => {
         
         const response = await getEstimateRequestListByRole(apiParams, companyCode);
         
-        console.log('✅ [상담요청 조회] API 응답:', response);
+        devLog('✅ [상담요청 조회] API 응답:', response);
 
         // adminMng와 동일한 응답 처리 로직
         // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
         const actualResponse = Array.isArray(response) ? response[0] : response;
-        console.log('actualResponse', actualResponse);
+        devLog('actualResponse', actualResponse);
 
         // actualResponse.data에서 실제 API 응답을 가져옴
         const apiResponse = (actualResponse as any)?.data;
-        console.log('apiResponse', apiResponse);
+        devLog('apiResponse', apiResponse);
 
         if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
-          // API 응답 데이터를 Inquiry 타입에 맞게 매핑
-          const mappedData: Inquiry[] = (apiResponse.data || []).map((item: any, index: number) => ({
+          // 새로운 API 응답 형식에 맞게 데이터 매핑
+          const mappedData: Inquiry[] = (apiResponse.data || []).map((item: EstimateRequestItem, index: number) => ({
             no: index + 1,
             _id: item._id,
             inquiryDate: item.createAt,
-            name: item.user.name,
-            userId: item.user.id,
-            email: item.user.email,
-            cellphone: item.user.cellphone,
+            name: item.userInfo?.name || '알 수 없음',
+            userId: item.userInfo?._id, // 사용자 ID
+            profileImageUrl: item.userInfo?.profileImage || '/ai-estimate/no_profile.png', // 프로필 이미지 URL
+            email: item.userInfo?.email || '-',
+            cellphone: item.userInfo?.cellphone || '-',
             title: item.title,
-            memo: item.memo,
-            status: item.status,
+            memo: item.memo || '-',
+            status: getStatusText(item.status), // 상태 텍스트 변환
             chatSession: item.chatSession,
             estimateId: item.estimateId,
-            estimateFile: item.estimateFile,
+            estimateFile: undefined, // 새 응답에는 estimateFile이 없음
           }));
 
-          console.log('📋 [상담요청 조회] 매핑된 데이터:', mappedData);
+          devLog('📋 [상담요청 조회] 매핑된 데이터:', mappedData);
 
           return {
             data: mappedData,
@@ -331,39 +644,70 @@ const InquiryPage: React.FC = () => {
       },
       { header: '이름', accessor: 'name', sortable: true },
       { header: '아이디', accessor: 'userId', sortable: true },
+      {
+        header: '프로필',
+        accessor: 'profileImageUrl',
+        width: 60, // 60px 너비 설정
+        noPopup: true,
+        formatter: (value, row) => (
+          <ProfileWrapper>
+            <ProfileHeader $imageUrl={row.profileImageUrl} />
+          </ProfileWrapper>
+        ),
+      },
       { header: '이메일', accessor: 'email', sortable: true },
       { header: '전화번호', accessor: 'cellphone', sortable: true },
       { header: '제목', accessor: 'title' },
       { header: '메모', accessor: 'memo', formatter: (value) => value || '-' },
-      { header: '상태', accessor: 'status', formatter: (value) => value || '-' },
+      { 
+        header: '처리상태', 
+        accessor: 'status', 
+        noPopup: true,
+        formatter: (value, row) => (
+          <StatusDropdown
+            currentStatus={value || '접수'}
+            onStatusChange={(newStatus) => handleStatusChange(row._id, newStatus)}
+          />
+        )
+      },
       {
-        header: '대화 이력',
+        header: '대화이력보기',
         accessor: 'chatSession',
         noPopup: true,
         formatter: (value, row) => (
-          <div>
             <DetailActionButton 
               $themeMode="light" 
-              onClick={() => handleChatHistoryClick(row.chatSession)}
+              onClick={() => handleChatHistoryClick(row.chatSession, row.name)}
             >
               대화 이력 보기
             </DetailActionButton>
-          </div>
         ),
       },
       {
-        header: '견적 다운로드',
+        header: '견적PDF다운',
         accessor: 'estimateId',
         noPopup: true,
         formatter: (value, row) => (
-          <div>
             <DownloadPdfButton 
               $themeMode="light" 
               onClick={() => handleDownloadPdf(row.estimateId)}
             >
-              견적 다운로드
+              PDF 다운로드
             </DownloadPdfButton>
-          </div>
+        ),
+      },
+      {
+        header: '견적XLX다운',
+        accessor: 'estimateId',
+        noPopup: true,
+        formatter: (value, row) => (
+            <DownloadPdfButton 
+              $themeMode="light" 
+              style={{ backgroundColor: '#51815A' }}
+              onClick={() => handleDownloadExcel(row.estimateId)}
+            >
+              엑셀 다운로드
+            </DownloadPdfButton>
         ),
       },
     ],
@@ -388,36 +732,23 @@ const InquiryPage: React.FC = () => {
         onInitialDateSet={handleInitialDateSet} // 초기 날짜 설정 핸들러 추가
         onDateChange={handleDateChange} // 날짜 변경 핸들러 추가
         onSearchChange={handleSearchChange} // 검색 변경 핸들러 추가
-         dateRangeOptions={['3개월', '6개월', '1년', '지정']}
-        onDateChange={(fromDate, toDate) => {
-          console.log('📅 고객 회원관리 - 날짜 변경:', { fromDate, toDate });
-          setDateRange({ fromDate, toDate });
-        }}
-        onInitialDateSet={(fromDate, toDate) => {
-          console.log('📅 고객 회원관리 - 초기 날짜 설정:', { fromDate, toDate });
-          setDateRange({ fromDate, toDate });
-        }}
-        onSearchChange={(keyword) => {
-          console.log('🔍 고객 회원관리 - 검색어 변경:', keyword);
-          setCurrentKeyword(keyword);
-        }}
+        dateRangeOptions={['3개월', '6개월', '1년', '지정']}
       />
-      <CmsPopup title="문의 상세" isOpen={isPopupOpen} onClose={closePopup}>
-        {selectedItem ? (
-          <div>
-            <h3>{selectedItem.title}</h3>
-            <p><strong>이름:</strong> {selectedItem.name}</p>
-            <p><strong>아이디:</strong> {selectedItem.userId}</p>
-            <p><strong>이메일:</strong> {selectedItem.email}</p>
-            <p><strong>전화번호:</strong> {selectedItem.cellphone}</p>
-            <p><strong>문의 일시:</strong> {selectedItem.inquiryDate ? dayjs(selectedItem.inquiryDate).format('YYYY-MM-DD HH:mm') : '-'}</p>
-            <p><strong>메모:</strong> {selectedItem.memo || '-'}</p>
-            <p><strong>상태:</strong> {selectedItem.status || '-'}</p>
-            <p><strong>채팅 세션:</strong> {selectedItem.chatSession || '-'}</p>
-            <p><strong>견적 ID:</strong> {selectedItem.estimateId || '-'}</p>
-          </div>
-        ) : null}
-      </CmsPopup>
+      {/* 견적문의 처리 모달 */}
+      <EstimateInquiryModal
+        isOpen={isPopupOpen}
+        onClose={closePopup}
+        selectedInquiry={selectedItem}
+        onSave={handleInquiryStatusSave}
+      />
+
+      {/* 채팅 이력 모달 */}
+      <ChatHistoryModal
+        isOpen={isChatHistoryModalOpen}
+        onClose={closeChatHistoryModal}
+        chatSessionId={selectedChatSession}
+        userName={selectedUserName}
+      />
     </>
   );
 };

@@ -63,7 +63,7 @@ export async function uploadFile(
     (error) => {
       // Firebase Storage 에러 객체는 code와 message 속성을 가질 수 있습니다.
       // 에러 객체 전체를 로깅하여 어떤 정보가 들어있는지 확인합니다.
-      console.error('Upload failed:', error);
+      // console.error('Upload failed:', error);
       // 특정 에러 코드에 따른 분기 처리도 가능합니다.
       // if (error.code === 'storage/unauthorized') {
       //   devLog("User doesn't have permission to access the object");
@@ -160,12 +160,12 @@ export function uploadFiles(files: File[], options: UploadImageOptions) {
       devLog('Allowed file type, proceeding with upload:', file.name);
       uploadFile(file, options);
     } else {
-      console.warn(
-        'Disallowed file type or no file, skipping upload:',
-        file.name,
-        'Type:',
-        file.type
-      );
+      // console.warn(
+      //   'Disallowed file type or no file, skipping upload:',
+      //   file.name,
+      //   'Type:',
+      //   file.type
+      // );
       // 사용자에게 알림을 줄 수도 있습니다.
       // 예를 들어 options 객체에 onError 콜백을 추가하여 호출할 수 있습니다.
     }

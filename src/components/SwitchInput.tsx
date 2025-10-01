@@ -36,7 +36,7 @@ const SwitchWrapper = styled.div<{ $labelPosition: 'vertical' | 'horizontal' }>`
   display: flex;
     margin-top: 8px;
   flex-direction: column;
-  align-items: ${({ $labelPosition }) => ($labelPosition === 'horizontal' ? 'flex-start' : 'stretch')};
+  align-items: ${({ $labelPosition }) => ($labelPosition === 'horizontal' ? 'flex-end' : 'stretch')};
 `;
 
 export const SwitchInput = ({

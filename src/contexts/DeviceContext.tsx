@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Breakpoints } from '@/constants/layoutConstants';
+import { devLog } from '@/utils/devLogger'
 
 type SimplifiedDeviceType = 'mobile' | 'desktop';
 
@@ -17,16 +18,16 @@ export const DeviceProvider = ({ children }: { children: React.ReactNode }) => {
       const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
       const isSmallScreen = window.matchMedia(`(max-width: ${Breakpoints.mobile}px)`).matches;
 
-      console.log("📱 Device Detection Log:");
-      console.log("📏 window.innerWidth:", width);
-      console.log("🧭 userAgent:", ua);
-      console.log("📐 matchMedia:", isSmallScreen);
+      devLog("📱 Device Detection Log:");
+      devLog("📏 window.innerWidth:", width);
+      devLog("🧭 userAgent:", ua);
+      devLog("📐 matchMedia:", isSmallScreen);
 
       if (isSmallScreen) {
-        console.log("✅ Set device: mobile");
+        devLog("✅ Set device: mobile");
         setDevice('mobile');
       } else {
-        console.log("✅ Set device: desktop");
+        devLog("✅ Set device: desktop");
         setDevice('desktop');
       }
     };

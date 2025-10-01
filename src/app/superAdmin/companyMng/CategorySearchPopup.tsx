@@ -81,11 +81,12 @@ import ActionButton from '@/components/ActionButton';
 import { THEME_COLORS, ThemeMode } from '@/styles/theme_colors';
 import CategoryRegisterPopup from './CategoryRegisterPopup';
 import {getCategoryList} from '@/lib/api/admin/adminApi';
+import { devLog } from '@/utils/devLogger'
 
 interface CategorySearchPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect?: (category: {name: string, code: string}) => void;
+  onSelect?: (category: {categoryId: string, categoryName: string, categoryCode: string}) => void;
 }
 
 const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClose, onSelect }) => {
@@ -130,7 +131,7 @@ const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClo
         createdAt: cat.createdAt || '',
         no: idx + 1,
       })));
-  console.log('카테고리 조회 결과:', arr);
+  devLog('카테고리 조회 결과:', arr);
     } catch (error) {
       console.error('카테고리 조회 에러:', error);
       setCategories([]);
@@ -331,7 +332,11 @@ const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClo
                       $isEven={index % 2 === 1}
                       onClick={() => {
                         if (onSelect) {
-                          onSelect({ name: category.name, code: category.code });
+                          onSelect({ 
+                            categoryId: category.id,
+                            categoryName: category.name,
+                            categoryCode: category.code
+                          });
                           onClose();
                         }
                       }}

@@ -1,5 +1,4 @@
 import { callAdminApi } from './callAdminApi';
-import { devLog } from '@/lib/utils/devLogger';
 import {
   AdminLoginParams,
   AdminGetListParams,
@@ -25,6 +24,7 @@ import {
   EstimateRequestGetListParams,
   SiteEstimateRequestGetListParams,
 } from './adminApi.types';
+import { devLog } from '@/lib/utils/devLogger';
 
 // API URL 생성 헬퍼 함수
 const getBaseUrl = () => {
@@ -118,7 +118,7 @@ export async function   adminGetList(params: AdminGetListParams) {
 export async function adminCreate(
   params: AdminCreateParams) {
 
-    console.log('params', params);
+    devLog('params', params);
 
   const requestBody: any = {
     adminId: params.adminId,
@@ -323,7 +323,7 @@ export async function getAllUnitPrices(
   queryParams.append('toDate', toDate);
 
   const queryString = queryParams.toString();
-  console.log("query url",queryParams.toString());
+  devLog("query url",queryParams.toString());
   const url = `${BASE_URL}/cms/unit-prices?${queryString}`;
 
   return callAdminApi({
@@ -414,7 +414,7 @@ export async function getCompanyList(
 
   // 토큰 확인 및 디코드
   const adminToken = localStorage.getItem('admin_access_token');
-  console.log('🔍 [getCompanyList] 토큰 상태 확인:', {
+  devLog('🔍 [getCompanyList] 토큰 상태 확인:', {
     params,
     queryString,
     fullUrl: url,
@@ -427,7 +427,7 @@ export async function getCompanyList(
   if (adminToken) {
     try {
       const payload = JSON.parse(atob(adminToken.split('.')[1]));
-      console.log('🔓 [JWT 토큰 디코드]', {
+      devLog('🔓 [JWT 토큰 디코드]', {
         payload: payload,
         isRoot: payload.isRoot,
         role: payload.role || 'unknown',
@@ -447,7 +447,7 @@ export async function getCompanyList(
       isWithToken: true, // 토큰 필요
     });
     
-    console.log('getCompanyList 응답:', result);
+    devLog('getCompanyList 응답:', result);
     return result;
   } catch (error) {
     console.error('getCompanyList 에러:', error);
@@ -725,4 +725,198 @@ export async function getSiteEstimateRequestList(
     devLog('❌ [getSiteEstimateRequestList API 에러]', error);
     throw error;
   }
+}
+
+// ***************** 채팅 관리
+
+// 채팅방 목록 조회 API
+export async function getChatRoomList(params: {
+  companyCode?: string;
+  fromDate?: string;
+  toDate?: string;
+  keyword?: string;
+} = {}) {
+  const queryParams = new URLSearchParams();
+  
+  // 기본값 설정
+  queryParams.append('companyCode', params.companyCode || 'heredot');
+  queryParams.append('fromDate', params.fromDate || '2025-01-01');
+  queryParams.append('toDate', params.toDate || '2025-12-31');
+  
+  // 선택적 파라미터
+  if (params.keyword) {
+    queryParams.append('keyword', params.keyword);
+  }
+
+  return callAdminApi({
+    title: '채팅방 목록 조회',
+    url: `${BASE_URL}/cms/company/chat?${queryParams.toString()}`,
+    method: 'GET',
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// 견적 다운로드 현황 조회 API
+export async function getEstimateDownloadList(params: {
+  keyword?: string;
+  fromDate?: string;
+  toDate?: string;
+  companyCode?: string;
+} = {}) {
+  const queryParams = new URLSearchParams();
+  
+  // 기본값 설정
+  queryParams.append('fromDate', params.fromDate || '2025-01-01');
+  queryParams.append('toDate', params.toDate || '2025-12-31');
+  
+  // 선택적 파라미터
+  if (params.keyword) {
+    queryParams.append('keyword', params.keyword);
+  }
+  
+  if (params.companyCode) {
+    queryParams.append('companyCode', params.companyCode);
+  }
+
+  return callAdminApi({
+    title: '견적 다운로드 현황 조회',
+    url: `${BASE_URL}/cms/company/estimate?${queryParams.toString()}`,
+    method: 'GET',
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// 견적서 다운로드 API
+export async function downloadEstimate(estimateId: string) {
+  return callAdminApi({
+    title: '견적서 다운로드',
+    url: `${BASE_URL}/cms/company/estimate/${estimateId}/download`,
+    method: 'GET',
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// 견적서 엑셀 다운로드 API - JSON 데이터 가져오기
+export async function getEstimateData(estimateId: string) {
+  return callAdminApi({
+    title: '견적서 데이터 조회',
+    url: `${BASE_URL}/cms/company/estimate/${estimateId}/download`,
+    method: 'GET',
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// 견적서 엑셀 다운로드 - 프론트엔드에서 생성
+export async function downloadEstimateExcel(estimateId: string) {
+  try {
+    // SheetJS 라이브러리 동적 import
+    const XLSX = await import('xlsx');
+    
+    // API에서 견적서 데이터 가져오기
+    const response = await getEstimateData(estimateId);
+    
+    let estimateData;
+    
+    // 응답 처리 (다른 API와 동일한 패턴)
+    if (response && typeof response === 'object') {
+      if ('statusCode' in response && response.statusCode === 200) {
+        estimateData = response as any;
+      } else if (Array.isArray(response) && response[0]) {
+        const firstItem = response[0];
+        if (firstItem && typeof firstItem === 'object' && 'data' in firstItem) {
+          const responseData = firstItem.data;
+          if (responseData && typeof responseData === 'object' && 'statusCode' in responseData) {
+            estimateData = responseData as any;
+          }
+        }
+      }
+    }
+    
+    if (!estimateData || estimateData.statusCode !== 200) {
+      throw new Error('견적서 데이터를 불러올 수 없습니다.');
+    }
+    
+    // data.data에서 JSON 파싱
+    const dataString = estimateData.data.data;
+    const scriptMatch = dataString.match(/<script[^>]*id="invoiceData"[^>]*>([\s\S]*?)<\/script>/);
+    
+    if (!scriptMatch) {
+      throw new Error('견적서 데이터 형식이 올바르지 않습니다.');
+    }
+    
+    const invoiceData = JSON.parse(scriptMatch[1]);
+    
+    // Excel 워크북 생성
+    const workbook = XLSX.utils.book_new();
+    
+    // 견적서 정보 시트
+    const summaryData = [
+      ['프로젝트명', invoiceData.project_name],
+      ['총 금액 (부가세 별도)', invoiceData.total_price + '원'],
+      ['총 금액 (부가세 포함)', invoiceData.vat_included_price + '원'],
+      ['예상 기간', invoiceData.estimated_period],
+      ['견적서 ID', invoiceData.uuid],
+      ['생성일', estimateData.data.createAt]
+    ];
+    
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(workbook, summarySheet, '견적서 정보');
+    
+    // 상세 항목 시트 생성
+    const detailData = [['대분류', '중분류', '항목명', '금액', '설명']];
+    
+    invoiceData.categories.forEach((category: any) => {
+      category.sub_categories.forEach((subCategory: any) => {
+        subCategory.items.forEach((item: any) => {
+          if (!item.is_deleted) {
+            detailData.push([
+              category.category_name,
+              subCategory.sub_category_name,
+              item.name,
+              item.price + '원',
+              item.description
+            ]);
+          }
+        });
+      });
+    });
+    
+    const detailSheet = XLSX.utils.aoa_to_sheet(detailData);
+    XLSX.utils.book_append_sheet(workbook, detailSheet, '상세 항목');
+    
+    // 컬럼 너비 조정
+    const summaryColWidths = [{ wch: 20 }, { wch: 40 }];
+    summarySheet['!cols'] = summaryColWidths;
+    
+    const detailColWidths = [{ wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 50 }];
+    detailSheet['!cols'] = detailColWidths;
+    
+    // 파일명 생성
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const filename = `견적서_${invoiceData.project_name}_${dateStr}.xlsx`;
+    
+    // Excel 파일 다운로드
+    XLSX.writeFile(workbook, filename);
+    
+    return { success: true, filename };
+  } catch (error) {
+    console.error('엑셀 다운로드 오류:', error);
+    throw error;
+  }
+}
+
+// 채팅방 메시지 조회 API
+export async function getChatMessages(chatId: string, companyCode: string = 'heredot') {
+  return callAdminApi({
+    title: '채팅 메시지 조회',
+    url: `${BASE_URL}/cms/company/chat/${chatId}/messages?companyCode=${companyCode}`,
+    method: 'GET',
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
 }

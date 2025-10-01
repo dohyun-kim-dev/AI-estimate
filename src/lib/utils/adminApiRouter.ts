@@ -1,6 +1,7 @@
 import { getEstimateRequestList, getSiteEstimateRequestList } from '@/lib/api/admin/adminApi';
 import { EstimateRequestGetListParams, SiteEstimateRequestGetListParams } from '@/lib/api/admin/adminApi.types';
 import { getAdminIsRoot } from '@/store/authStorage';
+import { devLog } from '@/utils/devLogger'
 
 /**
  * 관리자 권한에 따라 적절한 상담요청 조회 API를 호출하는 함수
@@ -18,7 +19,7 @@ export async function getEstimateRequestListByRole(
 ) {
   const isRoot = getAdminIsRoot();
   
-  console.log('🔧 [adminApiRouter] getEstimateRequestListByRole 호출:', {
+  devLog('🔧 [adminApiRouter] getEstimateRequestListByRole 호출:', {
     params,
     companyCode,
     isRoot,
@@ -33,7 +34,7 @@ export async function getEstimateRequestListByRole(
       companyCode, // 통합관리자는 companyCode를 쿼리 파라미터로 사용
     };
     
-    console.log('🔧 [통합관리자] 상담요청 조회 API 호출:', apiParams);
+    devLog('🔧 [통합관리자] 상담요청 조회 API 호출:', apiParams);
     return await getEstimateRequestList(apiParams);
   } else {
     // 사이트관리자인 경우
@@ -46,7 +47,7 @@ export async function getEstimateRequestListByRole(
       companyCode, // 사이트관리자는 companyCode를 헤더로 사용
     };
     
-    console.log('🔧 [사이트관리자] 상담요청 조회 API 호출:', apiParams);
+    devLog('🔧 [사이트관리자] 상담요청 조회 API 호출:', apiParams);
     return await getSiteEstimateRequestList(apiParams);
   }
 }

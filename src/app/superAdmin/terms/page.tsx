@@ -147,7 +147,7 @@ export default function TermsPage() {
   
     try {
       const response = await termUpdate(current.index, params) as any;
-      console.log("📦 저장 응답:", response);
+      devLog("📦 저장 응답:", response);
   
       const result = response?.[0] || response;
       if (result?.['message'] === "success" || response?.['message'] === "success") {

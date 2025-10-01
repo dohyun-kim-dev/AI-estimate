@@ -38,6 +38,10 @@ const CancelButton = styled(FooterButton)`
   color: ${AppColors.onSurface};
   border: 1px solid ${AppColors.border};
   border-radius: 4px;
+
+  &:hover {
+    border: 1px solid ${AppColors.border};
+  }
 `;
 
 const SaveButton = styled(FooterButton)`
@@ -48,7 +52,7 @@ const SaveButton = styled(FooterButton)`
 `;
 
 const PwdChangeButton = styled(FooterButton)`
-  background-color: ${AppColors.primary};
+  background-color: #2C2E3C;
   color: ${AppColors.onPrimary};
   border: 1px solid ${AppColors.border};
   height: 48px;

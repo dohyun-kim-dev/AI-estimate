@@ -11,6 +11,8 @@ import { createChatSession, createGuestChatSession, sendChatMessage, sendMessage
 import { generateAndUploadPdf } from '@/hooks/pdfUtils';
 import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import { v4 as uuidv4 } from 'uuid';
+import { devLog } from '@/utils/devLogger'
+
 
 
 import { ensureEstimateUuid, buildFullEstimateData, extractIntroFromReply } from '@/hooks/estimate';
@@ -32,7 +34,7 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
     if (scriptMatch) {
       const data = JSON.parse(scriptMatch[1]);
       if (data && typeof data === 'object' && Array.isArray(data.categories)) {
-        console.log("extractEstimateData data (from script):", data);
+        devLog("extractEstimateData data (from script):", data);
         return data as ProjectEstimate;
       }
     }
@@ -42,7 +44,7 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
     if (codeBlockMatch) {
       const data = JSON.parse(codeBlockMatch[1]);
       if (data && typeof data === 'object' && Array.isArray(data.categories)) {
-        console.log("extractEstimateData data (from markdown):", data);
+        devLog("extractEstimateData data (from markdown):", data);
         return data as ProjectEstimate;
       }
     }
@@ -57,12 +59,12 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
       try {
         const data = JSON.parse(trimmedContent);
         if (data && typeof data === 'object' && Array.isArray(data.categories)) {
-          console.log("extractEstimateData data (from raw JSON):", data);
+          devLog("extractEstimateData data (from raw JSON):", data);
           return data as ProjectEstimate;
         }
       } catch (jsonErr) {
         // JSON 파싱 실패는 정상적인 경우 (일반 텍스트)이므로 에러 로그 없이 넘어감
-        console.log("Raw JSON parsing failed - likely normal text content");
+        devLog("Raw JSON parsing failed - likely normal text content");
       }
     }
     
@@ -217,8 +219,8 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
   const handleFileUpload = (files: File[]) => {
     if (files.length === 0) return;
     
-    console.log('📁 handleFileUpload 호출됨 - 파일 개수:', files.length);
-    console.log('📁 파일 리스트:', files.map(f => ({ name: f.name, size: f.size, type: f.type })));
+    devLog('📁 handleFileUpload 호출됨 - 파일 개수:', files.length);
+    devLog('📁 파일 리스트:', files.map(f => ({ name: f.name, size: f.size, type: f.type })));
     
     const invalidFiles = files.filter(file => !validateFileType(file));
     if (invalidFiles.length > 0) {
@@ -240,16 +242,16 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     }));
     
     setUploadedFiles(prev => {
-      console.log('📁 이전 uploadedFiles:', prev.length, '개');
+      devLog('📁 이전 uploadedFiles:', prev.length, '개');
       const newFiles = [...prev, ...fileDataArray];
-      console.log('📁 새로운 uploadedFiles:', newFiles.length, '개');
+      devLog('📁 새로운 uploadedFiles:', newFiles.length, '개');
       return newFiles;
     });
     
     setSelectedFiles(prev => {
-      console.log('📁 이전 selectedFiles:', prev.length, '개');
+      devLog('📁 이전 selectedFiles:', prev.length, '개');
       const newFiles = [...prev, ...files];
-      console.log('📁 새로운 selectedFiles:', newFiles.length, '개');
+      devLog('📁 새로운 selectedFiles:', newFiles.length, '개');
       return newFiles;
     });
     
@@ -449,7 +451,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
     // AbortSignal이 감지되었을 때 정리하는 헬퍼 함수
     const handleAbort = () => {
-      console.log('🛑 작업이 중단되었습니다. 메시지를 정리합니다.');
+      devLog('🛑 작업이 중단되었습니다. 메시지를 정리합니다.');
       removeLastUserAndAiMessage();
       setUploadedFiles([]);
       setSelectedFiles([]);
@@ -459,15 +461,15 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
     // 사용자에게 보이는 메시지 생성 (간단한 버전)
     let userDisplayContent = displayMessage; // 이미 변환된 메시지 그대로 사용
-    console.log('useChatActions - displayMessage:', displayMessage);
-    console.log('useChatActions - userDisplayContent 초기값:', userDisplayContent);
+    devLog('useChatActions - displayMessage:', displayMessage);
+    devLog('useChatActions - userDisplayContent 초기값:', userDisplayContent);
     
     if (uploadedFiles.length > 0) {
       const fileInfo = uploadedFiles.map((file) => `[첨부파일: ${file.name}]`).join('\n');
       userDisplayContent = `${userDisplayContent}\n\n${fileInfo}`;
     }
 
-    console.log('useChatActions - userDisplayContent 최종값:', userDisplayContent);
+    devLog('useChatActions - userDisplayContent 최종값:', userDisplayContent);
 
     // AI에게 전달할 실제 메시지 내용 (상세 정보 포함)
     let messageContent = input; // 원본 input (AI 프롬프트 등 포함)
@@ -476,7 +478,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     addMessage({ role: 'user', content: userDisplayContent });
     // ai 메시지는 isLoading: true로 추가 (실시간 업데이트용)
     addMessage({ role: 'ai', content: '', isLoading: true });
-    console.log('사용자 메시지 및 빈 AI 메시지 추가 완료', { userDisplayContent }, { role: 'ai', content: '', isLoading: true });
+    devLog('사용자 메시지 및 빈 AI 메시지 추가 완료', { userDisplayContent }, { role: 'ai', content: '', isLoading: true });
 
     // URL 감지 및 크롤링 처리 (UI 로딩 상태가 이미 표시된 후 실행)
     const urlPattern = /https?:\/\/[^\s]+/gi;
@@ -486,7 +488,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
     if (detectedUrls && detectedUrls.length > 0) {
       try {
-        console.log('URL 발견, 크롤링 시작:', detectedUrls);
+        devLog('URL 발견, 크롤링 시작:', detectedUrls);
         // URL 크롤링 상태 설정
         const { setIsCrawlingUrl } = useChatStore.getState();
         setIsCrawlingUrl(true);
@@ -523,14 +525,14 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
             
             if (crawlResponse?.statusCode === 200 && crawlResponse.data) {
               urlAnalysisForAI = crawlResponse.data;
-              console.log('URL 크롤링 완료, AI에게 전달할 내용 준비됨');
+              devLog('URL 크롤링 완료, AI에게 전달할 내용 준비됨');
               // 크롤링 완료 후 다시 빈 상태로 변경
               updateLastMessage({
                 content: '',
                 isLoading: true,
               });
             } else {
-              console.log('URL 크롤링 응답이 유효하지 않음, 원본 메시지로 진행');
+              devLog('URL 크롤링 응답이 유효하지 않음, 원본 메시지로 진행');
               updateLastMessage({
                 content: '',
                 isLoading: true,
@@ -545,7 +547,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
             setIsCrawlingUrl(false);
             
             urlCrawlFailed = true; // 크롤링 실패 표시
-            console.log('URL 크롤링 실패 또는 타임아웃, 원본 메시지로 진행:', error.message);
+            devLog('URL 크롤링 실패 또는 타임아웃, 원본 메시지로 진행:', error.message);
             
             // 🔥 타임아웃 에러인지 확인하고 사용자에게 알림
             if (error.message.includes('타임아웃') || error.message.includes('timeout')) {
@@ -618,7 +620,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           throw new Error(createResponse.error?.message || '채팅방 생성에 실패했습니다.');
         }
       } catch (e) {
-        console.log('❗ 채팅방 생성 중 오류 발생:', e);
+        devLog('❗ 채팅방 생성 중 오류 발생:', e);
         
         // 채팅방 생성 실패 시 추가된 메시지들 제거
         removeLastUserAndAiMessage();
@@ -640,16 +642,16 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       let filesForGemini = [];
       
       // 🔍 파일 업로드 직전 디버깅
-      console.log('🔍 파일 업로드 시작 - selectedFiles 상태:', selectedFiles);
-      console.log('🔍 selectedFiles.length:', selectedFiles.length);
-      console.log('🔍 각 파일 정보:', selectedFiles.map(file => ({
+      devLog('🔍 파일 업로드 시작 - selectedFiles 상태:', selectedFiles);
+      devLog('🔍 selectedFiles.length:', selectedFiles.length);
+      devLog('🔍 각 파일 정보:', selectedFiles.map(file => ({
         name: file.name,
         size: file.size,
         type: file.type
       })));
       
       if (selectedFiles.length > 0) {
-        console.log('📤 서버로 파일 업로드 시작...');
+        devLog('📤 서버로 파일 업로드 시작...');
           if (abortSignal?.aborted) {
             handleAbort();
             return;
@@ -661,11 +663,11 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
             return;
           }
 
-        console.log('📥 서버 업로드 응답:', uploadResponse);
+        devLog('📥 서버 업로드 응답:', uploadResponse);
         
         // 🔥 API 응답 구조 수정: { statusCode: 200, data: [...] } 형태
         if (uploadResponse && uploadResponse.statusCode === 200 && Array.isArray(uploadResponse.data) && uploadResponse.data.length > 0) {
-          console.log('✅ 파일 업로드 성공 - 파일명들:', uploadResponse.data);
+          devLog('✅ 파일 업로드 성공 - 파일명들:', uploadResponse.data);
           uploadedFileNames = uploadResponse.data;
           filesForGemini = await Promise.all(
             uploadedFileNames.map(async (fileName, index) => {
@@ -690,7 +692,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           throw new Error(`파일 업로드에 실패했습니다. 상태코드: ${uploadResponse?.statusCode || 'unknown'}`);
         }
       } else {
-        console.log('📝 파일 없이 텍스트만 전송');
+        devLog('📝 파일 없이 텍스트만 전송');
       }
 
       // DB 저장용 메시지 내용
@@ -712,11 +714,11 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       let finalPrompt = combinedPrompt;
       if (urlAnalysisForAI) {
         finalPrompt = `지능형 콘텐츠 분석 및 워크플로우 최적화 규칙에 따라주세요 URL 분석한 내용입니다 ${input} ${urlAnalysisForAI} 지능형 콘텐츠 분석 및 워크플로우 최적화 규칙에 따라주세요 URL 분석한 내용입니다`;
-        console.log('URL 크롤링 결과가 AI 프롬프트에 포함됨');
+        devLog('URL 크롤링 결과가 AI 프롬프트에 포함됨');
       } else if (urlCrawlFailed && detectedUrls && detectedUrls.length > 0) {
         // URL 크롤링에 실패한 경우 AI에게 친절한 대응 요청
         finalPrompt = `${input}\n\n[참고: 사용자가 제공한 URL(${detectedUrls[0]})의 내용을 분석하려 했지만 크롤링에 실패했습니다. URL 내용 없이도 친절하고 도움이 되는 답변을 해주세요. 가능하다면 사용자에게 URL을 다시 확인하거나 해당 페이지의 주요 내용을 직접 설명해달라고 요청해주세요.]`;
-        console.log('URL 크롤링 실패, AI에게 친절한 대응 요청 메시지 추가');
+        devLog('URL 크롤링 실패, AI에게 친절한 대응 요청 메시지 추가');
       }
 
       // 🔥 명시적으로 전달된 chatHistory가 있으면 우선 사용, 없으면 스토어에서 생성
@@ -725,7 +727,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       if (explicitChatHistory !== undefined) {
         // 명시적으로 전달된 chatHistory 사용 (빈 배열일 수도 있음)
         chatHistory = explicitChatHistory;
-        console.log('[useChatActions] 명시적으로 전달된 chatHistory 사용:', chatHistory.length, '개 메시지');
+        devLog('[useChatActions] 명시적으로 전달된 chatHistory 사용:', chatHistory.length, '개 메시지');
       } else {
         // 스토어에서 현재 메시지 히스토리 가져와서 AI에게 전달
         const currentMessages = useChatStore.getState().messages;
@@ -758,7 +760,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           chatHistory = [];
         }
         
-        console.log('[useChatActions] 스토어에서 생성된 chatHistory 사용:', chatHistory.length, '개 메시지');
+        devLog('[useChatActions] 스토어에서 생성된 chatHistory 사용:', chatHistory.length, '개 메시지');
       }
 
       // 🔥 chatHistory 검증 및 정리 (연속된 동일 역할 메시지 방지)
@@ -770,7 +772,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           validatedChatHistory.push(message);
           lastRole = message.role;
         } else {
-          console.log('🔍 중복 역할 또는 빈 메시지 제외:', message.role, message.content.substring(0, 50));
+          devLog('🔍 중복 역할 또는 빈 메시지 제외:', message.role, message.content.substring(0, 50));
         }
       }
       
@@ -779,22 +781,22 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         validatedChatHistory.shift();
       }
       
-      console.log('[useChatActions] AI에게 전달할 검증된 채팅 히스토리:', validatedChatHistory.length, '개 메시지');
-      console.log('[useChatActions] 검증된 히스토리 구조:', validatedChatHistory.map(msg => `${msg.role}: ${msg.content.substring(0, 30)}...`));
+      devLog('[useChatActions] AI에게 전달할 검증된 채팅 히스토리:', validatedChatHistory.length, '개 메시지');
+      devLog('[useChatActions] 검증된 히스토리 구조:', validatedChatHistory.map(msg => `${msg.role}: ${msg.content.substring(0, 30)}...`));
 
       // ⭐️ 먼저 AI 응답을 받고 성공하면 DB에 저장하는 방식으로 변경
       let aiReply = '';
       let firstChunkReceived = false;
-      console.log('finalPrompt:', finalPrompt);
-      console.log('filesForAI:', filesForAI);
-      console.log('validatedChatHistory:', validatedChatHistory);
+      devLog('finalPrompt:', finalPrompt);
+      devLog('filesForAI:', filesForAI);
+      devLog('validatedChatHistory:', validatedChatHistory);
       const chatResult = await sendChat(finalPrompt, filesForAI, {
         streaming: true,
         chatHistory: validatedChatHistory, // 🔥 검증된 과거 대화 이력 전달
         maxRetries: 2, // 최대 2회 재시도
         retryDelay: 1000, // 1초 기본 지연
         onRetry: (attempt, error) => {
-          console.log(`🔄 AI API 재시도 중... (${attempt}번째 시도)`);
+          devLog(`🔄 AI API 재시도 중... (${attempt}번째 시도)`);
           updateLastMessage({
             content: `연결 문제로 재시도 중입니다... (${attempt}/2)`,
             isLoading: true,
@@ -817,7 +819,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         
         // 빈 응답 체크 (충분한 청크가 쌓인 후에 체크)
         if (aiReply.length > 10 && (trimmedReply === '' || trimmedReply === '""' || trimmedReply === "''")) {
-          console.log('❌ 스트리밍 도중 빈 응답 감지, 즉시 중단 및 원복');
+          devLog('❌ 스트리밍 도중 빈 응답 감지, 즉시 중단 및 원복');
           handleAbort();
           error('AI가 빈 응답을 했습니다. 다시 시도해주세요.');
           return;
@@ -841,7 +843,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       
       // 빈 응답 체크
       if (trimmedReply === '' || trimmedReply === '""' || trimmedReply === "''") {
-        console.log('❌ AI가 빈 응답으로 완료함');
+        devLog('❌ AI가 빈 응답으로 완료함');
         throw new Error('AI가 빈 응답을 했습니다.');
       }
       
@@ -875,18 +877,18 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         if (currentMessagesForUpdate[userMessageIndex].role === 'user') {
           // updateMessageById 대신 직접 스토어 업데이트 (인덱스 기반)
           // 여기서는 단순히 로그만 남기고 실제 messageId 업데이트는 나중에 필요시 구현
-          console.log('사용자 메시지 DB 저장 완료:', userMessageResponse);
+          devLog('사용자 메시지 DB 저장 완료:', userMessageResponse);
         }
       }
 
       // 실제 토큰 사용량으로 로그 출력
       if (chatResult.tokenUsage) {
-        console.log(`🤖 Gemini 2.5 Flash 실제 토큰 사용량:`);
-        console.log(`   📥 입력 토큰: ${chatResult.tokenUsage.promptTokens.toLocaleString()}`);
-        console.log(`   📤 출력 토큰: ${chatResult.tokenUsage.completionTokens.toLocaleString()}`);
-        console.log(`   🔢 총 토큰: ${chatResult.tokenUsage.totalTokens.toLocaleString()}`);
-        console.log(`   💰 비용: ₩${chatResult.tokenUsage.costKRW.toFixed(2)}`);
-        console.log(`   📊 토큰 효율성: ${(chatResult.tokenUsage.completionTokens / chatResult.tokenUsage.promptTokens * 100).toFixed(1)}% (출력/입력 비율)`);
+        devLog(`🤖 Gemini 2.5 Flash 실제 토큰 사용량:`);
+        devLog(`   📥 입력 토큰: ${chatResult.tokenUsage.promptTokens.toLocaleString()}`);
+        devLog(`   📤 출력 토큰: ${chatResult.tokenUsage.completionTokens.toLocaleString()}`);
+        devLog(`   🔢 총 토큰: ${chatResult.tokenUsage.totalTokens.toLocaleString()}`);
+        devLog(`   💰 비용: ₩${chatResult.tokenUsage.costKRW.toFixed(2)}`);
+        devLog(`   📊 토큰 효율성: ${(chatResult.tokenUsage.completionTokens / chatResult.tokenUsage.promptTokens * 100).toFixed(1)}% (출력/입력 비율)`);
       }
 
       // 스트리밍이 끝나면 마지막 ai 메시지의 isLoading을 false로 변경
@@ -897,7 +899,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
 
       // 견적 JSON 감지 및 저장 로직은 reply 전체가 온 뒤 기존대로 처리
       const estimateData = extractEstimateData(reply);
-console.log('extractEstimateData 직후 추출된 견적 데이터:', estimateData); 
+devLog('extractEstimateData 직후 추출된 견적 데이터:', estimateData); 
 
 let finalReply = reply;
 let estimateId = null;
@@ -911,10 +913,10 @@ if (estimateData) {
       effectiveUserId = localStorage.getItem('guest-uuid') || undefined;
     }
     ensureEstimateUuid(estimateData);
-    console.log('견적 데이터 저장 시작', estimateData);
+    devLog('견적 데이터 저장 시작', estimateData);
     estimateId = estimateData.uuid;
     const dataStr = buildFullEstimateData(reply, estimateId);
-    console.log('견적 데이터 조립 완료, 업로드 시작', { estimateId, dataStr });
+    devLog('견적 데이터 조립 완료, 업로드 시작', { estimateId, dataStr });
     if (abortSignal?.aborted) {
       handleAbort();
       return;
@@ -936,11 +938,11 @@ if (estimateData) {
 
     // calculateTotalAmount와 calculateEstimatedPeriod 함수를 사용하여 정확한 값 계산
     const totalAmount = calculateTotalAmount(estimateData);
-    console.log('계산된 실제 총 금액:', totalAmount);
+    devLog('계산된 실제 총 금액:', totalAmount);
 
     // 정확한 기간 계산을 위해 calculateEstimatedPeriod 함수 사용
     const periodCalculation = calculateEstimatedPeriod(estimateData);
-    console.log('계산된 실제 기간:', periodCalculation.estimatedPeriodText);
+    devLog('계산된 실제 기간:', periodCalculation.estimatedPeriodText);
 
     // 부가세 포함 금액 계산 (10% 부가세)
     const vatIncludedAmount = Math.round(totalAmount * 1.1);
@@ -953,7 +955,7 @@ if (estimateData) {
       estimated_period: `${periodCalculation.finalWeeks}주`, // 계산된 기간으로 수정 (주 단위만)
       categories: periodCalculation.updatedEstimate.categories // 화면설계 가격이 업데이트된 카테고리 사용
     };
-    console.log('수정된 견적 데이터:', {
+    devLog('수정된 견적 데이터:', {
       original_total: estimateData.total_price,
       corrected_total: correctedEstimateData.total_price,
       original_period: estimateData.estimated_period,
@@ -1024,7 +1026,7 @@ if (estimateData) {
       });
 
     } catch (e) {
-      console.log('❗ 메시지 전송 중 오류 발생:', e);
+      devLog('❗ 메시지 전송 중 오류 발생:', e);
       
       // 에러 발생 시 마지막 사용자 메시지와 AI 메시지 제거
       removeLastUserAndAiMessage();
@@ -1033,7 +1035,7 @@ if (estimateData) {
       if (!isAuthenticated()) {
         const { remainingCount, setRemainingCount } = useUsageStore.getState();
         setRemainingCount(remainingCount + 1); // 차감된 횟수 복구
-        console.log('🔄 AI 오류로 인한 사용량 복구 완료');
+        devLog('🔄 AI 오류로 인한 사용량 복구 완료');
       }
       
       // 토스트 에러 메시지 표시

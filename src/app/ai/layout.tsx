@@ -12,6 +12,7 @@ import { SocialLoginModal } from '../../components/ai-esti/SocialLoginModal';
 import { HeaderProvider } from '@/contexts/HeaderContext';
 import { tr } from 'date-fns/locale';
 import useAI from '@/hooks/useAI';
+import { devLog } from '../../utils/devLogger';
 
 const LayoutWrapper = styled.div`
   min-height: 100dvh;
@@ -325,7 +326,7 @@ export default function AILayout() {
 
   // 비회원 견적서 업로드 함수
   const uploadEstimateForGuestShare = async () => {
-    console.log('[uploadEstimateForGuestShare] 비회원 견적서 업로드 시작');
+    devLog('[uploadEstimateForGuestShare] 비회원 견적서 업로드 시작');
     
     // 비회원이고 URL에 share가 없을 때만 실행
     const isGuest = !isAuthenticated();
@@ -336,7 +337,7 @@ export default function AILayout() {
         // 게스트 정보 가져오기
         const guestInfoStr = sessionStorage.getItem('guestinfo');
         if (!guestInfoStr) {
-          console.log('guestinfo 없음, 업로드 건너뛰기');
+          devLog('guestinfo 없음, 업로드 건너뛰기');
           return;
         }
         
@@ -345,7 +346,7 @@ export default function AILayout() {
         // 세션 스토리지에서 메시지 데이터 가져오기
         const storedData = sessionStorage.getItem('ai-chat-storage');
         if (!storedData) {
-          console.log('채팅 데이터 없음, 업로드 건너뛰기');
+          devLog('채팅 데이터 없음, 업로드 건너뛰기');
           return;
         }
         
@@ -395,18 +396,18 @@ export default function AILayout() {
                   }
                 } catch (jsonErr) {
                   // JSON 파싱 실패는 정상적인 경우 (일반 텍스트)이므로 에러 로그 없이 넘어감
-                  console.log("Raw JSON parsing failed - likely normal text content");
+                  devLog("Raw JSON parsing failed - likely normal text content");
                 }
               }
             } catch (error) {
-              console.log('JSON 파싱 실패:', error);
+              devLog('JSON 파싱 실패:', error);
               continue;
             }
           }
         }
         
         if (!estimateId) {
-          console.log('estimateId 없음, 업로드 건너뛰기');
+          devLog('estimateId 없음, 업로드 건너뛰기');
           return;
         }
         
@@ -438,13 +439,13 @@ export default function AILayout() {
             },
             undefined // amount - 여기서는 견적서 데이터에 접근할 수 없으므로 undefined
           );
-          
-          console.log('✅ 비회원 채팅 공유 시 견적서 업로드 완료');
+
+          devLog('✅ 비회원 채팅 공유 시 견적서 업로드 완료');
         } else {
-          console.log('❌ 필수 데이터 누락:', { chatSessionId, estimateId });
+          devLog('❌ 필수 데이터 누락:', { chatSessionId, estimateId });
         }
       } catch (error) {
-        console.error('❌ 견적서 업로드 실패:', error);
+        devLog('❌ 견적서 업로드 실패:', error);
       }
     }
   };
@@ -473,7 +474,7 @@ export default function AILayout() {
         error('공유할 대화내역이 없습니다');
       }
     } catch (e) {
-      console.error('세션스토리지 데이터 파싱 오류:', e);
+      devLog('세션스토리지 데이터 파싱 오류:', e);
       error('데이터 확인 중 오류가 발생했습니다');
     }
   } else {
@@ -488,7 +489,7 @@ export default function AILayout() {
   // '가입없이 이용하기' 버튼 클릭 시 실행될 함수
   const handleNonMemberAction = () => {
     // 여기에 비회원 상태에서 실행할 로직을 추가합니다.
-    console.log("가입없이 이용하기 버튼 클릭! 비회원 로직 실행...");
+    devLog("가입없이 이용하기 버튼 클릭! 비회원 로직 실행...");
     success('비회원 상태로 기능이 활성화되었습니다.');
     closeLoginModal(); // 모달 닫기
   };
@@ -496,7 +497,7 @@ export default function AILayout() {
   // ✅ 구글 로그인 성공 후 실행될 함수.
   // 이 함수는 로그인 모달이 닫히고, 'shareChat' 모달을 열도록 합니다.
   const handleGoogleLoginSuccess = async (userData) => {
-    console.log("구글 로그인 성공!", userData);
+    devLog("구글 로그인 성공!", userData);
     success('로그인되었습니다!'); // 사용자에게 즉시 피드백을 주기 위해 delay 전에 호출
     
     // 1초(1000ms) 지연
@@ -516,7 +517,7 @@ export default function AILayout() {
         return;
       }
 
-      console.log('복사하려는 텍스트:', fullShareText); // 디버깅용
+      devLog('복사하려는 텍스트:', fullShareText); // 디버깅용
 
       // fallback 방법을 먼저 시도 (더 안정적)
       const copyWithFallback = () => {
@@ -549,7 +550,7 @@ export default function AILayout() {
           return;
         }
       } catch (fallbackErr) {
-        console.log('Fallback 복사 실패, Clipboard API 시도:', fallbackErr);
+        devLog('Fallback 복사 실패, Clipboard API 시도:', fallbackErr);
       }
 
       // fallback이 실패하면 Clipboard API 시도
@@ -560,14 +561,14 @@ export default function AILayout() {
           handleCloseShare();
           return;
         } catch (clipboardErr) {
-          console.log('Clipboard API 실패:', clipboardErr);
+          devLog('Clipboard API 실패:', clipboardErr);
         }
       }
 
       throw new Error('모든 복사 방법이 실패했습니다.');
 
     } catch (err) {
-      console.error('링크 복사 실패:', err);
+      devLog('링크 복사 실패:', err);
       error(`링크 복사에 실패했습니다. 수동으로 링크를 복사해주세요.`);
     }
   };
@@ -627,7 +628,7 @@ const handleNewChat = () => {
         resetChat();
         startNewChat();
         setTimeout(() => {
-          console.log('messages after clear:', useChatStore.getState().messages); // 빈 배열이어야 정상
+          devLog('messages after clear:', useChatStore.getState().messages); // 빈 배열이어야 정상
         }, 0);
         localStorage.removeItem('chatSessionId');
         sessionStorage.removeItem('chatSessionId');
@@ -645,7 +646,7 @@ const handleNewChat = () => {
         success('이미 새로운 채팅방입니다');
       }
     } catch (e) {
-      console.error('세션스토리지 데이터 파싱 오류:', e);
+      devLog('세션스토리지 데이터 파싱 오류:', e);
       error('데이터 확인 중 오류가 발생했습니다');
     }
   } else {

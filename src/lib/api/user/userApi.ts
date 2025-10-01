@@ -1,6 +1,7 @@
 import { callUserApi } from '../../methods/callUserApi';
 import { GoogleLoginInitialParams, GoogleLoginUpdateParams, GoogleLoginResponse } from './userApi.types';
 import { ApiResponse } from './userApi.types';
+import { devLog } from '@/utils/devLogger'
 
 function resolveCompanyCode() {
   let companyCode = 'heredot';
@@ -286,7 +287,7 @@ export async function uploadEstimatePdf(
     };
   }
 
-  console.log("uploadEstimatePdf payload:", payload);
+  devLog("uploadEstimatePdf payload:", payload);
   return callUserApi({
     title: '견적 저장',
     url: getApiUrl('/users/company/estimate/upload'),
@@ -324,19 +325,19 @@ export async function getDownloadEstimateUrlWithUserInfo(
 }
 
 export async function uploadFiles(files: File[]) {
-  console.log('📤 uploadFiles 함수 호출 - 파일 개수:', files.length);
-  console.log('📤 파일 리스트:', files.map(f => ({ name: f.name, size: f.size, type: f.type })));
+  devLog('📤 uploadFiles 함수 호출 - 파일 개수:', files.length);
+  devLog('📤 파일 리스트:', files.map(f => ({ name: f.name, size: f.size, type: f.type })));
   
   const formData = new FormData();
   files.forEach((file, index) => {
-    console.log(`📤 FormData에 파일 추가 [${index}]:`, file.name);
+    devLog(`📤 FormData에 파일 추가 [${index}]:`, file.name);
     formData.append('files', file);
   });
 
   // FormData 내용 확인
-  console.log('📤 생성된 FormData:', formData);
+  devLog('📤 생성된 FormData:', formData);
   for (const [key, value] of formData.entries()) {
-    console.log(`📤 FormData 엔트리 - ${key}:`, value);
+    devLog(`📤 FormData 엔트리 - ${key}:`, value);
   }
 
   return callUserApi<{

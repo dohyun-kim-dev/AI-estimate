@@ -19,6 +19,7 @@ import { getAllUnitPrices, uploadUnitPrices } from '@/lib/api/admin/adminApi';
 import { useToast } from '@/components/common/ToastProvider';
 import { priceApiResponseToMarkdownTable } from '../../../../ai/prompts/priceDataToJson';
 import { ToastContainer } from 'react-toastify';
+import { devLog } from '@/utils/devLogger'
 
 
 // 필수 여부를 한글로 변환하는 함수
@@ -182,8 +183,8 @@ const validateColumnMetadata = (uploadColumns: any[], originalColumns: any[]) =>
     ...originalColumns
   ].sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0));
   
-  console.log('Original columns:', allOriginalColumns);
-  console.log('Upload columns:', uploadColumns);
+  devLog('Original columns:', allOriginalColumns);
+  devLog('Upload columns:', uploadColumns);
   
   // 필수 컬럼 누락 체크
   const uploadColumnNames = uploadColumns.map(col => col.name);
@@ -465,15 +466,15 @@ const PriceListPage: React.FC = () => {
   // 단일 항목 저장 핸들러
   const handleSaveItem = async (formData: any) => {
     try {
-      console.log('=== handleSaveItem START ===');
-      console.log('formData:', formData);
-      console.log('selectedItem:', selectedItem);
-      console.log('selectedCompanyCode:', selectedCompanyCode);
-      console.log('currentColumnsInfo:', currentColumnsInfo);
+      devLog('=== handleSaveItem START ===');
+      devLog('formData:', formData);
+      devLog('selectedItem:', selectedItem);
+      devLog('selectedCompanyCode:', selectedCompanyCode);
+      devLog('currentColumnsInfo:', currentColumnsInfo);
       
       // 수정 모드인지 확인 (formData에 id가 있고 빈 값이 아닌 경우)
       const isEditMode = formData.id && formData.id !== '';
-      console.log('isEditMode:', isEditMode, 'id:', formData.id);
+      devLog('isEditMode:', isEditMode, 'id:', formData.id);
       
       // API에 전달할 데이터 준비
       const apiData = { ...formData };
@@ -481,9 +482,9 @@ const PriceListPage: React.FC = () => {
       // 신규 추가일 때는 id 필드 제거 (서버에서 자동 생성)
       if (!isEditMode) {
         delete apiData.id;
-        console.log('신규 추가 모드: id 필드 제거');
+        devLog('신규 추가 모드: id 필드 제거');
       } else {
-        console.log('수정 모드: id 필드 포함');
+        devLog('수정 모드: id 필드 포함');
       }
       
       // 여기서 실제 API 호출을 해야 하지만, 현재는 uploadUnitPrices를 사용
@@ -499,10 +500,10 @@ const PriceListPage: React.FC = () => {
         data: [apiData] // 단일 항목 배열로 감싸기
       };
 
-      console.log('API payload:', apiPayload);
+      devLog('API payload:', apiPayload);
       const response = await uploadUnitPrices(apiPayload);
       
-      console.log('uploadUnitPrices response:', response);
+      devLog('uploadUnitPrices response:', response);
       
       // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
       const actualResponse = Array.isArray(response) ? response[0] : response;
@@ -510,35 +511,35 @@ const PriceListPage: React.FC = () => {
       // actualResponse.data에서 실제 API 응답을 가져옴
       const apiResponse = (actualResponse as any)?.data;
       
-      console.log('API response details:', apiResponse);
+      devLog('API response details:', apiResponse);
       
       if (apiResponse && (apiResponse.statusCode === 200 || apiResponse.statusCode === "200") && apiResponse.message === 'success') {
         showToast(`데이터가 성공적으로 ${isEditMode ? '수정' : '저장'}되었습니다.`, 'success');
         
-        console.log('About to refresh table...');
-        console.log('selectedCompanyCode:', selectedCompanyCode);
-        console.log('selectedCompanyName:', selectedCompanyName);
+        devLog('About to refresh table...');
+        devLog('selectedCompanyCode:', selectedCompanyCode);
+        devLog('selectedCompanyName:', selectedCompanyName);
         
         // 테이블 새로고침 (약간의 지연을 두어 API 완료 후 실행)
         if (selectedCompanyCode) {
-          console.log('Calling GenericListUI refetch for refresh...');
+          devLog('Calling GenericListUI refetch for refresh...');
           setTimeout(() => {
             try {
               genericListRef.current?.refetch(); // GenericListUI의 refetch 호출 (현재 검색 조건 유지)
-              console.log('GenericListUI refetch completed');
+              devLog('GenericListUI refetch completed');
             } catch (error) {
               console.error('Error refreshing table:', error);
             }
           }, 100);
         } else {
-          console.log('Warning: selectedCompanyCode is null, cannot refresh table');
+          devLog('Warning: selectedCompanyCode is null, cannot refresh table');
         }
         
         console.log('=== handleSaveItem SUCCESS END ===');
         return Promise.resolve();
       } else {
         const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '저장에 실패했습니다.';
-        console.log('API response error:', errorMessage);
+        devLog('API response error:', errorMessage);
         showToast(errorMessage, 'error');
         return Promise.reject(new Error(errorMessage));
       }
@@ -558,21 +559,21 @@ const PriceListPage: React.FC = () => {
   // 단일 항목 삭제 핸들러 (테이블 새로고침용)
   const handleDeleteItem = async (id: string) => {
     try {
-      console.log('=== handleDeleteItem - 테이블 새로고침 START ===', { id });
+      devLog('=== handleDeleteItem - 테이블 새로고침 START ===', { id });
       
       // 테이블 새로고침을 위해 같은 회사 다시 선택
       if (selectedCompanyCode) {
         setTimeout(() => {
           try {
             genericListRef.current?.refetch(); // GenericListUI의 refetch 호출 (현재 검색 조건 유지)
-            console.log('Table refresh completed after delete');
+            devLog('Table refresh completed after delete');
           } catch (error) {
             console.error('Error refreshing table after delete:', error);
           }
         }, 100);
       }
       
-      console.log('=== handleDeleteItem SUCCESS ===');
+      devLog('=== handleDeleteItem SUCCESS ===');
       return Promise.resolve();
     } catch (error) {
       console.error('Delete item refresh error:', error);
@@ -582,7 +583,7 @@ const PriceListPage: React.FC = () => {
 
   // 검색 키워드와 함께 데이터를 조회하는 함수
   const fetchUnitPricesData = useCallback(async (params: FetchParams) => {
-    console.log('=== fetchUnitPricesData START ===', params);
+    devLog('=== fetchUnitPricesData START ===', params);
     
     // 검색 조건 저장
     setCurrentSearchParams({
@@ -592,7 +593,7 @@ const PriceListPage: React.FC = () => {
     });
     
     if (!selectedCompanyCode) {
-      console.log('No company selected, returning empty data');
+      devLog('No company selected, returning empty data');
       return {
         data: [],
         totalItems: 0,
@@ -601,7 +602,7 @@ const PriceListPage: React.FC = () => {
     }
     
     try {
-      console.log('Fetching data with params:', {
+      devLog('Fetching data with params:', {
         companyCode: selectedCompanyCode,
         keyword: params.keyword,
         fromDate: params.fromDate,
@@ -615,7 +616,7 @@ const PriceListPage: React.FC = () => {
         toDate: params.toDate,
       });
 
-      console.log('API response received');
+      devLog('API response received');
 
       // API 응답 처리 로직
       let columnsInfo: any[] = [];
@@ -773,7 +774,7 @@ const PriceListPage: React.FC = () => {
         no: (item.no !== undefined ? item.no : index + 1),
       }));
 
-      console.log('Transformed data:', transformedData);
+      devLog('Transformed data:', transformedData);
       
       return {
         data: transformedData,
@@ -792,7 +793,7 @@ const PriceListPage: React.FC = () => {
   }, [selectedCompanyCode]);
 
   const handleCompanySelect = useCallback((company: { id: string; name: string; }) => {
-    console.log('=== Company selected ===:', company);
+    devLog('=== Company selected ===:', company);
     
     if (!company.id) {
       showToast('회사 코드가 없습니다. 고객사를 다시 선택해주세요.', 'error');
@@ -825,17 +826,17 @@ const PriceListPage: React.FC = () => {
         // 첫 번째 시트만 처리
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        console.log('Processing sheet:', sheetName);
+        devLog('Processing sheet:', sheetName);
         
         // 전체 시트를 읽어서 템플릿 구조 확인
         const range = XLSX.utils.decode_range(worksheet['!ref'] as string);
-        console.log('Sheet range:', range);
+        devLog('Sheet range:', range);
         
         const allData = XLSX.utils.sheet_to_json(worksheet, {
           header: 1,
           range: range,
         });
-        console.log('All sheet data:', allData);
+        devLog('All sheet data:', allData);
 
         if (allData.length < 5) {
           showAlert('템플릿 구조가 올바르지 않습니다. 최소 5행이 필요합니다 (사용방법, 필수, 타입, 헤더, 데이터).', 'error');
@@ -895,7 +896,7 @@ const PriceListPage: React.FC = () => {
             }
           } else {
             // 최초 등록인 경우 업로드된 메타데이터를 새로운 스키마로 사용
-            console.log('최초 등록: 업로드된 메타데이터를 새로운 스키마로 설정합니다.');
+            devLog('최초 등록: 업로드된 메타데이터를 새로운 스키마로 설정합니다.');
           }
 
           // 2단계: 데이터 파싱 및 변환
@@ -1013,7 +1014,7 @@ const PriceListPage: React.FC = () => {
 
       // 컬럼은 있지만 데이터가 없는 경우 - 샘플 템플릿 생성
       if (!currentTableData || currentTableData.length === 0) {
-        console.log('Creating sample template with no data');
+        devLog('Creating sample template with no data');
         
         // currentColumnsInfo에서 orderNo로 정렬 (id 컬럼이 이미 포함되어 있음)
         const sortedColumns = [...currentColumnsInfo].sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0));
@@ -1099,7 +1100,7 @@ const PriceListPage: React.FC = () => {
       }
 
       // 정상적인 경우 - 실제 데이터로 템플릿 생성
-      console.log('Creating template with actual data');
+      devLog('Creating template with actual data');
       
       // currentColumnsInfo에서 orderNo로 정렬 (id 컬럼이 이미 포함되어 있음)
       const allColumns = [...currentColumnsInfo].sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0));

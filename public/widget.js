@@ -241,7 +241,7 @@ function ensureCloseButtonVisible() {
     tooltip.appendChild(closeButton);
     closeButton.style.display = 'flex';
     closeButton.style.opacity = '0.7';
-    console.log('[AI-Widget] 닫기 버튼이 사라져서 다시 추가함');
+    // console.log('[AI-Widget] 닫기 버튼이 사라져서 다시 추가함');
   }
 }
 
@@ -266,7 +266,7 @@ function detectDarkMode() {
   try {
     // 1. prefers-color-scheme 미디어 쿼리로 시스템 테마 확인
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      console.log('[AI-Widget] System dark mode detected');
+      // console.log('[AI-Widget] System dark mode detected');
       return true;
     }
 
@@ -280,7 +280,7 @@ function detectDarkMode() {
         const color = bgColor.match(/\d+/g)?.map(Number);
         if (color && color.length >= 3) {
           const luminance = (0.299 * color[0] + 0.587 * color[1] + 0.114 * color[2]) / 255;
-          console.log('[AI-Widget] Background luminance:', luminance);
+          // console.log('[AI-Widget] Background luminance:', luminance);
           return luminance < 0.5;
         }
       }
@@ -293,7 +293,7 @@ function detectDarkMode() {
           const color = htmlBgColor.match(/\d+/g)?.map(Number);
           if (color && color.length >= 3) {
             const luminance = (0.299 * color[0] + 0.587 * color[1] + 0.114 * color[2]) / 255;
-            console.log('[AI-Widget] HTML background luminance:', luminance);
+            // console.log('[AI-Widget] HTML background luminance:', luminance);
             return luminance < 0.5;
           }
         }
@@ -301,10 +301,10 @@ function detectDarkMode() {
     }
     
     // 3. 기본값으로 라이트 모드 반환
-    console.log('[AI-Widget] Defaulting to light mode');
+    // console.log('[AI-Widget] Defaulting to light mode');
     return false;
   } catch (error) {
-    console.warn('[AI-Widget] Error detecting dark mode:', error);
+    // console.warn('[AI-Widget] Error detecting dark mode:', error);
     return false;
   }
 }
@@ -393,15 +393,15 @@ const isDarkMode = detectDarkMode();
     // 모바일 디바이스 감지 (아이폰 포함)
     const isMobile = window.innerWidth <= 800 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    console.log('[AI-Widget] Device check - innerWidth:', window.innerWidth, 'userAgent:', navigator.userAgent, 'isMobile:', isMobile, 'isIOS:', isIOS);
+    // console.log('[AI-Widget] Device check - innerWidth:', window.innerWidth, 'userAgent:', navigator.userAgent, 'isMobile:', isMobile, 'isIOS:', isIOS);
     
     if (isMobile) {
       // 모바일에서는 새 탭으로 열기
-      console.log('[AI-Widget] Opening in new tab for mobile device');
+      // console.log('[AI-Widget] Opening in new tab for mobile device');
       const u = new URL(targetUrl, widgetSrc);
       if(!u.searchParams.get('embed')) u.searchParams.set('embed','1');
       u.searchParams.set('src','widget-mobile');
-      console.log('[AI-Widget] Opening URL:', u.toString());
+      // console.log('[AI-Widget] Opening URL:', u.toString());
 
       // 새 탭으로 열기 시도
       const newWindow = window.open(u.toString(), '_blank');
@@ -409,17 +409,17 @@ const isDarkMode = detectDarkMode();
       // 팝업이 차단되었는지 확인 (100ms 후)
       setTimeout(() => {
         if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-          console.log('[AI-Widget] Popup blocked, redirecting in current window');
+          // console.log('[AI-Widget] Popup blocked, redirecting in current window');
           window.location.href = u.toString();
         } else {
-          console.log('[AI-Widget] New tab opened successfully');
+          // console.log('[AI-Widget] New tab opened successfully');
         }
       }, 100);
       
       return;
     }
     
-    console.log('[AI-Widget] Opening iframe for desktop');
+    // console.log('[AI-Widget] Opening iframe for desktop');
     // 데스크톱에서는 기존 iframe 방식
     // 말풍선 숨기기 또는 표시
     if (root.classList.contains('open')) {
@@ -536,7 +536,7 @@ const isDarkMode = detectDarkMode();
           }, { passive: false });
         }
       } catch (err) {
-        console.log('[AI-Widget] Could not add iframe scroll listener:', err);
+        // console.log('[AI-Widget] Could not add iframe scroll listener:', err);
       }
       
       // 이미 등록된 리스너 제거(중복 방지)
@@ -619,24 +619,24 @@ const isDarkMode = detectDarkMode();
 
   const mount = () => {
     if (!document.body) {
-      console.warn('[AI-Widget] document.body not available');
+      // console.warn('[AI-Widget] document.body not available');
       return;
     }
     
     // 말풍선 툴팁 먼저 추가
     if (!tooltip.isConnected) {
       document.body.appendChild(tooltip);
-      console.log('[AI-Widget] Tooltip added to DOM');
+      // console.log('[AI-Widget] Tooltip added to DOM');
     }
     
     if (!btn.isConnected) {
       document.body.appendChild(btn);
-      console.log('[AI-Widget] Button added to DOM');
+      // console.log('[AI-Widget] Button added to DOM');
     }
     
     if (!root.isConnected) {
       document.body.appendChild(root);
-      console.log('[AI-Widget] Root added to DOM');
+      // console.log('[AI-Widget] Root added to DOM');
     }
     
     if (window.innerWidth > 800) handle.style.display = 'flex';
@@ -646,9 +646,9 @@ const isDarkMode = detectDarkMode();
     setTimeout(() => {
       if (tooltip.isConnected) {
         tooltip.style.opacity = '1'; // 위젯 접힌 상태이므로 말풍선 표시
-        console.log('[AI-Widget] Tooltip opacity set to 1');
+        // console.log('[AI-Widget] Tooltip opacity set to 1');
       } else {
-        console.warn('[AI-Widget] Tooltip not connected to DOM');
+        // console.warn('[AI-Widget] Tooltip not connected to DOM');
       }
     }, 100);
     

@@ -259,7 +259,4 @@ const MenuItem = styled.button`
   font-size: 14px;
   color: #333;
 
-  &:hover {
-    background-color: #f0f0f0;
-  }
 `;

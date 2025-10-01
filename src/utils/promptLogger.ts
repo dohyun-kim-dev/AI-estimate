@@ -1,3 +1,5 @@
+import { devLog } from '@/utils/devLogger'
+
 interface TokenInfo {
   promptTokens: number;
   completionTokens: number;
@@ -50,14 +52,14 @@ export const logPromptInfo = (info: PromptLogInfo) => {
   console.group(`${colors.bright}${colors.cyan}🤖 AI Chat Log${colors.reset}`);
   
   // 템플릿 ID
-  console.log(`${colors.yellow}Template ID:${colors.reset} ${info.templateId}`);
+  devLog(`${colors.yellow}Template ID:${colors.reset} ${info.templateId}`);
   
   // 사용자 입력
-  console.log(`${colors.yellow}User Input:${colors.reset} ${info.userInput}`);
+  devLog(`${colors.yellow}User Input:${colors.reset} ${info.userInput}`);
   
   // 결합된 프롬프트 (접었다 펼 수 있게)
   console.groupCollapsed(`${colors.yellow}Combined Prompt:${colors.reset}`);
-  console.log(info.combinedPrompt);
+  devLog(info.combinedPrompt);
   console.groupEnd();
   
   // 토큰 정보가 있는 경우
@@ -70,10 +72,10 @@ export const logPromptInfo = (info: PromptLogInfo) => {
     const totalCost = promptCost + completionCost;
     
     console.group(`${colors.yellow}Token Usage & Cost:${colors.reset}`);
-    console.log(`${colors.green}Prompt Tokens:${colors.reset} ${promptTokens.toLocaleString()} (₩${promptCost.toFixed(2)})`);
-    console.log(`${colors.green}Completion Tokens:${colors.reset} ${completionTokens.toLocaleString()} (₩${completionCost.toFixed(2)})`);
-    console.log(`${colors.green}Total Tokens:${colors.reset} ${totalTokens.toLocaleString()}`);
-    console.log(`${colors.bright}${colors.green}Total Cost:${colors.reset} ₩${totalCost.toFixed(2)}`);
+    devLog(`${colors.green}Prompt Tokens:${colors.reset} ${promptTokens.toLocaleString()} (₩${promptCost.toFixed(2)})`);
+    devLog(`${colors.green}Completion Tokens:${colors.reset} ${completionTokens.toLocaleString()} (₩${completionCost.toFixed(2)})`);
+    devLog(`${colors.green}Total Tokens:${colors.reset} ${totalTokens.toLocaleString()}`);
+    devLog(`${colors.bright}${colors.green}Total Cost:${colors.reset} ₩${totalCost.toFixed(2)}`);
     console.groupEnd();
   }
   

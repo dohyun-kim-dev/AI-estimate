@@ -1,5 +1,6 @@
 import React, { useState, useLayoutEffect, useCallback } from "react";
 import styled from "styled-components";
+import { devLog } from '@/utils/devLogger'
 
 interface ScrollAwareWrapperProps {
   children: React.ReactNode;
@@ -17,7 +18,7 @@ const ScrollAwareWrapper: React.FC<ScrollAwareWrapperProps> = ({ children }) => 
 
       setScrollbar((prev) => {
         if (prev.width !== newWidth || prev.height !== newHeight) {
-          console.log("✅ [ScrollAwareWrapper] scrollbar updated:", newWidth, newHeight);
+          devLog("✅ [ScrollAwareWrapper] scrollbar updated:", newWidth, newHeight);
         }
         return { width: newWidth, height: newHeight };
       });

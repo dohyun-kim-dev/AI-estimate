@@ -4,6 +4,7 @@ import Icon from '@components/ai-esti/Icon';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { useThemeStore } from '@store/themeStore';
 import BottomInput from '@components/ai-esti/BottomInput';
+import { devLog } from '@/utils/devLogger'
 
 const LayoutWrapper = styled.div`
   min-height: 100vh;
@@ -106,7 +107,7 @@ export default function AiEstimateLayout() {
       
       <BottomInput 
         placeholder="AI에게 견적 문의하기" 
-        onSubmit={(value) => console.log(value)}
+        onSubmit={(value) => devLog(value)}
       />
     </LayoutWrapper>
   );

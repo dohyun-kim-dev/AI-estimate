@@ -173,7 +173,6 @@ const DownloadButton = styled(ActionButton)`
   color: #ffffff;
   border: none;
   &:hover:not(:disabled) {
-    background-color: #446b4c;
     color: #ffffff;
   }
 `;

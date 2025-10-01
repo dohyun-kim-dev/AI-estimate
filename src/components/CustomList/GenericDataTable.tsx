@@ -18,6 +18,7 @@ export interface ColumnDefinition<T> {
   headerStyle?: React.CSSProperties;
   cellStyle?: React.CSSProperties | ((value: any, item: T) => React.CSSProperties);
   flex?: number; // ✅ flex 비율
+  width?: number | string; // ✅ 고정 너비 (px 또는 % 등)
 }
 
 interface GenericDataTableProps<T> {
@@ -67,8 +68,9 @@ const GenericDataTable = <T extends object>({
       devLog("📊 totalFlex:", totalFlex);
       columns.forEach((col, i) => {
         const flex = col.flex ?? 0;
+        const width = col.width;
         const percent = totalFlex > 0 ? ((flex / totalFlex) * 100).toFixed(2) : "0";
-        devLog(`  ▸ Column ${i} (${col.header}): flex=${flex}, widthPercent=${percent}%`);
+        devLog(`  ▸ Column ${i} (${col.header}): width=${width || 'auto'}, flex=${flex}, widthPercent=${percent}%`);
       });
       devLog("=============================================================");
     };
@@ -79,13 +81,22 @@ const GenericDataTable = <T extends object>({
 
   return (
     <Table ref={tableRef}>
-      {totalFlex > 0 && (
-        <colgroup>
-          {columns.map((col, i) => (
-            <col key={i} style={{ width: col.flex ? `${(col.flex / totalFlex) * 100}%` : undefined }} />
-          ))}
-        </colgroup>
-      )}
+      <colgroup>
+        {columns.map((col, i) => {
+          let width: string | undefined;
+          
+          // 1. width가 명시적으로 설정된 경우 우선 적용
+          if (col.width) {
+            width = typeof col.width === 'number' ? `${col.width}px` : col.width;
+          }
+          // 2. width가 없고 flex가 있으면 flex 비율로 계산
+          else if (col.flex && totalFlex > 0) {
+            width = `${(col.flex / totalFlex) * 100}%`;
+          }
+          
+          return <col key={i} style={{ width }} />;
+        })}
+      </colgroup>
       <thead>
         <tr>
           {columns.map((col, i) => {

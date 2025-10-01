@@ -3,6 +3,7 @@
 import React, { useRef, forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import GenericListUI, { FetchParams, FetchResult } from "@/components/CustomList/GenericListUI";
 import { ColumnDefinition } from "@/components/CustomList/GenericDataTable";
+import { devLog } from '@/utils/devLogger'
 
 // BaseRecord 타입 정의
 interface BaseRecord {
@@ -116,7 +117,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   // 초기 로딩 - 정확히 한 번만 실행되도록 보장
   useEffect(() => {
     if (!isInitialized) {
-      console.log('🚀 CmsDesktopView 초기 API 호출');
+      devLog('🚀 CmsDesktopView 초기 API 호출');
       setIsInitialized(true);
       handleFetchDataInternal({});
     }
@@ -125,7 +126,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   // data prop 변경 감지 - fetchData가 없을 때 직접 전달받은 data 사용
   useEffect(() => {
     if (!fetchData) {
-      console.log('🔄 CmsDesktopView data 변경 감지:', data.length);
+      devLog('🔄 CmsDesktopView data 변경 감지:', data.length);
       setListData(data);
       setTotalItems(data.length);
     }

@@ -6,6 +6,7 @@ import CommonTextField from '@/components/common/TextField';
 import ActionButton from '@/components/ActionButton';
 import { toast } from 'react-toastify';
 import { createCategory, updateCategory } from '@/lib/api/admin/adminApi';
+import { devLog } from '@/utils/devLogger'
 
 interface CategoryRegisterPopupProps {
   isOpen: boolean;
@@ -22,7 +23,7 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
     if (isOpen) {
       setCategoryName(editData?.name ?? '');
       setCategoryCode(editData?.code ?? '');
-      console.log('CategoryRegisterPopup 열림 - editData:', editData);
+      devLog('CategoryRegisterPopup 열림 - editData:', editData);
     }
   }, [editData, isOpen]);
 
@@ -38,12 +39,12 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
     try {
       if (editData) {
         // 수정 - ID 확인 로그 추가
-        console.log('카테고리 수정 - ID:', editData._id, '데이터:', { name: categoryName, code: categoryCode });
+        devLog('카테고리 수정 - ID:', editData._id, '데이터:', { name: categoryName, code: categoryCode });
         await updateCategory(editData._id, { name: categoryName, code: categoryCode });
         toast.success('카테고리가 수정되었습니다.');
       } else {
         // 등록
-        console.log('카테고리 등록 - 데이터:', { name: categoryName, code: categoryCode });
+        devLog('카테고리 등록 - 데이터:', { name: categoryName, code: categoryCode });
         await createCategory({ name: categoryName, code: categoryCode });
         toast.success('카테고리가 등록되었습니다.');
       }

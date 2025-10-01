@@ -9,6 +9,7 @@ import { callNullCheck } from '@/lib/utils/nullChecker';
 import { ApiResponse } from './userApi.types';
 import { useAuthStore } from '@/store/authStore';
 import { interceptApiResponse } from '@/utils/authHandler';
+import { devLog } from '@/utils/devLogger'
 
 export async function callUserApi<T>({
   title,
@@ -40,7 +41,7 @@ export async function callUserApi<T>({
       companyCode = pathParts[companyCodeIndex];
     }
     
-    console.log('[Company Code]', {
+    devLog('[Company Code]', {
       path: window.location.pathname,
       pathParts,
       companyCodeIndex,
@@ -86,7 +87,7 @@ export async function callUserApi<T>({
     }
 
     // API 요청 정보 로깅
-    console.log('[API Request]', {
+    devLog('[API Request]', {
       title,
       method,
       url,
@@ -231,8 +232,8 @@ export async function callUserApi<T>({
       };
     }
 
-    console.log(`[API Response] Title: ${title}`);
-    console.log('API Response:', response);
+    devLogI Response] Title: ${title}`);
+    devLog('API Response:', response);
 
     // 인증 에러 인터셉터 적용
     if (interceptApiResponse(response)) {

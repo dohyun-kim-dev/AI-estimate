@@ -10,6 +10,7 @@ import Icon from '@/components/ai-esti/Icon';
 import ShareAiResponseMessage from '@/components/ai-esti/ShareAiResponseMessage';
 import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import { AiMessageContent } from '@/app/ai/page';
+import { devLog } from '@/utils/devLogger'
 
 // 메시지 타입 정의
 import type { FileUploadData } from '@/firebase.functions';
@@ -416,7 +417,7 @@ const SharePage: React.FC = () => {
       }
 
       try {
-        console.log('공유 세션 메시지 로딩 중:', sessionId);
+        devLog('공유 세션 메시지 로딩 중:', sessionId);
         
         // 페이지 로드 시 기존 메시지 클리어
         clearMessages();
@@ -429,7 +430,7 @@ const SharePage: React.FC = () => {
         
         if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
           const messages = messagesResponse.data;
-          console.log('메시지 데이터:', messages);
+          devLog('메시지 데이터:', messages);
           
                   // 메시지들을 채팅 스토어에 추가
         messages.forEach((message: ChatMessage) => {

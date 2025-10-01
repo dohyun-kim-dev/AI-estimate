@@ -9,17 +9,20 @@ import dayjs from 'dayjs';
 import styled from 'styled-components';
 import CmsPopup from '@/components/CmsPopup';
 import ActionButton from '@/components/ActionButton';
+import { getEstimateDownloadList, downloadEstimate, downloadEstimateExcel } from '@/lib/api/admin/adminApi';
+import { devLog } from '@/utils/devLogger'
 
 type ProposalDownload = {
   no: number;
+  companyName: string;
   user: string;
   profileImageUrl: string;
   userId: string;
   email: string;
-  downloadDate: string;
-  projectName: string;
-  functionTitle: string;
-  filePath: string; // 다운로드 파일 경로
+  updateAt: string;
+  title: string;
+  _id: string;
+  isGuest?: boolean;
 };
 
 const ProfileWrapper = styled.div`
@@ -42,16 +45,28 @@ const ProfileHeader = styled.div<{ $imageUrl: string | null }>`
   flex-shrink: 0;
 `;
 
-const DownloadButton = styled(ActionButton)`
-  width: 80px;
+const DownloadButton = styled.button`
+  width: 100px;
   height: 30px;
-  background-color: #51815a;
+  background-color: #214A72;
   color: white;
   border: none;
   font-size: 12px;
-  &:hover:not(:disabled) {
-    background-color: #3e6b47;
-  }
+  border-radius: 0px;
+  cursor: pointer;
+  padding: 4px;
+`;
+
+const ExcelDownloadButton = styled.button`
+  width: 100px;
+  height: 30px;
+  background-color: #51815A;
+  color: white;
+  border: none;
+  font-size: 12px;
+  border-radius: 0px;
+  cursor: pointer;
+  padding: 4px;
 `;
 
 const ProposalDownloadPage: React.FC = () => {
@@ -76,9 +91,41 @@ const ProposalDownloadPage: React.FC = () => {
     setSelectedItem(null);
   };
 
-  const handleDownloadFile = (filePath: string) => {
-    console.log(`Downloading file from: ${filePath}`);
-    alert(`파일 다운로드: ${filePath}`);
+  const handleDownloadFile = async (estimateId: string) => {
+    try {
+      devLog(`Downloading file for estimate: ${estimateId}`);
+      
+      // 새 탭에서 PDF 미리보기 페이지 열기 (EstimateCard의 openPreviewTab과 동일한 방식)
+      const previewUrl = `/superadmin/pdf-preview?uuid=${estimateId}`;
+      const newWindow = window.open(previewUrl, '_blank');
+      
+      setTimeout(() => {
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          window.location.href = previewUrl;
+        }
+      }, 100);
+      
+      devLog('PDF 미리보기 페이지가 새 탭에서 열립니다.');
+    } catch (error) {
+      console.error('PDF 다운로드 오류:', error);
+      alert('PDF 다운로드 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleExcelDownload = async (estimateId: string) => {
+    try {
+      devLog(`Downloading Excel for estimate: ${estimateId}`);
+      
+      // 엑셀 파일 다운로드 실행
+      const result = await downloadEstimateExcel(estimateId);
+      devLog(`엑셀 다운로드 완료: ${result.filename}`);
+      
+      // 성공 메시지 표시 (선택사항)
+      // alert(`엑셀 파일이 다운로드되었습니다: ${result.filename}`);
+    } catch (error) {
+      console.error('엑셀 다운로드 오류:', error);
+      alert('엑셀 다운로드 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.');
+    }
   };
 
 
@@ -86,140 +133,144 @@ const ProposalDownloadPage: React.FC = () => {
       setSelectedCompanyCode(company.id);
       setSelectedCompanyName(company.name);
       
-      
+      // 고객사 선택 시 즉시 데이터 다시 조회
+      if (listRef.current) {
+        listRef.current.refetch();
+      }
     }, []);
-
-//이런 느낌 으로 api 연동
-  // const fetchData = useCallback(
-  //   async (params: FetchParams): Promise<FetchResult<User>> => {
-  //     try {
-  //       // 키워드가 전달되면 현재 키워드 업데이트 (빈 문자열 포함)
-  //       let searchKeyword = '';
-  //       if (params.keyword !== undefined) {
-  //         setCurrentKeyword(params.keyword);
-  //         searchKeyword = params.keyword;
-  //       } else {
-  //         searchKeyword = currentKeyword;
-  //       }
-
-  //       const fromDate = params.fromDate || dateRange?.fromDate || dayjs().subtract(3, 'month').format('YYYY-MM-DD');
-  //       const toDate = params.toDate || dateRange?.toDate || dayjs().format('YYYY-MM-DD');
-        
-  //       devLog('🔍 [fetchData 호출]', { searchKeyword, fromDate, toDate, selectedCompanyCode });
-        
-  //       // API 호출
-  //       const response = await getUserList({
-  //         keyword: searchKeyword,
-  //         fromDate: fromDate,
-  //         toDate: toDate,
-  //         companyCode: selectedCompanyCode || '',
-  //       });
-        
-  //       devLog('✅ [fetchData 응답 받음]', response);
-        
-  //       // 응답 처리 (응답 구조에 맞게 수정)
-  //       if (response && typeof response === 'object') {
-  //         // 응답이 직접 API 응답 객체인 경우
-  //         if ('statusCode' in response && response.statusCode === 200) {
-  //           // 타입 단언으로 안전하게 처리
-  //           const responseWithData = response as { data?: any[]; metadata?: { totalCnt?: number; allCnt?: number } };
-  //           const userData = responseWithData.data || [];
-  //           const totalItems = responseWithData.metadata?.totalCnt || userData.length;
-  //           const allItems = responseWithData.metadata?.allCnt || totalItems;
-  //           return { data: userData, totalItems, allItems };
-  //         } 
-  //         // 응답이 배열로 감싸져 있는 경우 (callAdminApi 특성)
-  //         else if (Array.isArray(response) && response[0]) {
-  //           const firstItem = response[0];
-  //           if (firstItem && typeof firstItem === 'object' && 'data' in firstItem) {
-  //             const responseData = firstItem.data;
-  //             if (responseData && typeof responseData === 'object' && 'statusCode' in responseData) {
-  //               // 타입 단언으로 안전하게 처리
-  //               const typedResponseData = responseData as { data?: any[]; metadata?: { totalCnt?: number; allCnt?: number } };
-  //               const userData = typedResponseData.data || [];
-  //               const totalItems = typedResponseData.metadata?.totalCnt || userData.length;
-  //               const allItems = typedResponseData.metadata?.allCnt || totalItems;
-  //               return { data: userData, totalItems, allItems };
-  //             }
-  //           }
-  //         }
-  //       }
-        
-  //       console.error('유저 목록 응답 형식이 예상과 다릅니다:', response);
-  //       return { data: [], totalItems: 0, allItems: 0 };
-  //     } catch (error) {
-  //       console.error('고객 회원 조회 오류:', error);
-  //       return { data: [], totalItems: 0, allItems: 0 };
-  //     }
-  //   },
-  //   [currentKeyword, selectedCompanyCode, dateRange]
-  // );
 
   const fetchData = useCallback(
     async (params: FetchParams): Promise<FetchResult<ProposalDownload>> => {
-      console.log('Mock Data fetching for ProposalDownload...', params);
-      const dummyProfileUrls = [
-        'https://i.pravatar.cc/150?img=6', 'https://i.pravatar.cc/150?img=7', 'https://i.pravatar.cc/150?img=8',
-      ];
+      try {
+        // 키워드가 전달되면 현재 키워드 업데이트 (빈 문자열 포함)
+        let searchKeyword = '';
+        if (params.keyword !== undefined) {
+          setCurrentKeyword(params.keyword);
+          searchKeyword = params.keyword;
+        } else {
+          searchKeyword = currentKeyword;
+        }
 
-      const mockData: ProposalDownload[] = [
-        {
-          no: 1, user: '이민지', profileImageUrl: dummyProfileUrls[0], userId: 'lmj_user', email: 'lmj@example.com', downloadDate: '2025-08-14T10:00:00Z', projectName: '신규 쇼핑몰 개발', functionTitle: '회원가입 기능', filePath: '/files/proposal1.pdf',
-        },
-        {
-          no: 2, user: '홍길동', profileImageUrl: dummyProfileUrls[1], userId: 'gildong', email: 'gildong@heredotcorp.com', downloadDate: '2025-08-13T15:30:00Z', projectName: '고객 관리 시스템', functionTitle: '데이터 분석 모듈', filePath: '/files/proposal2.docx',
-        },
-        // ...
-      ];
-
-      const filteredByDate = mockData.filter(item => {
-        const itemDate = dayjs(item.downloadDate);
-        const fromDate = params.fromDate ? dayjs(params.fromDate) : null;
-        const toDate = params.toDate ? dayjs(params.toDate) : null;
-        if (fromDate && itemDate.isBefore(fromDate, 'day')) return false;
-        if (toDate && itemDate.isAfter(toDate, 'day')) return false;
-        return true;
-      });
-
-      const filteredData = params.keyword
-        ? filteredByDate.filter(item =>
-            item.user.includes(params.keyword as string) ||
-            item.userId.includes(params.keyword as string) ||
-            item.email.includes(params.keyword as string) ||
-            item.projectName.includes(params.keyword as string)
-          )
-        : filteredByDate;
-
-      return { data: filteredData, totalItems: filteredData.length, allItems: mockData.length };
+        const fromDate = params.fromDate || dateRange?.fromDate || dayjs().subtract(3, 'month').format('YYYY-MM-DD');
+        const toDate = params.toDate || dateRange?.toDate || dayjs().format('YYYY-MM-DD');
+        
+        devLog('🔍 [견적 다운로드 fetchData 호출]', { searchKeyword, fromDate, toDate });
+        
+        // API 호출
+        const response = await getEstimateDownloadList({
+          keyword: searchKeyword,
+          fromDate: fromDate,
+          toDate: toDate,
+          companyCode: selectedCompanyCode || undefined,
+        });
+        
+        devLog('✅ [견적 다운로드 fetchData 응답 받음]', response);
+        
+        // 응답 처리 (응답 구조에 맞게 수정)
+        if (response && typeof response === 'object') {
+          // 응답이 직접 API 응답 객체인 경우
+          if ('statusCode' in response && response.statusCode === 200) {
+            // 타입 단언으로 안전하게 처리
+            const responseWithData = response as { data?: any[]; metadata?: { totalCnt?: number; allCnt?: number } };
+            const estimateData = responseWithData.data || [];
+            
+            // API 응답 데이터를 컴포넌트용 데이터로 변환
+            const transformedData: ProposalDownload[] = estimateData.map((item: any, index: number) => ({
+              no: item.no || index + 1,
+              companyName: item.company?.companyName || '알 수 없음',
+              user: item.userInfo?.name || '비회원',
+              profileImageUrl: item.userInfo?.name ? null : '/cms/guest.png',
+              userId: item.user || '',
+              email: item.userInfo?.email || '',
+              updateAt: item.createAt || '',
+              title: item.title || '',
+              _id: item._id || '',
+              isGuest: !item.userInfo?.name
+            }));
+            
+            const totalItems = responseWithData.metadata?.totalCnt || transformedData.length;
+            const allItems = responseWithData.metadata?.allCnt || totalItems;
+            return { data: transformedData, totalItems, allItems };
+          } 
+          // 응답이 배열로 감싸져 있는 경우 (callAdminApi 특성)
+          else if (Array.isArray(response) && response[0]) {
+            const firstItem = response[0];
+            if (firstItem && typeof firstItem === 'object' && 'data' in firstItem) {
+              const responseData = firstItem.data;
+              if (responseData && typeof responseData === 'object' && 'statusCode' in responseData) {
+                // 타입 단언으로 안전하게 처리
+                const typedResponseData = responseData as { data?: any[]; metadata?: { totalCnt?: number; allCnt?: number } };
+                const estimateData = typedResponseData.data || [];
+                
+                // API 응답 데이터를 컴포넌트용 데이터로 변환
+                const transformedData: ProposalDownload[] = estimateData.map((item: any, index: number) => ({
+                  no: item.no || index + 1,
+                  companyName: item.company?.companyName || '알 수 없음',
+                  user: item.userInfo?.name || '비회원',
+                  profileImageUrl: item.userInfo?.name ? null : '/cms/guest.png',
+                  userId: item.user || '',
+                  email: item.userInfo?.email || '',
+                  updateAt: item.createAt || '',
+                  title: item.title || '',
+                  _id: item._id || '',
+                  isGuest: !item.userInfo?.name
+                }));
+                
+                const totalItems = typedResponseData.metadata?.totalCnt || transformedData.length;
+                const allItems = typedResponseData.metadata?.allCnt || totalItems;
+                return { data: transformedData, totalItems, allItems };
+              }
+            }
+          }
+        }
+        
+        console.error('견적 다운로드 목록 응답 형식이 예상과 다릅니다:', response);
+        return { data: [], totalItems: 0, allItems: 0 };
+      } catch (error) {
+        console.error('견적 다운로드 현황 조회 오류:', error);
+        return { data: [], totalItems: 0, allItems: 0 };
+      }
     },
-    []
+    [currentKeyword, selectedCompanyCode, dateRange]
   );
 
   const columns: ColumnDefinition<ProposalDownload>[] = useMemo(
     () => [
-      { header: 'No', accessor: 'no', sortable: true },
-      { header: '유저', accessor: 'user', sortable: true },
+      { header: 'No', accessor: 'no', width: 60, sortable: true },
+      { header: '고객사', accessor: 'companyName', flex: 0.7, sortable: true },
+      { header: '유저', accessor: 'user', flex: 0.7, sortable: true },
       {
         header: '프로필',
         accessor: 'profileImageUrl',
+        width: 60,
         formatter: (value, row) => (
           <ProfileWrapper>
-            <ProfileHeader $imageUrl={row.profileImageUrl} />
+            <ProfileHeader $imageUrl={row.isGuest ? '/cms/guest.png' : row.profileImageUrl} />
           </ProfileWrapper>
         ),
       },
-      { header: '아이디', accessor: 'userId', sortable: true },
-      { header: '이메일', accessor: 'email', sortable: true },
-      { header: '날짜', accessor: 'downloadDate', sortable: true, formatter: (value) => dayjs(value).format('YYYY-MM-DD') },
-      { header: '프로젝트', accessor: 'projectName' },
-      { header: '기능제목', accessor: 'functionTitle' },
+      { header: '아이디', accessor: 'userId', flex: 1.2, sortable: true },
+      { header: '이메일', accessor: 'email', flex: 1.2, sortable: true },
+      { header: '날짜', accessor: 'updateAt', flex: 1, sortable: true, formatter: (value) => dayjs(value).format('YYYY-MM-DD') },
+      { header: '제목', accessor: 'title', flex: 2 },
       {
         header: '파일다운로드',
-        accessor: 'filePath',
+        accessor: '_id',
+        width: 120,
         formatter: (value) => (
-          <DownloadButton onClick={() => handleDownloadFile(value as string)}>
-            다운로드
+          <DownloadButton onClick={() => handleDownloadFile("b3434c8a-1d19-4e80-8499-4da501e6ff84")}>
+            파일 다운로드
           </DownloadButton>
+        ),
+      },
+      {
+        header: '견적xlx다운',
+        accessor: '_id',
+        width: 120,
+        formatter: (value) => (
+          <ExcelDownloadButton onClick={() => handleExcelDownload("b3434c8a-1d19-4e80-8499-4da501e6ff84")}>
+            엑셀 다운로드
+          </ExcelDownloadButton>
         ),
       },
     ],
@@ -231,31 +282,40 @@ const ProposalDownloadPage: React.FC = () => {
       <CmsResponsiveContainer<ProposalDownload>
         ref={listRef}
         title="견적 다운로드 현황"
-        excelFileName="ProposalDownloads"
+        data={[]} // 빈 배열로 초기화 (fetchData 사용 시)
         columns={columns}
         fetchData={fetchData}
-        enableSearch
-        enableDateFilter
-        searchPlaceholder="유저, 아이디, 이메일, 프로젝트명 검색"
-        onRowClick={handleRowClick}
+        enableDateFilter={true}
+        searchPlaceholder="유저, 아이디, 이메일, 제목 검색"
+        enableCompanySearch={true}
         themeMode="light"
         onCompanySelect={handleCompanySelect}
+        
         dateRangeOptions={['3개월', '6개월', '1년', '지정']}
         onDateChange={(fromDate, toDate) => {
-          console.log('📅 고객 회원관리 - 날짜 변경:', { fromDate, toDate });
+          devLog('📅 견적 다운로드 현황 - 날짜 변경:', { fromDate, toDate });
           setDateRange({ fromDate, toDate });
         }}
         onInitialDateSet={(fromDate, toDate) => {
-          console.log('📅 고객 회원관리 - 초기 날짜 설정:', { fromDate, toDate });
+          devLog('📅 견적 다운로드 현황 - 초기 날짜 설정:', { fromDate, toDate });
           setDateRange({ fromDate, toDate });
         }}
         onSearchChange={(keyword) => {
-          console.log('🔍 고객 회원관리 - 검색어 변경:', keyword);
+          devLog('🔍 견적 다운로드 현황 - 검색어 변경:', keyword);
           setCurrentKeyword(keyword);
         }}
       />
       <CmsPopup title="다운로드 상세" isOpen={isPopupOpen} onClose={closePopup}>
-        {/* ... */}
+        <div>
+          {selectedItem && (
+            <div>
+              <p><strong>제목:</strong> {selectedItem.title}</p>
+              <p><strong>사용자:</strong> {selectedItem.user}</p>
+              <p><strong>이메일:</strong> {selectedItem.email}</p>
+              <p><strong>날짜:</strong> {selectedItem.updateAt ? dayjs(selectedItem.updateAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</p>
+            </div>
+          )}
+        </div>
       </CmsPopup>
     </>
   );

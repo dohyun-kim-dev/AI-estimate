@@ -290,7 +290,8 @@ const MenuItem = styled.li<{ $active?: boolean; $isCollapsed: boolean }>`
   cursor: pointer;
   border-bottom: 1px solid #252736;
   transition: background 0.2s, color 0.2s;
-  background-color: ${({ $active }) => ($active ? '#4071ed' : '#2c2e3c')};
+  // background-color: ${({ $active }) => ($active ? '#4071ed' : '#2c2e3c')};
+  background-color: transparent;
   padding-left: ${({ $isCollapsed }) => ($isCollapsed ? '0' : '20px')};
   width: 100%;
   text-decoration: none;
@@ -300,7 +301,7 @@ const MenuItem = styled.li<{ $active?: boolean; $isCollapsed: boolean }>`
   overflow: visible; /* 추가 */
 
   &:hover {
-    background-color: #3a3f4e;
+    // background-color: #3a3f4e;
     color: white;
   }
 `;
@@ -356,7 +357,6 @@ const FooterSection = styled.div<{ $isCollapsed: boolean }>`
  
   &:hover {
     color: white;
-    background-color: #3a3f4e;
   }
 `;
  
@@ -402,7 +402,7 @@ const SubMenuItem = styled.li<{ $active?: boolean; $isCollapsed?: boolean }>`
   transition: background 0.2s, color 0.2s;
   padding-left: ${({ $isCollapsed }) => ($isCollapsed ? '15px' : '80px')};
   padding-right: ${({ $isCollapsed }) => ($isCollapsed ? '15px' : '20px')};
-  background-color: ${({ $active }) => ($active ? '#3a3f4e' : 'transparent')};
+  background-color: transparent;
   white-space: nowrap;
 
   &:first-child {
@@ -416,7 +416,6 @@ const SubMenuItem = styled.li<{ $active?: boolean; $isCollapsed?: boolean }>`
   }
 
   &:hover {
-    background-color: #3a3f4e;
     color: white;
   }
 `;

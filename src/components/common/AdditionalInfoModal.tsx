@@ -9,6 +9,7 @@ import { Validators } from '@/lib/utils/validators'
 import { googleLoginUpdate, companyRegister, sendAuthCode, validateAuthCode } from '@/lib/api/user/userApi'
 import TermsAgreement from '@/components/ai-esti/TermsAgreement'
 import { useToast } from '@/components/common/ToastProvider';
+import { devLog } from '@/utils/devLogger'
 
 const Form = styled.form`
   margin-top: 32px; 
@@ -287,9 +288,9 @@ useEffect(() => {
           const needsCompanyRegistration = !userServices.includes(currentCompanyCode);
           if (needsCompanyRegistration) {
             await companyRegister();
-            console.log(`고객사 등록 완료: ${currentCompanyCode}`);
+            devLog(`고객사 등록 완료: ${currentCompanyCode}`);
           } else {
-            console.log(`이미 고객사 등록됨: ${currentCompanyCode}`);
+            devLog(`이미 고객사 등록됨: ${currentCompanyCode}`);
           }
         } catch (err) {
           console.error('고객사 등록 중 오류:', err);
