@@ -34,7 +34,7 @@ const ProfileHeader = styled.div<{ $imageUrl: string | null }>`
   border-radius: 50%;
   background-size: cover;
   background-position: center;
-  background-image: url(${({ $imageUrl }) => $imageUrl || 'ai-astimate/no-profile.png'});
+  background-image: url(${({ $imageUrl }) => $imageUrl || '/ai-estimate/no-profile.png'});
   border: 1px solid #ccc;
   flex-shrink: 0;
 `;
@@ -46,6 +46,7 @@ interface EstimateRequestUserInfo {
   email: string;
   cellphone: string;
   profileImage?: string; // 프로필 이미지 추가
+  isGuest?: boolean; // 게스트 여부 추가
 }
 
 interface EstimateRequestItem {
@@ -88,6 +89,8 @@ type Inquiry = {
   chatSession?: string;
   estimateId?: string;
   estimateFile?: string;
+  isGuest?: boolean; // 게스트 여부 추가
+  userInfo?: EstimateRequestUserInfo; // userInfo 추가
 };
 
 // 버튼 스타일
@@ -589,22 +592,35 @@ const InquiryPage: React.FC = () => {
 
         if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
           // 새로운 API 응답 형식에 맞게 데이터 매핑
-          const mappedData: Inquiry[] = (apiResponse.data || []).map((item: EstimateRequestItem, index: number) => ({
-            no: index + 1,
-            _id: item._id,
-            inquiryDate: item.createAt,
-            name: item.userInfo?.name || '알 수 없음',
-            userId: item.userInfo?._id, // 사용자 ID
-            profileImageUrl: item.userInfo?.profileImage || '/ai-estimate/no_profile.png', // 프로필 이미지 URL
-            email: item.userInfo?.email || '-',
-            cellphone: item.userInfo?.cellphone || '-',
-            title: item.title,
-            memo: item.memo || '-',
-            status: getStatusText(item.status), // 상태 텍스트 변환
-            chatSession: item.chatSession,
-            estimateId: item.estimateId,
-            estimateFile: undefined, // 새 응답에는 estimateFile이 없음
-          }));
+          const mappedData: Inquiry[] = (apiResponse.data || []).map((item: EstimateRequestItem, index: number) => {
+            const isGuest = item.userInfo?.isGuest === true;
+            let profileImageUrl = '/ai-estimate/no-profile.png'; // 기본값
+            
+            if (isGuest) {
+              profileImageUrl = '/cms/guest.png';
+            } else if (item.userInfo?.profileImage) {
+              profileImageUrl = item.userInfo.profileImage;
+            }
+            
+            return {
+              no: index + 1,
+              _id: item._id,
+              inquiryDate: item.createAt,
+              name: item.userInfo?.name || '알 수 없음',
+              userId: item.user, // 사용자 ID
+              profileImageUrl, // 수정된 프로필 이미지 로직
+              email: item.userInfo?.email || '-',
+              cellphone: item.userInfo?.cellphone || '-',
+              title: item.title,
+              memo: item.memo || '-',
+              status: getStatusText(item.status), // 상태 텍스트 변환
+              chatSession: item.chatSession,
+              estimateId: item.estimateId,
+              estimateFile: undefined, // 새 응답에는 estimateFile이 없음
+              isGuest,
+              userInfo: item.userInfo,
+            };
+          });
 
           devLog('📋 [상담요청 조회] 매핑된 데이터:', mappedData);
 
@@ -643,21 +659,33 @@ const InquiryPage: React.FC = () => {
         width: 180,
         formatter: (value) => dayjs(value).format('YYYY-MM-DD(ddd) HH:mm') 
       },
-      { header: '이름', accessor: 'name', sortable: true },
-      { header: '아이디', accessor: 'userId', sortable: true },
       {
         header: '프로필',
         accessor: 'profileImageUrl',
         width: 60, // 60px 너비 설정
         noPopup: true,
-        formatter: (value, row) => (
-          <ProfileWrapper>
-            <ProfileHeader $imageUrl={row.profileImageUrl} />
-          </ProfileWrapper>
-        ),
+        formatter: (value, row) => {
+          let imageUrl = '/ai-estimate/no-profile.png'; // 기본값
+          
+          if (row.userInfo?.isGuest === true) {
+            imageUrl = '/cms/guest.png';
+          } else if (row.userInfo?.profileImage) {
+            imageUrl = row.userInfo.profileImage;
+          } else if (row.profileImageUrl) {
+            imageUrl = row.profileImageUrl;
+          }
+          
+          return (
+            <ProfileWrapper>
+              <ProfileHeader $imageUrl={imageUrl} />
+            </ProfileWrapper>
+          );
+        },
       },
+      { header: '이름', accessor: 'name', sortable: true },
       { header: '이메일', accessor: 'email', sortable: true },
       { header: '전화번호', accessor: 'cellphone', sortable: true },
+      { header: '아이디', accessor: 'userId', sortable: true },
       { header: '제목', accessor: 'title' },
       { header: '메모', accessor: 'memo', formatter: (value) => value || '-' },
       { 
@@ -672,22 +700,10 @@ const InquiryPage: React.FC = () => {
         )
       },
       {
-        header: '대화이력보기',
-        accessor: 'chatSession',
-        noPopup: true,
-        formatter: (value, row) => (
-            <DetailActionButton 
-              $themeMode="light" 
-              onClick={() => handleChatHistoryClick(row.chatSession, row.name)}
-            >
-              대화 이력 보기
-            </DetailActionButton>
-        ),
-      },
-      {
         header: '견적PDF다운',
         accessor: 'estimateId',
         noPopup: true,
+        width: 100,
         formatter: (value, row) => (
             <DownloadPdfButton 
               $themeMode="light" 
@@ -701,6 +717,7 @@ const InquiryPage: React.FC = () => {
         header: '견적XLX다운',
         accessor: 'estimateId',
         noPopup: true,
+        width: 100,
         formatter: (value, row) => (
             <DownloadPdfButton 
               $themeMode="light" 
@@ -709,6 +726,20 @@ const InquiryPage: React.FC = () => {
             >
               엑셀 다운로드
             </DownloadPdfButton>
+        ),
+      },
+      {
+        header: '대화이력보기',
+        accessor: 'chatSession',
+        noPopup: true,
+        width: 100,
+        formatter: (value, row) => (
+            <DetailActionButton 
+              $themeMode="light" 
+              onClick={() => handleChatHistoryClick(row.chatSession, row.name)}
+            >
+              대화 이력 보기
+            </DetailActionButton>
         ),
       },
     ],

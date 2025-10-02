@@ -126,7 +126,7 @@ const handleMenuToggle = (menuId: string) => {
       path: `/superadmin/user-data`,
       subMenu: [
         { id: 'user-data-price', title: '단가표 관리', path: `/superadmin/user-data/price` },
-        { id: 'user-data-proposal', title: '견적 다운로드 현황', path: `/superadmin/user-data/proposal` },
+        { id: 'user-data-proposal', title: '견적 발행 이력', path: `/superadmin/user-data/proposal` },
         { id: 'user-data-inquiry', title: '상담 요청 관리', path: `/superadmin/user-data/inquiry` },
       ],
     },

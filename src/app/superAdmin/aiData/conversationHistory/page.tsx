@@ -50,6 +50,7 @@ type ChatHistory = {
     email: string;
     cellphone: string;
     profileImage?: string;
+    isGuest?: boolean;
   };
   createAt: string;
   updateAt: string;
@@ -108,7 +109,7 @@ const ProfileHeader = styled.div<{ $imageUrl: string | null }>`
   border-radius: 50%;
   background-size: cover;
   background-position: center;
-  background-image: url(${({ $imageUrl }) => $imageUrl || 'ai-astimate/no-profile.png'});
+  background-image: url(${({ $imageUrl }) => $imageUrl || '/ai-estimate/no-profile.png'});
   border: 1px solid #ccc;
   flex-shrink: 0;
 `;
@@ -439,23 +440,32 @@ dayjs.locale('ko');
         devLog('파싱된 채팅방 데이터:', chatRooms);
 
         // API 응답 데이터를 ChatHistory 타입으로 변환
-        const transformedData: ChatHistory[] = chatRooms.map((room: any) => ({
-          no: room.no || 0,
-          _id: room._id,
-          title: room.title || '제목 없음',
-          isGuest: room.isGuest || false,
-          userInfo: room.userInfo,
-          createAt: room.createAt,
-          updateAt: room.updateAt,
-          // 표시용 필드들
-          name: room.userInfo?.name || '게스트 사용자',
-          profileImageUrl: room.isGuest 
-            ? '/cms/guest.png' 
-            : (room.userInfo?.profileImage || '/ai-estimate/no_profile.png'),
-          email: room.userInfo?.email || '-',
-          cellphone: room.userInfo?.cellphone || '-',
-          chatSessionId: room._id, // 채팅방 ID를 세션 ID로 사용
-        }));
+        const transformedData: ChatHistory[] = chatRooms.map((room: any) => {
+          const isGuest = room.userInfo?.isGuest === true || room.isGuest === true;
+          let profileImageUrl = '/ai-estimate/no-profile.png'; // 기본값
+          
+          if (isGuest) {
+            profileImageUrl = '/cms/guest.png';
+          } else if (room.userInfo?.profileImage) {
+            profileImageUrl = room.userInfo.profileImage;
+          }
+          
+          return {
+            no: room.no || 0,
+            _id: room._id,
+            title: room.title || '제목 없음',
+            isGuest,
+            userInfo: room.userInfo,
+            createAt: room.createAt,
+            updateAt: room.updateAt,
+            // 표시용 필드들
+            name: room.userInfo?.name || '게스트 사용자',
+            profileImageUrl,
+            email: room.userInfo?.email || '-',
+            cellphone: room.userInfo?.cellphone || '-',
+            chatSessionId: room._id, // 채팅방 ID를 세션 ID로 사용
+          };
+        });
 
         return {
           data: transformedData,
@@ -485,11 +495,23 @@ dayjs.locale('ko');
         header: '프로필',
         accessor: 'profileImageUrl',
         width: 60,
-        formatter: (value, row) => (
-          <ProfileWrapper>
-            <ProfileHeader $imageUrl={row.profileImageUrl} />
-          </ProfileWrapper>
-        ),
+        formatter: (value, row) => {
+          let imageUrl = '/ai-estimate/no-profile.png'; // 기본값
+          
+          if (row.userInfo?.isGuest === true || row.isGuest === true) {
+            imageUrl = '/cms/guest.png';
+          } else if (row.userInfo?.profileImage) {
+            imageUrl = row.userInfo.profileImage;
+          } else if (row.profileImageUrl) {
+            imageUrl = row.profileImageUrl;
+          }
+          
+          return (
+            <ProfileWrapper>
+              <ProfileHeader $imageUrl={imageUrl} />
+            </ProfileWrapper>
+          );
+        },
       },
       { header: '이름', accessor: 'name',width:100, sortable: true },
       { header: '이메일', accessor: 'email', sortable: true },

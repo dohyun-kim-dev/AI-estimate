@@ -550,9 +550,14 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
               cellphone: info.cellphone
             }));
             props.onDownload && props.onDownload();
-            
+
           } else if (infoModalPurpose === 'share') {
             devLog('[IssuerInfoModal submit] purpose: share', info);
+               sessionStorage.setItem('guestInfo', JSON.stringify({
+              name: info.name,
+              email: info.email,
+              cellphone: info.cellphone
+            }));
             props.onShare && props.onShare();
           } else if (infoModalPurpose === 'limitReached') {
             devLog('[IssuerInfoModal submit] purpose: limitReached', info);

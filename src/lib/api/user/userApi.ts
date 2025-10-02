@@ -543,3 +543,21 @@ export async function crawlUrl(url: string) {
     isCallPageLoader: false,
   });
 }
+
+export async function fillGuestInfo(
+  user: string,
+  chatSession: string,
+  userInfo: { name: string; email: string; cellphone: string }
+) {
+  return callUserApi<any>({
+    title: '게스트 정보 업데이트',
+    url: getApiUrl('/users/company/estimate/fill-guest-info'),
+    method: 'PATCH',
+    body: {
+      user,
+      chatSession,
+      userInfo
+    },
+    isCallPageLoader: false,
+  });
+}

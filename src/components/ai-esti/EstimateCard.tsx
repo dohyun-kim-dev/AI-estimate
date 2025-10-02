@@ -12,7 +12,7 @@ import { useAuthStore } from '@/store/authStore';
 import { v4 as uuidv4 } from 'uuid';
 import { SocialLoginModal } from './SocialLoginModal';
 import { useNavigate } from 'react-router-dom';
-import { getDownloadEstimateUrlWithUserInfo, googleLoginInitial, googleLoginUpdate, uploadEstimatePdf } from '@/lib/api/user/userApi';
+import { getDownloadEstimateUrlWithUserInfo, googleLoginInitial, googleLoginUpdate, uploadEstimatePdf, fillGuestInfo } from '@/lib/api/user/userApi';
 import { buildFullEstimateData, extractEstimateData } from '@/hooks/estimate';
 import IssuerInfoModal, { IssuerInfo } from '@/components/ai-esti/IssuerInfoModal';
 import { devLog } from '@/utils/devLogger'
@@ -252,6 +252,54 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
     }
   
 
+  const updateGuestInfo = async () => {
+    const isGuest = !isAuthenticated();
+    const hasShareInUrl = window.location.href.includes('share');
+    devLog("updateGuestInfo isGuest, hasShareInUrl:", isGuest, hasShareInUrl);
+    if (isGuest && !hasShareInUrl) {
+      try {
+        // 게스트 정보 가져오기
+        const guestInfoStr = sessionStorage.getItem('guestInfo');
+        if (!guestInfoStr) {
+          devLog('guestInfo 없음, 게스트 정보 업데이트 건너뛰기');
+          return;
+        }
+        
+        const guestInfo = JSON.parse(guestInfoStr);
+        
+        // 게스트 UUID 보장
+        let guestUuid = localStorage.getItem('guest-uuid');
+        if (!guestUuid) {
+          guestUuid = crypto.randomUUID();
+          localStorage.setItem('guest-uuid', guestUuid);
+        }
+        
+        // 채팅 세션 ID 가져오기
+        let chatSessionId = localStorage.getItem('chatSessionId');
+        if (!chatSessionId) {
+          chatSessionId = sessionStorage.getItem('chatSessionId') || '';
+        }
+        
+        if (chatSessionId) {
+          await fillGuestInfo(
+            guestUuid,
+            chatSessionId,
+            {
+              name: guestInfo.name || '',
+              email: guestInfo.email || '',
+              cellphone: guestInfo.cellphone || ''
+            }
+          );
+          devLog('✅ 게스트 정보 업데이트 완료');
+        } else {
+          devLog('❌ chatSessionId 없음');
+        }
+      } catch (error) {
+        console.error('❌ 게스트 정보 업데이트 실패:', error);
+      }
+    }
+  };
+
   const uploadEstimateForGuest = async (estimateObj: any) => {
     devLog('[uploadEstimateForGuest] estimateObj:', estimateObj);
     
@@ -311,6 +359,8 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
   };
 
   const ensureUuidAndGetUrl = async () => {
+    await updateGuestInfo();
+    
     devLog("ensureUuidAndGetUrl 함수 호출 직전 estimate:", estimate);
     
     // 비회원일 때 견적서 업로드 실행
@@ -324,6 +374,8 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
 
   // 미리보기 새탭 오픈 (다운로드/공유 공용)
   const openPreviewTab = async () => {
+    await updateGuestInfo();
+    
     try {
       devLog("openPreviewTab 함수 호출 직전 estimate:", estimate);
           await uploadEstimateForGuest(estimate);
@@ -405,10 +457,12 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
 
       if (pendingPurpose === 'download') {
+        await updateGuestInfo();
         const previewUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
         window.open(previewUrl, '_blank');
         success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
       } else if (pendingPurpose === 'share') {
+        await updateGuestInfo();
         const newShareUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
         setShareUrl(newShareUrl);
         setOpenShare(true);

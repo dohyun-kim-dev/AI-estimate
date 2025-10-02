@@ -11,6 +11,9 @@ import CmsPopup from '@/components/CmsPopup';
 import ActionButton from '@/components/ActionButton';
 import { getEstimateDownloadList, downloadEstimate, downloadEstimateExcel } from '@/lib/api/admin/adminApi';
 import { devLog } from '@/utils/devLogger'
+import 'dayjs/locale/ko';
+
+dayjs.locale('ko');
 
 type ProposalDownload = {
   no: number;
@@ -18,12 +21,21 @@ type ProposalDownload = {
   user: string;
   profileImageUrl: string;
   userId: string;
+  userInfo: userInfo;
   email: string;
-  updateAt: string;
+  createAt: string;
   title: string;
   _id: string;
   isGuest?: boolean;
 };
+
+type userInfo={
+  name:string;
+  email:string;
+  cellphone:string;
+  profileImage:string;
+  isGuest?:boolean;
+}
 
 const ProfileWrapper = styled.div`
   display: flex;
@@ -40,7 +52,7 @@ const ProfileHeader = styled.div<{ $imageUrl: string | null }>`
   border-radius: 50%;
   background-size: cover;
   background-position: center;
-  background-image: url(${({ $imageUrl }) => $imageUrl || 'ai-astimate/no-profile.png'});
+  background-image: url(${({ $imageUrl }) => $imageUrl || '/ai-estimate/no-profile.png'});
   border: 1px solid #ccc;
   flex-shrink: 0;
 `;
@@ -175,18 +187,30 @@ const ProposalDownloadPage: React.FC = () => {
             const estimateData = responseWithData.data || [];
             
             // API 응답 데이터를 컴포넌트용 데이터로 변환
-            const transformedData: ProposalDownload[] = estimateData.map((item: any, index: number) => ({
-              no: item.no || index + 1,
-              companyName: item.company?.companyName || '알 수 없음',
-              user: item.userInfo?.name || '비회원',
-              profileImageUrl: item.userInfo?.name ? null : '/cms/guest.png',
-              userId: item.user || '',
-              email: item.userInfo?.email || '',
-              updateAt: item.createAt || '',
-              title: item.title || '',
-              _id: item._id || '',
-              isGuest: !item.userInfo?.name
-            }));
+            const transformedData: ProposalDownload[] = estimateData.map((item: any, index: number) => {
+              const isGuest = item.userInfo?.isGuest === true;
+              let profileImageUrl = '/ai-estimate/no-profile.png'; // 기본값
+              
+              if (isGuest) {
+                profileImageUrl = '/cms/guest.png';
+              } else if (item.userInfo?.profileImage) {
+                profileImageUrl = item.userInfo.profileImage;
+              }
+              
+              return {
+                no: item.no || index + 1,
+                companyName: item.company?.companyName || '알 수 없음',
+                user: item.userInfo?.name || '비회원',
+                profileImageUrl,
+                userId: item.user || '',
+                userInfo: item.userInfo || {},
+                email: item.userInfo?.email || '',
+                createAt: item.createAt || '',
+                title: item.title || '',
+                _id: item._id || '',
+                isGuest
+              };
+            });
             
             const totalItems = responseWithData.metadata?.totalCnt || transformedData.length;
             const allItems = responseWithData.metadata?.allCnt || totalItems;
@@ -203,18 +227,30 @@ const ProposalDownloadPage: React.FC = () => {
                 const estimateData = typedResponseData.data || [];
                 
                 // API 응답 데이터를 컴포넌트용 데이터로 변환
-                const transformedData: ProposalDownload[] = estimateData.map((item: any, index: number) => ({
-                  no: item.no || index + 1,
-                  companyName: item.company?.companyName || '알 수 없음',
-                  user: item.userInfo?.name || '비회원',
-                  profileImageUrl: item.userInfo?.name ? null : '/cms/guest.png',
-                  userId: item.user || '',
-                  email: item.userInfo?.email || '',
-                  updateAt: item.createAt || '',
-                  title: item.title || '',
-                  _id: item._id || '',
-                  isGuest: !item.userInfo?.name
-                }));
+                const transformedData: ProposalDownload[] = estimateData.map((item: any, index: number) => {
+                  const isGuest = item.userInfo?.isGuest === true;
+                  let profileImageUrl = '/ai-estimate/no-profile.png'; // 기본값
+                  
+                  if (isGuest) {
+                    profileImageUrl = '/cms/guest.png';
+                  } else if (item.userInfo?.profileImage) {
+                    profileImageUrl = item.userInfo.profileImage;
+                  }
+                  
+                  return {
+                    no: item.no || index + 1,
+                    companyName: item.company?.companyName || '알 수 없음',
+                    user: item.userInfo?.name || '비회원',
+                    profileImageUrl,
+                    userId: item.user || '',
+                    userInfo: item.userInfo || {},
+                    email: item.userInfo?.email || '',
+                    createAt: item.createAt || '',
+                    title: item.title || '',
+                    _id: item._id || '',
+                    isGuest
+                  };
+                });
                 
                 const totalItems = typedResponseData.metadata?.totalCnt || transformedData.length;
                 const allItems = typedResponseData.metadata?.allCnt || totalItems;
@@ -237,22 +273,34 @@ const ProposalDownloadPage: React.FC = () => {
   const columns: ColumnDefinition<ProposalDownload>[] = useMemo(
     () => [
       { header: 'No', accessor: 'no', width: 60, sortable: true },
+      { header: '날짜', accessor: 'createAt', flex: 1, sortable: true, formatter: (value) => dayjs(value).format('YYYY-MM-DD(ddd)') },
       { header: '고객사', accessor: 'companyName', flex: 0.7, sortable: true },
       { header: '유저', accessor: 'user', flex: 0.7, sortable: true },
       {
         header: '프로필',
         accessor: 'profileImageUrl',
         width: 60,
-        formatter: (value, row) => (
-          <ProfileWrapper>
-            <ProfileHeader $imageUrl={row.isGuest ? '/cms/guest.png' : row.profileImageUrl} />
-          </ProfileWrapper>
-        ),
+        formatter: (value, row) => {
+          let imageUrl = '/ai-estimate/no-profile.png'; // 기본값
+          
+          if (row.userInfo?.isGuest === true) {
+            imageUrl = '/cms/guest.png';
+          } else if (row.userInfo?.profileImage) {
+            imageUrl = row.userInfo.profileImage;
+          } else if (row.profileImageUrl) {
+            imageUrl = row.profileImageUrl;
+          }
+          
+          return (
+            <ProfileWrapper>
+              <ProfileHeader $imageUrl={imageUrl} />
+            </ProfileWrapper>
+          );
+        },
       },
       { header: '아이디', accessor: 'userId', flex: 1.2, sortable: true },
       { header: '이메일', accessor: 'email', flex: 1.2, sortable: true },
-      { header: '날짜', accessor: 'updateAt', flex: 1, sortable: true, formatter: (value) => dayjs(value).format('YYYY-MM-DD') },
-      { header: '제목', accessor: 'title', flex: 2 },
+      { header: '견적 제목', accessor: 'title', flex: 2 },
       {
         header: '파일다운로드',
         accessor: '_id',
@@ -281,7 +329,7 @@ const ProposalDownloadPage: React.FC = () => {
     <>
       <CmsResponsiveContainer<ProposalDownload>
         ref={listRef}
-        title="견적 다운로드 현황"
+        title="견적 발행 이력"
         data={[]} // 빈 배열로 초기화 (fetchData 사용 시)
         columns={columns}
         fetchData={fetchData}
@@ -310,9 +358,9 @@ const ProposalDownloadPage: React.FC = () => {
           {selectedItem && (
             <div>
               <p><strong>제목:</strong> {selectedItem.title}</p>
-              <p><strong>사용자:</strong> {selectedItem.user}</p>
-              <p><strong>이메일:</strong> {selectedItem.email}</p>
-              <p><strong>날짜:</strong> {selectedItem.updateAt ? dayjs(selectedItem.updateAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</p>
+              <p><strong>사용자:</strong> {selectedItem.userInfo?.name}</p>
+              <p><strong>이메일:</strong> {selectedItem.userInfo?.email}</p>
+              <p><strong>날짜:</strong> {selectedItem.createAt ? dayjs(selectedItem.createAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</p>
             </div>
           )}
         </div>
