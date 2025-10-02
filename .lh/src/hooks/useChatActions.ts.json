@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 108,
+            "activePatchIndex": 109,
             "patches": [
                 {
                     "date": 1756365557553,
@@ -440,6 +440,10 @@
                 {
                     "date": 1759379268229,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -521,13 +521,11 @@\n           if (process.env.NODE_ENV === 'development') {\n             return `/api/file/${serverFileName}`;\n           }\n           \n-          // 프로덕션 환경에서는 API 서버 도메인과 결합\n+          // 프로덕션 환경에서는 file 경로로 직접 접근\n           const apiHost = process.env.VITE_API_HOST || 'https://api.aigo.here-dot.co.kr';\n-          // API 호스트가 이미 /api로 끝나는 경우 그대로 사용, 아니면 추가\n-          const baseUrl = apiHost.endsWith('/api') ? apiHost : `${apiHost}/api`;\n-          return `${baseUrl}/file/${serverFileName}`;\n+          return `${apiHost}/file/${serverFileName}`;\n         };\n         \n         // 이미지 파일들과 서버 파일명을 매핑하여 올바른 URL 생성\n         const images = imageFiles.map((file: FileUploadData, index: number) => {\n"
+                },
+                {
+                    "date": 1759379659140,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -522,9 +522,9 @@\n             return `/api/file/${serverFileName}`;\n           }\n           \n           // 프로덕션 환경에서는 file 경로로 직접 접근\n-          const apiHost = process.env.VITE_API_HOST || 'https://api.aigo.here-dot.co.kr';\n+          const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';\n           return `${apiHost}/file/${serverFileName}`;\n         };\n         \n         // 이미지 파일들과 서버 파일명을 매핑하여 올바른 URL 생성\n"
                 }
             ],
             "date": 1756365557553,
