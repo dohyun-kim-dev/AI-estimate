@@ -23,6 +23,7 @@ type ProposalDownload = {
   userId: string;
   userInfo: userInfo;
   email: string;
+  cellphone: string;
   createAt: string;
   title: string;
   _id: string;
@@ -46,13 +47,11 @@ const ProfileWrapper = styled.div`
   }
 `;
 
-const ProfileHeader = styled.div<{ $imageUrl: string | null }>`
+const ProfileImage = styled.img`
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background-size: cover;
-  background-position: center;
-  background-image: url(${({ $imageUrl }) => $imageUrl || '/ai-estimate/no-profile.png'});
+  object-fit: cover;
   border: 1px solid #ccc;
   flex-shrink: 0;
 `;
@@ -189,7 +188,7 @@ const ProposalDownloadPage: React.FC = () => {
             // API 응답 데이터를 컴포넌트용 데이터로 변환
             const transformedData: ProposalDownload[] = estimateData.map((item: any, index: number) => {
               const isGuest = item.userInfo?.isGuest === true;
-              let profileImageUrl = '/ai-estimate/no-profile.png'; // 기본값
+              let profileImageUrl = '/ai-estimate/no_profile.png'; // 기본값
               
               if (isGuest) {
                 profileImageUrl = '/cms/guest.png';
@@ -205,6 +204,7 @@ const ProposalDownloadPage: React.FC = () => {
                 userId: item.user || '',
                 userInfo: item.userInfo || {},
                 email: item.userInfo?.email || '',
+                cellphone: item.userInfo?.cellphone || '',
                 createAt: item.createAt || '',
                 title: item.title || '',
                 _id: item._id || '',
@@ -229,7 +229,7 @@ const ProposalDownloadPage: React.FC = () => {
                 // API 응답 데이터를 컴포넌트용 데이터로 변환
                 const transformedData: ProposalDownload[] = estimateData.map((item: any, index: number) => {
                   const isGuest = item.userInfo?.isGuest === true;
-                  let profileImageUrl = '/ai-estimate/no-profile.png'; // 기본값
+                  let profileImageUrl = '/ai-estimate/no_profile.png'; // 기본값
                   
                   if (isGuest) {
                     profileImageUrl = '/cms/guest.png';
@@ -245,6 +245,7 @@ const ProposalDownloadPage: React.FC = () => {
                     userId: item.user || '',
                     userInfo: item.userInfo || {},
                     email: item.userInfo?.email || '',
+                    cellphone: item.userInfo?.cellphone || '',
                     createAt: item.createAt || '',
                     title: item.title || '',
                     _id: item._id || '',
@@ -273,15 +274,14 @@ const ProposalDownloadPage: React.FC = () => {
   const columns: ColumnDefinition<ProposalDownload>[] = useMemo(
     () => [
       { header: 'No', accessor: 'no', width: 60, sortable: true },
-      { header: '날짜', accessor: 'createAt', flex: 1, sortable: true, formatter: (value) => dayjs(value).format('YYYY-MM-DD(ddd)') },
-      { header: '고객사', accessor: 'companyName', flex: 0.7, sortable: true },
-      { header: '유저', accessor: 'user', flex: 0.7, sortable: true },
+      { header: '날짜', accessor: 'createAt', width: 120, sortable: true, formatter: (value) => dayjs(value).format('YYYY-MM-DD(ddd)') },
+      { header: '고객사', accessor: 'companyName', flex: 1, sortable: true },
       {
         header: '프로필',
         accessor: 'profileImageUrl',
         width: 60,
         formatter: (value, row) => {
-          let imageUrl = '/ai-estimate/no-profile.png'; // 기본값
+          let imageUrl = '/ai-estimate/no_profile.png'; // 기본값
           
           if (row.userInfo?.isGuest === true) {
             imageUrl = '/cms/guest.png';
@@ -293,14 +293,23 @@ const ProposalDownloadPage: React.FC = () => {
           
           return (
             <ProfileWrapper>
-              <ProfileHeader $imageUrl={imageUrl} />
+              <ProfileImage 
+                src={imageUrl}
+                alt="프로필"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/ai-estimate/no_profile.png';
+                }}
+              />
             </ProfileWrapper>
           );
         },
       },
-      { header: '아이디', accessor: 'userId', flex: 1.2, sortable: true },
-      { header: '이메일', accessor: 'email', flex: 1.2, sortable: true },
-      { header: '견적 제목', accessor: 'title', flex: 2 },
+      { header: '이름', accessor: 'user', flex: 0.7, sortable: true },
+      { header: '연락처', accessor: 'cellphone', flex: 1, sortable: true, width:120 },
+      { header: '이메일', accessor: 'email', flex: 1.2, sortable: true, allowWrap: true },
+      { header: '아이디', accessor: 'userId', flex: 1.2, sortable: true, allowWrap: true },
+      { header: '견적 제목', accessor: 'title', flex: 2, allowWrap: true },
       {
         header: '파일다운로드',
         accessor: '_id',

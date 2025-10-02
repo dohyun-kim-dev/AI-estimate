@@ -656,7 +656,7 @@ const InquiryPage: React.FC = () => {
         header: '문의 일시', 
         accessor: 'inquiryDate', 
         sortable: true, 
-        width: 180,
+        width: 150,
         formatter: (value) => dayjs(value).format('YYYY-MM-DD(ddd) HH:mm') 
       },
       {
@@ -682,15 +682,16 @@ const InquiryPage: React.FC = () => {
           );
         },
       },
-      { header: '이름', accessor: 'name', sortable: true },
-      { header: '이메일', accessor: 'email', sortable: true },
-      { header: '전화번호', accessor: 'cellphone', sortable: true },
-      { header: '아이디', accessor: 'userId', sortable: true },
-      { header: '제목', accessor: 'title' },
+      { header: '이름', accessor: 'name', sortable: true, flex: 0.7 },
+      { header: '이메일', accessor: 'email', sortable: true, allowWrap: true, flex: 1.2 },
+      { header: '전화번호', accessor: 'cellphone', sortable: true, width: 120 },
+      { header: '아이디', accessor: 'userId', sortable: true, flex: 0.5, allowWrap: true },
+      { header: '제목', accessor: 'title' ,flex:1,allowWrap: true},
       { header: '메모', accessor: 'memo', formatter: (value) => value || '-' },
       { 
         header: '처리상태', 
         accessor: 'status', 
+        width: 100,
         noPopup: true,
         formatter: (value, row) => (
           <StatusDropdown

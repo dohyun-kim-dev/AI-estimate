@@ -19,6 +19,7 @@ export interface ColumnDefinition<T> {
   cellStyle?: React.CSSProperties | ((value: any, item: T) => React.CSSProperties);
   flex?: number; // ✅ flex 비율
   width?: number | string; // ✅ 고정 너비 (px 또는 % 등)
+  allowWrap?: boolean; // ✅ 텍스트 줄바꿈 허용 여부 (기본 false)
 }
 
 interface GenericDataTableProps<T> {
@@ -152,6 +153,7 @@ const GenericDataTable = <T extends object>({
                 return (
                   <Td
                     key={colIdx}
+                    $allowWrap={col.allowWrap}
                     style={{
                       ...style,
                       cursor: col.noPopup ? "default" : "pointer",
@@ -159,7 +161,9 @@ const GenericDataTable = <T extends object>({
                     onClick={() => {
                       if (!col.noPopup && onRowClick) onRowClick(item, rowIdx);
                     }}>
-                    {content}
+                    <CellContent $allowWrap={col.allowWrap}>
+                      {content}
+                    </CellContent>
                   </Td>
                 );
               })}
@@ -207,6 +211,7 @@ const SortIcon = styled.span`
 const TableRow = styled.tr`
   background-color: #fffefb;
   position: relative; /* 툴팁 위치 기준점 */
+  height: auto; /* 높이 자동 조정 */
 
   &:nth-child(even) {
     background-color: #f7f7f7;
@@ -218,16 +223,44 @@ const TableRow = styled.tr`
   }
 `;
 
-const Td = styled.td`
-  padding: 12px 8px;
+const Td = styled.td<{ $allowWrap?: boolean }>`
+  padding: ${({ $allowWrap }) => $allowWrap ? '8px' : '12px 8px'};
   background-color: transparent;
   color: #221d12;
   text-align: center;
   border: none;
-  overflow: hidden; /* 넘치는 내용 숨김 */
-  text-overflow: ellipsis; /* 말줄임표 표시 */
-  white-space: nowrap; /* 텍스트 줄바꿈 방지 */
   position: relative; /* 툴팁 위치 기준점 */
+  vertical-align: ${({ $allowWrap }) => $allowWrap ? 'top' : 'middle'};
+  
+  /* 기본 스타일 */
+  ${({ $allowWrap }) => 
+    !$allowWrap && `
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    `
+  }
+`;
+
+const CellContent = styled.div<{ $allowWrap?: boolean }>`
+  ${({ $allowWrap }) => 
+    $allowWrap 
+      ? `
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.4;
+        word-break: break-word;
+        white-space: normal;
+      `
+      : `
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      `
+  }
 `;
 
 const TdNoData = styled.td`
