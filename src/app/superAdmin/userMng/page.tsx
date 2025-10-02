@@ -481,28 +481,35 @@ const UserMngPage: React.FC = () => {
       { 
         header: 'No', 
         accessor: 'no',
+        width: 60,
         // formatter: (_value, _item, index) => index + 1 
       },
       {
         header: '가입일시',
         accessor: 'createAt',
         sortable: true,
+        flex: 1,
+        allowWrap: true,
         formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD(ddd) HH:mm:ss') : '-'),
       },
       {
         header: '최근접속',
         accessor: 'lastLoginAt',
         sortable: true,
+        flex: 1,
+        allowWrap: true,
         formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD(ddd) HH:mm:ss') : '-'),
       },
       {
         header: '고객사명',
         accessor: 'usingService',
+        flex: 1,
         formatter: (value) => (Array.isArray(value) && value.length > 0 ? value.join(', ') : '-'),
       },
       {
         header: '프로필',
         accessor: 'profileImage',
+        width: 60,
         formatter: (value, row) => (
           <ProfileWrapper>
             <ProfileHeader $imageUrl={row.profileImage || "/ai-estimate/no_profile.png"} />
@@ -511,30 +518,38 @@ const UserMngPage: React.FC = () => {
       },
       {
         header: '이름',
+        flex: 1,
         accessor: 'name',
       },
       { 
         header: '이메일', 
         accessor: 'email',
+        flex: 1,
+        allowWrap: true,
         formatter: (value) => value || '-'
       },
       { 
         header: '전화번호', 
         accessor: 'cellphone',
+        flex: 1,
         formatter: (value) => value || '-' 
       },
       { 
         header: '아이디', 
         accessor: '_id',
+        flex: 1,
+        allowWrap: true,
         formatter: (value) => value || '-'
       },
       { 
         header: '국가', 
         accessor: 'nation',
-        formatter: (value) => value || '-' 
+         width: 60,
+        formatter: (value) => value || 'KR' 
       },
       { 
         header: '비고', 
+        flex: 1,
         accessor: 'memo',
         formatter: (value) => value || '-' 
       },

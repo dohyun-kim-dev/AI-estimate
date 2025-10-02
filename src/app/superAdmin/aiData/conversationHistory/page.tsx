@@ -514,13 +514,14 @@ dayjs.locale('ko');
         },
       },
       { header: '이름', accessor: 'name',width:100, sortable: true },
-      { header: '이메일', accessor: 'email', sortable: true },
-      { header: '전화번호', accessor: 'cellphone', sortable: true },
-      { header: '채팅방제목', accessor: 'title', sortable: true },
+      { header: '이메일', accessor: 'email', sortable: true,allowWrap: true },
+      { header: '전화번호', accessor: 'cellphone', sortable: true,width:120 },
+      { header: '채팅방제목', accessor: 'title', sortable: true,allowWrap: true },
       { 
         header: '채팅방ID', 
         accessor: 'chatSessionId', 
         sortable: true,
+        allowWrap: true,
         formatter: (value) => (
           <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#666' }}>
             {value || '-'}

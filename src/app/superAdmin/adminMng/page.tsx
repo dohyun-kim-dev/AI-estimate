@@ -489,30 +489,34 @@ const AdminMngPage: React.FC = () => {
       {
         header: 'No',
         accessor: 'no',
+        width: 60,
         // formatter: (value, item, index) => index + 1,
       },
       {
         header: '가입일',
         accessor: 'createAt',
+        width: 120,
         sortable: true,
         formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD(ddd)') : '-'),
       },
       {
         header: '최근 접속',
         accessor: 'lastLoginAt',
-        sortable: true,
+        width: 120,
         formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD(ddd)') : '-'),
       },
-      { header: '고객사명', accessor: 'companyCode' },
-      { header: '이름', accessor: 'name' },
-      { header: '이메일', accessor: 'email' },
-      { header: '전화번호', accessor: 'cellphone' },
-      { header: '아이디', accessor: 'adminId' },
+      { header: '고객사명', accessor: 'companyCode', flex: 1 },
+      { header: '이름', accessor: 'name', flex: 1 },
+      { header: '이메일', accessor: 'email', flex: 1,
+        allowWrap: true, },
+      { header: '전화번호', accessor: 'cellphone', flex: 1 },
+      { header: '아이디', accessor: 'adminId', flex: 1 },
       {
         header: '알림톡 수신',
         accessor: 'receiveAlimtalk',
         noPopup: true,
         sortable: false,
+        flex: 1,
         formatter: (_value, row) => (
           <Switch
             checked={Boolean(row.receiveAlimtalk)}
@@ -528,6 +532,8 @@ const AdminMngPage: React.FC = () => {
         accessor: 'receiveEmail',
         noPopup: true,
         sortable: false,
+        width: 120,
+        flex: 1,
         formatter: (_value, row) => (
           <Switch
             checked={Boolean(row.receiveEmail)}
@@ -541,6 +547,7 @@ const AdminMngPage: React.FC = () => {
       {
         header: '비고',
         accessor: 'memo',
+        flex: 1,
         formatter: (value) => value || '-',
       },
     ],

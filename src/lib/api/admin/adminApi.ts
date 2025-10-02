@@ -920,3 +920,18 @@ export async function getChatMessages(chatId: string, companyCode: string = 'her
     isWithToken: true,
   });
 }
+
+// 견적요청 상태 업데이트 API
+export async function updateEstimateRequestStatus(estimateRequestId: string, params: {
+  status: 'pending' | 'approved' | 'rejected';
+  memo?: string;
+}) {
+  return callAdminApi({
+    title: '견적요청 상태 업데이트',
+    url: `${BASE_URL}/cms/company/estimate-requests/${estimateRequestId}`,
+    method: 'PATCH',
+    body: params,
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}

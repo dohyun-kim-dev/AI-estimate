@@ -34,20 +34,18 @@ interface EstimateInquiryModalProps {
 
 // 처리상태 옵션
 const STATUS_OPTIONS = [
-  { value: 'received', label: '접수' },
-  { value: 'contact_failed', label: '연락불가' },
-  { value: 'canceled', label: '불발' },
-  { value: 'completed', label: '완료' },
+  { value: 'pending', label: '진행' },
+  { value: 'rejected', label: '실패' },
+  { value: 'approved', label: '완료' },
 ];
 
 // 상태 텍스트 변환 함수
 const getStatusValue = (statusText?: string) => {
   switch (statusText) {
-    case '접수': return 'received';
-    case '연락불가': return 'contact_failed';
-    case '불발': return 'canceled';
-    case '완료': return 'completed';
-    default: return 'received';
+    case '진행': return 'pending';
+    case '실패': return 'rejected';
+    case '완료': return 'approved';
+    default: return 'pending';
   }
 };
 
@@ -57,7 +55,7 @@ const EstimateInquiryModal: React.FC<EstimateInquiryModalProps> = ({
   selectedInquiry,
   onSave,
 }) => {
-  const [status, setStatus] = useState<string>('received');
+  const [status, setStatus] = useState<string>('pending');
   const [memo, setMemo] = useState<string>('');
   
   // 드롭다운 상태
@@ -147,17 +145,17 @@ const EstimateInquiryModal: React.FC<EstimateInquiryModalProps> = ({
     try {
       if (onSave) {
         await onSave(selectedInquiry._id, status, memo);
-        toast.success('견적문의 상태가 업데이트되었습니다.');
+        // toast.success('견적문의 상태가 업데이트되었습니다.');
         onClose();
       }
     } catch (error) {
       console.error('견적문의 상태 업데이트 오류:', error);
-      toast.error('상태 업데이트에 실패했습니다.');
+    //   toast.error('상태 업데이트에 실패했습니다.');
     }
   };
 
   const handleClose = () => {
-    setStatus('received');
+    setStatus('pending');
     setMemo('');
     onClose();
   };

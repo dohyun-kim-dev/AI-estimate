@@ -246,29 +246,42 @@ const PromptPage: React.FC = () => {
       { 
         header: 'No', 
         accessor: 'no',
+        width: 60,
         // formatter: (_value, _item, index) => (index !== undefined ? index + 1 : 1),
       },
       {
         header: '최종수정일',
         accessor: 'updateAt',
-        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '-'),
+        flex: 1,
+        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD(ddd)') : '-'),
       },
       {
         header: '작성자',
         accessor: 'createBy',
+        flex: 1,
+        allowWrap: true,
       },
       {
         header: '프롬프트명',
         accessor: 'name',
         sortable: true,
+        flex: 1,
         formatter: (value) => value ?? '-',
       },
       {
         header: '프롬프트 설명',
         accessor: 'description',
+        flex: 1,
         sortable: true,
         formatter: (value) => value ?? '-',
       },
+      {
+        header: '프롬프트 내용',
+        accessor: 'content',
+        sortable: false,
+        flex: 3,
+        formatter: (value) => value ? (value.length > 50 ? value.slice(0, 50) + '...' : value) : '-',
+      }
     ],
     []
   );

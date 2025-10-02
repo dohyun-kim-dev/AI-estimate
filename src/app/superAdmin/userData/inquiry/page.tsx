@@ -11,7 +11,7 @@ import { THEME_COLORS } from '@/styles/theme_colors';
 import { getEstimateRequestListByRole } from '@/lib/utils/adminApiRouter';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { toast } from 'react-toastify';
-import { downloadEstimate, downloadEstimateExcel } from '@/lib/api/admin/adminApi';
+import { downloadEstimate, downloadEstimateExcel, updateEstimateRequestStatus } from '@/lib/api/admin/adminApi';
 import ChatHistoryModal from '@/components/ChatHistoryModal';
 import EstimateInquiryModal from '@/components/EstimateInquiryModal';
 import { devLog } from '@/utils/devLogger'
@@ -133,10 +133,9 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ currentStatus, onStatus
   const dropdownRef = useRef<HTMLUListElement>(null);
 
   const statusOptions = [
-    { value: '접수', color: '#2196F3' },
-    { value: '연락불가', color: '#FF9800' },
-    { value: '불발', color: '#F44336' },
-    { value: '완료', color: '#4CAF50' },
+    { value: '진행', color: '#2196F3', apiValue: 'pending' },
+    { value: '실패', color: '#F44336', apiValue: 'rejected' },
+    { value: '완료', color: '#4CAF50', apiValue: 'approved' },
   ];
 
   const getCurrentStatusColor = () => {
@@ -162,7 +161,10 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ currentStatus, onStatus
   };
 
   const handleSelect = (value: string) => {
-    onStatusChange(value);
+    const selectedOption = statusOptions.find(opt => opt.value === value);
+    if (selectedOption) {
+      onStatusChange(selectedOption.apiValue);
+    }
     setIsOpen(false);
   };
 
@@ -345,10 +347,14 @@ const InquiryPage: React.FC = () => {
   // 견적문의 상태 업데이트 핸들러
   const handleInquiryStatusSave = async (inquiryId: string, newStatus: string, newMemo: string) => {
     try {
-      // TODO: API 호출로 상태 업데이트
       devLog('견적문의 상태 업데이트:', { inquiryId, newStatus, newMemo });
       
-      // 임시로 성공 처리 (실제 API 연동 필요)
+      // API 호출로 상태 업데이트
+      await updateEstimateRequestStatus(inquiryId, {
+        status: newStatus as 'pending' | 'approved' | 'rejected',
+        memo: newMemo
+      });
+      
       toast.success('견적문의 상태가 업데이트되었습니다.');
       
       // 리스트 새로고침
@@ -362,10 +368,13 @@ const InquiryPage: React.FC = () => {
   // 테이블에서 상태 변경 핸들러
   const handleStatusChange = async (inquiryId: string, newStatus: string) => {
     try {
-      // TODO: API 호출로 상태만 업데이트 (메모는 기존 값 유지)
       devLog('테이블에서 상태 변경:', { inquiryId, newStatus });
       
-      // 임시로 성공 처리 (실제 API 연동 필요)
+      // API 호출로 상태만 업데이트 (메모는 기존 값 유지)
+      await updateEstimateRequestStatus(inquiryId, {
+        status: newStatus as 'pending' | 'approved' | 'rejected'
+      });
+      
       toast.success('처리상태가 변경되었습니다.');
       
       // 리스트 새로고침
@@ -379,11 +388,10 @@ const InquiryPage: React.FC = () => {
   // 상태 텍스트 변환 함수 (서버 영어 상태 -> 한글 상태)
   const getStatusText = (status?: string) => {
     switch (status) {
-      case 'received': return '접수';
-      case 'contact_failed': return '연락불가';
-      case 'canceled': return '불발';
-      case 'completed': return '완료';
-      default: return status || '-';
+      case 'pending': return '진행';
+      case 'rejected': return '실패';
+      case 'approved': return '완료';
+      default: return status || '진행';
     }
   };
 
@@ -683,9 +691,9 @@ const InquiryPage: React.FC = () => {
         },
       },
       { header: '이름', accessor: 'name', sortable: true, flex: 0.7 },
-      { header: '이메일', accessor: 'email', sortable: true, allowWrap: true, flex: 1.2 },
-      { header: '전화번호', accessor: 'cellphone', sortable: true, width: 120 },
-      { header: '아이디', accessor: 'userId', sortable: true, flex: 0.5, allowWrap: true },
+      { header: '이메일', accessor: 'email', sortable: true, allowWrap: true, flex: 1 },
+      { header: '전화번호', accessor: 'cellphone', sortable: true, width: 110 },
+      { header: '아이디', accessor: 'userId', sortable: true, flex: 1, allowWrap: true },
       { header: '제목', accessor: 'title' ,flex:1,allowWrap: true},
       { header: '메모', accessor: 'memo', formatter: (value) => value || '-' },
       { 
@@ -695,7 +703,7 @@ const InquiryPage: React.FC = () => {
         noPopup: true,
         formatter: (value, row) => (
           <StatusDropdown
-            currentStatus={value || '접수'}
+            currentStatus={value || '진행'}
             onStatusChange={(newStatus) => handleStatusChange(row._id, newStatus)}
           />
         )
@@ -704,7 +712,7 @@ const InquiryPage: React.FC = () => {
         header: '견적PDF다운',
         accessor: 'estimateId',
         noPopup: true,
-        width: 100,
+        width: 110,
         formatter: (value, row) => (
             <DownloadPdfButton 
               $themeMode="light" 
@@ -718,7 +726,7 @@ const InquiryPage: React.FC = () => {
         header: '견적XLX다운',
         accessor: 'estimateId',
         noPopup: true,
-        width: 100,
+        width: 110,
         formatter: (value, row) => (
             <DownloadPdfButton 
               $themeMode="light" 
@@ -733,7 +741,7 @@ const InquiryPage: React.FC = () => {
         header: '대화이력보기',
         accessor: 'chatSession',
         noPopup: true,
-        width: 100,
+        width: 110,
         formatter: (value, row) => (
             <DetailActionButton 
               $themeMode="light" 
