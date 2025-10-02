@@ -1,7 +1,7 @@
 
 import useAI from '@/hooks/useAI';
 import { useToast } from '@/components/common/ToastProvider';
-import { useChatStore } from '@/store/chatStore';
+import { useChatStore, ImageData } from '@/store/chatStore';
 import BottomInput from '@/components/ai-esti/BottomInput';
 import AiResponseMessage from '@/components/ai-esti/AiResponseMessage';
 import EstimateCard from '@/components/ai-esti/EstimateCard';
@@ -9,6 +9,7 @@ import EstimateAccordion from '@/components/ai-esti/EstimateAccordion';
 import { calculateEstimatedPeriod } from '@/utils/estimateCalculator';
 import DetailModal from '@/components/ai-esti/DetailModal';
 import EstimateActionButtons from '@/components/ai-esti/EstimateActionButtons';
+import ImageGrid from '@/components/ai-esti/ImageGrid';
 import PeriodSlider from '@/components/ai-esti/PeriodSlider';
 import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
 import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
@@ -29,7 +30,6 @@ import { transformMessageForDisplay } from '@/utils/messageTransform';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import { usePathname } from 'next/navigation';
 import styled, { keyframes } from 'styled-components';
 // --- Gradient Text Animation ---
 const gradientText = keyframes`
@@ -144,13 +144,22 @@ const ChatBox = styled.div`
   min-height: 320px;
 `;
 
+const UserMessageContainer = styled.div<{ hasImages?: boolean }>`
+  align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  max-width: 80%;
+  gap: 8px;
+`;
+
 const UserMessage = styled.div`
   align-self: flex-end;
   background: ${({ theme }) => theme.surface1};
   color: ${({ theme }) => theme.text};
   padding: 10px 12px;
   border-radius: 12px;
-  max-width: 80%;
+  max-width: 100%;
   white-space: pre-line;
   word-break: break-word;
   font-size: 18px;
@@ -428,15 +437,18 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
   }
 };
 
-const parseMessageContent = (content: string) => {
+const parseMessageContent = (content: string, images?: ImageData[]) => {
+  console.log('🔍 parseMessageContent 호출:', { content, images });
+  
   // content가 undefined나 null인 경우 처리
   if (!content || typeof content !== 'string') {
-    return {
+    const result = {
       text: '',
-      fileName: null,
-      imageUrl: null,
-      isImage: false
+      images: images || [],
+      hasImages: (images && images.length > 0) || false
     };
+    console.log('🔍 parseMessageContent 결과 (빈 content):', result);
+    return result;
   }
   
   // AI 프롬프트와 명령어 제거 및 액션별 메시지 변환
@@ -450,25 +462,58 @@ const parseMessageContent = (content: string) => {
     return cleanedText;
   };
   
-  const fileMatch = content.match(/\[첨부파일: (.+?)\]/);
-  if (fileMatch) {
-    const fileName = fileMatch[1];
-    const textContent = content.replace(/\[첨부파일: .+?\]/, '').trim();
-    const imageUrl = `/file/${fileName}`;
-    const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
-    return {
-      text: stripAiPrompt(textContent),
-      fileName,
-      imageUrl,
-      isImage
-    };
+  // 첨부파일 패턴을 찾아서 제거하되, 이미지는 images 배열로 처리
+  const fileMatches = content.match(/\[첨부파일: (.+?)\]/g);
+  let textContent = content;
+  const extractedImages: ImageData[] = [];
+  
+  if (fileMatches) {
+    fileMatches.forEach(match => {
+      const fileName = match.match(/\[첨부파일: (.+?)\]/)?.[1];
+      if (fileName) {
+        const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
+        if (isImage) {
+          // 환경에 따른 이미지 URL 생성
+          const getImageUrl = (fileName: string) => {
+            // 이미 full URL인 경우 (http로 시작)
+            if (fileName.startsWith('http')) {
+              return fileName;
+            }
+            
+            // 개발 환경에서는 프록시 설정에 의해 /api/file/로 접근
+            if (process.env.NODE_ENV === 'development') {
+              return `/api/file/${fileName}`;
+            }
+            
+            // 프로덕션 환경에서는 file 경로로 직접 접근
+            const apiHost = process.env.VITE_API_HOST || 'https://api.aigo.here-dot.co.kr';
+            return `${apiHost}/file/${fileName}`;
+          };
+          
+          const imageUrl = getImageUrl(fileName);
+          
+          extractedImages.push({
+            url: imageUrl,
+            fileName: fileName,
+            mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'png'}`
+          });
+        }
+      }
+      // 텍스트에서 첨부파일 태그 제거
+      textContent = textContent.replace(match, '').trim();
+    });
   }
-  return {
-    text: stripAiPrompt(content),
-    fileName: null,
-    imageUrl: null,
-    isImage: false
+  
+  // images prop과 추출된 이미지를 합치기
+  const allImages = [...(images || []), ...extractedImages];
+  
+  const result = {
+    text: stripAiPrompt(textContent),
+    images: allImages,
+    hasImages: allImages.length > 0
   };
+  console.log('🔍 parseMessageContent 결과 (일반):', result);
+  return result;
 };
 
 // URL 체크 함수
@@ -497,7 +542,8 @@ export const AiMessageContent: React.FC<{
   const messages = useChatStore((s) => s.messages); // ⭐️ 추가: messages 배열 가져오기
   
   // URL에 superadmin이 포함되면 항상 다크모드, 그렇지 않으면 테마 스토어 값 사용
-  const pathname = usePathname();
+  const location1 = useLocation();
+  const pathname = location1.pathname;
   const { isDarkMode: themeIsDarkMode } = useThemeStore();
   const isDarkMode = pathname?.includes('superadmin') ? true : themeIsDarkMode;
 
@@ -997,7 +1043,8 @@ export default function AiChatPage() {
   const { isAuthenticated, user } = useAuthStore(); // user 상태도 가져오기
   
   // URL에 superadmin이 포함되면 항상 다크모드, 그렇지 않으면 테마 스토어 값 사용
-  const pathname = usePathname();
+  const location2 = useLocation();
+  const pathname = location2.pathname;
   const { isDarkMode: themeIsDarkMode } = useThemeStore();
   const isDarkMode = pathname?.includes('superadmin') ? true : themeIsDarkMode;
 
@@ -1422,13 +1469,43 @@ useEffect(() => {
               setChatSessionId(latestSession._id);
               const messagesResponse = await getChatSessionMessages(latestSession._id) as any;
               if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
-                const chatMessages = messagesResponse.data.map((msg: any) => ({
-                  role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
-                  content: msg.content.value || msg.content.content || '',
-                  messageId: msg._id,
-                  title: msg.title,
-                  estimateId: msg.content?.estimateId
-                }));
+                const chatMessages = messagesResponse.data.map((msg: any) => {
+                  // 🔥 서버에서 files 정보를 가져와서 이미지 생성
+                  let images: ImageData[] = [];
+                  if (msg.content.files && Array.isArray(msg.content.files)) {
+                    // 파일 배열에서 이미지 파일만 필터링
+                    images = msg.content.files
+                      .filter((fileName: string) => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName))
+                      .map((fileName: string) => {
+                        // 환경에 따른 이미지 URL 생성
+                        const getImageUrl = (fileName: string) => {
+                          // 개발 환경에서는 프록시 설정에 의해 /api/file/로 접근
+                          if (process.env.NODE_ENV === 'development') {
+                            return `/api/file/${fileName}`;
+                          }
+                          
+                          // 프로덕션 환경에서는 file 경로로 직접 접근
+                          const apiHost = process.env.VITE_API_HOST || 'https://api.aigo.here-dot.co.kr';
+                          return `${apiHost}/file/${fileName}`;
+                        };
+                        
+                        return {
+                          url: getImageUrl(fileName),
+                          fileName: fileName,
+                          mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'png'}`
+                        };
+                      });
+                  }
+                  
+                  return {
+                    role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
+                    content: msg.content.value || msg.content.content || '',
+                    images: images.length > 0 ? images : undefined, // 🔥 이미지 정보 추가
+                    messageId: msg._id,
+                    title: msg.title,
+                    estimateId: msg.content?.estimateId
+                  };
+                });
                 
                 // 기존 메시지가 있으면 clear하지 않고, 없을 때만 DB에서 로드
                 const currentMessages = useChatStore.getState().messages;
@@ -1450,13 +1527,43 @@ useEffect(() => {
             setChatSessionId(localChatSessionId);
             const messagesResponse = await getChatSessionMessages(localChatSessionId) as any;
             if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
-              const chatMessages = messagesResponse.data.map((msg: any) => ({
-                role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
-                content: msg.content.value || msg.content.content || '',
-                messageId: msg._id,
-                title: msg.title,
-                estimateId: msg.content?.estimateId
-              }));
+              const chatMessages = messagesResponse.data.map((msg: any) => {
+                // 🔥 서버에서 files 정보를 가져와서 이미지 생성
+                let images: ImageData[] = [];
+                if (msg.content.files && Array.isArray(msg.content.files)) {
+                  // 파일 배열에서 이미지 파일만 필터링
+                  images = msg.content.files
+                    .filter((fileName: string) => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName))
+                    .map((fileName: string) => {
+                      // 환경에 따른 이미지 URL 생성
+                      const getImageUrl = (fileName: string) => {
+                        // 개발 환경에서는 프록시 설정에 의해 /api/file/로 접근
+                        if (process.env.NODE_ENV === 'development') {
+                          return `/api/file/${fileName}`;
+                        }
+                        
+                        // 프로덕션 환경에서는 file 경로로 직접 접근
+                        const apiHost = process.env.VITE_API_HOST || 'https://api.aigo.here-dot.co.kr';
+                        return `${apiHost}/file/${fileName}`;
+                      };
+                      
+                      return {
+                        url: getImageUrl(fileName),
+                        fileName: fileName,
+                        mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'png'}`
+                      };
+                    });
+                }
+                
+                return {
+                  role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
+                  content: msg.content.value || msg.content.content || '',
+                  images: images.length > 0 ? images : undefined, // 🔥 이미지 정보 추가
+                  messageId: msg._id,
+                  title: msg.title,
+                  estimateId: msg.content?.estimateId
+                };
+              });
               
               // 기존 메시지가 있으면 clear하지 않고, 없을 때만 DB에서 로드
               const currentMessages = useChatStore.getState().messages;
@@ -1590,20 +1697,30 @@ useEffect(() => {
       <ChatBox>
         {messages.map((m, idx) => {
           if (m.role === 'user') {
-            // 사용자 메시지는 transformMessageForDisplay로 간단하게 표시
-            const fileMatch = m.content.match(/\[첨부파일: (.+?)\]/);
-            const messageWithoutFile = fileMatch ? m.content.replace(/\[첨부파일: .+?\]/, '').trim() : m.content;
-            const displayText = transformMessageForDisplay(messageWithoutFile);
+            // 이미지와 텍스트를 분리해서 처리
+            const parsedContent = parseMessageContent(m.content, m.images);
+            
+            console.log('🔍 사용자 메시지 파싱:', {
+              originalContent: m.content,
+              originalImages: m.images,
+              parsedContent,
+              hasImages: parsedContent.hasImages
+            });
             
             return (
-              <UserMessage key={idx}>
-                {displayText}
-                {fileMatch && (
-                  <div style={{ marginTop: '8px', fontSize: '14px', opacity: 0.7 }}>
-                    📎 {fileMatch[1]}
-                  </div>
+              <UserMessageContainer key={idx} hasImages={parsedContent.hasImages}>
+                {/* 이미지가 있으면 그리드로 표시 */}
+                {parsedContent.hasImages && (
+                  <ImageGrid images={parsedContent.images} />
                 )}
-              </UserMessage>
+                {/* 텍스트가 있으면 말풍선으로 표시 */}
+                {parsedContent.text && (
+                  <UserMessage>
+                    {parsedContent.text}
+                  </UserMessage>
+                )}
+                {/* 기존 파일 첨부 표시는 제거 (새로운 이미지 시스템으로 대체됨) */}
+              </UserMessageContainer>
             );
           } else {
 

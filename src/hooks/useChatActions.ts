@@ -464,18 +464,114 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     devLog('useChatActions - displayMessage:', displayMessage);
     devLog('useChatActions - userDisplayContent 초기값:', userDisplayContent);
     
+    // 이미지와 텍스트를 분리할 때는 텍스트에 파일 정보를 포함하지 않음
+    // (기존 방식과의 호환성을 위해 조건부로 처리)
+    let shouldSeparateMessages = false;
     if (uploadedFiles.length > 0) {
-      const fileInfo = uploadedFiles.map((file) => `[첨부파일: ${file.name}]`).join('\n');
-      userDisplayContent = `${userDisplayContent}\n\n${fileInfo}`;
+      const imageFiles = uploadedFiles.filter((file: FileUploadData) => 
+        /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name)
+      );
+      shouldSeparateMessages = imageFiles.length > 0;
+      
+      if (!shouldSeparateMessages) {
+        // 이미지가 아닌 파일들만 있는 경우에만 파일 정보를 텍스트에 추가
+        const fileInfo = uploadedFiles.map((file) => `[첨부파일: ${file.name}]`).join('\n');
+        userDisplayContent = `${userDisplayContent}\n\n${fileInfo}`;
+      }
     }
 
     devLog('useChatActions - userDisplayContent 최종값:', userDisplayContent);
+    devLog('useChatActions - shouldSeparateMessages:', shouldSeparateMessages);
 
     // AI에게 전달할 실제 메시지 내용 (상세 정보 포함)
     let messageContent = input; // 원본 input (AI 프롬프트 등 포함)
     
-    // 사용자 메시지 임시 추가 (표시용은 간단하게)
-    addMessage({ role: 'user', content: userDisplayContent });
+    // 이미지와 텍스트를 분리해서 메시지 추가
+    console.log('🔍 handleSubmit 시작:', { input, uploadedFilesCount: uploadedFiles.length });
+    
+    const messageId = uuidv4();
+    
+    // 이미지 파일이 있는 경우 이미지 데이터 생성
+    if (uploadedFiles.length > 0) {
+      console.log('🔍 업로드된 파일들:', uploadedFiles);
+      const imageFiles = uploadedFiles.filter((file: FileUploadData) => 
+        /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name)
+      );
+      console.log('🔍 필터링된 이미지 파일들:', imageFiles);
+      
+      if (imageFiles.length > 0) {
+        // ⚠️ 먼저 실제 파일 업로드를 수행하여 UUID 파일명 획득
+        console.log('📤 이미지 URL 생성을 위한 파일 업로드 시작...');
+        let serverFileNames: string[] = [];
+        
+        if (selectedFiles.length > 0) {
+          const uploadResponse = await uploadFiles(selectedFiles);
+          if (uploadResponse && uploadResponse.statusCode === 200 && Array.isArray(uploadResponse.data)) {
+            serverFileNames = uploadResponse.data;
+            console.log('✅ 서버에서 반환된 UUID 파일명들:', serverFileNames);
+          } else {
+            console.error('❌ 파일 업로드 실패:', uploadResponse);
+            throw new Error('이미지 업로드에 실패했습니다.');
+          }
+        }
+        
+        // 환경에 따른 이미지 URL 생성 (UUID 파일명 사용)
+        const getImageUrl = (serverFileName: string) => {
+          // 개발 환경에서는 프록시 설정에 의해 /api/file/로 접근
+          if (process.env.NODE_ENV === 'development') {
+            return `/api/file/${serverFileName}`;
+          }
+          
+          // 프로덕션 환경에서는 file 경로로 직접 접근
+          const apiHost = process.env.VITE_API_HOST || 'https://api.aigo.here-dot.co.kr';
+          return `${apiHost}/file/${serverFileName}`;
+        };
+        
+        // 이미지 파일들과 서버 파일명을 매핑하여 올바른 URL 생성
+        const images = imageFiles.map((file: FileUploadData, index: number) => {
+          const serverFileName = serverFileNames[index] || file.name; // fallback to original name
+          const imageUrl = getImageUrl(serverFileName);
+          console.log(`🔗 이미지 URL 생성: ${file.name} -> ${serverFileName} -> ${imageUrl}`);
+          
+          return {
+            url: imageUrl,
+            fileName: file.name, // 원본 파일명은 화면 표시용으로 유지
+            mimeType: file.mimeType || `image/${file.name.split('.').pop()?.toLowerCase() || 'png'}`
+          };
+        });
+        
+        console.log('🔍 이미지 파일들 처리됨:', images);
+        console.log('🔍 originalImages (업로드된 파일들):', imageFiles.map(f => ({ name: f.name, fileUri: f.fileUri })));
+        
+        // 이미지와 텍스트가 모두 있는 경우 두 개의 메시지로 분리
+        // 1. 이미지만 있는 메시지
+        const imageMessage = {
+          role: 'user' as const,
+          content: '',
+          images,
+          messageId: messageId + '_image'
+        };
+        console.log('🔍 이미지 메시지 생성:', imageMessage);
+        addMessage(imageMessage);
+        
+        // 2. 텍스트가 있으면 별도 메시지
+        if (userDisplayContent.trim()) {
+          const textMessage = {
+            role: 'user' as const,
+            content: userDisplayContent,
+            messageId: messageId + '_text'
+          };
+          console.log('🔍 텍스트 메시지 생성:', textMessage);
+          addMessage(textMessage);
+        }
+      } else {
+        // 이미지가 아닌 파일들만 있는 경우 기존 로직 사용
+        addMessage({ role: 'user', content: userDisplayContent, messageId });
+      }
+    } else {
+      // 이미지가 없는 일반 메시지
+      addMessage({ role: 'user', content: userDisplayContent, messageId });
+    }
     // ai 메시지는 isLoading: true로 추가 (실시간 업데이트용)
     addMessage({ role: 'ai', content: '', isLoading: true });
     devLog('사용자 메시지 및 빈 AI 메시지 추가 완료', { userDisplayContent }, { role: 'ai', content: '', isLoading: true });
@@ -657,18 +753,43 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
             return;
           }
 
-        const uploadResponse = await uploadFiles(selectedFiles);
-          if (abortSignal?.aborted) {
-            handleAbort();
-            return;
-          }
-
-        devLog('📥 서버 업로드 응답:', uploadResponse);
+        // ⚠️ 이미 이미지 URL 생성을 위해 업로드를 수행했는지 확인
+        // selectedFiles가 남아있다면 아직 업로드되지 않은 파일들이 있음
+        let needsUpload = true;
         
-        // 🔥 API 응답 구조 수정: { statusCode: 200, data: [...] } 형태
-        if (uploadResponse && uploadResponse.statusCode === 200 && Array.isArray(uploadResponse.data) && uploadResponse.data.length > 0) {
-          devLog('✅ 파일 업로드 성공 - 파일명들:', uploadResponse.data);
-          uploadedFileNames = uploadResponse.data;
+        // 이미지가 포함된 경우 이미 위에서 업로드했을 수 있음
+        const hasImages = selectedFiles.some(file => 
+          /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name)
+        );
+        
+        if (hasImages && uploadedFileNames.length > 0) {
+          devLog('🔄 이미지 파일들은 이미 업로드됨, 추가 업로드 생략');
+          needsUpload = false;
+        }
+        
+        if (needsUpload) {
+          const uploadResponse = await uploadFiles(selectedFiles);
+            if (abortSignal?.aborted) {
+              handleAbort();
+              return;
+            }
+
+          devLog('📥 서버 업로드 응답:', uploadResponse);
+          
+          // 🔥 API 응답 구조 수정: { statusCode: 200, data: [...] } 형태
+          if (uploadResponse && uploadResponse.statusCode === 200 && Array.isArray(uploadResponse.data) && uploadResponse.data.length > 0) {
+            devLog('✅ 파일 업로드 성공 - 파일명들:', uploadResponse.data);
+            uploadedFileNames = uploadResponse.data;
+          } else {
+            console.error('❌ 파일 업로드 실패 - 응답이 비어있거나 잘못됨:', uploadResponse);
+            console.error('❌ statusCode:', uploadResponse?.statusCode);
+            console.error('❌ data 길이:', uploadResponse?.data?.length);
+            throw new Error(`파일 업로드에 실패했습니다. 상태코드: ${uploadResponse?.statusCode || 'unknown'}`);
+          }
+        }
+        
+        // Gemini용 파일 데이터 생성
+        if (uploadedFileNames.length > 0) {
           filesForGemini = await Promise.all(
             uploadedFileNames.map(async (fileName, index) => {
               const file = selectedFiles[index];
@@ -683,14 +804,10 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
             })
           );
           await new Promise(resolve => setTimeout(resolve, 1000));
-          // 🔥 파일 업로드 완료 후 selectedFiles 초기화
-          setSelectedFiles([]);
-        } else {
-          console.error('❌ 파일 업로드 실패 - 응답이 비어있거나 잘못됨:', uploadResponse);
-          console.error('❌ statusCode:', uploadResponse?.statusCode);
-          console.error('❌ data 길이:', uploadResponse?.data?.length);
-          throw new Error(`파일 업로드에 실패했습니다. 상태코드: ${uploadResponse?.statusCode || 'unknown'}`);
         }
+        
+        // 🔥 파일 업로드 완료 후 selectedFiles 초기화
+        setSelectedFiles([]);
       } else {
         devLog('📝 파일 없이 텍스트만 전송');
       }
@@ -698,7 +815,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       // DB 저장용 메시지 내용
       const messageContentForDB = {
         content: input, // AI에게 전달되는 원본 내용
-        file: uploadedFileNames.length > 0 ? uploadedFileNames[0] : undefined
+        files: uploadedFileNames.length > 0 ? uploadedFileNames : undefined  // 🔥 모든 파일명을 배열로 저장
       };
 
       const filesForAI = filesForGemini.map(file => ({
