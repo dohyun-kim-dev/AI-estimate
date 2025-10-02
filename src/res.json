@@ -1,28 +1,52 @@
-{
-    "statusCode": 200,
-    "message": "success",
-    "data": [
-        {
-            "_id": "68ddfdb23fc3296199e3462e",
-            "session": "c9fc489d-0884-4176-818a-d05238aed786",
-            "role": "USER",
-            "content": {
-                "content": "테스트",
-                "file": "8850220c-47ea-4ef7-a50e-fd936f041c6d.webp"
-            },
-            "createAt": "2025-10-02 13:21:06"
+"statusCode": 200,
+"message": "success",
+"data": [
+    {
+        "_id": "68de06093d3c4c3fe790b956",
+        "session": "e369cf8b-ecf2-4fb1-bdcf-db771de8efcb",
+        "role": "USER",
+        "content": {
+            "content": "테스트11"
         },
-        {
-            "_id": "68ddfdb28644b47a443e34fb",
-            "session": "c9fc489d-0884-4176-818a-d05238aed786",
-            "role": "AI",
-            "content": {
-                "type": "text",
-                "value": "문의주셔서 감사합니다. 이미지를 보니 'BIDSPACE'라는 경매 서비스에 대해 구상하고 계신 것으로 이해했습니다.\n\n구상하시는 서비스를 사용자들이 어떤 환경에서 이용하길 원하시나요? 예를 들어 '웹사이트'와 '스마트폰 앱' 중에서 생각하고 계신 모든 형태를 말씀해주세요."
-            },
-            "createAt": "2025-10-02 13:21:06"
-        }
-    ],
-    "metadata": null,
-    "error": null
+        "createAt": "2025-10-02 13:56:41"
+    },
+    {
+        "_id": "68de0609500f7b2f701ff868",
+        "session": "e369cf8b-ecf2-4fb1-bdcf-db771de8efcb",
+        "role": "AI",
+        "content": {
+            "type": "text",
+            "value": "안녕하세요, (주)여기닷 AI 기술영업팀 강유하입니다.\n\n구상하시는 서비스를 사용자들이 어떤 환경에서 이용하길 원하시나요? 예를 들어 '웹사이트'와 '스마트폰 앱' 중에서 생각하고 계신 모든 형태를 말씀해주세요."
+        },
+        "createAt": "2025-10-02 13:56:41"
+    },
+    {
+        "_id": "68de0629d05aa05cf66ee2ae",
+        "session": "e369cf8b-ecf2-4fb1-bdcf-db771de8efcb",
+        "role": "USER",
+        "content": {
+            "content": "테스트22",
+            "files": [
+                "2df507c3-e723-41d6-992d-6bc920d2c1e7.webp"
+            ]
+        },
+        "createAt": "2025-10-02 13:57:13"
+    },
+    {
+        "_id": "68de0629f5de8cede8544ca9",
+        "session": "e369cf8b-ecf2-4fb1-bdcf-db771de8efcb",
+        "role": "AI",
+        "content": {
+            "type": "text",
+            "value": "제공해주신 이미지를 통해 'BIDSPACE'라는 경매 서비스를 구상하고 계신 것으로 보입니다.\n\n이러한 경매 서비스를 사용자들이 어떤 환경에서 이용하길 원하시나요? '웹사이트'와 '스마트폰 앱' 중에서 생각하고 계신 모든 형태를 말씀해주시면, 거기에 맞춰 다음 단계를 진행할 수 있습니다."
+        },
+        "createAt": "2025-10-02 13:57:13"
+    }
+],
+"metadata": {
+    "allCnt": 4,
+    "totalCnt": 4
+},
+"error": null
 }
+
