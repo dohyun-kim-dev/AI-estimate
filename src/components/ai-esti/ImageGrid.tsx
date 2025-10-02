@@ -24,77 +24,90 @@ const GridContainer = styled.div<{ imageCount: number; totalRows: number }>`
     return 'flex-start'; // 3개 이상일 때는 왼쪽 정렬
   }};
   
-  /* iOS Safari 호환성 개선 */
+  /* iOS Safari 호환성 개선 - display: flex 강제 적용 */
+  display: -webkit-box !important;
+  display: -webkit-flex !important;
+  display: -ms-flexbox !important;
+  display: flex !important;
+  -webkit-flex-wrap: wrap;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+  
+  /* iOS Safari Box Model 호환성 */
   -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
   box-sizing: border-box;
+  
+  /* iOS Safari에서 강제 렌더링 */
+  min-height: 100px;
+  position: relative;
+  z-index: 1;
 `;
- 
+
 const ImageContainer = styled.div<{ isFirst?: boolean; imageCount: number }>`
   position: relative;
   overflow: hidden;
   border-radius: 8px;
   cursor: pointer;
   
-  /* 이미지 개수에 따른 유연한 크기 설정 */
+  /* 간단한 크기 설정 - 부모 컨테이너 내에서만 계산 */
   ${({ imageCount }) => {
     if (imageCount === 1) return `
       flex: 0 0 100%;
       max-width: 100%;
-      width: 100%;
     `;
     if (imageCount === 2) return `
       flex: 0 0 calc(50% - 4px);
       max-width: calc(50% - 4px);
-      width: calc(50% - 4px);
     `;
     return `
-      flex: 0 0 calc(33.333% - 5.33px);
-      max-width: calc(33.333% - 5.33px);
-      width: calc(33.333% - 5.33px);
+      flex: 0 0 calc(33.333% - 6px);
+      max-width: calc(33.333% - 6px);
     `;
   }}
   
-  /* 1:1 비율 유지를 위한 aspect-ratio */
+  /* 1:1 비율 유지 - 간단하게 aspect-ratio 사용 */
   aspect-ratio: 1;
   
-  /* iOS Safari 호환성을 위한 대안 (aspect-ratio 미지원 시) */
+  /* iOS Safari 호환성을 위한 fallback */
   @supports not (aspect-ratio: 1) {
     height: 0;
-    ${({ imageCount }) => {
-      if (imageCount === 1) return 'padding-bottom: 100%;';
-      if (imageCount === 2) return 'padding-bottom: calc(50% - 4px);';
-      return 'padding-bottom: calc(33.333% - 5.33px);';
-    }}
+    padding-bottom: 100%;
   }
   
-  /* iOS Safari 호환성 */
+  /* iOS Safari Box Model 호환성 */
   -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
   box-sizing: border-box;
+  
+  /* iOS Safari GPU 가속 최적화 */
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   
   &:hover {
     transform: scale(1.02) translateZ(0);
     transition: transform 0.2s ease;
   }
 `;
- 
+
 const Image = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.2s ease;
-  cursor: pointer;
+  object-position: center;
   display: block;
+  cursor: pointer;
   
-  /* aspect-ratio 미지원 시 absolute 포지셔닝 */
+  /* aspect-ratio 미지원 시 절대 포지셔닝 */
   @supports not (aspect-ratio: 1) {
     position: absolute;
     top: 0;
     left: 0;
   }
   
-  /* iOS Safari 이미지 어두운 필터 문제 해결 */
+  /* iOS Safari 이미지 렌더링 최적화 */
   -webkit-filter: brightness(1) contrast(1) saturate(1);
   filter: brightness(1) contrast(1) saturate(1);
   -webkit-transform: translateZ(0);
@@ -102,12 +115,20 @@ const Image = styled.img`
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   
-  /* iOS Safari 이미지 최적화 비활성화 */
+  /* iOS Safari 이미지 최적화 설정 */
   -webkit-optimize-contrast: auto;
   image-rendering: auto;
   
-  /* 색상 강제 설정 */
-  opacity: 1;
+  /* iOS Safari 강제 표시 */
+  opacity: 1 !important;
+  visibility: visible !important;
+  
+  /* iOS Safari 터치 최적화 */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  
+  transition: transform 0.2s ease;
   
   &:hover {
     transform: scale(1.05) translateZ(0);
@@ -141,13 +162,26 @@ const OptimizedModalImage = ({ src, alt, ...props }: { src: string; alt: string;
   const [hasError, setHasError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   
+  // 디버깅용 로그
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 OptimizedModalImage 초기화:', { src, currentSrc, isLoaded, hasError });
+    }
+  }, [src, currentSrc, isLoaded, hasError]);
+  
   const handleLoad = () => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 OptimizedModalImage 로드 성공:', currentSrc);
+    }
     setTimeout(() => {
       setIsLoaded(true);
     }, 15);
   };
   
   const handleError = () => {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('🔍 OptimizedModalImage 로드 실패:', { currentSrc, hasError });
+    }
     if (!hasError && !src.startsWith("data:image/svg+xml")) {
       setHasError(true);
       setCurrentSrc("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIyIDEyQzIyIDEzLjk3NzggMjEuNDE0IDE1Ljg2NjYgMjAuMzcxNCAxNy40ODI5QzE5LjMyODkgMTkuMDk5MiAxNy44NzQ0IDIwLjM3MjYgMTYuMjAyOCAyMS4xNzU2QzE0LjUzMTMgMjEuOTc4NyAxMi43MTA2IDIyLjI5NTQgMTAuOTAzNyAyMi4wOTc2QzkuMDk2NzIgMjEuODk5OCA3LjM4NDMzIDIxLjE5NTMgNiAyMC4wOTEyQzQuNjE1NjcgMTguOTg3MSAzLjUzNzI1IDE3LjUxNjkgMi44NjMwNyAxNS44NDM3QzIuMTg4OSAxNC4xNzA0IDEuOTQ2NDMgMTIuMzQ2NSAyLjE3OTY3IDEwLjU1MDNDMi40MTI5MSA4Ljc1NDEzIDMuMTEzODUgNy4wNDcxOSA0LjIxNDcgNS42MTE4QzUuMzE1NTUgNC4xNzY0IDYuNzcyNjEgMy4wNjQ4MiA4LjQzNDMgMi4zNzQ3NyIgc3Ryb2tlPSIjY2NjIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIzIiBzdHJva2U9IiNjY2MiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K");
@@ -468,18 +502,25 @@ const PaginationDot = styled.button<{ $isActive: boolean }>`
 const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
   const [showModal, setShowModal] = useState(false);
   const [modalIndex, setModalIndex] = useState(0);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
+  const [errorImages, setErrorImages] = useState<Set<number>>(new Set());
   
   // 터치 이벤트 상태
   const startX = useRef<number | null>(null);
   const isDragging = useRef(false);
   const hasMoved = useRef(false);
   
+  // iOS 감지
+  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+  
   // 디버깅용 로그 추가
   console.log('🔍 ImageGrid 렌더링:', {
     images: images?.length,
     maxRows,
     userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
-    isIOS: typeof navigator !== 'undefined' ? /iPad|iPhone|iPod/.test(navigator.userAgent) : false
+    isIOS,
+    loadedImagesCount: loadedImages.size,
+    errorImagesCount: errorImages.size
   });
   
   if (!images || images.length === 0) {
@@ -500,17 +541,43 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
     totalRows
   });
  
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const target = e.currentTarget;
-    console.error('🔍 이미지 로드 실패:', {
-      src: target.src,
-      naturalWidth: target.naturalWidth,
-      naturalHeight: target.naturalHeight,
-      complete: target.complete,
-      error: e,
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
+  const handleImageLoad = (index: number) => {
+    console.log(`🔍 이미지 로드 성공 ${index}:`, displayImages[index]?.url);
+    setLoadedImages(prev => new Set([...prev, index]));
+    setErrorImages(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(index);
+      return newSet;
     });
-    target.style.display = 'none';
+  };
+ 
+  const handleImageError = (index: number, e: React.SyntheticEvent<HTMLImageElement>) => {
+    console.error('🔍 이미지 로드 실패:', {
+      index,
+      src: e.currentTarget.src,
+      error: e,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+      isIOS
+    });
+    
+    setErrorImages(prev => new Set([...prev, index]));
+    setLoadedImages(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(index);
+      return newSet;
+    });
+    
+    // iOS Safari에서 이미지 로드 재시도
+    if (isIOS && !e.currentTarget.src.includes('data:image/svg+xml')) {
+      setTimeout(() => {
+        const img = e.currentTarget;
+        const originalSrc = img.src;
+        img.src = '';
+        setTimeout(() => {
+          img.src = originalSrc;
+        }, 100);
+      }, 1000);
+    }
   };
  
   const openModal = (index: number) => {
@@ -622,14 +689,12 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
     <>
       <GridContainer imageCount={displayImages.length} totalRows={totalRows}>
         {displayImages.map((image, index) => {
-          console.log(`🔍 ImageGrid 이미지 ${index}:`, {
-            url: image.url,
-            fileName: image.fileName,
-            mimeType: image.mimeType
-          });
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`🔍 렌더링 이미지 ${index}:`, image.url);
+          }
           return (
             <ImageContainer
-              key={index}
+              key={`${image.url}-${index}`}
               isFirst={index === 0}
               imageCount={displayImages.length}
               onClick={() => openModal(index)}
@@ -637,12 +702,31 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
               <Image
                 src={image.url}
                 alt={image.fileName || `이미지 ${index + 1}`}
-                onError={handleImageError}
-                loading="lazy"
-                onLoad={() => {
-                  console.log(`🔍 이미지 로드 성공 ${index}:`, image.url);
+                onError={(e) => handleImageError(index, e)}
+                onLoad={() => handleImageLoad(index)}
+                loading={isIOS ? "eager" : "lazy"} // iOS에서는 즉시 로딩
+                style={{
+                  opacity: loadedImages.has(index) ? 1 : 0.8,
+                  transition: 'opacity 0.2s ease',
+                  display: errorImages.has(index) ? 'none' : 'block'
                 }}
               />
+              {/* 로딩 인디케이터 */}
+              {!loadedImages.has(index) && !errorImages.has(index) && (
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                  borderRadius: '4px',
+                  padding: '8px',
+                  fontSize: '12px',
+                  color: '#666'
+                }}>
+                  로딩중...
+                </div>
+              )}
               {/* 마지막 이미지에 남은 개수 표시 */}
               {index === maxImages - 1 && remainingCount > 0 && (
                 <MoreIndicator onClick={() => openModal(index)}>
@@ -719,4 +803,3 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
 };
  
 export default ImageGrid;
- 
