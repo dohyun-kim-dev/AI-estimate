@@ -3,23 +3,26 @@
     "message": "success",
     "data": [
         {
-            "_id": "68d6162381c0a324cf5f4200",
-            "user": {
-                "id": "27dd7039-5972-4ae8-8e3f-bc4509829c61",
-                "name": "김도현",
-                "cellphone": "01020625344",
-                "email": "daehyeon@heredotcorp.com",
-                "_id": "68d6162381c0a324cf5f4201"
+            "_id": "68ddfdb23fc3296199e3462e",
+            "session": "c9fc489d-0884-4176-818a-d05238aed786",
+            "role": "USER",
+            "content": {
+                "content": "테스트",
+                "file": "8850220c-47ea-4ef7-a50e-fd936f041c6d.webp"
             },
-            "title": "미술관 티켓 웹사이트",
-            "chatSession": "38ece760-2d7d-48d2-a993-81c6143729d7",
-            "estimateId": "201b2a9f-3e6f-47a8-8e6d-53609805e3f3",
-            "createAt": "2025-09-26 13:27:15"
+            "createAt": "2025-10-02 13:21:06"
+        },
+        {
+            "_id": "68ddfdb28644b47a443e34fb",
+            "session": "c9fc489d-0884-4176-818a-d05238aed786",
+            "role": "AI",
+            "content": {
+                "type": "text",
+                "value": "문의주셔서 감사합니다. 이미지를 보니 'BIDSPACE'라는 경매 서비스에 대해 구상하고 계신 것으로 이해했습니다.\n\n구상하시는 서비스를 사용자들이 어떤 환경에서 이용하길 원하시나요? 예를 들어 '웹사이트'와 '스마트폰 앱' 중에서 생각하고 계신 모든 형태를 말씀해주세요."
+            },
+            "createAt": "2025-10-02 13:21:06"
         }
     ],
-    "metadata": {
-        "allCnt": 49,
-        "totalCnt": 1
-    },
+    "metadata": null,
     "error": null
 }
