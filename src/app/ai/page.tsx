@@ -1,7 +1,7 @@
 
 import useAI from '@/hooks/useAI';
 import { useToast } from '@/components/common/ToastProvider';
-import { useChatStore } from '@/store/chatStore';
+import { useChatStore, ImageData } from '@/store/chatStore';
 import BottomInput from '@/components/ai-esti/BottomInput';
 import AiResponseMessage from '@/components/ai-esti/AiResponseMessage';
 import EstimateCard from '@/components/ai-esti/EstimateCard';
@@ -26,6 +26,7 @@ import { usePromptStore } from '@/store/promptStore';
 import { useAuthStore } from '@/store/authStore';
 import { useThemeStore } from '@/store/themeStore';
 import { transformMessageForDisplay } from '@/utils/messageTransform';
+import ImageGrid from '@/components/ai-esti/ImageGrid';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -154,6 +155,15 @@ const UserMessage = styled.div`
   word-break: break-word;
   font-size: 18px;
   line-height: 2.0;
+`;
+
+const UserMessageContainer = styled.div<{ hasImages?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%; /* 전체 너비 사용 */
+  align-self: flex-end;
 `;
 
 
@@ -373,6 +383,84 @@ const ScrollDownIcon = styled.div<{ $isDark: boolean }>`
 type ModelName = 'gemini-2.5-flash' | 'gemini-2.5-flash-lite' | 'gemini-2.0-flash';
 
 
+// 서버에서 받은 메시지를 ChatMessage 형태로 변환하는 함수
+const convertServerMessageToChatMessage = (msg: any) => {
+  const role = msg.role === 'USER' ? 'user' as const : 'ai' as const;
+  const content = msg.content.value || msg.content.content || '';
+  const messageId = msg._id;
+  
+  // AI 메시지는 기존 방식대로 처리
+  if (role === 'ai') {
+    return {
+      role,
+      content,
+      messageId
+    };
+  }
+  
+  // 사용자 메시지에서 파일이 있는 경우 처리 (단일 file 또는 복수 files 지원)
+  if ((msg.content.file || msg.content.files) && role === 'user') {
+    // files 배열이 있으면 우선 사용, 없으면 file을 배열로 변환
+    const fileNames = msg.content.files || (msg.content.file ? [msg.content.file] : []);
+    const imageFiles = fileNames.filter((fileName: string) => 
+      /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName)
+    );
+    
+    if (imageFiles.length > 0) {
+      // 환경에 따른 이미지 URL 생성
+      const getImageUrl = (fileName: string) => {
+        // 개발 환경에서는 프록시 설정에 의해 /api/file/로 접근
+        if (import.meta.env.DEV) {
+          return `/api/file/${fileName}`;
+        }
+        
+        // 프로덕션 환경에서는 API 서버 도메인과 결합
+        const apiHost = import.meta.env.VITE_API_HOST || 'https://api.aigo.here-dot.co.kr';
+        // API 호스트가 이미 /api로 끝나는 경우 그대로 사용, 아니면 추가
+        const baseUrl = apiHost.endsWith('/api') ? apiHost : `${apiHost}/api`;
+        return `${baseUrl}/file/${fileName}`;
+      };
+      
+      const images = imageFiles.map((fileName: string) => ({
+        url: getImageUrl(fileName),
+        fileName: fileName,
+        mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'png'}`
+      }));
+      
+      // 이미지와 텍스트가 모두 있는 경우 두 개의 메시지로 분리
+      const messages = [];
+      
+      // 1. 이미지만 있는 메시지
+      const imageMessage = {
+        role,
+        content: '',
+        images,
+        messageId: messageId + '_image'
+      };
+      messages.push(imageMessage);
+      
+      // 2. 텍스트가 있으면 별도 메시지
+      if (content.trim()) {
+        const textMessage = {
+          role,
+          content,
+          messageId: messageId + '_text'
+        };
+        messages.push(textMessage);
+      }
+      
+      return messages;
+    }
+  }
+  
+  // 이미지가 없는 일반 메시지
+  return {
+    role,
+    content,
+    messageId
+  };
+};
+
 function ensureClientUuid(estimate: any) {
   if (!estimate.uuid) {
     estimate.uuid = uuidv4(); // 클라에서 미리 박음
@@ -402,14 +490,13 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
   }
 };
 
-const parseMessageContent = (content: string) => {
+const parseMessageContent = (content: string, images?: ImageData[]) => {
   // content가 undefined나 null인 경우 처리
   if (!content || typeof content !== 'string') {
     return {
       text: '',
-      fileName: null,
-      imageUrl: null,
-      isImage: false
+      images: images || [],
+      hasImages: (images && images.length > 0) || false
     };
   }
   
@@ -424,24 +511,57 @@ const parseMessageContent = (content: string) => {
     return cleanedText;
   };
   
-  const fileMatch = content.match(/\[첨부파일: (.+?)\]/);
-  if (fileMatch) {
-    const fileName = fileMatch[1];
-    const textContent = content.replace(/\[첨부파일: .+?\]/, '').trim();
-    const imageUrl = `/file/${fileName}`;
-    const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
-    return {
-      text: stripAiPrompt(textContent),
-      fileName,
-      imageUrl,
-      isImage
-    };
+  // 첨부파일 패턴을 찾아서 제거하되, 이미지는 images 배열로 처리
+  const fileMatches = content.match(/\[첨부파일: (.+?)\]/g);
+  let textContent = content;
+  const extractedImages: ImageData[] = [];
+  
+  if (fileMatches) {
+    fileMatches.forEach(match => {
+      const fileName = match.match(/\[첨부파일: (.+?)\]/)?.[1];
+      if (fileName) {
+        const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
+        if (isImage) {
+          // 환경에 따른 이미지 URL 생성
+          const getImageUrl = (fileName: string) => {
+            // 이미 full URL인 경우 (http로 시작)
+            if (fileName.startsWith('http')) {
+              return fileName;
+            }
+            
+            // 개발 환경에서는 프록시 설정에 의해 /api/file/로 접근
+            if (import.meta.env.DEV) {
+              return `/api/file/${fileName}`;
+            }
+            
+            // 프로덕션 환경에서는 API 서버 도메인과 결합
+            const apiHost = import.meta.env.VITE_API_HOST || 'https://api.aigo.here-dot.co.kr';
+            // API 호스트가 이미 /api로 끝나는 경우 그대로 사용, 아니면 추가
+            const baseUrl = apiHost.endsWith('/api') ? apiHost : `${apiHost}/api`;
+            return `${baseUrl}/file/${fileName}`;
+          };
+          
+          const imageUrl = getImageUrl(fileName);
+          
+          extractedImages.push({
+            url: imageUrl,
+            fileName: fileName,
+            mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'png'}`
+          });
+        }
+      }
+      // 텍스트에서 첨부파일 태그 제거
+      textContent = textContent.replace(match, '').trim();
+    });
   }
+  
+  // images prop과 추출된 이미지를 합치기
+  const allImages = [...(images || []), ...extractedImages];
+  
   return {
-    text: stripAiPrompt(content),
-    fileName: null,
-    imageUrl: null,
-    isImage: false
+    text: stripAiPrompt(textContent),
+    images: allImages,
+    hasImages: allImages.length > 0
   };
 };
 
@@ -1234,12 +1354,14 @@ useEffect(() => {
         setChatSessionId(urlSessionId);
         try {
           const messagesResponse = await getChatSessionMessages(urlSessionId) as any;
+          console.log('🔍 서버 응답:', messagesResponse);
           if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
-            const chatMessages = messagesResponse.data.map((msg: ChatMessage) => ({
-              role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
-              content: msg.content.value || msg.content.content || '',
-              messageId: msg._id
-            }));
+            console.log('🔍 서버 메시지 데이터:', messagesResponse.data);
+            const convertedMessages = messagesResponse.data.map((msg: any) => convertServerMessageToChatMessage(msg));
+            console.log('🔍 변환된 메시지들:', convertedMessages);
+            // 배열을 평탄화 (이미지+텍스트 분리된 메시지들을 하나의 배열로)
+            const chatMessages = convertedMessages.flat();
+            console.log('🔍 평탄화된 메시지들:', chatMessages);
             
             // AI 세션에 과거 대화 이력 전달
             const chatHistory = chatMessages.map((msg: any) => ({
@@ -1253,7 +1375,10 @@ useEffect(() => {
             if (currentMessages.length === 0 || !hasShownInitialMessage) {
               clear();
               addMessage({ role: 'ai', content: initialAiMessage });
-              chatMessages.forEach((msg: any) => addMessage(msg));
+              chatMessages.forEach((msg: any) => {
+                console.log('🔍 addMessage 호출:', msg);
+                addMessage(msg);
+              });
               setHasShownInitialMessage(true);
             }
           }
@@ -1271,11 +1396,9 @@ useEffect(() => {
             setChatSessionId(localChatSessionId);
             const messagesResponse = await getChatSessionMessages(localChatSessionId) as any;
             if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
-              const chatMessages = messagesResponse.data.map((msg: ChatMessage) => ({
-                role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
-                content: msg.content.value || msg.content.content || '',
-                messageId: msg._id
-              }));
+              const convertedMessages = messagesResponse.data.map((msg: any) => convertServerMessageToChatMessage(msg));
+              // 배열을 평탄화 (이미지+텍스트 분리된 메시지들을 하나의 배열로)
+              const chatMessages = convertedMessages.flat();
               
               // AI 세션에 과거 대화 이력 전달
               const chatHistory = chatMessages.map((msg: any) => ({
@@ -1307,11 +1430,9 @@ useEffect(() => {
               setChatSessionId(latestSession._id);
               const messagesResponse = await getChatSessionMessages(latestSession._id) as any;
               if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
-                const chatMessages = messagesResponse.data.map((msg: ChatMessage) => ({
-                  role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
-                  content: msg.content.value || msg.content.content || '',
-                  messageId: msg._id
-                }));
+                const convertedMessages = messagesResponse.data.map((msg: any) => convertServerMessageToChatMessage(msg));
+                // 배열을 평탄화 (이미지+텍스트 분리된 메시지들을 하나의 배열로)
+                const chatMessages = convertedMessages.flat();
                 
                 // 기존 메시지가 있으면 clear하지 않고, 없을 때만 DB에서 로드
                 const currentMessages = useChatStore.getState().messages;
@@ -1333,11 +1454,9 @@ useEffect(() => {
             setChatSessionId(localChatSessionId);
             const messagesResponse = await getChatSessionMessages(localChatSessionId) as any;
             if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
-              const chatMessages = messagesResponse.data.map((msg: ChatMessage) => ({
-                role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
-                content: msg.content.value || msg.content.content || '',
-                messageId: msg._id
-              }));
+              const convertedMessages = messagesResponse.data.map((msg: any) => convertServerMessageToChatMessage(msg));
+              // 배열을 평탄화 (이미지+텍스트 분리된 메시지들을 하나의 배열로)
+              const chatMessages = convertedMessages.flat();
               
               // 기존 메시지가 있으면 clear하지 않고, 없을 때만 DB에서 로드
               const currentMessages = useChatStore.getState().messages;
@@ -1460,20 +1579,22 @@ useEffect(() => {
       <ChatBox>
         {messages.map((m, idx) => {
           if (m.role === 'user') {
-            // 사용자 메시지는 transformMessageForDisplay로 간단하게 표시
-            const fileMatch = m.content.match(/\[첨부파일: (.+?)\]/);
-            const messageWithoutFile = fileMatch ? m.content.replace(/\[첨부파일: .+?\]/, '').trim() : m.content;
-            const displayText = transformMessageForDisplay(messageWithoutFile);
+            // 이미지와 텍스트를 분리해서 처리
+            const parsedContent = parseMessageContent(m.content, m.images);
             
             return (
-              <UserMessage key={idx}>
-                {displayText}
-                {fileMatch && (
-                  <div style={{ marginTop: '8px', fontSize: '14px', opacity: 0.7 }}>
-                    📎 {fileMatch[1]}
-                  </div>
+              <UserMessageContainer key={idx} hasImages={parsedContent.hasImages}>
+                {/* 이미지가 있으면 그리드로 표시 */}
+                {parsedContent.hasImages && (
+                  <ImageGrid images={parsedContent.images} />
                 )}
-              </UserMessage>
+                {/* 텍스트가 있으면 말풍선으로 표시 */}
+                {parsedContent.text && (
+                  <UserMessage>
+                    {parsedContent.text}
+                  </UserMessage>
+                )}
+              </UserMessageContainer>
             );
           } else {
 

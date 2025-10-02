@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import useAI from './useAI';
 import { useToast } from '@/components/common/ToastProvider';
-import { useChatStore } from '@/store/chatStore';
+import { useChatStore, ImageData as ChatImageData } from '@/store/chatStore';
 import { useAuthStore } from '@/store/authStore';
 import { combinePrompts } from '@/ai/promptTemplates';
 import { FileUploadData } from '@/firebase.functions';
@@ -377,26 +377,56 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       error('작업이 중단되었습니다.');
     };
 
-    // 사용자에게 보이는 메시지 생성 (간단한 버전)
+    // 사용자에게 보이는 메시지 생성
     let userDisplayContent = displayMessage; // 이미 변환된 메시지 그대로 사용
     console.log('useChatActions - displayMessage:', displayMessage);
     console.log('useChatActions - userDisplayContent 초기값:', userDisplayContent);
     
-    if (uploadedFiles.length > 0) {
-      const fileInfo = uploadedFiles.map((file) => `[첨부파일: ${file.name}]`).join('\n');
-      userDisplayContent = `${userDisplayContent}\n\n${fileInfo}`;
+    // 이미지 파일들을 ImageData 배열로 변환
+    const imageFiles = uploadedFiles.filter(file => 
+      file.mimeType?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name)
+    );
+    
+    const images: ChatImageData[] = imageFiles.map(file => ({
+      url: file.fileUri,
+      fileName: file.name,
+      mimeType: file.mimeType,
+    }));
+    
+    // 이미지가 있으면 별도 메시지로, 텍스트는 이미지와 분리
+    if (images.length > 0) {
+      // 1. 이미지만 있는 메시지 추가
+      addMessage({ 
+        role: 'user', 
+        content: '', // 빈 텍스트
+        images: images 
+      });
+      
+      // 2. 텍스트가 있으면 별도 메시지로 추가
+      if (userDisplayContent.trim()) {
+        addMessage({ 
+          role: 'user', 
+          content: userDisplayContent 
+        });
+      }
+    } else {
+      // 이미지가 없으면 기존처럼 텍스트만 추가
+      addMessage({ role: 'user', content: userDisplayContent });
     }
 
-    console.log('useChatActions - userDisplayContent 최종값:', userDisplayContent);
-
-    // AI에게 전달할 실제 메시지 내용 (상세 정보 포함)
-    let messageContent = input; // 원본 input (AI 프롬프트 등 포함)
-    
-    // 사용자 메시지 임시 추가 (표시용은 간단하게)
-    addMessage({ role: 'user', content: userDisplayContent });
     // ai 메시지는 isLoading: true로 추가 (실시간 업데이트용)
     addMessage({ role: 'ai', content: '', isLoading: true });
     console.log('사용자 메시지 및 빈 AI 메시지 추가 완료', { userDisplayContent }, { role: 'ai', content: '', isLoading: true });
+
+    console.log('useChatActions - userDisplayContent 최종값:', userDisplayContent);
+
+    // AI에게 전달할 실제 메시지 내용 (파일 정보 포함)
+    let messageContent = input; // 원본 input (AI 프롬프트 등 포함)
+    
+    if (uploadedFiles.length > 0) {
+      const fileInfo = uploadedFiles.map((file) => `[첨부파일: ${file.name}]`).join('\n');
+      messageContent = `${messageContent}\n\n${fileInfo}`;
+    }
 
     // URL 감지 및 크롤링 처리 (UI 로딩 상태가 이미 표시된 후 실행)
     const urlPattern = /https?:\/\/[^\s]+/gi;
@@ -610,7 +640,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       // DB 저장용 메시지 내용
       const messageContentForDB = {
         content: input, // AI에게 전달되는 원본 내용
-        file: uploadedFileNames.length > 0 ? uploadedFileNames[0] : undefined
+        files: uploadedFileNames.length > 0 ? uploadedFileNames : undefined  // 모든 파일명을 배열로 저장
       };
 
       const filesForAI = filesForGemini.map(file => ({

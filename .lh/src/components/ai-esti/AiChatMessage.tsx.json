@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1756086290711,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1759367841676,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,9 @@\n import ReactMarkdown, { Options } from 'react-markdown';\n import remarkGfm from 'remark-gfm';\n import rehypeRaw from 'rehype-raw';\n import React, { useMemo, useState, useEffect } from 'react';\n-import useAuthStore from '@/store/authStore';\n+import { useAuthStore } from '@/store/authStore';\n import { useLang } from '@/contexts/LangContext';\n import { aiChatDictionary } from '@/lib/i18n/aiChat';\n import { ChatDictionary } from '@/app/ai/components/StepData'; // ChatDictionary 타입 임포트\n import useAiFlowStore from '@/store/aiFlowStore';\n@@ -748,11 +748,11 @@\n   };\n   const currentDate = formatDate(new Date());\n   const user = useAuthStore((state) => state.user);\n \n-  const userName = user?.name;\n+  const userName = user?.name || '비회원';\n   const userPhone = user?.cellphone;\n-  const userEmail = user?.email;\n+  const userEmail = user?.email || '비회원';\n \n   // eslint-disable-next-line @typescript-eslint/no-explicit-any\n   const recipientName =\n     invoiceData.project || (t as any).recipientName || '역경매 플랫폼 개발';\n@@ -1009,18 +1009,18 @@\n           {/* Row 2: 고객명, 대표명 */}\n           <tr>\n             <td style={headerCellStyle}>{clientNameLabel}</td>\n             <td style={clientValueCellStyle}>\n-              {userName || 'guest'} {userPhone ? ' 82+' : ''} {userPhone || ''}\n+              {userName || '비회원'} {userPhone ? ' 82+' : ''} {userPhone || ''}\n             </td>\n             <td style={headerCellStyle}>{supplierCeoLabel}</td>\n             <td style={valueCellStyle}>{representativeName}</td>\n           </tr>\n \n           {/* Row 3: 메일주소, 사업자번호 */}\n           <tr>\n             <td style={headerCellStyle}>{clientEmailLabel}</td>\n-            <td style={valueCellStyle}>{userEmail || 'guest'}</td>\n+            <td style={valueCellStyle}>{userEmail || '비회원'}</td>\n             <td style={headerCellStyle}>{supplierBizNumLabel}</td>\n             <td style={valueCellStyle}>{companyRegistrationNumber}</td>\n           </tr>\n           {/* Row 4: 견적명, 업종·업태 */}\n@@ -1299,9 +1299,9 @@\n   const [isMobileView, setIsMobileView] = useState(false);\n \n   useEffect(() => {\n     const handleResize = () => {\n-      setIsMobileView(window.innerWidth < 750);\n+      setIsMobileView(window.innerWidth < 768);\n     };\n     handleResize();\n     window.addEventListener('resize', handleResize);\n     return () => window.removeEventListener('resize', handleResize);\n"
                 }
             ],
             "date": 1756086290711,

@@ -7,7 +7,7 @@ import ReactMarkdown, { Options } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import React, { useMemo, useState, useEffect } from 'react';
-import useAuthStore from '@/store/authStore';
+import { useAuthStore } from '@/store/authStore';
 import { useLang } from '@/contexts/LangContext';
 import { aiChatDictionary } from '@/lib/i18n/aiChat';
 import { ChatDictionary } from '@/app/ai/components/StepData'; // ChatDictionary 타입 임포트

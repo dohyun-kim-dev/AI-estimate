@@ -1,0 +1,561 @@
+import React, { useState, useRef } from 'react';
+import styled from 'styled-components';
+import { ImageData } from '@/store/chatStore';
+
+interface ImageGridProps {
+  images: ImageData[];
+  maxRows?: number;
+}
+
+const GridContainer = styled.div<{ imageCount: number; totalRows: number }>`
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  max-width: 320px;
+  
+  grid-template-columns: repeat(3, 1fr); /* 항상 3열 */
+  grid-template-rows: repeat(${({ totalRows }) => totalRows}, 1fr);
+`;
+
+const ImageContainer = styled.div<{ isFirst?: boolean; imageCount: number }>`
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  aspect-ratio: 1;
+  cursor: pointer;
+  
+  &:hover {
+    transform: scale(1.02);
+    transition: transform 0.2s ease;
+  }
+`;
+
+const Image = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+`;
+
+const MoreIndicator = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  backdrop-filter: blur(2px);
+  cursor: pointer;
+`;
+
+// iOS 최적화된 이미지 컴포넌트 (로딩 속도 개선)
+const OptimizedModalImage = ({ src, alt, ...props }: { src: string; alt: string; [key: string]: any }) => {
+  const [currentSrc, setCurrentSrc] = useState(src);
+  const [hasError, setHasError] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  const handleLoad = () => {
+    setTimeout(() => {
+      setIsLoaded(true);
+    }, 15);
+  };
+  
+  const handleError = () => {
+    if (!hasError && !src.startsWith("data:image/svg+xml")) {
+      setHasError(true);
+      setCurrentSrc("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIyIDEyQzIyIDEzLjk3NzggMjEuNDE0IDE1Ljg2NjYgMjAuMzcxNCAxNy40ODI5QzE5LjMyODkgMTkuMDk5MiAxNy44NzQ0IDIwLjM3MjYgMTYuMjAyOCAyMS4xNzU2QzE0LjUzMTMgMjEuOTc4NyAxMi43MTA2IDIyLjI5NTQgMTAuOTAzNyAyMi4wOTc2QzkuMDk2NzIgMjEuODk5OCA3LjM4NDMzIDIxLjE5NTMgNiAyMC4wOTEyQzQuNjE1NjcgMTguOTg3MSAzLjUzNzI1IDE3LjUxNjkgMi44NjMwNyAxNS44NDM3QzIuMTg4OSAxNC4xNzA0IDEuOTQ2NDMgMTIuMzQ2NSAyLjE3OTY3IDEwLjU1MDNDMi40MTI5MSA4Ljc1NDEzIDMuMTEzODUgNy4wNDcxOSA0LjIxNDcgNS42MTE4QzUuMzE1NTUgNC4xNzY0IDYuNzcyNjEgMy4wNjQ4MiA4LjQzNDMgMi4zNzQ3NyIgc3Ryb2tlPSIjY2NjIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIzIiBzdHJva2U9IiNjY2MiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K");
+      setIsLoaded(true);
+    }
+  };
+  
+  return (
+    <img
+      src={currentSrc}
+      alt={alt}
+      onLoad={handleLoad}
+      onError={handleError}
+      loading="lazy"
+      style={{
+        objectFit: 'contain',
+        objectPosition: 'center',
+        width: '100%',
+        height: '100%',
+        display: isLoaded ? 'block' : 'none',
+        opacity: isLoaded ? 1 : 0,
+        transition: 'opacity 0.2s ease',
+        WebkitTransform: 'translateZ(0)',
+        transform: 'translateZ(0)',
+        backfaceVisibility: 'hidden',
+        WebkitBackfaceVisibility: 'hidden',
+        ...props.style
+      }}
+      {...props}
+    />
+  );
+};
+
+// 전체화면 모달
+const FullScreenModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 9999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  isolation: isolate;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
+  
+  touch-action: pan-x pan-y;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+`;
+
+// 모달 컨테이너
+const ModalContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  touch-action: pan-x pan-y;
+  -webkit-touch-callout: none;
+`;
+
+// 슬라이더 컨테이너
+const SliderContainer = styled.div`
+  width: 100vw;
+  height: 90%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+`;
+
+// 슬라이더 래퍼
+const SliderWrapper = styled.div<{ $currentIndex: number }>`
+  display: flex;
+  height: 100%;
+  width: 100%;
+  transition: transform 0.3s ease;
+  transform: translateX(-${({ $currentIndex }) => $currentIndex * 100}%);
+`;
+
+// 슬라이드 아이템
+const SlideItem = styled.div`
+  width: 100vw;
+  min-width: 100vw;
+  max-width: 100vw;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 20px;
+  box-sizing: border-box;
+`;
+
+// 모달 이미지
+const ModalImage = styled(OptimizedModalImage)`
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+  user-select: none;
+  
+  touch-action: pan-x pan-y pinch-zoom;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+`;
+
+// 닫기 버튼
+const CloseButton = styled.button`
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  font-size: 32px;
+  font-weight: bold;
+  color: #fff;
+  cursor: pointer;
+  z-index: 99999999;
+  
+  /* 강제 원형 만들기 */
+  width: 50px !important;
+  height: 50px !important;
+  min-width: 50px !important;
+  min-height: 50px !important;
+  max-width: 50px !important;
+  max-height: 50px !important;
+  border-radius: 50% !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  flex-shrink: 0 !important;
+  
+  /* 텍스트나 콘텐츠가 버튼을 늘이지 않도록 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  @media (max-width: 768px) {
+    width: 56px !important;
+    height: 56px !important;
+    min-width: 56px !important;
+    min-height: 56px !important;
+    max-width: 56px !important;
+    max-height: 56px !important;
+    font-size: 36px;
+    top: 16px;
+    right: 16px;
+  }
+`;
+
+// 네비게이션 버튼
+const NavButton = styled.button<{ $direction: 'prev' | 'next' }>`
+  position: absolute;
+  top: 50%;
+  ${({ $direction }) => $direction === 'prev' ? 'left: 20px;' : 'right: 20px;'}
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  cursor: pointer;
+  z-index: 999998;
+  
+  /* 강제 원형 만들기 */
+  width: 50px !important;
+  height: 50px !important;
+  min-width: 50px !important;
+  min-height: 50px !important;
+  max-width: 50px !important;
+  max-height: 50px !important;
+  border-radius: 50% !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 24px;
+  flex-shrink: 0 !important;
+  
+  /* 텍스트나 콘텐츠가 버튼을 늘이지 않도록 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+  
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
+
+// 페이지네이션
+const Pagination = styled.div`
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 999998;
+`;
+
+const PaginationDot = styled.button<{ $isActive: boolean }>`
+  /* 강제 원형 만들기 */
+  width: 10px !important;
+  height: 10px !important;
+  min-width: 10px !important;
+  min-height: 10px !important;
+  max-width: 10px !important;
+  max-height: 10px !important;
+  border-radius: 50% !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  
+  border: none;
+  background: ${({ $isActive }) => $isActive ? 'white' : 'rgba(255, 255, 255, 0.5)'};
+  cursor: pointer;
+  transition: background 0.2s ease;
+  flex-shrink: 0 !important;
+  
+  /* 텍스트나 콘텐츠가 버튼을 늘이지 않도록 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  
+  &:hover {
+    background: white;
+  }
+`;
+
+const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
+  const [showModal, setShowModal] = useState(false);
+  const [modalIndex, setModalIndex] = useState(0);
+  
+  // 터치 이벤트 상태
+  const startX = useRef<number | null>(null);
+  const isDragging = useRef(false);
+  const hasMoved = useRef(false);
+  
+  if (!images || images.length === 0) return null;
+
+  // 최대 표시할 이미지 개수는 maxRows * 3 (3열)
+  const maxImages = maxRows * 3;
+  const displayImages = images.slice(0, maxImages);
+  const remainingCount = images.length - maxImages;
+  const totalRows = Math.min(Math.ceil(images.length / 3), maxRows);
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    console.error('이미지 로드 실패:', e.currentTarget.src);
+    e.currentTarget.style.display = 'none';
+  };
+
+  const openModal = (index: number) => {
+    setModalIndex(index);
+    setShowModal(true);
+    // 모바일에서 스크롤 방지
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setModalIndex(0);
+    // 스크롤 복구
+    document.body.style.overflow = '';
+  };
+
+  const goToPrevious = () => {
+    setModalIndex(prev => (prev > 0 ? prev - 1 : images.length - 1));
+  };
+
+  const goToNext = () => {
+    setModalIndex(prev => (prev < images.length - 1 ? prev + 1 : 0));
+  };
+
+  const goToSlide = (index: number) => {
+    setModalIndex(index);
+  };
+
+  // 터치 이벤트 핸들러 (모달용)
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touches = e.touches;
+    if (touches.length === 1) {
+      const touch = touches[0];
+      startX.current = touch.clientX;
+      isDragging.current = true;
+      hasMoved.current = false;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touches = e.touches;
+    
+    if (touches.length === 1 && isDragging.current) {
+      const touch = touches[0];
+      
+      if (startX.current !== null) {
+        const deltaX = touch.clientX - startX.current;
+        
+        if (Math.abs(deltaX) > 3) {
+          hasMoved.current = true;
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        
+        if (Math.abs(deltaX) > 50) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          if (deltaX > 0) {
+            goToPrevious();
+          } else {
+            goToNext();
+          }
+          
+          startX.current = null;
+          isDragging.current = false;
+        }
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    isDragging.current = false;
+    hasMoved.current = false;
+    startX.current = null;
+  };
+
+  // 모달 배경 클릭 시 닫기
+  const handleModalBackgroundClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target === e.currentTarget) {
+      closeModal();
+    }
+  };
+
+  // 키보드 네비게이션
+  React.useEffect(() => {
+    if (!showModal) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'Escape':
+          closeModal();
+          break;
+        case 'ArrowLeft':
+          goToPrevious();
+          break;
+        case 'ArrowRight':
+          goToNext();
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showModal]);
+
+  return (
+    <>
+      <GridContainer imageCount={displayImages.length} totalRows={totalRows}>
+        {displayImages.map((image, index) => (
+          <ImageContainer 
+            key={index} 
+            isFirst={index === 0}
+            imageCount={displayImages.length}
+            onClick={() => openModal(index)}
+          >
+            <Image
+              src={image.url}
+              alt={image.fileName || `이미지 ${index + 1}`}
+              onError={handleImageError}
+              loading="lazy"
+            />
+            {/* 마지막 이미지에 남은 개수 표시 */}
+            {index === maxImages - 1 && remainingCount > 0 && (
+              <MoreIndicator onClick={() => openModal(index)}>
+                +{remainingCount}
+              </MoreIndicator>
+            )}
+          </ImageContainer>
+        ))}
+      </GridContainer>
+
+      {/* 전체화면 모달 */}
+      {showModal && (
+        <FullScreenModal onClick={handleModalBackgroundClick}>
+          <ModalContainer>
+            <SliderContainer
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              <SliderWrapper $currentIndex={modalIndex}>
+                {images.map((image, index) => (
+                  <SlideItem key={index}>
+                    <ModalImage
+                      src={image.url}
+                      alt={image.fileName || `이미지 ${index + 1}`}
+                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                    />
+                  </SlideItem>
+                ))}
+              </SliderWrapper>
+            </SliderContainer>
+
+            {/* 네비게이션 버튼 */}
+            {images.length > 1 && (
+              <>
+                <NavButton 
+                  $direction="prev" 
+                  onClick={goToPrevious}
+                >
+                  ‹
+                </NavButton>
+                <NavButton 
+                  $direction="next" 
+                  onClick={goToNext}
+                >
+                  ›
+                </NavButton>
+              </>
+            )}
+
+            {/* 페이지네이션 */}
+            {images.length > 1 && (
+              <Pagination>
+                {images.map((_, index) => (
+                  <PaginationDot
+                    key={index}
+                    $isActive={index === modalIndex}
+                    onClick={() => goToSlide(index)}
+                  />
+                ))}
+              </Pagination>
+            )}
+
+            {/* 닫기 버튼 */}
+            <CloseButton onClick={closeModal}>
+              ×
+            </CloseButton>
+          </ModalContainer>
+        </FullScreenModal>
+      )}
+    </>
+  );
+};
+
+export default ImageGrid;

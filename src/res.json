@@ -3,23 +3,26 @@
     "message": "success",
     "data": [
         {
-            "_id": "68d6162381c0a324cf5f4200",
-            "user": {
-                "id": "27dd7039-5972-4ae8-8e3f-bc4509829c61",
-                "name": "김도현",
-                "cellphone": "01020625344",
-                "email": "daehyeon@heredotcorp.com",
-                "_id": "68d6162381c0a324cf5f4201"
+            "_id": "68ddd5fff0456426089ea98f",
+            "session": "790765a9-2a55-4d4f-b00c-5255d1c922fd",
+            "role": "USER",
+            "content": {
+                "content": "테스트",
+                "file": "8f4199c5-8995-4738-89c3-553ac6b7e487.webp"
             },
-            "title": "미술관 티켓 웹사이트",
-            "chatSession": "38ece760-2d7d-48d2-a993-81c6143729d7",
-            "estimateId": "201b2a9f-3e6f-47a8-8e6d-53609805e3f3",
-            "createAt": "2025-09-26 13:27:15"
+            "createAt": "2025-10-02 10:31:43"
+        },
+        {
+            "_id": "68ddd5ffddcd70d4ee784f90",
+            "session": "790765a9-2a55-4d4f-b00c-5255d1c922fd",
+            "role": "AI",
+            "content": {
+                "type": "text",
+                "value": "문의주셔서 감사합니다. 올려주신 이미지에서는 프로젝트와 관련된 특정 정보를 파악하기 어렵습니다. 궁금하신 점을 먼저 저에게 편하게 말씀해주시면 제가 답변드리거나, 논의 후 정리하여 담당 부서에 정확히 전달해 드리겠습니다."
+            },
+            "createAt": "2025-10-02 10:31:43"
         }
     ],
-    "metadata": {
-        "allCnt": 49,
-        "totalCnt": 1
-    },
+    "metadata": null,
     "error": null
 }

@@ -2,9 +2,17 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { devtools } from 'zustand/middleware'
 
+export interface ImageData {
+  url: string;
+  fileName: string;
+  mimeType?: string;
+  size?: number;
+}
+
 export type ChatMessage = {
   role: 'user' | 'ai';
   content: string;
+  images?: ImageData[]; // 이미지 배열 추가
   isLoading?: boolean;
   messageId?: string;
   estimateId?: string;
