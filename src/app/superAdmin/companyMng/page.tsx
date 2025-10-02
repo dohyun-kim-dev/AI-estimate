@@ -15,6 +15,9 @@ import ActionButton from '@/components/ActionButton';
 import { THEME_COLORS } from '@/styles/theme_colors';
 import { ThemeMode } from '@/styles/theme_colors';
 import { devLog } from '@/utils/devLogger'
+import 'dayjs/locale/ko';
+
+dayjs.locale('ko');
 
 // API 응답 타입 정의
 interface ApiResponse<T> {

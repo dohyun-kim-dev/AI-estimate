@@ -21,7 +21,9 @@ import { devLog } from '@/lib/utils/devLogger';
 import PasswordPopup from './PasswordPopup';
 import CmsResponsiveContainer from '@components/CustomList/ResponsiveList/CmsResponsiveContainer';
 import AdminFormPopup from './AdminFormPopup';
+import 'dayjs/locale/ko';
 
+dayjs.locale('ko');
 
 const PrimaryButton = styled(ActionButton)<{ $themeMode: ThemeMode }>`
   width: 110px;
@@ -60,6 +62,7 @@ type AdminUser = {
   email: string;
   cellphone: string;
   createAt: string;
+  lastLoginAt?: string;
   memo?: string;
   emailYn?: 'Y' | 'N';
   smsYn?: 'Y' | 'N';
@@ -305,6 +308,7 @@ const AdminMngPage: React.FC = () => {
             email: item.email,
             cellphone: item.cellphone,
             createAt: item.createAt,
+            lastLoginAt: item.lastLoginAt,
             memo: item.memo,
             emailYn: item.emailYn,
             smsYn: item.smsYn,
@@ -435,18 +439,18 @@ const adminDeleteClick = useCallback(
         header: '가입일',
         accessor: 'createAt',
         sortable: true,
-        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '-'),
+        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD(ddd)') : '-'),
       },
       {
         header: '최근 접속',
         accessor: 'lastLoginAt',
         sortable: true,
-        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '-'),
+        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD(ddd)') : '-'),
       },
       { header: '이름', accessor: 'name' },
-      { header: '아이디', accessor: 'adminId' },
       { header: '이메일', accessor: 'email' },
       { header: '전화번호', accessor: 'cellphone' },
+      { header: '아이디', accessor: 'adminId' },
       { 
         header: '비고', 
         accessor: 'memo',

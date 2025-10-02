@@ -108,7 +108,7 @@ const ProfileHeader = styled.div<{ $imageUrl: string | null }>`
   border-radius: 50%;
   background-size: cover;
   background-position: center;
-  background-image: url(${({ $imageUrl }) => $imageUrl || '/default-profile.png'});
+  background-image: url(${({ $imageUrl }) => $imageUrl || 'ai-astimate/no-profile.png'});
   border: 1px solid #ccc;
   flex-shrink: 0;
 `;
@@ -478,6 +478,7 @@ dayjs.locale('ko');
         header: '채팅방 생성일시',
         accessor: 'createAt',
         sortable: true,
+        width: 180,
         formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD (ddd) HH:mm ') : '-'),
       },
       {
@@ -491,6 +492,8 @@ dayjs.locale('ko');
         ),
       },
       { header: '이름', accessor: 'name',width:100, sortable: true },
+      { header: '이메일', accessor: 'email', sortable: true },
+      { header: '전화번호', accessor: 'cellphone', sortable: true },
       { header: '채팅방제목', accessor: 'title', sortable: true },
       { 
         header: '채팅방ID', 
@@ -502,9 +505,7 @@ dayjs.locale('ko');
           </span>
         )
       },
-      { header: '이메일', accessor: 'email', sortable: true },
       { header: '국가', accessor: 'nation',width:100, formatter: (value) => '대한민국' },
-      { header: '전화번호', accessor: 'cellphone', sortable: true },
       
     ],
     []

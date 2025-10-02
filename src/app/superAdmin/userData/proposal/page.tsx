@@ -40,7 +40,7 @@ const ProfileHeader = styled.div<{ $imageUrl: string | null }>`
   border-radius: 50%;
   background-size: cover;
   background-position: center;
-  background-image: url(${({ $imageUrl }) => $imageUrl || '/default-profile.png'});
+  background-image: url(${({ $imageUrl }) => $imageUrl || 'ai-astimate/no-profile.png'});
   border: 1px solid #ccc;
   flex-shrink: 0;
 `;

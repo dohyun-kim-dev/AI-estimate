@@ -22,6 +22,9 @@ import PasswordPopup from './PasswordPopup';
 import CmsResponsiveContainer from '@components/CustomList/ResponsiveList/CmsResponsiveContainer';
 import AdminFormPopup from './AdminFormPopup';
 import Switch from '@/components/Switch';
+import 'dayjs/locale/ko';
+
+dayjs.locale('ko');
 
 const PrimaryButton = styled(ActionButton)<{ $themeMode: ThemeMode }>`
   width: 110px;
@@ -492,19 +495,19 @@ const AdminMngPage: React.FC = () => {
         header: '가입일',
         accessor: 'createAt',
         sortable: true,
-        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '-'),
+        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD(ddd)') : '-'),
       },
       {
         header: '최근 접속',
         accessor: 'lastLoginAt',
         sortable: true,
-        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD') : '-'),
+        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD(ddd)') : '-'),
       },
-      { header: '이름', accessor: 'name' },
       { header: '고객사명', accessor: 'companyCode' },
-      { header: '아이디', accessor: 'adminId' },
+      { header: '이름', accessor: 'name' },
       { header: '이메일', accessor: 'email' },
       { header: '전화번호', accessor: 'cellphone' },
+      { header: '아이디', accessor: 'adminId' },
       {
         header: '알림톡 수신',
         accessor: 'receiveAlimtalk',

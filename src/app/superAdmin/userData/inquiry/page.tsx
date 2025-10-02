@@ -34,7 +34,7 @@ const ProfileHeader = styled.div<{ $imageUrl: string | null }>`
   border-radius: 50%;
   background-size: cover;
   background-position: center;
-  background-image: url(${({ $imageUrl }) => $imageUrl || '/default-profile.png'});
+  background-image: url(${({ $imageUrl }) => $imageUrl || 'ai-astimate/no-profile.png'});
   border: 1px solid #ccc;
   flex-shrink: 0;
 `;
@@ -635,12 +635,13 @@ const InquiryPage: React.FC = () => {
 
   const columns: ColumnDefinition<Inquiry>[] = useMemo(
     () => [
-      { header: 'No', accessor: 'no', sortable: true },
+      { header: 'No', accessor: 'no', sortable: true, width: 60 },
       { 
         header: '문의 일시', 
         accessor: 'inquiryDate', 
         sortable: true, 
-        formatter: (value) => dayjs(value).format('YYYY-MM-DD HH:mm') 
+        width: 180,
+        formatter: (value) => dayjs(value).format('YYYY-MM-DD(ddd) HH:mm') 
       },
       { header: '이름', accessor: 'name', sortable: true },
       { header: '아이디', accessor: 'userId', sortable: true },

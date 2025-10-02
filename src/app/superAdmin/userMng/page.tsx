@@ -30,6 +30,9 @@ import { SwitchInput } from '@/components/SwitchInput';
 import { devLog } from '@/lib/utils/devLogger';
 import CmsResponsiveContainer from '@components/CustomList/ResponsiveList/CmsResponsiveContainer';
 import ConfirmButton from '@/components/ConfirmButton';
+import 'dayjs/locale/ko';
+
+dayjs.locale('ko');
 
 const SwitchRow = styled.div`
   display: flex;
@@ -57,7 +60,7 @@ const ProfileHeader = styled.div<{ $imageUrl: string | null }>`
   border-radius: 50%;
   background-size: cover;
   background-position: center;
-  background-image: url(${({ $imageUrl }) => $imageUrl || '/default-profile.png'});
+  background-image: url(${({ $imageUrl }) => $imageUrl || '/ai-astimate/no-profile.png'});
   border: 1px solid #ccc;
   flex-shrink: 0;
   // margin-right: 8px;
@@ -484,22 +487,18 @@ const UserMngPage: React.FC = () => {
         header: '가입일시',
         accessor: 'createAt',
         sortable: true,
-        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '-'),
+        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD(ddd) HH:mm:ss') : '-'),
       },
       {
         header: '최근접속',
         accessor: 'lastLoginAt',
         sortable: true,
-        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '-'),
+        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD(ddd) HH:mm:ss') : '-'),
       },
       {
         header: '고객사명',
         accessor: 'usingService',
         formatter: (value) => (Array.isArray(value) && value.length > 0 ? value.join(', ') : '-'),
-      },
-      {
-        header: '이름',
-        accessor: 'name',
       },
       {
         header: '프로필',
@@ -510,10 +509,9 @@ const UserMngPage: React.FC = () => {
           </ProfileWrapper>
         ),
       },
-      { 
-        header: '아이디', 
-        accessor: '_id',
-        formatter: (value) => value || '-'
+      {
+        header: '이름',
+        accessor: 'name',
       },
       { 
         header: '이메일', 
@@ -521,13 +519,18 @@ const UserMngPage: React.FC = () => {
         formatter: (value) => value || '-'
       },
       { 
-        header: '국가', 
-        accessor: 'nation',
+        header: '전화번호', 
+        accessor: 'cellphone',
         formatter: (value) => value || '-' 
       },
       { 
-        header: '전화번호', 
-        accessor: 'cellphone',
+        header: '아이디', 
+        accessor: '_id',
+        formatter: (value) => value || '-'
+      },
+      { 
+        header: '국가', 
+        accessor: 'nation',
         formatter: (value) => value || '-' 
       },
       { 
