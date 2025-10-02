@@ -523,7 +523,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           }
           
           // 프로덕션 환경에서는 file 경로로 직접 접근
-          const apiHost = process.env.VITE_API_HOST || 'https://api.aigo.here-dot.co.kr';
+          const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
           return `${apiHost}/file/${serverFileName}`;
         };
         
