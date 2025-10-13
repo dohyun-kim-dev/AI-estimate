@@ -358,19 +358,23 @@ const CustomerMngPage: React.FC = () => {
       {
         header: 'No',
         accessor: 'no',
+        width: 60,
         // formatter: (value, item, index) => index + 1,
       },
       {
         header: '가입일시',
         accessor: 'createAt',
+        width:100,
+        allowWrap: true,
         sortable: true,
         formatter: (value) => (value ? dayjs(value).format('YY-MM-DD(ddd) HH:mm') : '-'),
       },
-      { header: '고객사명(KR)', accessor: 'companyName' },
-      { header: '고객사명(EN)', accessor: 'dbName' },
+      { header: '고객사명(KR)', accessor: 'companyName', width: 100 },
+      { header: '고객사명(EN)', accessor: 'dbName', width: 100 },
       {
         header: '고객사 CI',
         accessor: 'ciImage',
+        flex: 1,
         formatter: (value) => {
           if (!value) return '-';
           return (
@@ -400,6 +404,7 @@ const CustomerMngPage: React.FC = () => {
       {
         header: '라이선스',
         accessor: 'license',
+        flex:1,
         formatter: (value) => {
           switch (value) {
             case 'LIGHT': return 'Lite (고객용)';
@@ -409,7 +414,7 @@ const CustomerMngPage: React.FC = () => {
       },
       {
         header: '계약구분',
-        accessor: 'contractType',
+        accessor: 'contractType',flex:1,
         formatter: (value) => {
           switch (value) {
             case 'MONTH': return '월계약';
@@ -420,7 +425,7 @@ const CustomerMngPage: React.FC = () => {
       },
       {
         header: '계약기간',
-        accessor: 'contractStartDate',
+        accessor: 'contractStartDate',width: 100,allowWrap: true,
         formatter: (value, row) => {
           const start = row.contractStartDate ? dayjs(row.contractStartDate).format('YY-MM-DD') : '';
           const end = row.contractEndDate ? dayjs(row.contractEndDate).format('YY-MM-DD') : '';
@@ -429,7 +434,7 @@ const CustomerMngPage: React.FC = () => {
       },
       {
         header: '카테고리명',
-        accessor: 'category',
+        accessor: 'category',width:100,
         formatter: (value) => value?.name || '-',
       },
       // {
@@ -439,20 +444,20 @@ const CustomerMngPage: React.FC = () => {
       // },
       {
         header: '사업자번호',
-        accessor: 'businessNumber',
+        accessor: 'businessNumber',width:100,allowWrap: true,
         formatter: (value) => value || '-',
       },
-      { header: '대표명', accessor: 'name' },
+      { header: '대표명', accessor: 'name',flex:1 },
       {
-        header: '고객사 주소',
+        header: '고객사 주소',flex:1,allowWrap: true,
         accessor: 'address',
         formatter: (value, row) => `${row.address || ''} ${row.detailAddress || ''}`.trim() || '-',
       },
-      { header: '전화번호', accessor: 'cellphone' },
-      { header: '이메일', accessor: 'email' },
+      { header: '전화번호', accessor: 'cellphone',flex:1,allowWrap: true, },
+      { header: '이메일', accessor: 'email',flex:1,allowWrap: true },
       {
         header: '메모',
-        accessor: 'memo',
+        accessor: 'memo',flex:1,allowWrap: true,
         formatter: (value) => value || '-',
       },
     ],

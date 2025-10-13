@@ -303,6 +303,7 @@ const InquiryPage: React.FC = () => {
   const [isChatHistoryModalOpen, setIsChatHistoryModalOpen] = useState(false);
   const [selectedChatSession, setSelectedChatSession] = useState<string>('');
   const [selectedUserName, setSelectedUserName] = useState<string>('');
+  const [selectedChatTitle, setSelectedChatTitle] = useState<string>('');
   const listRef = useRef<{ refetch: () => void }>(null);
   const { isRoot, ready } = useAdminAuth(); // ready 상태 추가
   
@@ -396,10 +397,11 @@ const InquiryPage: React.FC = () => {
   };
 
   // 대화 이력 보기 핸들러
-  const handleChatHistoryClick = (chatSession?: string, userName?: string) => {
+  const handleChatHistoryClick = (chatSession?: string, userName?: string, chatTitle?: string) => {
     if (chatSession) {
       setSelectedChatSession(chatSession);
       setSelectedUserName(userName || '사용자');
+      setSelectedChatTitle(chatTitle || '견적 문의');
       setIsChatHistoryModalOpen(true);
     } else {
       alert('대화 이력이 없습니다.');
@@ -411,6 +413,7 @@ const InquiryPage: React.FC = () => {
     setIsChatHistoryModalOpen(false);
     setSelectedChatSession('');
     setSelectedUserName('');
+    setSelectedChatTitle('');
   };
 
   // PDF 다운로드 핸들러
@@ -745,7 +748,7 @@ const InquiryPage: React.FC = () => {
         formatter: (value, row) => (
             <DetailActionButton 
               $themeMode="light" 
-              onClick={() => handleChatHistoryClick(row.chatSession, row.name)}
+              onClick={() => handleChatHistoryClick(row.chatSession, row.name, row.title)}
             >
               대화 이력 보기
             </DetailActionButton>
@@ -789,6 +792,7 @@ const InquiryPage: React.FC = () => {
         onClose={closeChatHistoryModal}
         chatSessionId={selectedChatSession}
         userName={selectedUserName}
+        chatTitle={selectedChatTitle}
       />
     </>
   );

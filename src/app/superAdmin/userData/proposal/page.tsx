@@ -306,7 +306,7 @@ const ProposalDownloadPage: React.FC = () => {
         },
       },
       { header: '이름', accessor: 'user', flex: 0.7, sortable: true },
-      { header: '연락처', accessor: 'cellphone', flex: 1, sortable: true, width:120 },
+      { header: '연락처', accessor: 'cellphone', flex: 1, sortable: true, width:120, },
       { header: '이메일', accessor: 'email', flex: 1.2, sortable: true, allowWrap: true },
       { header: '아이디', accessor: 'userId', flex: 1.2, sortable: true, allowWrap: true },
       { header: '견적 제목', accessor: 'title', flex: 2, allowWrap: true },
@@ -314,8 +314,9 @@ const ProposalDownloadPage: React.FC = () => {
         header: '파일다운로드',
         accessor: '_id',
         width: 120,
-        formatter: (value) => (
-          <DownloadButton onClick={() => handleDownloadFile("b3434c8a-1d19-4e80-8499-4da501e6ff84")}>
+        noPopup: true,
+        formatter: (value, row) => (
+          <DownloadButton onClick={() => handleDownloadFile(row._id)}>
             파일 다운로드
           </DownloadButton>
         ),
@@ -324,8 +325,9 @@ const ProposalDownloadPage: React.FC = () => {
         header: '견적xlx다운',
         accessor: '_id',
         width: 120,
-        formatter: (value) => (
-          <ExcelDownloadButton onClick={() => handleExcelDownload("b3434c8a-1d19-4e80-8499-4da501e6ff84")}>
+        noPopup: true,
+        formatter: (value, row) => (
+          <ExcelDownloadButton onClick={() => handleExcelDownload(row._id)}>
             엑셀 다운로드
           </ExcelDownloadButton>
         ),

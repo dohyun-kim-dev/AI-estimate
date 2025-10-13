@@ -43,7 +43,7 @@ const GridContainer = styled.div<{ imageCount: number; totalRows: number }>`
   position: relative;
   z-index: 1;
 `;
-
+ 
 const ImageContainer = styled.div<{ isFirst?: boolean; imageCount: number }>`
   position: relative;
   overflow: hidden;
@@ -91,7 +91,7 @@ const ImageContainer = styled.div<{ isFirst?: boolean; imageCount: number }>`
     transition: transform 0.2s ease;
   }
 `;
-
+ 
 const Image = styled.img`
   width: 100%;
   height: 100%;
@@ -429,12 +429,25 @@ const NavButton = styled.button<{ $direction: 'prev' | 'next' }>`
   align-items: center !important;
   justify-content: center !important;
   font-size: 24px;
+  font-weight: normal;
   flex-shrink: 0 !important;
+  
+  /* 텍스트 중심 정렬을 위한 추가 설정 */
+  line-height: 1 !important;
+  font-family: Arial, sans-serif;
+  text-align: center !important;
+  vertical-align: middle;
   
   /* 텍스트나 콘텐츠가 버튼을 늘이지 않도록 */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: clip;
+  
+  /* 좌우 화살표의 시각적 중심 보정 */
+  ${({ $direction }) => $direction === 'prev'
+    ? 'padding-right: 2px !important;'
+    : 'padding-left: 2px !important;'
+  }
   
   &:hover {
     background: rgba(255, 255, 255, 0.2);
@@ -803,3 +816,4 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
 };
  
 export default ImageGrid;
+ 

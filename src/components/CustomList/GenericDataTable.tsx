@@ -126,7 +126,8 @@ const GenericDataTable = <T extends object>({
               </LoadingWrapper>
             </TdNoData>
           </tr>
-        ) : error ? (
+        ) : 
+        error ? (
           <tr>
             <TdNoData colSpan={columns.length}>
               <NoDataWrapper>
@@ -138,7 +139,8 @@ const GenericDataTable = <T extends object>({
           <tr>
             <TdNoData colSpan={columns.length}>
               <NoDataWrapper>
-                <p>데이터가 없습니다.</p>
+                <img src="/cms/nodata.svg" alt="nodata" />
+                <p>데이터가 없습니다. <br /> 다시 한번 조회해 주세요</p>
               </NoDataWrapper>
             </TdNoData>
           </tr>
@@ -230,7 +232,7 @@ const Td = styled.td<{ $allowWrap?: boolean }>`
   text-align: center;
   border: none;
   position: relative; /* 툴팁 위치 기준점 */
-  vertical-align: ${({ $allowWrap }) => $allowWrap ? 'top' : 'middle'};
+  vertical-align: middle;
   
   /* 기본 스타일 */
   ${({ $allowWrap }) => 
@@ -272,6 +274,14 @@ const TdNoData = styled.td`
 const NoDataWrapper = styled.div`
   text-align: center;
   width: 100%;
+  color: #747474;
+
+   img {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
+    margin-bottom: 12px;
+  }
 `;
 
 const LoadingWrapper = styled.div`

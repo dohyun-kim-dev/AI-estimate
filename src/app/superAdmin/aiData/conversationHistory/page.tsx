@@ -581,6 +581,7 @@ dayjs.locale('ko');
         onClose={closeChatHistoryModal}
         chatSessionId={selectedChat?.chatSessionId || ''}
         userName={selectedChat?.name}
+        chatTitle={selectedChat?.title}
       />
     </>
   );

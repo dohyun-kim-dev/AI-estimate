@@ -63,10 +63,18 @@ export function PageLoaderProvider({ children }: { children: React.ReactNode }) 
   pageLoaderController.open = open
   pageLoaderController.close = close
 
+  // URL에 'superadmin'이 포함된 경우 로더 표시하지 않음
+  const shouldShowLoader = () => {
+    if (typeof window !== 'undefined') {
+      return !window.location.pathname.includes('superadmin')
+    }
+    return true
+  }
+
   return (
     <Ctx.Provider value={{ open, close }}>
       {children}
-      {visible && (
+      {visible && shouldShowLoader() && (
         <Overlay>
           <Spinner />
           <LoadingText>{message}</LoadingText>

@@ -8,7 +8,7 @@ import CmsPopup from '@/components/CmsPopup';
 import { devLog } from '@/utils/devLogger'
 import ImageGrid from '@/components/ai-esti/ImageGrid';
 import { ImageData } from '@/store/chatStore';
-
+ 
 // 메시지 타입 정의
 import type { FileUploadData } from '@/firebase.functions';
 interface ChatMessage {
@@ -25,39 +25,41 @@ interface ChatMessage {
   createAt: string;
   files?: FileUploadData[]; // 클라이언트에서 변환된 파일 정보
 }
-
+ 
 const Container = styled.div`
   max-width: 100%;
   width: 100%;
   padding: 1px;
   padding-bottom: 20px;
-  max-height: 70vh;
+  max-height: 90vh;
   overflow-y: auto;
-
+  overflow-x: hidden; /* 가로 스크롤 방지 */
+  box-sizing: border-box;
+ 
   /* 윈도우/크롬 스크롤바 */
   &::-webkit-scrollbar {
     width: 8px;
   }
-
+ 
   &::-webkit-scrollbar-track {
     background: #000;
     border-radius: 4px;
   }
-
+ 
   &::-webkit-scrollbar-thumb {
     background: #868686;
     border-radius: 4px;
   }
-
+ 
   &::-webkit-scrollbar-thumb:hover {
     background: #999;
   }
-
+ 
   /* 파이어폭스 스크롤바 */
   scrollbar-width: thin;
   scrollbar-color: #868686 #000;
 `;
-
+ 
 const ChatBox = styled.div`
   display: flex;
   flex-direction: column;
@@ -66,31 +68,35 @@ const ChatBox = styled.div`
   border-radius: 8px;
   padding: 12px;
   min-height: 320px;
-
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden; /* 가로 스크롤 방지 */
+ 
   /* 윈도우/크롬 스크롤바 */
   &::-webkit-scrollbar {
     width: 8px;
   }
-
+ 
   &::-webkit-scrollbar-track {
     background: #000;
     border-radius: 4px;
   }
-
+ 
   &::-webkit-scrollbar-thumb {
     background: #868686;
     border-radius: 4px;
   }
-
+ 
   &::-webkit-scrollbar-thumb:hover {
     background: #999;
   }
-
+ 
   /* 파이어폭스 스크롤바 */
   scrollbar-width: thin;
   scrollbar-color: #868686 #000;
 `;
-
+ 
 const UserMessage = styled.div`
   align-self: flex-end;
   background: #383838;
@@ -100,40 +106,82 @@ const UserMessage = styled.div`
   white-space: pre-wrap;
   font-size: 16px;
   line-height: 1.5;
+  max-width: 100%;
+  word-wrap: break-word;
+  word-break: break-word;
+  box-sizing: border-box;
 `;
-
+ 
 const UserMessageContainer = styled.div<{ hasImages?: boolean }>`
   align-self: flex-end;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   max-width: 80%;
+  min-width: 0; /* flexbox 축소 허용 */
   gap: 8px;
+  box-sizing: border-box;
+  
+  /* 이미지가 있을 때는 더 넓게 */
+  ${({ hasImages }) => hasImages && `
+    max-width: 90%;
+  `}
 `;
-
+ 
 const StyledAiMessage = styled(ShareAiResponseMessage)<{ isFullWidth?: boolean }>`
   padding: 0;
   max-width: ${({ isFullWidth }) => (isFullWidth ? '100%' : '100%')};
   align-self: flex-start;
+  min-width: 0; /* flexbox 축소 허용 */
+  box-sizing: border-box;
+  overflow-x: hidden; /* 내부 콘텐츠 가로 스크롤 방지 */
 `;
-
+ 
 const LoadingContainer = styled.div`
   text-align: center;
   color: #fff;
   padding: 40px 20px;
 `;
-
+ 
 const ErrorContainer = styled.div`
   text-align: center;
   color: #d32f2f;
   padding: 20px;
 `;
-
+ 
 const PopupFooter = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
   margin-top: 24px;
+`;
+ 
+const ChatHeader = styled.div`
+  padding: 16px 20px;
+`;
+
+const ChatTitle = styled.h2`
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  margin-bottom: 8px;
+`;
+
+const ChatSubtitle = styled.div`
+  color: #999;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const UserBadge = styled.span`
+  background: #333;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
 `;
 
 const CloseButton = styled.button`
@@ -151,26 +199,28 @@ const CloseButton = styled.button`
     opacity: 0.8;
   }
 `;
-
+ 
 interface ChatHistoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   chatSessionId: string;
   userName?: string;
+  chatTitle?: string; // 채팅방 제목 추가
 }
-
-const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  chatSessionId, 
-  userName 
+ 
+const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
+  isOpen,
+  onClose,
+  chatSessionId,
+  userName,
+  chatTitle
 }) => {
   const { setSessionId, addMessage, messages, clearMessages } = useShareChatStore();
   // 항상 다크모드로 설정
   const isDarkMode = true;
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
+ 
   // 견적서 메시지 감지 함수
   const isEstimateMessage = (content: string) => {
     if (typeof content !== 'string') return false;
@@ -186,7 +236,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
     
     return false;
   };
-
+ 
   // 유저 메시지에서 ai 프롬프트(견적 정보 등) 제거 및 액션별 메시지 변환
   const stripAiPrompt = (text: string) => {
     // AI 예산 줄이기 패턴 감지 및 변환
@@ -223,7 +273,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
     
     return cleanedText;
   };
-
+ 
   const parseMessageContent = (content: string, files?: FileUploadData[]) => {
     console.log('🔍 parseMessageContent 호출:', { content, files });
     
@@ -303,11 +353,11 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
     console.log('🔍 parseMessageContent 결과 (일반):', result);
     return result;
   };
-
+ 
   useEffect(() => {
     const loadChatMessages = async () => {
       if (!chatSessionId || !isOpen) return;
-
+ 
       setLoading(true);
       setErrorMessage(null);
       
@@ -332,7 +382,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
           // 응답이 직접 API 응답 객체인 경우
           if ('statusCode' in messagesResponse && messagesResponse.statusCode === 200) {
             messages = Array.isArray(messagesResponse.data) ? messagesResponse.data : [];
-          } 
+          }
           // 응답이 배열로 감싸져 있는 경우 (callAdminApi 특성)
           else if (Array.isArray(messagesResponse) && messagesResponse[0]) {
             const firstItem = messagesResponse[0];
@@ -419,10 +469,10 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
         setLoading(false);
       }
     };
-
+ 
     loadChatMessages();
   }, [chatSessionId, isOpen, setSessionId, addMessage, clearMessages]);
-
+ 
   const renderContent = () => {
     if (loading) {
       return (
@@ -431,7 +481,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
         </LoadingContainer>
       );
     }
-
+ 
     if (errorMessage) {
       return (
         <ErrorContainer>
@@ -439,7 +489,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
         </ErrorContainer>
       );
     }
-
+ 
     return (
       <ChatBox>
         {messages.map((message, index) => {
@@ -470,7 +520,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
             return (
               <StyledAiMessage
                 key={index}
-                content={<AiMessageContent content={message.content}/>} 
+                content={<AiMessageContent content={message.content}/>}
                 profileImage="/ai-estimate/pretty.png"
                 name="강유하"
                 chatSessionId={chatSessionId}
@@ -482,7 +532,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
       </ChatBox>
     );
   };
-
+ 
   return (
     <CmsPopup
       title={`${userName ? `${userName}의 ` : ''}채팅 이력 - ${chatSessionId}`}
@@ -496,12 +546,25 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
           <CloseButton onClick={onClose}>닫기</CloseButton>
         </PopupFooter>
       }
+
+      
     >
+
+              {/* 채팅방 제목 헤더 */}
+      <ChatHeader>
+        <ChatTitle>{chatTitle || '채팅방'}</ChatTitle>
+        <ChatSubtitle>
+          <UserBadge>{userName || '사용자'}</UserBadge>
+          <span>세션 ID: {chatSessionId}</span>
+        </ChatSubtitle>
+      </ChatHeader>
+      
       <Container>
         {renderContent()}
       </Container>
     </CmsPopup>
   );
 };
-
+ 
 export default ChatHistoryModal;
+ 

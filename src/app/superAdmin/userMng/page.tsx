@@ -105,6 +105,9 @@ const FooterButton = styled.button`
   font-size: 16px;
   cursor: pointer;
   border: none;
+
+  &:hover{
+  border: 1px solid ${AppColors.border};
 `;
 
 const CancelButton = styled(FooterButton)`

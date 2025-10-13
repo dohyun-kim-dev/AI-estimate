@@ -159,7 +159,9 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   // 고객사 변경 콜백 - 상태만 저장 (API 호출 없음)
   const handleCompanyChange = (companyCode: string | null, companyName: string) => {
     setCurrentParams(prev => ({ ...prev, companyCode: companyCode || undefined }));
-  };  return (
+  };  
+  
+  return (
     <GenericListUI<T>
       title={title}
       excelFileName="데이터 목록"

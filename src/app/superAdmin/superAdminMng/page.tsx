@@ -433,22 +433,23 @@ const adminDeleteClick = useCallback(
       {
         header: 'No',
         accessor: 'no',
+        width:60,
         // formatter: (value, item, index) => index + 1,
       },
       {
         header: '가입일',
         accessor: 'createAt',
         sortable: true,
-        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD(ddd)') : '-'),
+        formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd)') : '-'),
       },
       {
         header: '최근 접속',
         accessor: 'lastLoginAt',
         sortable: true,
-        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD(ddd)') : '-'),
+        formatter: (value) => (value ? dayjs(value).format(('YY.MM.DD(ddd)')) : '-'),
       },
       { header: '이름', accessor: 'name' },
-      { header: '이메일', accessor: 'email' },
+      { header: '이메일', accessor: 'email',allowWrap: true, },
       { header: '전화번호', accessor: 'cellphone' },
       { header: '아이디', accessor: 'adminId' },
       { 

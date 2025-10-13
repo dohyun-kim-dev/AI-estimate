@@ -5,7 +5,9 @@ import styled from 'styled-components';
 import { THEME_COLORS, ThemeMode } from "@/styles/theme_colors";
 import { getCompanyList } from '@/lib/api/admin/adminApi';
 import CmsPopup from '@/components/CmsPopup';
-import { devLog } from '@/utils/devLogger'
+import { devLog } from '@/utils/devLogger';
+import dayjs from 'dayjs';
+import 'dayjs/locale/ko';
 
 interface Company {
   _id: string;
@@ -56,6 +58,9 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // dayjs 한국어 locale 설정
+  dayjs.locale('ko');
 
   // 고객사 목록 조회 함수
   const loadCompanyList = async (keyword?: string) => {
@@ -139,6 +144,7 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
     if (isOpen) {
       setCompanies([]);
       setSearchTerm('');
+      loadCompanyList(); 
     }
   }, [isOpen]);
 
@@ -223,7 +229,7 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
                     $isEven={index % 2 === 1}
                   >
                     <td>{index + 1}</td>
-                    <td>{company.createAt}</td>
+                    <td>{dayjs(company.createAt).format('YY.MM.DD(ddd)')}</td>
                     <td>{company.companyName || company.name}</td>
                     <td>{company.name}</td>
                   </TableRow>
