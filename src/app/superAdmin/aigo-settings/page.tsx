@@ -3,11 +3,11 @@ import styled from 'styled-components';
 import TextField from '@/components/common/TextField';
 import TextArea from '@/components/common/TextArea';
 import CheckBox from '@/components/common/CheckBox';
+import BidUnitSetting from '@/components/BidUnitSetting';
 import Switch from '@components/Switch';
 import { AppColors } from '@styles/colors';
 import { ThemeProvider } from "styled-components";
-import { lightTheme } from "@styles/theme"; 
-import { Button } from '@mui/material';
+import { lightTheme } from "@styles/theme";
 
 const Slider = styled.input.attrs({ type: 'range' })<{ value: number }>`
   width: 100%;
@@ -352,13 +352,10 @@ export default function AigoSettingsPage() {
     basicRate: '',
     advancedRate: '',
     premiumRate: '',
-    // 단위 기준 설정
-    unitWeek: false,
-    unitMonth: false,
-    unitAmount: false,
-    // 단위 설정
-    unitFixed: false,
-    unitDynamic: false
+    // 단위 기준 설정 (단일 선택)
+    unitBasisType: 'month' as 'week' | 'month' | 'amount',
+    // 단위 설정 (단일 선택)
+    unitSettingType: '' as '' | 'fixed' | 'dynamic'
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -377,6 +374,20 @@ export default function AigoSettingsPage() {
     setFormData(prev => ({
       ...prev,
       [name]: checked,
+    }));
+  };
+
+  const handleUnitBasisChange = (unitType: 'week' | 'month' | 'amount') => {
+    setFormData(prev => ({
+      ...prev,
+      unitBasisType: unitType
+    }));
+  };
+
+  const handleUnitSettingChange = (settingType: 'fixed' | 'dynamic') => {
+    setFormData(prev => ({
+      ...prev,
+      unitSettingType: prev.unitSettingType === settingType ? '' : settingType
     }));
   };
 
@@ -574,22 +585,22 @@ export default function AigoSettingsPage() {
                     <CheckBox
                       id="unitWeek"
                       label="주"
-                      checked={formData.unitWeek}
-                      onChange={(checked) => handleCheckBoxChange('unitWeek', checked)}
+                      checked={formData.unitBasisType === 'week'}
+                      onChange={() => handleUnitBasisChange('week')}
                       color="#636994"
                     />
                     <CheckBox
                       id="unitMonth"
                       label="달"
-                      checked={formData.unitMonth}
-                      onChange={(checked) => handleCheckBoxChange('unitMonth', checked)}
+                      checked={formData.unitBasisType === 'month'}
+                      onChange={() => handleUnitBasisChange('month')}
                       color="#636994"
                     />
                     <CheckBox
                       id="unitAmount"
                       label="수량"
-                      checked={formData.unitAmount}
-                      onChange={(checked) => handleCheckBoxChange('unitAmount', checked)}
+                      checked={formData.unitBasisType === 'amount'}
+                      onChange={() => handleUnitBasisChange('amount')}
                       color="#636994"
                     />
                   </div>
@@ -642,18 +653,25 @@ export default function AigoSettingsPage() {
                   <CheckBox
                     id="unitFixed"
                     label="단위고정설정"
-                    checked={formData.unitFixed}
-                    onChange={(checked) => handleCheckBoxChange('unitFixed', checked)}
+                    checked={formData.unitSettingType === 'fixed'}
+                    onChange={() => handleUnitSettingChange('fixed')}
                     color="#636994"
                   />
                   <CheckBox
                     id="unitDynamic"
                     label="단위 동작 설정"
-                    checked={formData.unitDynamic}
-                    onChange={(checked) => handleCheckBoxChange('unitDynamic', checked)}
+                    checked={formData.unitSettingType === 'dynamic'}
+                    onChange={() => handleUnitSettingChange('dynamic')}
                     color="#636994"
                   />
                 </div>
+                
+                {formData.unitSettingType && (
+                  <BidUnitSetting
+                    unitType={formData.unitBasisType}
+                    settingType={formData.unitSettingType}
+                  />
+                )}
               </div>
               
               <div>

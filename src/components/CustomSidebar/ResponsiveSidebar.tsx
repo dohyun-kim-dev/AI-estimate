@@ -62,7 +62,7 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({
           onFooterClick={onFooterClick}
         >
           <AppBar $sidebarWidth={isCollapsed ? 80 : 250}>
-            <LeftLogo src="/logo.png" alt="logo" />
+            <LeftLogo src="/favicon.png" alt="logo" />
             <CenterNotice>
               {recentNotices.length > 0 ? recentNotices[0] : '최근 공지가 없습니다.'}
             </CenterNotice>
@@ -70,7 +70,8 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({
               <DateText>{dayjs().format('YYYY.MM.DD')}</DateText>
               <SettingsContainer>
                 <SettingsButton onClick={handleSettingsClick}>
-                  <SettingsIcon />
+                  {/* <SettingsIcon /> */}
+                  <img src="/cms/AI_setting.png" alt="setting" width='32' height='32' />
                 </SettingsButton>
                 <SettingsMenu $isvisible={showSettingsMenu}>
                   <MenuItem onClick={() => handleNavigate('/superadmin/company-settings')}>회사정보 설정</MenuItem>
@@ -219,7 +220,7 @@ const SettingsButton = styled.button`
   height: 32px;
   border-radius: 50%;
   border: none;
-  background-color: #999;
+  // background-color: #999;
   color: #fff;
   cursor: pointer;
   display: flex;
