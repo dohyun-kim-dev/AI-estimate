@@ -43,6 +43,7 @@ type ChatHistory = {
   no: number;
   _id: string; // 채팅방 ID
   title: string; // 채팅방 제목
+  firstQuestion?: string; // 첫번째 질문
   isGuest: boolean;
   userInfo?: {
     _id: string;
@@ -200,6 +201,51 @@ const CloseButton = styled.button`
   }
 `;
 
+const ChatIdWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+`;
+
+const ChatIdText = styled.span`
+  font-family: monospace;
+  font-size: 12px;
+  color: #666;
+  flex: 1;
+  word-break: break-all;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+  max-height: 2.4em; /* line-height * 2 */
+`;
+
+const CopyIconButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px;
+  flex-shrink: 0;
+  
+  &:hover {
+    background-color: #f0f0f0;
+  }
+  
+  img {
+    width: 16px;
+    height: 16px;
+  }
+`;
+
 // 대화 이력 상세 데이터 타입
 type ChatDetail = {
   no: number;
@@ -239,14 +285,45 @@ dayjs.locale('ko');
   };
 
   const handleCompanySelect = useCallback((company: { id: string; name: string }) => {
+    devLog('=== Company selected ===:', company);
+    
+    if (!company.id) {
+      toast.error('회사 코드가 없습니다. 고객사를 다시 선택해주세요.');
+      return;
+    }
+    
+    // 상태 업데이트
     setSelectedCompanyCode(company.id);
     setSelectedCompanyName(company.name);
-    
-    // 고객사 선택 시 즉시 데이터 다시 조회
-    if (listRef.current) {
+  }, []);
+
+  // selectedCompanyCode 변경 시 refetch 실행
+  React.useEffect(() => {
+    if (selectedCompanyCode && listRef.current) {
+      devLog('🏢 Company 변경 감지, refetch 실행:', selectedCompanyCode);
       listRef.current.refetch();
     }
-  }, []);
+  }, [selectedCompanyCode]);
+
+  // 클립보드에 채팅방 링크 복사 함수
+  const handleCopyToClipboard = useCallback((chatSessionId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // 행 클릭 이벤트 방지
+    
+    if (!selectedCompanyCode) {
+      toast.error('고객사를 선택해주세요.');
+      return;
+    }
+    
+    const currentUrl = window.location.origin;
+    const shareUrl = `${currentUrl}/aiclient/${selectedCompanyCode}/ai/share/${chatSessionId}`;
+    
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      toast.success('링크가 클립보드에 복사되었습니다.');
+    }).catch((err) => {
+      console.error('클립보드 복사 실패:', err);
+      toast.error('클립보드 복사에 실패했습니다.');
+    });
+  }, [selectedCompanyCode]);
 //이런 느낌으로 api 연동
   // const fetchData = useCallback(
   //   async (params: FetchParams): Promise<FetchResult<User>> => {
@@ -401,14 +478,14 @@ dayjs.locale('ko');
         const fromDate = params.fromDate || dateRange?.fromDate || dayjs().subtract(3, 'month').format('YYYY-MM-DD');
         const toDate = params.toDate || dateRange?.toDate || dayjs().format('YYYY-MM-DD');
         
-        devLog('🔍 [fetchData 호출]', { searchKeyword, fromDate, toDate });
+        devLog('🔍 [fetchData 호출]', { searchKeyword, fromDate, toDate, selectedCompanyCode });
         
         // API 호출
         const response = await getChatRoomList({
           keyword: searchKeyword,
           fromDate: fromDate,
           toDate: toDate,
-          companyCode: selectedCompanyCode || 'heredot',
+          companyCode: selectedCompanyCode || '',
         });
         
         devLog('✅ [fetchData 응답 받음]', response);
@@ -454,6 +531,7 @@ dayjs.locale('ko');
             no: room.no || 0,
             _id: room._id,
             title: room.title || '제목 없음',
+            firstQuestion: room.firstQuestion || '-',
             isGuest,
             userInfo: room.userInfo,
             createAt: room.createAt,
@@ -489,7 +567,7 @@ dayjs.locale('ko');
         accessor: 'createAt',
         sortable: true,
         width: 180,
-        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD (ddd) HH:mm ') : '-'),
+        formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd) HH:mm') : '-'),
       },
       {
         header: '프로필',
@@ -516,22 +594,31 @@ dayjs.locale('ko');
       { header: '이름', accessor: 'name',width:100, sortable: true },
       { header: '이메일', accessor: 'email', sortable: true,allowWrap: true },
       { header: '전화번호', accessor: 'cellphone', sortable: true,width:120 },
-      { header: '채팅방제목', accessor: 'title', sortable: true,allowWrap: true },
+      { header: '채팅방 제목', accessor: 'title', sortable: true,allowWrap: true },
+      { header: '채팅방 첫질의', accessor: 'firstQuestion', sortable: true,allowWrap: true },
       { 
         header: '채팅방ID', 
         accessor: 'chatSessionId', 
         sortable: true,
         allowWrap: true,
-        formatter: (value) => (
-          <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#666' }}>
-            {value || '-'}
-          </span>
+        formatter: (value, row) => (
+          <ChatIdWrapper>
+            <ChatIdText>{value || '-'}</ChatIdText>
+            {value && (
+              <CopyIconButton
+                onClick={(e) => handleCopyToClipboard(value, e)}
+                title="채팅방 링크 복사"
+              >
+                <img src="/cms/copy_icon.png" alt="복사" />
+              </CopyIconButton>
+            )}
+          </ChatIdWrapper>
         )
       },
       { header: '국가', accessor: 'nation',width:100, formatter: (value) => '대한민국' },
       
     ],
-    []
+    [handleCopyToClipboard]
   );
 
   return (

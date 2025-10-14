@@ -288,6 +288,8 @@ const ButtonContainer = styled.div`
 `;
 
 const SaveAllButton = styled.button`
+  position: fixed;
+  bottom: 24px;
   padding: 16px 20px;
   background-color: #2C2E3C;
   color: white;

@@ -367,7 +367,7 @@ const CustomerMngPage: React.FC = () => {
         width:100,
         allowWrap: true,
         sortable: true,
-        formatter: (value) => (value ? dayjs(value).format('YY-MM-DD(ddd) HH:mm') : '-'),
+        formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd) HH:mm') : '-'),
       },
       { header: '고객사명(KR)', accessor: 'companyName', width: 100 },
       { header: '고객사명(EN)', accessor: 'dbName', width: 100 },
@@ -427,8 +427,8 @@ const CustomerMngPage: React.FC = () => {
         header: '계약기간',
         accessor: 'contractStartDate',width: 100,allowWrap: true,
         formatter: (value, row) => {
-          const start = row.contractStartDate ? dayjs(row.contractStartDate).format('YY-MM-DD') : '';
-          const end = row.contractEndDate ? dayjs(row.contractEndDate).format('YY-MM-DD') : '';
+          const start = row.contractStartDate ? dayjs(row.contractStartDate).format('YY.MM.DD') : '';
+          const end = row.contractEndDate ? dayjs(row.contractEndDate).format('YY.MM.DD') : '';
           return start && end ? `${start} ~ ${end}` : '-';
         },
       },

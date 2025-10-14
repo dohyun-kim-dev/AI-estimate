@@ -1,7 +1,7 @@
 import { callUserApi } from '../../methods/callUserApi';
 import { GoogleLoginInitialParams, GoogleLoginUpdateParams, GoogleLoginResponse } from './userApi.types';
 import { ApiResponse } from './userApi.types';
-import { devLog } from '@/utils/devLogger'
+import { devLog } from '@/utils/devLogger';
 
 function resolveCompanyCode() {
   let companyCode = 'heredot';
@@ -136,22 +136,29 @@ export interface ChatMessageApiResponse {
   error: null;
 }
 
-export async function createChatSession(title: string) {
+export async function createChatSession(firstQuestion: string) {
   return callUserApi<ChatSessionData>({
     title: '새 채팅 세션 생성',
     url: getApiUrl('/company/chat/sessions'),
     method: 'PUT',
-    body: { title },
+    body: { 
+      title: '새로운 채팅', // 기본 제목
+      firstQuestion: firstQuestion.substring(0, 20) // 20글자 제한
+    },
     isCallPageLoader: true,
   });
 }
 
-export async function createGuestChatSession(title: string, uuid: string) {
+export async function createGuestChatSession(firstQuestion: string, uuid: string) {
   return callUserApi<ChatSessionData>({
     title: '비회원 채팅 세션 생성',
     url: getApiUrl('/company/chat/sessions/guest'),
     method: 'POST',
-    body: { title, uuid },
+    body: { 
+      title: '새로운 채팅', // 기본 제목
+      firstQuestion: firstQuestion.substring(0, 20), // 20글자 제한
+      uuid 
+    },
     isCallPageLoader: true,
   });
 }
@@ -216,9 +223,25 @@ export async function getChatSessionMessages(sessionId: string) {
 export async function transferChatSessionToUser(sessionId: string) {
   return callUserApi<ChatSessionData>({
     title: '채팅 세션 소유권 이전',
-    url: getApiUrl(`/company/chat/sessions/${sessionId}`),
+    url: getApiUrl(`/company/chat/sessions/${sessionId}/owner`),
     method: 'PATCH',
     isCallPageLoader: true,
+  });
+}
+
+
+
+// 🔥 채팅 세션 제목 업데이트 API (updateChatSession API 사용)
+export async function updateChatSessionTitle(sessionId: string, title: string, firstQuestion?: string) {
+  return callUserApi<ChatSessionData>({
+    title: '채팅 세션 제목 업데이트',
+    url: getApiUrl(`/company/chat/sessions/${sessionId}`),
+    method: 'PATCH',
+    body: { 
+      title,
+      ...(firstQuestion && { firstQuestion })
+    },
+    isCallPageLoader: false,
   });
 }
 

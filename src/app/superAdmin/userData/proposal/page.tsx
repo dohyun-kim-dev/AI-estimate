@@ -274,7 +274,7 @@ const ProposalDownloadPage: React.FC = () => {
   const columns: ColumnDefinition<ProposalDownload>[] = useMemo(
     () => [
       { header: 'No', accessor: 'no', width: 60, sortable: true },
-      { header: '날짜', accessor: 'createAt', width: 120, sortable: true, formatter: (value) => dayjs(value).format('YYYY-MM-DD(ddd)') },
+      { header: '날짜', accessor: 'createAt', width: 120, sortable: true, formatter: (value) => dayjs(value).format('YY.MM.DD(ddd)') },
       { header: '고객사', accessor: 'companyName', flex: 1, sortable: true },
       {
         header: '프로필',

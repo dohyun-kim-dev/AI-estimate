@@ -7,7 +7,7 @@ import { useUsageStore } from '@/store/usageStore';
 import { combinePrompts } from '@/ai/promptTemplates';
 import { FileUploadData } from '@/firebase.functions';
 import type { SimpleModel } from './useAI';
-import { createChatSession, createGuestChatSession, sendChatMessage, sendMessageWithFiles, validateFileType, validateFileSize, uploadFiles, ChatMessageResponseData, crawlUrl } from '@/lib/api/user/userApi';
+import { createChatSession, createGuestChatSession, sendChatMessage, sendMessageWithFiles, validateFileType, validateFileSize, uploadFiles, ChatMessageResponseData, crawlUrl, updateChatSessionTitle } from '@/lib/api/user/userApi';
 import { generateAndUploadPdf } from '@/hooks/pdfUtils';
 import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import { v4 as uuidv4 } from 'uuid';
@@ -700,9 +700,9 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       try {
         let createResponse;
         if (isAuthenticated()) {
-          createResponse = await createChatSession(displayMessage.slice(0, 20) || '새로운 채팅');
+          createResponse = await createChatSession(displayMessage);
         } else {
-          createResponse = await createGuestChatSession(displayMessage.slice(0, 20) || '새로운 채팅', userId);
+          createResponse = await createGuestChatSession(displayMessage, userId);
         }
         if (createResponse && createResponse.statusCode === 200 && createResponse.data && createResponse.data.length > 0 && createResponse.data[0]._id) {
           currentSessionId = createResponse.data[0]._id;
@@ -942,9 +942,17 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           return;
         }
         
-        // 일반 텍스트 스트리밍 표시
+        // 🔥 스트리밍 중에도 chatTitle 태그와 백틱 실시간 제거
+        let displayContent = aiReply
+          .replace(/<chatTitle>.*?<\/chatTitle>/gs, '') // chatTitle 태그 제거
+          .replace(/```\s*\n?/g, '') // 백틱 코드 블록 마커 제거  
+          .replace(/`([^`]*)`/g, '$1') // 인라인 백틱 제거
+          .replace(/^\s*\n+/g, '') // 시작 부분 빈 줄 제거
+          .trim();
+        
+        // 일반 텍스트 스트리밍 표시 (정리된 내용으로)
         updateLastMessage({
-          content: aiReply,
+          content: displayContent,
           isLoading: wasEmpty ? false : false,
         });
         
@@ -1134,9 +1142,43 @@ if (estimateData) {
       }
       const aiMessageId = aiMessageResponse?.data?._id;
       
-      // 스토어의 마지막 AI 메시지 업데이트 (messageId와 estimateId 추가)
+      // 🔥 채팅방 타이틀 자동 업데이트 (AI 응답에서 추출 후 내용에서 제거)
+      let cleanedReply = finalReply;
+      try {
+        // <chatTitle>태그로 감싸진 제목 추출
+        const titleMatch = finalReply.match(/<chatTitle>(.*?)<\/chatTitle>/s);
+        if (titleMatch && titleMatch[1]) {
+          const extractedTitle = titleMatch[1].trim();
+          devLog('🏷️ AI 응답에서 추출된 타이틀:', extractedTitle);
+          
+          // 응답 내용에서 chatTitle 태그와 모든 백틱 제거 (공백과 줄바꿈도 정리)
+          cleanedReply = finalReply
+            .replace(/<chatTitle>.*?<\/chatTitle>/gs, '') // chatTitle 태그 제거
+            .replace(/```\s*\n?/g, '') // 백틱 코드 블록 마커 제거
+            .replace(/`([^`]*)`/g, '$1') // 인라인 백틱 제거 (예: `텍스트` -> 텍스트)
+            .replace(/\\`/g, '') // 이스케이프된 백틱 제거
+            .replace(/^\s*\n+/g, '') // 시작 부분 빈 줄 제거
+            .replace(/\n+\s*$/g, '') // 끝 부분 빈 줄 제거
+            .trim();
+          
+          devLog('🔧 chatTitle 태그 제거된 응답:', cleanedReply.substring(0, 100) + '...');
+          
+          if (extractedTitle && extractedTitle !== '새로운 채팅') {
+            await updateChatSessionTitle(currentSessionId, extractedTitle);
+            devLog('✅ 채팅방 타이틀 업데이트 완료:', extractedTitle);
+          }
+        }
+      } catch (titleError) {
+        devLog('⚠️ 채팅방 타이틀 업데이트 실패:', titleError);
+        // 타이틀 업데이트 실패는 무시하고 계속 진행
+      }
+      
+      // 🔥 UI와 DB에는 chatTitle 태그가 제거된 깔끔한 내용 저장
+      finalReply = cleanedReply;
+      
+      // 🔄 스토어의 UI 표시용 메시지도 정리된 내용으로 업데이트
       updateLastMessage({
-        content: finalReply,
+        content: cleanedReply,
         messageId: aiMessageId,
         ...(estimateId && { estimateId }),
         isLoading: false,

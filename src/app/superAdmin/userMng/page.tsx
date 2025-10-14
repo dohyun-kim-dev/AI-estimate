@@ -493,7 +493,7 @@ const UserMngPage: React.FC = () => {
         sortable: true,
         flex: 1,
         allowWrap: true,
-        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD(ddd) HH:mm:ss') : '-'),
+        formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd) HH:mm') : '-'),
       },
       {
         header: '최근접속',
@@ -501,7 +501,7 @@ const UserMngPage: React.FC = () => {
         sortable: true,
         flex: 1,
         allowWrap: true,
-        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD(ddd) HH:mm:ss') : '-'),
+        formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd) HH:mm') : '-'),
       },
       {
         header: '고객사명',

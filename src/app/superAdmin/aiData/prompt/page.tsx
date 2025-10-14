@@ -253,7 +253,7 @@ const PromptPage: React.FC = () => {
         header: '최종수정일',
         accessor: 'updateAt',
         flex: 1,
-        formatter: (value) => (value ? dayjs(value).format('YYYY-MM-DD(ddd)') : '-'),
+        formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd)') : '-'),
       },
       {
         header: '작성자',

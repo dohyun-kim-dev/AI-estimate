@@ -175,9 +175,11 @@ const SearchButton = styled(FooterButton)`
 
 const ImageUploadSection = styled.div`
   margin-top: 24px;
+  // background: #eee;
 `;
 
 const ImageUploadTitle = styled.h3`
+  // position: absolute;
   font-size: 16px;
   font-weight: bold;
   margin: 0 0 16px 0;
@@ -1159,6 +1161,7 @@ const RemoveImageButton = styled.button`
         {/* 이미지 첨부 */}
         <SectionTitle>이미지 첨부</SectionTitle>
         <ImageUploadSection>
+          <div>
           <ImageUploadTitle>* 고객사 CI</ImageUploadTitle>
           {ciPreview ? (
             <div style={{ marginBottom: '16px', textAlign: 'center', position: 'relative' }}>
@@ -1176,6 +1179,7 @@ const RemoveImageButton = styled.button`
                   setCiPreview(''); // 미리보기 상태 초기화하여 업로드 박스 표시
                 }}
               />
+              
               <RemoveImageButton 
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1188,6 +1192,7 @@ const RemoveImageButton = styled.button`
                 }}
               />
             </div>
+            
           ) : (
             <ImageUploadBox onClick={() => document.getElementById('ci-upload')?.click()}>
               <ImageUploadText>파일을 업로드해주세요</ImageUploadText>
@@ -1197,7 +1202,7 @@ const RemoveImageButton = styled.button`
               </ImageUploadSubText>
               <UploadButton type="button">파일 열기</UploadButton>
             </ImageUploadBox>
-          )}
+          )}</div>
           <HiddenInput
             id="ci-upload"
             type="file"

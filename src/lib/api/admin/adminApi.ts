@@ -739,7 +739,7 @@ export async function getChatRoomList(params: {
   const queryParams = new URLSearchParams();
   
   // 기본값 설정
-  queryParams.append('companyCode', params.companyCode || 'heredot');
+  queryParams.append('companyCode', params.companyCode || '');
   queryParams.append('fromDate', params.fromDate || '2025-01-01');
   queryParams.append('toDate', params.toDate || '2025-12-31');
   
@@ -856,8 +856,8 @@ export async function downloadEstimateExcel(estimateId: string) {
     // 견적서 정보 시트
     const summaryData = [
       ['프로젝트명', invoiceData.project_name],
-      ['총 금액 (부가세 별도)', invoiceData.total_price + '원'],
-      ['총 금액 (부가세 포함)', invoiceData.vat_included_price + '원'],
+      ['총 금액 (부가세 별도)', invoiceData.total_price],
+      ['총 금액 (부가세 포함)', invoiceData.vat_included_price],
       ['예상 기간', invoiceData.estimated_period],
       ['견적서 ID', invoiceData.uuid],
       ['생성일', estimateData.data.createAt]
@@ -877,7 +877,7 @@ export async function downloadEstimateExcel(estimateId: string) {
               category.category_name,
               subCategory.sub_category_name,
               item.name,
-              item.price + '원',
+              item.price,
               item.description
             ]);
           }

@@ -668,7 +668,7 @@ const InquiryPage: React.FC = () => {
         accessor: 'inquiryDate', 
         sortable: true, 
         width: 150,
-        formatter: (value) => dayjs(value).format('YYYY-MM-DD(ddd) HH:mm') 
+        formatter: (value) => dayjs(value).format('YY.MM.DD(ddd) HH:mm') 
       },
       {
         header: '프로필',
