@@ -1,13 +1,15 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { devLog } from '@/utils/devLogger'
+import { devLog } from '@/utils/devLogger';
+import { useAdminStore, type AdminInfo } from '@/store/adminStore';
 
 type AdminAuthContextType = {
   isLoggedIn: boolean;
   ready: boolean;
-  isRoot: boolean; // isRoot 추가
-  login: (id: string, token?: string, isRoot?: boolean) => void;
+  isRoot: boolean;
+  adminInfo: AdminInfo | null;
+  login: (id: string, token?: string, isRoot?: boolean, adminData?: AdminInfo) => void;
   logout: () => void;
 };
 
@@ -17,13 +19,18 @@ let externalLogout: (() => void) | null = null;
 export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [ready, setReady] = useState(false);
-  const [isRoot, setIsRoot] = useState(false); // isRoot 상태 추가
+  const [isRoot, setIsRoot] = useState(false);
+  
+  // adminStore 훅 사용
+  const { adminInfo, setAdminInfo, clearAdminInfo } = useAdminStore();
 
   useEffect(() => {
     const adminId = localStorage.getItem('adminId');
     const adminIsRoot = localStorage.getItem('admin_isRoot') === 'true';
-    setIsLoggedIn(!!adminId);
-    setIsRoot(adminIsRoot);
+    
+    // adminStore에서 정보 가져오기
+    setIsLoggedIn(!!adminId || !!adminInfo);
+    setIsRoot(adminIsRoot || !!adminInfo?.isRoot);
     setReady(true);
 
     const syncAuthState = () => {
@@ -37,16 +44,16 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
     return () => {
       window.removeEventListener('storage', syncAuthState);
     };
-  }, []);
+  }, [adminInfo]);
 
-  const login = (id: string, token?: string, isRoot?: boolean) => {
+  const login = (id: string, token?: string, isRoot?: boolean, adminData?: AdminInfo) => {
     devLog('🚀 [AdminAuthContext] login 함수 호출됨:', {
       id,
       tokenProvided: !!token,
       tokenPrefix: token?.substring(0, 10) + '...',
       isRootProvided: isRoot !== undefined,
       isRootValue: isRoot,
-      typeOfIsRoot: typeof isRoot
+      adminDataProvided: !!adminData
     });
 
     localStorage.setItem('adminId', id);
@@ -65,12 +72,16 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
     if (isRoot !== undefined) {
       localStorage.setItem('admin_isRoot', isRoot.toString());
       setIsRoot(isRoot);
-      devLog('👑 [AdminAuthContext] isRoot 저장됨:', {
-        isRoot,
-        stored: localStorage.getItem('admin_isRoot')
+    }
+
+    // adminData가 제공된 경우 adminStore에 저장
+    if (adminData) {
+      setAdminInfo(adminData);
+      devLog('� [AdminAuthContext] 관리자 정보 저장:', {
+        name: adminData.name,
+        adminId: adminData.adminId,
+        isRoot: adminData.isRoot
       });
-    } else {
-      console.warn('⚠️ [AdminAuthContext] isRoot 값이 undefined로 전달됨');
     }
     
     setIsLoggedIn(true);
@@ -80,6 +91,10 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
     localStorage.removeItem('adminId');
     localStorage.removeItem('admin_access_token');
     localStorage.removeItem('admin_isRoot');
+    
+    // adminStore 정보도 삭제
+    clearAdminInfo();
+    
     setIsLoggedIn(false);
     setIsRoot(false);
   };
@@ -88,7 +103,7 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
   externalLogout = logout;
 
   return (
-    <AdminAuthContext.Provider value={{ isLoggedIn, ready, isRoot, login, logout }}>
+    <AdminAuthContext.Provider value={{ isLoggedIn, ready, isRoot, adminInfo, login, logout }}>
       {children}
     </AdminAuthContext.Provider>
   );

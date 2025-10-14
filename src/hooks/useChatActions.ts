@@ -17,7 +17,7 @@ import { devLog } from '@/utils/devLogger'
 
 import { ensureEstimateUuid, buildFullEstimateData, extractIntroFromReply } from '@/hooks/estimate';
 import { uploadEstimatePdf } from '@/lib/api/user/userApi';
-import { calculateTotalAmount, calculateEstimatedPeriod } from '../utils/estimateCalculator';
+import { calculateTotalAmount, calculateEstimatedPeriod, calculateTotalPages, updateDesignItemPrices } from '../utils/estimateCalculator';
 import { transformMessageForDisplay } from '@/utils/messageTransform';
 
 // 견적서 데이터를 추출하는 유틸리티 함수
@@ -1062,8 +1062,44 @@ if (estimateData) {
     }
 
     // calculateTotalAmount와 calculateEstimatedPeriod 함수를 사용하여 정확한 값 계산
-    const totalAmount = calculateTotalAmount(estimateData);
-    devLog('계산된 실제 총 금액:', totalAmount);
+    
+    // 🔍 디버깅: AI 생성 데이터 상세 분석
+    devLog('🔍 AI 생성 원본 데이터 분석:', {
+      categories: estimateData.categories?.length,
+      aiTotalPrice: estimateData.total_price
+    });
+    
+    let debugTotalForCheck = 0;
+    estimateData.categories?.forEach((cat, catIdx) => {
+      devLog(`🔍 카테고리 ${catIdx}: ${cat.category_name}`);
+      cat.sub_categories?.forEach((sub, subIdx) => {
+        devLog(`  🔍 서브카테고리 ${subIdx}: ${sub.sub_category_name}`);
+        sub.items?.forEach((item, itemIdx) => {
+          const price = typeof item.price === 'string' ? parseFloat(item.price.replace(/,/g, '')) : item.price;
+          devLog(`    🔍 항목 ${itemIdx}: ${item.name} - 가격: ${price}, 삭제됨: ${item.is_deleted}`);
+          if (!item.is_deleted) {
+            debugTotalForCheck += (price || 0);
+          }
+        });
+      });
+    });
+    devLog('🔍 수동 계산 총액:', debugTotalForCheck);
+    
+    // 🔍 EstimateAccordion과 동일한 전처리 적용 테스트
+    const totalPages = calculateTotalPages(estimateData.categories);
+    const preprocessedEstimate = updateDesignItemPrices(estimateData, totalPages);
+    
+    const totalAmountOriginal = calculateTotalAmount(estimateData);
+    const totalAmountPreprocessed = calculateTotalAmount(preprocessedEstimate);
+    
+    devLog('🔍 계산 결과 비교:', {
+      original: totalAmountOriginal,
+      preprocessed: totalAmountPreprocessed,
+      aiSaid: estimateData.total_price
+    });
+    
+    // 전처리된 데이터로 최종 계산
+    const totalAmount = totalAmountPreprocessed;
 
     // 정확한 기간 계산을 위해 calculateEstimatedPeriod 함수 사용
     const periodCalculation = calculateEstimatedPeriod(estimateData);

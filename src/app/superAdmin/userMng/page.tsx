@@ -12,7 +12,7 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import PhoneIcon from '@mui/icons-material/Phone';
 import EmailIcon from '@mui/icons-material/Email';
 import { ColumnDefinition } from '@/components/CustomList/GenericDataTable';
-import { adminGetList, getUserList, adminCreate, updateUser } from '@/lib/api/admin/adminApi';
+import { adminGetList, getUserList, adminCreate, updateUser, getUserDetail } from '@/lib/api/admin/adminApi';
 import dayjs from 'dayjs';
 import styled from 'styled-components';
 import { THEME_COLORS } from '@/styles/theme_colors';
@@ -24,7 +24,7 @@ import TextArea from '@/components/common/TextArea';
 import SelectionField from '@/components/selectionField';
 import { AppColors } from '@/styles/colors';
 import { Validators } from '@/lib/utils/validators';
-import { toast, ToastContainer } from 'react-toastify';
+import { useToast } from '@/components/common/ToastProvider';
 import Switch from '@/components/Switch';
 import { SwitchInput } from '@/components/SwitchInput';
 import { devLog } from '@/lib/utils/devLogger';
@@ -91,7 +91,7 @@ const PopupFooter = styled.div`
 `;
 
 const Title = styled.h2`
-  padding: 20px;
+  padding: 4px 0;
   font-size: 16px;
   font-weight: 500;
   color: ${AppColors.onSurface};
@@ -149,10 +149,10 @@ const RegisterButton = styled(ActionButton)<{ $themeMode: 'light' | 'dark' }>`
 const UserInfoSection = styled.div`
   display: flex;
   align-items: flex-start;
-  padding: 24px;
+  padding: 12px 0 0 0;
   // background-color: #2C2E3C; // 이미지 배경색에 맞춰 조정
   border-radius: 8px;
-  margin-bottom: 24px;
+  // margin-bottom: 24px;
 `;
 
 const ProfileImage = styled.img`
@@ -208,10 +208,130 @@ const FormSection = styled.div`
   padding-top: 10px;
 `;
 
+// 가입이력 관련 스타일 컴포넌트들
+const JoinHistorySection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0;
+`;
+
+const JoinHistoryHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 12px 0;
+  // border-bottom: 1px solid #e0e0e0;
+  
+`;
+
+const JoinHistoryTitle = styled.div`
+  font-size: 16px;
+  font-weight: 500;
+  color: ${AppColors.onSurface};
+`;
+
+const JoinHistoryIcon = styled.div<{ $isExpanded: boolean }>`
+  display: flex;
+  align-items: center;
+  transition: transform 0.3s ease;
+  transform: ${({ $isExpanded }) => $isExpanded ? 'rotate(0deg)' : 'rotate(180deg)'};
+  
+  svg {
+    width: 14px;
+    height: 8px;
+  }
+`;
+
+const JoinHistoryContent = styled.div<{ $isExpanded: boolean }>`
+  display: ${({ $isExpanded }) => $isExpanded ? 'block' : 'none'};
+  // background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 0;
+  margin-top: 8px;
+  gap: 8px;
+`;
+
+const JoinHistoryItem = styled.div`
+  background-color: white;
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 8px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const JoinHistoryItemHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+`;
+
+const JoinHistoryCompany = styled.div`
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+`;
+
+const JoinHistoryDate = styled.div`
+  font-size: 12px;
+  color: #999;
+  font-weight: 400;
+`;
+
+const JoinHistoryToggleButton = styled.div<{ $isExpanded: boolean }>`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px 0;
+  color: #666;
+  font-size: 12px;
+  gap: 4px;
+  
+  svg {
+    width: 12px;
+    height: 6px;
+    transition: transform 0.3s ease;
+    transform: ${({ $isExpanded }) => $isExpanded ? 'rotate(0deg)' : 'rotate(180deg)'};
+  }
+  
+  &:hover {
+    color: #333;
+  }
+`;
+
+const JoinHistoryMemoSection = styled.div<{ $isExpanded: boolean }>`
+  display: ${({ $isExpanded }) => $isExpanded ? 'block' : 'none'};
+  margin-top: 12px;
+`;
+
+const JoinHistoryLabel = styled.div`
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
+  margin-bottom: 12px;
+`;
+
+const JoinHistoryMemo = styled.div`
+  font-size: 13px;
+  color: #555;
+  background-color: #F7F7F7;
+  padding: 12px;
+  border-radius: 4px;
+  line-height: 1.4;
+`;
+
 const UserMngPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<Partial<User> | null>(
     null
   );
+  const { show: showToast } = useToast(); // 토스트 훅 추가
 
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
@@ -232,6 +352,43 @@ const UserMngPage: React.FC = () => {
   const [currentKeyword, setCurrentKeyword] = useState<string>('');
   const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('');
   const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
+  
+  // 가입이력 관련 상태
+  const [isJoinHistoryExpanded, setIsJoinHistoryExpanded] = useState(false);
+  const [expandedHistoryItems, setExpandedHistoryItems] = useState<{ [key: number]: boolean }>({});
+  
+  // 가입이력 데이터 (API 응답에서 가져온 데이터)
+  const joinHistory = useMemo(() => {
+    if (!selectedUser?.usingService || !Array.isArray(selectedUser.usingService)) {
+      return [];
+    }
+    
+    return selectedUser.usingService.map((service: any) => ({
+      companyName: service.companyInfo?.name || '알 수 없음',
+      joinDate: service.createAt || service.createAt,
+      memo: service.memo || '메모 없음'
+    }));
+  }, [selectedUser]);
+
+  // 가입이력 토글 함수
+  const toggleJoinHistory = () => {
+    setIsJoinHistoryExpanded(!isJoinHistoryExpanded);
+  };
+
+  // 개별 이력 아이템 더보기 토글 함수
+  const toggleHistoryItemMemo = (index: number) => {
+    setExpandedHistoryItems(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
+  // 화살표 아이콘 컴포넌트
+  const ArrowIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="8" viewBox="0 0 14 8" fill="none">
+      <path fillRule="evenodd" clipRule="evenodd" d="M7.70832 0.293633C7.52079 0.106162 7.26648 0.000846386 7.00132 0.000846386C6.73616 0.000846386 6.48185 0.106162 6.29432 0.293633L0.63732 5.95063C0.541809 6.04288 0.465627 6.15322 0.413218 6.27523C0.360809 6.39723 0.333223 6.52845 0.332069 6.66123C0.330915 6.79401 0.356217 6.92569 0.406498 7.04859C0.456779 7.17148 0.531032 7.28314 0.624925 7.37703C0.718818 7.47092 0.830469 7.54517 0.953365 7.59546C1.07626 7.64574 1.20794 7.67104 1.34072 7.66988C1.4735 7.66873 1.60472 7.64114 1.72672 7.58874C1.84873 7.53633 1.95907 7.46014 2.05132 7.36463L7.00132 2.41463L11.9513 7.36463C12.1399 7.54679 12.3925 7.64759 12.6547 7.64531C12.9169 7.64303 13.1677 7.53786 13.3531 7.35245C13.5385 7.16704 13.6437 6.91623 13.646 6.65403C13.6483 6.39184 13.5475 6.13924 13.3653 5.95063L7.70832 0.293633Z" fill="#555555"/>
+    </svg>
+  );
   
   
   // 날짜 상태 - 초기값은 null로 설정하고 UI에서 설정된 값을 받음
@@ -272,9 +429,54 @@ const UserMngPage: React.FC = () => {
     setIsPopupOpen(true);
   };
 
-  const handleRowClick = (item: User) => {
-    resetForm(item); // 수정
-    setIsPopupOpen(true);
+  const handleRowClick = async (item: User) => {
+    try {
+      // 회원 상세 정보 조회
+      const response = await getUserDetail(item._id);
+      
+      devLog('회원 상세 정보 조회 응답:', response);
+      
+      let detailData = null;
+      
+      // 응답 처리 (다른 API와 동일한 패턴)
+      if (response && typeof response === 'object') {
+        if ('statusCode' in response && response.statusCode === 200) {
+          detailData = (response as any).data;
+        } else if (Array.isArray(response) && response[0]) {
+          const firstItem = response[0];
+          if (firstItem && typeof firstItem === 'object' && 'data' in firstItem) {
+            const responseData = firstItem.data;
+            if (responseData && typeof responseData === 'object' && 'statusCode' in responseData && responseData.statusCode === 200) {
+              detailData = (responseData as any).data;
+            }
+          }
+        }
+      }
+      
+      if (detailData) {
+        // 상세 정보로 폼 초기화
+        const userWithDetails = {
+          ...item,
+          ...detailData,
+          // usingService 배열을 처리하여 가입이력 데이터로 변환
+          usingService: detailData.usingService || []
+        };
+        
+        resetForm(userWithDetails);
+      } else {
+        // 상세 정보 조회 실패 시 기본 정보로 폴백
+        resetForm(item);
+        showToast('회원 상세 정보를 불러올 수 없습니다. 기본 정보로 표시됩니다.', 'error');
+      }
+      
+      setIsPopupOpen(true);
+    } catch (error) {
+      console.error('회원 상세 정보 조회 오류:', error);
+      // 에러 발생 시 기본 정보로 폴백
+      resetForm(item);
+      setIsPopupOpen(true);
+      showToast('회원 상세 정보 조회 중 오류가 발생했습니다.', 'error');
+    }
   };
 
   const closePopup = () => {
@@ -337,7 +539,7 @@ const UserMngPage: React.FC = () => {
         const responseData = Array.isArray(response) ? response[0] : response;
         devLog("응답데이터 ",responseData);
       if (responseData && responseData.data.statusCode === 200 && responseData.data.message === 'success') {
-          toast.success('회원 정보가 수정되었습니다.');
+          showToast('회원 정보가 수정되었습니다.','success');
           setIsPopupOpen(false);
           listRef.current?.refetch();
         } else {
@@ -350,8 +552,8 @@ const UserMngPage: React.FC = () => {
               errorMessage = responseData.message as string;
             }
           }
-          
-          toast.error(errorMessage);
+
+          showToast(errorMessage, 'error');
         }
       } else {
         // 신규 사용자 등록 (기존 로직)
@@ -372,7 +574,7 @@ const UserMngPage: React.FC = () => {
         const responseData = Array.isArray(response) ? response[0] : response;
         
         if (responseData && typeof responseData === 'object' && 'message' in responseData && responseData.message === 'success') {
-          toast.success('사용자가 성공적으로 등록되었습니다.');
+          showToast('사용자가 성공적으로 등록되었습니다.','success');
           setIsPopupOpen(false);
           listRef.current?.refetch();
         } else {
@@ -385,13 +587,13 @@ const UserMngPage: React.FC = () => {
               errorMessage = responseData.message as string;
             }
           }
-          
-          toast.error(errorMessage);
+
+          showToast(errorMessage, 'error');
         }
       }
     } catch (error: any) {
       const errorMessage = error?.customMessage || error?.message || (isEditMode ? '회원 정보 수정에 실패했습니다.' : '사용자 등록에 실패했습니다.');
-      toast.error(errorMessage);
+      showToast(errorMessage, 'error');
     }
   };
 
@@ -468,16 +670,25 @@ const UserMngPage: React.FC = () => {
   );
 
   const handleCompanySelect = useCallback((company: { id: string; name: string }) => {
+    devLog('=== Company selected ===:', company);
+    
+    if (!company.id) {
+      showToast('회사 코드가 없습니다. 고객사를 다시 선택해주세요.', 'error');
+      return;
+    }
+    
+    // 상태 업데이트
     setSelectedCompanyCode(company.id);
     setSelectedCompanyName(company.name);
-    
-    // 고객사 변경 시 자동 새로고침 제거 - 사용자가 조회 버튼을 클릭하도록 유도
-    // setTimeout(() => {
-    //   if (listRef.current) {
-    //     listRef.current.refetch();
-    //   }
-    // }, 100);
-  }, []);
+  }, [showToast]);
+
+  // selectedCompanyCode 변경 시 refetch 실행
+  React.useEffect(() => {
+    if (selectedCompanyCode && listRef.current) {
+      devLog('🏢 Company 변경 감지, refetch 실행:', selectedCompanyCode);
+      listRef.current.refetch();
+    }
+  }, [selectedCompanyCode]);
 
   const columns: ColumnDefinition<User>[] = useMemo(
     () => [
@@ -544,12 +755,12 @@ const UserMngPage: React.FC = () => {
         allowWrap: true,
         formatter: (value) => value || '-'
       },
-      { 
-        header: '국가', 
-        accessor: 'nation',
-         width: 60,
-        formatter: (value) => value || 'KR' 
-      },
+      // { 
+      //   header: '국가', 
+      //   accessor: 'nation',
+      //    width: 60,
+      //   formatter: (value) => value || 'KR' 
+      // },
       { 
         header: '비고', 
         flex: 1,
@@ -562,21 +773,9 @@ const UserMngPage: React.FC = () => {
 
   return (
     <>
-      {/* <ToastContainer
-        position="top-center"
-        autoClose={3000}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        style={{ zIndex: 10000 }}
-      ></ToastContainer> */}
       <CmsResponsiveContainer<User>
         ref={listRef}
-        title="고객 회원관리"
+        title="사용자 관리"
         data={[]}
         columns={columns}
         fetchData={fetchData}
@@ -716,6 +915,44 @@ const UserMngPage: React.FC = () => {
             errorMessage={cellphoneError ?? undefined}
           />
           
+          {/* 가입이력 섹션 - 수정 모드일 때만 표시 */}
+          {selectedUser?._id && (
+            <JoinHistorySection>
+              <JoinHistoryHeader onClick={toggleJoinHistory}>
+                <JoinHistoryTitle>가입이력</JoinHistoryTitle>
+                <JoinHistoryIcon $isExpanded={isJoinHistoryExpanded}>
+                  <ArrowIcon />
+                </JoinHistoryIcon>
+              </JoinHistoryHeader>
+              
+              <JoinHistoryContent $isExpanded={isJoinHistoryExpanded}>
+                {joinHistory.map((history, index) => (
+                  <JoinHistoryItem key={index}>
+                    <JoinHistoryItemHeader>
+                      <JoinHistoryCompany>{history.companyName}</JoinHistoryCompany>
+                      <JoinHistoryDate>
+                        {dayjs(history.joinDate).format('YY.MM.DD(ddd) HH:mm')} 가입 완료
+                      </JoinHistoryDate>
+                    </JoinHistoryItemHeader>
+                    <JoinHistoryMemoSection $isExpanded={expandedHistoryItems[index] || false}>
+                      <JoinHistoryMemo>                      <JoinHistoryLabel>비고</JoinHistoryLabel>
+{history.memo}</JoinHistoryMemo>
+                    </JoinHistoryMemoSection>
+                    <JoinHistoryToggleButton 
+                      $isExpanded={expandedHistoryItems[index] || false}
+                      onClick={() => toggleHistoryItemMemo(index)}
+                    >
+                      <span>{expandedHistoryItems[index] ? '접기' : '더보기'}</span>
+                      <ArrowIcon />
+                    </JoinHistoryToggleButton>
+                    
+                    
+                  </JoinHistoryItem>
+                ))}
+              </JoinHistoryContent>
+            </JoinHistorySection>
+          )}
+
           <Title>비고</Title>
           
           <TextArea

@@ -838,19 +838,23 @@ const TopHeader = styled.div`
 
 const HeaderMainRow = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
   margin-top: 0px;
   width: 100%;
+  position: relative;
 `;
 
 const CompanySearchContainer = styled.div`
   display: flex;
   align-items: center;
+  position: absolute;
+  right: 0;
+  top: 0;
 `;
 
 const TitleContainer = styled.div`
-  /* 제목 영역 스타일 (필요시 추가) */
+  /* 제목 영역 스타일 - 항상 왼쪽에 고정 */
+  flex: 1;
 `;
 
 const ControlHeader = styled.div`
@@ -867,25 +871,32 @@ const ControlHeader = styled.div`
 
 const APIControls = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
   /* background-color: #756b55; */
   flex-wrap: wrap;
   /* padding: 10px; */
   border-radius: 8px;
   gap: 15px;
+  position: relative;
+  min-height: 50px; /* 최소 높이 고정 */
 `;
 
 const LeftFilterControls = styled.div`
   display: flex;
   align-items: center;
   gap: 15px;
+  flex: 1;
+  min-height: 50px; /* 최소 높이 고정 */
 `;
 
 const RightFilterControls = styled.div`
   display: flex;
   align-items: center;
   /* gap: 15px; */
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 50px; /* 고정 높이 */
 `;
 
 const EventControls = styled.div`
@@ -936,7 +947,7 @@ const MiddleControls = styled.div`
 
 const Flex = styled.div`
 display:flex;
-margin-bottom : 8px;
+// margin-bottom : 8px;
 `;
 
 const SearchContainer = styled.div`
@@ -1085,17 +1096,17 @@ const NavButton = styled.button<{ $themeMode: ThemeMode }>`
   border: 1px solid
     ${({ $themeMode }) =>
       $themeMode === 'light' ? THEME_COLORS.light.borderColor : THEME_COLORS.dark.borderColor};
-  background-color: #ddd8c7;
+  background-color: #fff;
   color: ${({ $themeMode }) =>
     $themeMode === 'light' ? THEME_COLORS.light.text : THEME_COLORS.dark.text};
-  border-radius: 4px;
+  border-radius: 0px;
   font-size: 16px;
   font-weight: bold;
   line-height: 1;
   transition:
     background-color 0.2s,
     border-color 0.2s;
-
+  padding: 0;
   &:hover:not(:disabled) {
     opacity: 0.8;
     border-color: ${({ $themeMode }) => ($themeMode === 'light' ? '#999' : '#AAAAAA')};

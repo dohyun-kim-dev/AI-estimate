@@ -249,9 +249,11 @@ type Customer = {
   aiConfidence: string | null;
   mode: 'LIGHT' | 'DARK';
   category: {
-    categoryId: string;
-    categoryName: string;
-    categoryCode: string;
+    _id: string;
+    name: string;
+    code: string;
+    createAt?: string;
+    updateAt?: string;
   } | null;
   businessNumber?: string;
   memo?: string;
@@ -605,12 +607,22 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
         setBusinessPreview('');
       }
       
-      // 카테고리 정보 설정
+      // 카테고리 정보 설정 - 서버 데이터 구조에 맞게 수정
       if (selectedCustomer.category) {
         setSelectedCategory({
-          name: selectedCustomer.category.categoryName,
-          code: selectedCustomer.category.categoryCode
+          name: selectedCustomer.category.name,
+          code: selectedCustomer.category.code
         });
+        // 부모 컴포넌트의 카테고리 상태도 업데이트
+        if (onFormChange?.setCategory) {
+          onFormChange.setCategory(selectedCustomer.category.name);
+        }
+        if (onFormChange?.setCategoryId) {
+          onFormChange.setCategoryId(selectedCustomer.category._id);
+        }
+        if (onFormChange?.setCategoryCode) {
+          onFormChange.setCategoryCode(selectedCustomer.category.code);
+        }
       } else {
         setSelectedCategory(null);
       }
@@ -1285,6 +1297,8 @@ const RemoveImageButton = styled.button`
           isOpen={categoryModalOpen}
           onClose={() => setCategoryModalOpen(false)}
           onSelect={handleCategorySelect}
+          showEditActions={false}
+          selectedCategoryId={selectedCustomer?.category?._id}
         />
       )}
 

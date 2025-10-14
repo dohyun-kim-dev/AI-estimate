@@ -615,7 +615,7 @@ dayjs.locale('ko');
           </ChatIdWrapper>
         )
       },
-      { header: '국가', accessor: 'nation',width:100, formatter: (value) => '대한민국' },
+      // { header: '국가', accessor: 'nation',width:100, formatter: (value) => '대한민국' },
       
     ],
     [handleCopyToClipboard]
@@ -623,19 +623,6 @@ dayjs.locale('ko');
 
   return (
     <>
-      <ToastContainer
-        position="top-center"
-        autoClose={3000}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        style={{ zIndex: 10000 }}
-      ></ToastContainer>
-      
       <CmsResponsiveContainer<ChatHistory>
         ref={listRef}
         title="AI 대화 이력 관리"

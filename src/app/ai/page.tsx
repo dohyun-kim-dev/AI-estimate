@@ -438,8 +438,8 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
 };
 
 const parseMessageContent = (content: string, images?: ImageData[]) => {
-  console.log('🔍 parseMessageContent 호출:', { content, images });
-  
+  // devLog('🔍 parseMessageContent 호출:', { content, images });
+
   // content가 undefined나 null인 경우 처리
   if (!content || typeof content !== 'string') {
     const result = {
@@ -447,7 +447,7 @@ const parseMessageContent = (content: string, images?: ImageData[]) => {
       images: images || [],
       hasImages: (images && images.length > 0) || false
     };
-    console.log('🔍 parseMessageContent 결과 (빈 content):', result);
+    // devLog('🔍 parseMessageContent 결과 (빈 content):', result);
     return result;
   }
   
@@ -512,7 +512,7 @@ const parseMessageContent = (content: string, images?: ImageData[]) => {
     images: allImages,
     hasImages: allImages.length > 0
   };
-  console.log('🔍 parseMessageContent 결과 (일반):', result);
+  // console.log('🔍 parseMessageContent 결과 (일반):', result);
   return result;
 };
 
@@ -1700,12 +1700,12 @@ useEffect(() => {
             // 이미지와 텍스트를 분리해서 처리
             const parsedContent = parseMessageContent(m.content, m.images);
             
-            console.log('🔍 사용자 메시지 파싱:', {
-              originalContent: m.content,
-              originalImages: m.images,
-              parsedContent,
-              hasImages: parsedContent.hasImages
-            });
+            // console.log('🔍 사용자 메시지 파싱:', {
+            //   originalContent: m.content,
+            //   originalImages: m.images,
+            //   parsedContent,
+            //   hasImages: parsedContent.hasImages
+            // });
             
             return (
               <UserMessageContainer key={idx} hasImages={parsedContent.hasImages}>

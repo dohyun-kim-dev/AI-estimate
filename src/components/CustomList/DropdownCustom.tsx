@@ -135,7 +135,8 @@ const DropdownContainer = styled.div`
   position: relative;
   width: 70px; /* 너비를 60px에서 70px로 증가 */
   font-family: "Pretendard Variable", sans-serif;
-  z-index: 9999; /* z-index를 매우 높게 설정 */
+  z-index: 999; /* z-index를 매우 높게 설정 */
+  margin-left: 20px;
 `;
  
 const MarginTop = styled.div`
@@ -173,10 +174,9 @@ const DropdownList = styled.ul<{ $themeMode: ThemeMode }>`
   list-style: none;
   padding: 0;
   margin: 0;
-  z-index: 99999; /* z-index 값을 매우 높게 설정 */
+  z-index: 999; /* z-index 값을 매우 높게 설정 */
   max-height: 200px; /* 최대 높이 설정 */
   overflow-y: auto; /* 스크롤 가능하도록 */
-  box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1); /* 위쪽 그림자 추가 */
 `;
  
 const DropdownItem = styled.li<{ $themeMode: ThemeMode }>`

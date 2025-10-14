@@ -23,6 +23,7 @@ import CmsResponsiveContainer from '@components/CustomList/ResponsiveList/CmsRes
 import AdminFormPopup from './AdminFormPopup';
 import Switch from '@/components/Switch';
 import 'dayjs/locale/ko';
+import { useToast } from '@/components/common/ToastProvider';
 
 dayjs.locale('ko');
 
@@ -88,6 +89,7 @@ const AdminMngPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<Partial<AdminUser> | null>(null);
   const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('');
   const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
+  const { show: showToast } = useToast(); // 토스트 훅 추가
 
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
@@ -254,7 +256,7 @@ const AdminMngPage: React.FC = () => {
         const apiResponse = (actualResponse as any)?.data as ApiResponse<AdminUser>;
 
         if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
-          toast.success('관리자 정보가 수정되었습니다.');
+          showToast('관리자 정보가 수정되었습니다.','success');
           setIsPopupOpen(false);
 
           // 리스트 새로고침
@@ -263,7 +265,7 @@ const AdminMngPage: React.FC = () => {
           }, 100);
         } else {
           const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '수정에 실패했습니다.';
-          toast.error(errorMessage);
+          showToast(errorMessage, 'error');
         }
       } else {
         // 신규 등록 모드
@@ -295,7 +297,7 @@ const AdminMngPage: React.FC = () => {
         const apiResponse = (actualResponse as any)?.data as ApiResponse<AdminUser>;
 
         if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
-          toast.success('관리자가 성공적으로 등록되었습니다.');
+          showToast('관리자가 성공적으로 등록되었습니다.','success');
           setIsPopupOpen(false);
 
           // 리스트 새로고침
@@ -304,7 +306,7 @@ const AdminMngPage: React.FC = () => {
           }, 100);
         } else {
           const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '등록에 실패했습니다.';
-          toast.error(errorMessage);
+          showToast(errorMessage, 'error');
         }
       }
     } catch (error) {
@@ -315,7 +317,7 @@ const AdminMngPage: React.FC = () => {
         : err instanceof Error
           ? err.message
           : '처리에 실패했습니다.';
-      toast.error(errorMessage);
+      showToast(errorMessage, 'error');
     }
   };
 
@@ -404,7 +406,7 @@ const AdminMngPage: React.FC = () => {
         const apiResponse = (actualResponse as any)?.data as ApiResponse<AdminUser>;
 
         if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
-          toast.success('관리자가 성공적으로 삭제되었습니다.');
+          showToast('관리자가 성공적으로 삭제되었습니다.','success');
 
           // 모달 닫기
           setIsPopupOpen(false);
@@ -417,7 +419,7 @@ const AdminMngPage: React.FC = () => {
         } else {
           // 응답이 성공이 아닐 경우 오류 메시지를 표시
           const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '삭제에 실패했습니다.';
-          toast.error(errorMessage);
+          showToast(errorMessage, 'error');
         }
       } catch (error) {
         console.error('Delete error:', error);
@@ -427,7 +429,7 @@ const AdminMngPage: React.FC = () => {
           : err instanceof Error
             ? err.message
             : '삭제에 실패했습니다.';
-        toast.error(errorMessage);
+        showToast(errorMessage, 'error');
       }
     },
     [genericListRef]
@@ -456,18 +458,18 @@ const AdminMngPage: React.FC = () => {
         const apiResponse = (actualResponse as any)?.data as ApiResponse<AdminUser>;
 
         if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
-          toast.success(`${type === 'receiveEmail' ? '메일' : 'SMS'} 수신 설정이 변경되었습니다.`);
+          showToast(`${type === 'receiveEmail' ? '메일' : 'SMS'} 수신 설정이 변경되었습니다.`, 'success');
           // 성공 시 리스트 새로고침
           genericListRef.current?.refetch();
         } else {
           const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '변경에 실패했습니다.';
-          toast.error(errorMessage);
+          showToast(errorMessage, 'error');
           // 실패 시 에러 발생시켜 롤백 처리
           throw new Error(errorMessage);
         }
       } catch (error) {
         const err = error as Error;
-        toast.error(err?.message || '변경에 실패했습니다.');
+        showToast(err?.message || '변경에 실패했습니다.', 'error');
         // 에러를 다시 throw해서 optimistic UI 롤백 처리
         throw error;
       }
@@ -511,22 +513,22 @@ const AdminMngPage: React.FC = () => {
         allowWrap: true, },
       { header: '전화번호', accessor: 'cellphone', flex: 1 },
       { header: '아이디', accessor: 'adminId', flex: 1 },
-      {
-        header: '알림톡 수신',
-        accessor: 'receiveAlimtalk',
-        noPopup: true,
-        sortable: false,
-        flex: 1,
-        formatter: (_value, row) => (
-          <Switch
-            checked={Boolean(row.receiveAlimtalk)}
-            onToggle={() => {
-              const newValue = !Boolean(row.receiveAlimtalk);
-              handleDropdownChange(row._id, 'receiveAlimtalk', newValue);
-            }}
-          />
-        ),
-      },
+      // {
+      //   header: '알림톡 수신',
+      //   accessor: 'receiveAlimtalk',
+      //   noPopup: true,
+      //   sortable: false,
+      //   flex: 1,
+      //   formatter: (_value, row) => (
+      //     <Switch
+      //       checked={Boolean(row.receiveAlimtalk)}
+      //       onToggle={() => {
+      //         const newValue = !Boolean(row.receiveAlimtalk);
+      //         handleDropdownChange(row._id, 'receiveAlimtalk', newValue);
+      //       }}
+      //     />
+      //   ),
+      // },
       {
         header: '메일 수신',
         accessor: 'receiveEmail',
@@ -556,22 +558,9 @@ const AdminMngPage: React.FC = () => {
 
   return (
     <>
-      {/* <ToastContainer
-        position="top-center"
-        autoClose={3000}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        style={{ zIndex: 10000 }}
-      ></ToastContainer> */}
-
       <CmsResponsiveContainer<AdminUser>
         ref={genericListRef}
-        title="고객사 관리자 관리"
+        title="관리자 관리"
         data={[]} // 초기값, fetchData가 있으면 무시됨
         columns={columns}
         fetchData={fetchData}

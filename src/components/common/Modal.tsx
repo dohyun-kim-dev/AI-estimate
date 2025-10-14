@@ -13,6 +13,7 @@ interface ModalProps {
   height?: string | number
   centerTitle?: boolean
   closeOnOverlayClick?: boolean // overlay 클릭 시 닫힘 여부 (기본값 true)
+  showCloseButton?: boolean // 클로즈 버튼 표시 여부 (기본값 true)
 }
 
 const Overlay = styled.div`
@@ -69,7 +70,7 @@ const Body = styled.div`
   padding: 16px 20px 20px;
 `
 
-export default function Modal({ open, title, onClose, children, width, height, centerTitle = false, closeOnOverlayClick = true }: ModalProps) {
+export default function Modal({ open, title, onClose, children, width, height, centerTitle = false, closeOnOverlayClick = true, showCloseButton = true }: ModalProps) {
   if (!open) return null
   
    const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -88,9 +89,13 @@ export default function Modal({ open, title, onClose, children, width, height, c
             {/* <IoClose size={20} /> */}
           </CloseButton>
           {title ? <Title $center={centerTitle}>{title}</Title> : <div />}
-          <CloseButton aria-label="close" onClick={onClose}>
-            <IoClose size={20} />
-          </CloseButton>
+          {showCloseButton ? (
+            <CloseButton aria-label="close" onClick={onClose}>
+              <IoClose size={20} />
+            </CloseButton>
+          ) : (
+            <div style={{ width: '32px' }} />
+          )}
         </Header>
         <Body>{children}</Body>
       </Dialog>

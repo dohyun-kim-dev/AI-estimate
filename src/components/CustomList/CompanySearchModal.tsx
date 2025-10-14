@@ -69,7 +69,7 @@ const CompanySearchModal: React.FC<CompanySearchModalProps> = ({
       const today = new Date().toISOString().split('T')[0]; // 오늘 날짜 (YYYY-MM-DD)
       const params = {
         keyword: keyword || '',
-        fromDate: '2025-08-09', // 고정값
+        fromDate: '2000-01-01', // 고정값
         toDate: today // 오늘 날짜
       };
       

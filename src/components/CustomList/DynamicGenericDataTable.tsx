@@ -216,7 +216,7 @@ const DynamicTable = styled.table`
 
 const Th = styled.th<{ $isSortable?: boolean }>`
   padding: 12px 8px;
-  border-bottom: 1px solid #e6e7e9;
+  border: 1px solid #E6E7E9;
   background-color: #f7f7f7;
   color: #221d12;
   font-weight: bold;
@@ -253,7 +253,7 @@ const Td = styled.td`
   background-color: transparent;
   color: #221d12;
   text-align: center;
-  border: none;
+  border: 1px solid #E6E7E9;
   overflow: hidden; /* 넘치는 내용 숨김 */
   text-overflow: ellipsis; /* 말줄임표 표시 */
   white-space: nowrap; /* 텍스트 줄바꿈 방지 */
@@ -261,7 +261,7 @@ const Td = styled.td`
 `;
 
 const TdNoData = styled.td`
-  padding: 40px;
+  padding: 200px 0;
   color: #aaa;
   background-color: #fffefb;
 `;

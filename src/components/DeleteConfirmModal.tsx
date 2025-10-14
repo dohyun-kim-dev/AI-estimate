@@ -13,6 +13,8 @@ type DeleteConfirmModalProps = {
   onConfirm: () => void
   onCancel: () => void
   width?: number
+  showCloseButton?: boolean // 클로즈 버튼 표시 여부 (기본값 true)
+  reverseButtons?: boolean // 버튼 순서 반대로 (기본값 false: 확인-취소, true: 취소-확인)
 }
 
 export default function DeleteConfirmModal({
@@ -24,15 +26,26 @@ export default function DeleteConfirmModal({
   onConfirm,
   onCancel,
   width = 400,
+  showCloseButton = true,
+  reverseButtons = false,
 }: DeleteConfirmModalProps) {
 
   return (
-    <Modal open={open} title={title} onClose={onCancel} width={width}>
+    <Modal open={open} title={title} onClose={onCancel} width={width} centerTitle showCloseButton={showCloseButton}>
       <ContentWrapper>
         <Description>{content}</Description>
         <Actions>
-          <PrimaryButton onClick={onConfirm}>{confirmText}</PrimaryButton>
-          <SecondaryButton onClick={onCancel}>{cancelText}</SecondaryButton>
+          {reverseButtons ? (
+            <>
+              <SecondaryButton onClick={onCancel}>{cancelText}</SecondaryButton>
+              <PrimaryButton onClick={onConfirm}>{confirmText}</PrimaryButton>
+            </>
+          ) : (
+            <>
+              <PrimaryButton onClick={onConfirm}>{confirmText}</PrimaryButton>
+              <SecondaryButton onClick={onCancel}>{cancelText}</SecondaryButton>
+            </>
+          )}
         </Actions>
       </ContentWrapper>
     </Modal>
@@ -40,7 +53,7 @@ export default function DeleteConfirmModal({
 }
 
 const ContentWrapper = styled.div`
-  padding: 12px 32px;
+  padding: 0;
 `
 
 const Description = styled.div`
@@ -66,7 +79,7 @@ const PrimaryButton = styled.button`
   background: #2E3040;
   color: #ffffff;
   font-weight: 700;
-  font-size: 18px;
+  font-size: 16px;
   cursor: pointer;
 `
 
@@ -78,6 +91,6 @@ const SecondaryButton = styled.button`
   background: #ffffff;
   color: #333;
   font-weight: 700;
-  font-size: 18px;
+  font-size: 16px;
   cursor: pointer;
 `

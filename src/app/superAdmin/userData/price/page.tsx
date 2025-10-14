@@ -15,11 +15,11 @@ import { ColumnDefinition } from '@/components/CustomList/GenericDataTable';
 import CmsPopup from '@/components/CmsPopup';
 import UploadResultPopup from './UploadResultPopup';
 import PriceEditPopup from './PriceEditPopup';
-import { getAllUnitPrices, uploadUnitPrices } from '@/lib/api/admin/adminApi';
+import { getAllUnitPrices, uploadUnitPrices, deleteAllUnitPrices, deleteUnitPrice } from '@/lib/api/admin/adminApi';
 import { useToast } from '@/components/common/ToastProvider';
 import { priceApiResponseToMarkdownTable } from '../../../../ai/prompts/priceDataToJson';
-import { ToastContainer } from 'react-toastify';
-import { devLog } from '@/utils/devLogger'
+import { devLog } from '@/utils/devLogger';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
 
 // 필수 여부를 한글로 변환하는 함수
@@ -452,6 +452,9 @@ const PriceListPage: React.FC = () => {
   }>({}); // 현재 검색 조건 저장
   const fileInputRef = useRef<HTMLInputElement>(null);
   const genericListRef = useRef<{ refetch: () => void }>(null); // GenericListUI ref 추가
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false); // 일괄 삭제 확인 모달 상태
+  const [isSingleDeleteConfirmOpen, setIsSingleDeleteConfirmOpen] = useState(false); // 개별 삭제 확인 모달 상태
+  const [selectedDeleteItem, setSelectedDeleteItem] = useState<any | null>(null); // 삭제할 개별 항목
 
   const handleRowClick = (item: any) => {
     setSelectedItem(item);
@@ -719,6 +722,24 @@ const PriceListPage: React.FC = () => {
             sortable: false,
             formatter: (value) => value
           },
+          // 작성일시 컬럼 추가
+          {
+            header: '작성일시',
+            accessor: 'createdTime',
+            sortable: true,
+            flex: 1,
+            allowWrap: true,
+            formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd) HH:mm') : '-'),
+          },
+          // 수정일시 컬럼 추가
+          {
+            header: '수정일시',
+            accessor: 'updateTime',
+            sortable: true,
+            flex: 1,
+            allowWrap: true,
+            formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd) HH:mm') : '-'),
+          },
           ...allColumnsForTable
             .sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0))
             .map((col: any) => {
@@ -758,7 +779,37 @@ const PriceListPage: React.FC = () => {
                 };
               }
               return columnDef;
-            })
+            }),
+          // 삭제 컬럼 추가
+          {
+            header: '삭제',
+            accessor: 'deleteAction',
+            sortable: false,
+            formatter: (value, record) => {
+              if (!record?.id || record.id === '') {
+                return ''; // id가 없으면 삭제 버튼 표시하지 않음
+              }
+              return (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation(); // 행 클릭 이벤트 방지
+                    handleDeleteSingleItem(record.id, record);
+                  }}
+                  style={{
+                    background: '#dc3545',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  삭제
+                </button>
+              );
+            }
+          }
         ];
 
         // 상태 업데이트
@@ -1275,21 +1326,162 @@ const PriceListPage: React.FC = () => {
     setAlertMessage('');
   };
 
+  // 단가표 일괄 삭제 핸들러
+  const handleDeleteAll = async () => {
+    try {
+      if (!selectedCompanyCode) {
+        showToast('고객사를 먼저 선택해주세요.', 'error');
+        return;
+      }
+
+      const response = await deleteAllUnitPrices(selectedCompanyCode);
+      
+      // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+      const actualResponse = Array.isArray(response) ? response[0] : response;
+      
+      // actualResponse.data에서 실제 API 응답을 가져옴
+      const apiResponse = (actualResponse as any)?.data;
+      
+      if (apiResponse && (apiResponse.statusCode === 200 || apiResponse.statusCode === "200") && apiResponse.message === 'success') {
+        showToast('단가표가 모두 삭제되었습니다.', 'success');
+        
+        // 테이블 새로고침
+        if (selectedCompanyCode) {
+          setTimeout(() => {
+            try {
+              genericListRef.current?.refetch();
+            } catch (error) {
+              console.error('Error refreshing table after delete all:', error);
+            }
+          }, 100);
+        }
+      } else {
+        const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '단가표 삭제에 실패했습니다.';
+        showToast(errorMessage, 'error');
+      }
+    } catch (error) {
+      console.error('Delete all unit prices error:', error);
+      const err = error as Error | { customMessage?: string };
+      const errorMessage = 'customMessage' in err 
+        ? err.customMessage 
+        : err instanceof Error 
+          ? err.message 
+          : '단가표 삭제 중 오류가 발생했습니다.';
+      showToast(errorMessage, 'error');
+    } finally {
+      setIsDeleteConfirmOpen(false);
+    }
+  };
+
+  // 단가표 등록 핸들러
+  const handleAddPriceData = () => {
+    if (!selectedCompanyCode) {
+      showToast('먼저 고객사를 선택해주세요.', 'error');
+      return;
+    }
+    
+    // 새로운 항목 추가를 위해 빈 객체 설정
+    setSelectedItem({});
+    setIsPopupOpen(true);
+  };
+
+  // 개별 삭제 핸들러 (버튼 클릭 시)
+  const handleDeleteSingleItem = (id: string, record: any) => {
+    setSelectedDeleteItem(record);
+    setIsSingleDeleteConfirmOpen(true);
+  };
+
+  // 개별 삭제 확인 핸들러
+  const handleConfirmSingleDelete = async () => {
+    try {
+      if (!selectedDeleteItem?.id || !selectedCompanyCode) {
+        showToast('삭제할 항목이 없습니다.', 'error');
+        return;
+      }
+
+      const response = await deleteUnitPrice(selectedDeleteItem.id, selectedCompanyCode);
+      
+      // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+      const actualResponse = Array.isArray(response) ? response[0] : response;
+      
+      // actualResponse.data에서 실제 API 응답을 가져옴
+      const apiResponse = (actualResponse as any)?.data;
+      
+      if (apiResponse && (apiResponse.statusCode === 200 || apiResponse.statusCode === "200") && apiResponse.message === 'success') {
+        showToast('항목이 삭제되었습니다.', 'success');
+        
+        // 테이블 새로고침
+        if (selectedCompanyCode) {
+          setTimeout(() => {
+            try {
+              genericListRef.current?.refetch();
+            } catch (error) {
+              console.error('Error refreshing table after single delete:', error);
+            }
+          }, 100);
+        }
+      } else {
+        const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '항목 삭제에 실패했습니다.';
+        showToast(errorMessage, 'error');
+      }
+    } catch (error) {
+      console.error('Delete single unit price error:', error);
+      const err = error as Error | { customMessage?: string };
+      const errorMessage = 'customMessage' in err 
+        ? err.customMessage 
+        : err instanceof Error 
+          ? err.message 
+          : '항목 삭제 중 오류가 발생했습니다.';
+      showToast(errorMessage, 'error');
+    } finally {
+      setIsSingleDeleteConfirmOpen(false);
+      setSelectedDeleteItem(null);
+    }
+  };
+
+  // 중간 영역 렌더링 함수
+  const renderMiddleContent = () => {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+      <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+        <button
+          onClick={() => setIsDeleteConfirmOpen(true)}
+          disabled={!selectedCompanyCode}
+          style={{
+            background: '#214A72',
+            color: '#ffffff',
+            border: 'none',
+            padding: '10px 18px',
+            fontSize: '14px',
+            fontWeight: '500',
+            cursor: selectedCompanyCode ? 'pointer' : 'not-allowed',
+            opacity: selectedCompanyCode ? 1 : 0.5,
+          }}
+        >
+          단가표 비우기
+        </button>
+        <button
+          onClick={handleAddPriceData}
+          disabled={!selectedCompanyCode}
+          style={{
+            background: '#ffffff',
+            color: '#214A72',
+            padding: '10px 18px',
+            fontSize: '14px',
+            fontWeight: '500',
+            cursor: selectedCompanyCode ? 'pointer' : 'not-allowed',
+            opacity: selectedCompanyCode ? 1 : 0.5,
+          }}
+        >
+          단가표 등록
+        </button>
+      </div>
+      </div>
+    );
+  };
+
   return (
     <>
-        {/* <ToastContainer
-            position="top-center"
-            autoClose={3000}
-            newestOnTop={false}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme="light"
-            style={{ zIndex: 10000 }}
-          ></ToastContainer> */}
-          
       <CmsResponsiveContainer<any>
         ref={genericListRef}
         key={`price-list-${selectedCompanyCode || 'no-company'}-${forceUpdateKey}`}
@@ -1305,17 +1497,18 @@ const PriceListPage: React.FC = () => {
         onRowClick={handleRowClick}
         themeMode="light"
         fetchData={fetchUnitPricesData}
-        onAdd={() => {
-          if (!selectedCompanyCode) {
-            showToast('먼저 고객사를 선택해주세요.', 'error');
-            return;
-          }
+        renderMiddleContent={renderMiddleContent}
+        // onAdd={() => {
+        //   if (!selectedCompanyCode) {
+        //     showToast('먼저 고객사를 선택해주세요.', 'error');
+        //     return;
+        //   }
           
-          // 새로운 항목 추가를 위해 빈 객체 설정
-          setSelectedItem({});
-          setIsPopupOpen(true);
-        }}
-        addButtonLabel="단가표 등록"
+        //   // 새로운 항목 추가를 위해 빈 객체 설정
+        //   setSelectedItem({});
+        //   setIsPopupOpen(true);
+        // }}
+        // addButtonLabel="단가표 등록"
         isShowExcelTemplate={true}
         excelUploadBtnCallBack={handleExcelUpload}
         excelTemplateBtnCallBack={handleExcelTemplateDownload}
@@ -1346,6 +1539,38 @@ const PriceListPage: React.FC = () => {
         onSave={alertType === 'success' || alertType === 'warning' ? handleSaveUploadResult : undefined}
         type={alertType}
         message={alertMessage}
+      />
+
+      {/* 일괄 삭제 확인 모달 */}
+      <DeleteConfirmModal
+        open={isDeleteConfirmOpen}
+        title="단가표를 전체 삭제하시겠습니까 ?"
+        content={`선택한 고객사(${selectedCompanyName})의\n모든 단가표 데이터가 삭제됩니다.\n정말로 삭제하시겠습니까?`}
+        confirmText="삭제"
+        cancelText="취소"
+        onConfirm={handleDeleteAll}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
+        width={450}
+        showCloseButton={false}
+        reverseButtons={true}
+      />
+
+      {/* 개별 삭제 확인 모달 */}
+      <DeleteConfirmModal
+        open={isSingleDeleteConfirmOpen}
+        title="해당 단가표를 삭제하시겠습니까 ?"
+        content={`삭제한 단가표는 복구할 수 없습니다
+계속 진행하시려면 ‘삭제’버튼을 눌러주세요`}
+        confirmText="삭제"
+        cancelText="취소"
+        onConfirm={handleConfirmSingleDelete}
+        onCancel={() => {
+          setIsSingleDeleteConfirmOpen(false);
+          setSelectedDeleteItem(null);
+        }}
+        width={400}
+        showCloseButton={false}
+        reverseButtons={true}
       />
     </>
   );

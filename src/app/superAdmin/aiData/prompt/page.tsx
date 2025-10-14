@@ -16,7 +16,7 @@ import { TextField } from '@/components/TextField';
 import SelectionField from '@/components/selectionField';
 import { AppColors } from '@/styles/colors';
 import { Validators } from '@/lib/utils/validators';
-import { toast, ToastContainer } from 'react-toastify';
+import { useToast } from '@/components/common/ToastProvider';
 import { adminCreate } from '@/lib/api/admin';
 import Switch from '@/components/Switch';
 import { SwitchInput } from '@/components/SwitchInput';
@@ -127,7 +127,7 @@ const PromptPage: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<Partial<Prompt> | null>(
     null
   );
-
+  const { show: showToast } = useToast();
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isFormPopupOpen, setIsFormPopupOpen] = useState(false);
   const [currentKeyword, setCurrentKeyword] = useState<string>('');
@@ -255,12 +255,12 @@ const PromptPage: React.FC = () => {
         flex: 1,
         formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd)') : '-'),
       },
-      {
-        header: '작성자',
-        accessor: 'createBy',
-        flex: 1,
-        allowWrap: true,
-      },
+      // {
+      //   header: '작성자',
+      //   accessor: 'createBy',
+      //   flex: 1,
+      //   allowWrap: true,
+      // },
       {
         header: '프롬프트명',
         accessor: 'name',
@@ -288,18 +288,6 @@ const PromptPage: React.FC = () => {
 
   return (
     <>
-      <ToastContainer
-        position="top-center"
-        autoClose={3000}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        style={{ zIndex: 10000 }}
-      ></ToastContainer>
       <CmsResponsiveContainer<Prompt>
         ref={listRef}
         title="AI 프롬프트 관리"

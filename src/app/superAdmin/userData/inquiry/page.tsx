@@ -10,7 +10,7 @@ import ActionButton from '@/components/ActionButton';
 import { THEME_COLORS } from '@/styles/theme_colors';
 import { getEstimateRequestListByRole } from '@/lib/utils/adminApiRouter';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
-import { toast } from 'react-toastify';
+import { useToast } from '@/components/common/ToastProvider';
 import { downloadEstimate, downloadEstimateExcel, updateEstimateRequestStatus } from '@/lib/api/admin/adminApi';
 import ChatHistoryModal from '@/components/ChatHistoryModal';
 import EstimateInquiryModal from '@/components/EstimateInquiryModal';
@@ -127,6 +127,7 @@ interface StatusDropdownProps {
 }
 
 const StatusDropdown: React.FC<StatusDropdownProps> = ({ currentStatus, onStatusChange }) => {
+  const { show: showToast } = useToast(); // 토스트 훅 추가
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -298,6 +299,7 @@ const StatusDropdownItem = styled.li<{ $statusColor: string; $isSelected: boolea
 `;
 
 const InquiryPage: React.FC = () => {
+  const { show: showToast } = useToast(); // 토스트 훅 추가
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Inquiry | null>(null);
   const [isChatHistoryModalOpen, setIsChatHistoryModalOpen] = useState(false);
@@ -355,13 +357,14 @@ const InquiryPage: React.FC = () => {
         status: newStatus as 'pending' | 'approved' | 'rejected',
         memo: newMemo
       });
-      
-      toast.success('견적문의 상태가 업데이트되었습니다.');
-      
+
+      showToast('상담 요청 정보가 수정되었습니다.', 'success');
+
       // 리스트 새로고침
       listRef.current?.refetch();
     } catch (error) {
       console.error('견적문의 상태 업데이트 오류:', error);
+      showToast('상담 요청 정보가 수정에 실패했습니다.', 'error');
       throw error;
     }
   };
@@ -376,13 +379,13 @@ const InquiryPage: React.FC = () => {
         status: newStatus as 'pending' | 'approved' | 'rejected'
       });
       
-      toast.success('처리상태가 변경되었습니다.');
+      showToast('처리상태가 변경되었습니다.', 'success');
       
       // 리스트 새로고침
       listRef.current?.refetch();
     } catch (error) {
       console.error('상태 변경 오류:', error);
-      toast.error('상태 변경에 실패했습니다.');
+      showToast('상태 변경에 실패했습니다.', 'error');
     }
   };
 
@@ -467,13 +470,13 @@ const InquiryPage: React.FC = () => {
       
       if (result.success) {
         devLog(`엑셀 다운로드 완료: ${result.filename}`);
-        toast.success('엑셀 파일이 성공적으로 다운로드되었습니다.');
+        showToast('엑셀 파일이 성공적으로 다운로드되었습니다.', 'success');
       } else {
         throw new Error('엑셀 파일 생성에 실패했습니다.');
       }
     } catch (error) {
       console.error('엑셀 다운로드 오류:', error);
-      toast.error('엑셀 다운로드 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.');
+      showToast('엑셀 다운로드 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.', 'error');
     }
   };
 
@@ -541,7 +544,7 @@ const InquiryPage: React.FC = () => {
 
         // 통합관리자이고 회사가 선택되지 않은 경우 토스트 메시지 표시
         if (isRoot && !selectedCompanyCode) {
-        toast.warn('회사를 먼저 선택해주세요.'); // TODO: 토스트 라이브러리로 교체
+          showToast('회사를 먼저 선택해주세요.', 'error');
           return { data: [], totalItems: 0, allItems: 0 };
         }
 

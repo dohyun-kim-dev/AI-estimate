@@ -11,26 +11,16 @@ import ResponsiveSidebar from '@components/CustomSidebar/ResponsiveSidebar';
 import CustomSidebarHeader from '@components/CustomSidebar/CustomSidebarHeader';
 import type { MenuItemConfig } from '@components/CustomSidebar/CustomSidebar';
 import {
-  Dashboard as DashboardIcon,
-  AdminPanelSettings as AdminPanelSettingsIcon,
-  People as PeopleIcon,
-  Dataset as DatasetIcon,
-  Settings as SettingsIcon,
-  Description as DescriptionIcon,
-  Logout as LogoutIcon,
-  Assessment as AssessmentIcon,
-  TextFields as TextFieldsIcon,
-  QuestionAnswer as QuestionAnswerIcon,
-  Chat as ChatIcon,
-  Business as BusinessIcon,
-  Tune as TuneIcon,
-  Download as DownloadIcon,
-  ContactSupport as ContactSupportIcon,
-  Storage as StorageIcon,
-  RequestQuote as RequestQuoteIcon,
-  WorkspacePremium as WorkspacePremiumIcon,
-  Group as GroupIcon,
-} from '@mui/icons-material';
+  DashboardIcon,
+  SuperAdminIcon,
+  CompanyIcon,
+  AdminIcon,
+  UserIcon,
+  AIDataIcon,
+  CustomerDataIcon,
+  TermsIcon,
+  LogoutIcon,
+} from '@/components/icons/AdminMenuIcons';
 import ScrollAwareWrapper from '@layout/ScrollAwareWrapper';
 import PageWrapper from '@components/PageWrapper';
 
@@ -93,13 +83,13 @@ const handleMenuToggle = (menuId: string) => {
 
   const menuItems: MenuItemConfig[] = [
     { id: 'dashboard', icon: <DashboardIcon />, title: '대시보드', path: `/superadmin` },
-    { id: 'super-admin', icon: <WorkspacePremiumIcon />, title: '통합관리자 관리', path: `/superadmin/super-admin` },
-    { id: 'company', icon: <BusinessIcon />, title: '고객사 관리', path: `/superadmin/company-management` },
-    { id: 'admin', icon: <AdminPanelSettingsIcon />, title: '고객사 관리자 관리', path: `/superadmin/admin-management` },
-    { id: 'user', icon: <GroupIcon />, title: '고객 회원관리', path: `/superadmin/user-management` },
+    { id: 'super-admin', icon: <SuperAdminIcon />, title: '통합관리자 관리', path: `/superadmin/super-admin` },
+    { id: 'company', icon: <CompanyIcon />, title: '고객사 관리', path: `/superadmin/company-management` },
+    { id: 'admin', icon: <AdminIcon />, title: '관리자 관리', path: `/superadmin/admin-management` },
+    { id: 'user', icon: <UserIcon />, title: '사용자 관리', path: `/superadmin/user-management` },
     {
       id: 'ai-data',
-      icon: <DatasetIcon />,
+      icon: <AIDataIcon />,
       title: 'AI 데이터 관리',
       path: `/superadmin/ai-data`,
       subMenu: [
@@ -121,7 +111,7 @@ const handleMenuToggle = (menuId: string) => {
     // },
     {
       id: 'user-data',
-      icon: <StorageIcon />,
+      icon: <CustomerDataIcon />,
       title: '고객 데이터 관리',
       path: `/superadmin/user-data`,
       subMenu: [
@@ -130,7 +120,7 @@ const handleMenuToggle = (menuId: string) => {
         { id: 'user-data-inquiry', title: '상담 요청 관리', path: `/superadmin/user-data/inquiry` },
       ],
     },
-    { id: 'terms', icon: <DescriptionIcon />, title: '이용 약관', path: `/superadmin/terms` },
+    { id: 'terms', icon: <TermsIcon />, title: '이용 약관', path: `/superadmin/terms` },
   ];
 
   // 현재 경로에 매칭되는 메뉴 찾기

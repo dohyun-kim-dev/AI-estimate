@@ -525,6 +525,21 @@ export async function deleteUnitPrice(id: string, companyCode: string) {
   });
 }
 
+// 단가표 일괄 삭제 API
+export async function deleteAllUnitPrices(companyCode: string) {
+  const queryParams = new URLSearchParams();
+  queryParams.append('companyCode', companyCode);
+
+  return callAdminApi({
+    title: '단가표 전체 삭제',
+    url: `${BASE_URL}/cms/unit-prices?${queryParams.toString()}`,
+    method: 'DELETE',
+    body: {},
+    isCallPageLoader: true,
+    isWithToken: true, // 토큰 필요
+  });
+}
+
 // ***************** AI 프롬프트
 
 // AI 프롬프트 목록 조회
@@ -623,6 +638,17 @@ export async function getAIPromptHistory(
 }
 
 // ***************** 회원 정보 수정
+
+// 회원 상세 정보 조회
+export async function getUserDetail(id: string) {
+  return callAdminApi({
+    title: '회원 상세 정보 조회',
+    url: `${BASE_URL}/cms/users/${id}`,
+    method: 'GET',
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
 
 // 회원 정보 수정
 export async function updateUser(params: UserUpdateParams) {

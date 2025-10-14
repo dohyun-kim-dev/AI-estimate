@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useCallback, useRef, useMemo } from 'react';
 import CmsResponsiveContainer from '@components/CustomList/ResponsiveList/CmsResponsiveContainer';
-import { toast, ToastContainer } from 'react-toastify';
+import { useToast } from '@/components/common/ToastProvider';
 import { getCompanyList, createCompany, updateCompany } from '@/lib/api/admin/adminApi';
 import { getFileUrl } from '@/lib/api/user/userApi';
 import dayjs from 'dayjs';
@@ -76,7 +76,7 @@ const PrimaryButton = styled(ActionButton)`
 const CustomerMngPage: React.FC = () => {
   const [customers, setCustomers] = useState<Company[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Partial<Company> | null>(null);
-  
+  const { show: showToast } = useToast(); // 토스트 훅 추가
   // 새로운 Company 타입에 맞는 상태
   const [name, setName] = useState('');
   const [companyName, setCompanyName] = useState('');
@@ -211,7 +211,7 @@ const CustomerMngPage: React.FC = () => {
         
         const targetCompanyCode = code || selectedCustomer.companyCode || '';
         await updateCompany(targetCompanyCode, updateParams);
-        toast.success('고객사 정보가 수정되었습니다.');
+        showToast('고객사 정보가 수정되었습니다.','success');
       } else {
         // 신규 생성 모드
         const createParams = {
@@ -235,7 +235,7 @@ const CustomerMngPage: React.FC = () => {
         };
         
         await createCompany(createParams);
-        toast.success('고객사가 등록되었습니다.');
+        showToast('고객사가 등록되었습니다.','success');
       }
       
       setIsPopupOpen(false);
@@ -246,7 +246,7 @@ const CustomerMngPage: React.FC = () => {
       }, 100);
     } catch (error) {
       console.error('고객사 저장 실패:', error);
-      toast.error('저장 중 오류가 발생했습니다.');
+      showToast('저장 중 오류가 발생했습니다.','error');
     }
   };
 
@@ -505,6 +505,7 @@ const CustomerMngPage: React.FC = () => {
       <CategorySearchPopup
         isOpen={isCategorySearchOpen}
         onClose={() => setIsCategorySearchOpen(false)}
+        showEditActions={true}
       />
 
       {/* 고객사 수정 팝업 */}

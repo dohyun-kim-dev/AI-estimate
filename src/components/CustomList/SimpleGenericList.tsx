@@ -284,7 +284,7 @@ const NavButton = styled.button<{ $themeMode: ThemeMode }>`
   cursor: pointer;
   border: 1px solid
     ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.borderColor : THEME_COLORS.dark.borderColor)};
-  background-color: ${({ $themeMode }) => ($themeMode === "light" ? "#FFFFFF" : THEME_COLORS.dark.secondary)};
+  background-color: #fff;
   color: ${({ $themeMode }) => ($themeMode === "light" ? THEME_COLORS.light.text : THEME_COLORS.dark.text)};
   border-radius: 4px;
   padding: 0;

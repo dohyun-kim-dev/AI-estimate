@@ -24,7 +24,7 @@ const NavButton = styled.button<{ $themeMode?: ThemeMode }>`
   border-radius: 2px;
   border: none;
   padding: 2px 0 0 0 ;
-  background: ${({ $themeMode }) => $themeMode === 'dark' ? '#EDEDED' : '#EDEDED'};
+  background: #fff;
   color: ${({ $themeMode }) => $themeMode === 'dark' ? '#fff' : '#333'};
   font-size: 12px;
   font-weight: 600;
@@ -87,9 +87,11 @@ interface CategorySearchPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect?: (category: {categoryId: string, categoryName: string, categoryCode: string}) => void;
+  showEditActions?: boolean; // 수정/삭제 헤더 표시 여부
+  selectedCategoryId?: string; // 현재 선택된 카테고리 ID
 }
 
-const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClose, onSelect }) => {
+const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClose, onSelect, showEditActions = false, selectedCategoryId }) => {
   // 페이징 관련 상태 (예시)
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -314,14 +316,14 @@ const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClo
                     </span>
                   </span>
                 </th>
-                <th>수정</th>
-                <th>삭제</th>
+                {showEditActions && <th>수정</th>}
+                {showEditActions && <th>삭제</th>}
               </tr>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={showEditActions ? 6 : 4}>
                     <LoadingText>검색 중...</LoadingText>
                   </td>
                 </tr>
@@ -330,6 +332,7 @@ const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClo
                     <TableRow 
                       key={category.id} 
                       $isEven={index % 2 === 1}
+                      $isSelected={selectedCategoryId === category.id}
                       onClick={() => {
                         if (onSelect) {
                           onSelect({ 
@@ -345,21 +348,25 @@ const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClo
                       <td>{category.createdAt}</td>
                       <td>{category.name}</td>
                       <td>{category.code}</td>
-                      <td>
-                        <EditButton onClick={(e) => { 
-                          e.stopPropagation(); // 이벤트 버블링 방지
-                          setEditCategory(category); 
-                          setRegisterOpen(true); 
-                        }}>수정</EditButton>
-                      </td>
-                      <td>
-                        <DeleteButton onClick={(e) => e.stopPropagation()}>삭제</DeleteButton>
-                      </td>
+                      {showEditActions && (
+                        <td>
+                          <EditButton onClick={(e) => { 
+                            e.stopPropagation(); // 이벤트 버블링 방지
+                            setEditCategory(category); 
+                            setRegisterOpen(true); 
+                          }}>수정</EditButton>
+                        </td>
+                      )}
+                      {showEditActions && (
+                        <td>
+                          <DeleteButton onClick={(e) => e.stopPropagation()}>삭제</DeleteButton>
+                        </td>
+                      )}
                     </TableRow>
                   ))
               ) : (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={showEditActions ? 6 : 4}>
                     <NoResults>검색 결과가 없습니다.</NoResults>
                   </td>
                 </tr>

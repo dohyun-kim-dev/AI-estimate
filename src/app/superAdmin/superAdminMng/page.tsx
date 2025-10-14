@@ -22,6 +22,8 @@ import PasswordPopup from './PasswordPopup';
 import CmsResponsiveContainer from '@components/CustomList/ResponsiveList/CmsResponsiveContainer';
 import AdminFormPopup from './AdminFormPopup';
 import 'dayjs/locale/ko';
+import { useToast } from '@/components/common/ToastProvider';
+
 
 dayjs.locale('ko');
 
@@ -87,7 +89,7 @@ const AdminMngPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<Partial<AdminUser> | null>(
     null
   );
-
+  const { show: showToast } = useToast(); 
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -215,7 +217,7 @@ const AdminMngPage: React.FC = () => {
         const apiResponse = (actualResponse as any)?.data as ApiResponse<AdminUser>;
         
         if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
-          toast.success('관리자 정보가 수정되었습니다.');
+          showToast('관리자 정보가 수정되었습니다.','success');
           setIsPopupOpen(false);
           
           // 리스트 새로고침
@@ -224,7 +226,7 @@ const AdminMngPage: React.FC = () => {
           }, 100);
         } else {
           const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '수정에 실패했습니다.';
-          toast.error(errorMessage);
+          showToast(errorMessage,'error');
         }
       } else {
         // 신규 등록 모드
@@ -250,7 +252,7 @@ const AdminMngPage: React.FC = () => {
         const apiResponse = (actualResponse as any)?.data as ApiResponse<AdminUser>;
         
         if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
-          toast.success('관리자가 성공적으로 등록되었습니다.');
+          showToast('관리자가 성공적으로 등록되었습니다.','success');
           setIsPopupOpen(false);
           
           // 리스트 새로고침
@@ -259,7 +261,7 @@ const AdminMngPage: React.FC = () => {
           }, 100);
         } else {
           const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '등록에 실패했습니다.';
-          toast.error(errorMessage);
+          showToast(errorMessage,'error');
         }
       }
     } catch (error) {
@@ -270,7 +272,7 @@ const AdminMngPage: React.FC = () => {
         : err instanceof Error 
           ? err.message 
           : '처리에 실패했습니다.';
-      toast.error(errorMessage);
+      showToast(errorMessage,'error');
     }
   };
   
@@ -359,7 +361,7 @@ const adminDeleteClick = useCallback(
       const apiResponse = (actualResponse as any)?.data as ApiResponse<AdminUser>;
 
       if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
-        toast.success('관리자가 성공적으로 삭제되었습니다.');
+        showToast('관리자가 성공적으로 삭제되었습니다.','success');
         
         // 모달 닫기
         setIsPopupOpen(false);
@@ -372,7 +374,7 @@ const adminDeleteClick = useCallback(
       } else {
         // 응답이 성공이 아닐 경우 오류 메시지를 표시
         const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '삭제에 실패했습니다.';
-        toast.error(errorMessage);
+        showToast(errorMessage,'error');
       }
     } catch (error) {
       console.error('Delete error:', error);
@@ -382,7 +384,7 @@ const adminDeleteClick = useCallback(
         : err instanceof Error 
           ? err.message 
           : '삭제에 실패했습니다.';
-      toast.error(errorMessage);
+      showToast(errorMessage,'error');
     }
   },
   [genericListRef] 
@@ -413,15 +415,15 @@ const adminDeleteClick = useCallback(
         const apiResponse = (actualResponse as any)?.data as ApiResponse<AdminUser>;
   
         if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
-          toast.success(`${type === 'emailYn' ? '메일' : 'SMS'} 수신 설정이 변경되었습니다.`);
+          showToast(`${type === 'emailYn' ? '메일' : 'SMS'} 수신 설정이 변경되었습니다.`, 'success');
           genericListRef.current?.refetch();
         } else {
           const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '변경에 실패했습니다.';
-          toast.error(errorMessage);
+          showToast(errorMessage, 'error');
         }
       } catch (error) {
         const err = error as Error;
-        toast.error(err?.message || '변경에 실패했습니다.');
+        showToast(err?.message || '변경에 실패했습니다.', 'error');
       }
     },
     []
@@ -463,19 +465,6 @@ const adminDeleteClick = useCallback(
 
   return (
     <>
-      {/* <ToastContainer
-        position="top-center"
-        autoClose={3000}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        style={{ zIndex: 10000 }}
-      ></ToastContainer> */}
-
 <CmsResponsiveContainer<AdminUser>
   ref={genericListRef}
   title="통합 관리자 관리"

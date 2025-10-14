@@ -33,6 +33,7 @@ import ProposalDownloadPage from '../app/superAdmin/userData/proposal/page';
 import PDFPreview from './pdfPreview';
 import ExcelPreview from './excelPreview';
 import CompletedPage from '@app/completed/page';
+import PromptDetailPage from '@app/prompt-detail/page';
 
 export default function AppRoutes() {
   const location = useLocation();
@@ -105,6 +106,9 @@ export default function AppRoutes() {
 
         <Route path="*" element={<Navigate to="." replace />} />
       </Route>
+
+      {/* 프롬프트 상세 페이지 - 레이아웃 없이 독립적으로 렌더링 */}
+      <Route path="/prompt-detail" element={<PromptDetailPage />} />
 
       <Route element={<CMSLayout />}>
           <Route path="superadmin" element={<CMS />} />

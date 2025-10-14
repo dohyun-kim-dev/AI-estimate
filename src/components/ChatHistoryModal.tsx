@@ -275,7 +275,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
   };
  
   const parseMessageContent = (content: string, files?: FileUploadData[]) => {
-    console.log('🔍 parseMessageContent 호출:', { content, files });
+    // console.log('🔍 parseMessageContent 호출:', { content, files });
     
     // content가 undefined나 null인 경우 처리
     if (!content || typeof content !== 'string') {
@@ -288,7 +288,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
         })) : [],
         hasImages: files ? files.some(f => f.mimeType?.startsWith('image/')) : false
       };
-      console.log('🔍 parseMessageContent 결과 (빈 content):', result);
+      // console.log('🔍 parseMessageContent 결과 (빈 content):', result);
       return result;
     }
     
@@ -350,7 +350,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
       images: allImages,
       hasImages: allImages.length > 0
     };
-    console.log('🔍 parseMessageContent 결과 (일반):', result);
+    // console.log('🔍 parseMessageContent 결과 (일반):', result);
     return result;
   };
  
@@ -497,12 +497,12 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
             // 이미지와 텍스트를 분리해서 처리
             const parsedContent = parseMessageContent(message.content, message.files);
             
-            console.log('🔍 사용자 메시지 파싱:', {
-              originalContent: message.content,
-              originalFiles: message.files,
-              parsedContent,
-              hasImages: parsedContent.hasImages
-            });
+            // console.log('🔍 사용자 메시지 파싱:', {
+            //   originalContent: message.content,
+            //   originalFiles: message.files,
+            //   parsedContent,
+            //   hasImages: parsedContent.hasImages
+            // });
             
             return (
               <UserMessageContainer key={index} hasImages={parsedContent.hasImages}>

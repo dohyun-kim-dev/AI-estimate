@@ -275,6 +275,7 @@ const NavButton = styled.button<{ $themeMode: ThemeMode }>`
   font-weight: bold;
   line-height: 1;
   transition: background-color 0.2s, border-color 0.2s;
+  padding: 0;
 
   &:hover:not(:disabled) {
     opacity: 0.8;

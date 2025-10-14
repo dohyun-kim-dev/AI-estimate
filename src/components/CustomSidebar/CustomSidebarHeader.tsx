@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import styled, { css } from "styled-components";
+import { useAdminStore } from '@/store/adminStore';
 
 interface CustomSidebarHeaderProps {
   isCollapsed: boolean;
@@ -15,11 +16,17 @@ const CustomSidebarHeader: React.FC<CustomSidebarHeaderProps> = ({
   isCollapsed,
   showTime = true, // 기본값: 시간 표시
   iconSrc = "/cms/cms_user.png", // 기본값: 유저 아이콘
-  name = "User", // 기본값: User
+  name = "User", // 기본값: User (fallback)
   iconSize = 24, // 기본 아이콘 크기
 }) => {
   const [currentTime, setCurrentTime] = useState("");
   const [imgSrc, setImgSrc] = useState(iconSrc);
+  
+  // adminStore에서 관리자 정보 가져오기
+  const { adminInfo } = useAdminStore();
+
+  // 실제 관리자 이름 사용 (없으면 prop으로 전달된 name 사용)
+  const displayName = adminInfo?.name || name;
 
   useEffect(() => {
     setImgSrc(iconSrc);
@@ -66,7 +73,7 @@ const CustomSidebarHeader: React.FC<CustomSidebarHeaderProps> = ({
                 <img src={iconSrc} alt="user icon" width={iconSize} height={iconSize} />
               </StyledIconWrapper>
             )}
-            <UserName>{name}</UserName>
+            <UserName>{displayName}</UserName>
           </Flex>
         </>
       )}

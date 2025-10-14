@@ -251,7 +251,7 @@ const AdminFormPopup: React.FC<AdminFormPopupProps> = ({
         {/* 문자 · 메일 수신 섹션 */}
         <Flex>
           <Title>문자 · 메일 수신</Title>
-          <SwitchForm>
+          {/* <SwitchForm>
             <div style={{ width: '80px', color: 'black', marginTop: '4px' }}>알림톡</div>
             <SwitchInput
               // label="알림톡 수신"
@@ -263,7 +263,7 @@ const AdminFormPopup: React.FC<AdminFormPopupProps> = ({
           $labelPosition="horizontal"
           labelColor="white"
         />
-        </SwitchForm>
+        </SwitchForm> */}
            <SwitchForm>
             <div style={{ width: '80px', color: 'black', marginTop: '4px' }}>메일</div>
         <SwitchInput

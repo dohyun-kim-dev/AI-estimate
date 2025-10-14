@@ -12,6 +12,8 @@ import ActionButton from '@/components/ActionButton';
 import { getEstimateDownloadList, downloadEstimate, downloadEstimateExcel } from '@/lib/api/admin/adminApi';
 import { devLog } from '@/utils/devLogger'
 import 'dayjs/locale/ko';
+import { useToast } from '@/components/common/ToastProvider';
+
 
 dayjs.locale('ko');
 
@@ -81,6 +83,7 @@ const ExcelDownloadButton = styled.button`
 `;
 
 const ProposalDownloadPage: React.FC = () => {
+  const { show: showToast } = useToast();
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Partial<ProposalDownload> | null>(null);
   const listRef = useRef<{ refetch: () => void }>(null);
@@ -119,7 +122,7 @@ const ProposalDownloadPage: React.FC = () => {
       devLog('PDF 미리보기 페이지가 새 탭에서 열립니다.');
     } catch (error) {
       console.error('PDF 다운로드 오류:', error);
-      alert('PDF 다운로드 중 오류가 발생했습니다.');
+      showToast('PDF 다운로드 중 오류가 발생했습니다.', 'error');
     }
   };
 
@@ -132,10 +135,10 @@ const ProposalDownloadPage: React.FC = () => {
       devLog(`엑셀 다운로드 완료: ${result.filename}`);
       
       // 성공 메시지 표시 (선택사항)
-      // alert(`엑셀 파일이 다운로드되었습니다: ${result.filename}`);
+      showToast(`엑셀 파일이 다운로드되었습니다: ${result.filename}`, 'success');
     } catch (error) {
       console.error('엑셀 다운로드 오류:', error);
-      alert('엑셀 다운로드 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.');
+      showToast('엑셀 다운로드 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.', 'error');
     }
   };
 

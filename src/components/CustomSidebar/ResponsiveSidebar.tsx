@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import dayjs from 'dayjs';
 import ResponsiveView from '@layout/ResponsiveView';
@@ -35,7 +35,17 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [currentTime, setCurrentTime] = useState(dayjs().format('YYYY.MM.DD. HH:mm:ss'));
   const navigate = useNavigate();
+
+  // 매초마다 시간 업데이트
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(dayjs().format('YYYY.MM.DD. HH:mm:ss'));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const toggleMobileSidebar = (next: boolean) => {
     setIsOpen(next);
@@ -64,10 +74,10 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({
           <AppBar $sidebarWidth={isCollapsed ? 80 : 250}>
             <LeftLogo src="/favicon.png" alt="logo" />
             <CenterNotice>
-              {recentNotices.length > 0 ? recentNotices[0] : '최근 공지가 없습니다.'}
+              {/* {recentNotices.length > 0 ? recentNotices[0] : '최근 공지가 없습니다.'} */}
             </CenterNotice>
             <RightInfo>
-              <DateText>{dayjs().format('YYYY.MM.DD')}</DateText>
+              <DateText>{currentTime}</DateText>
               <SettingsContainer>
                 <SettingsButton onClick={handleSettingsClick}>
                   {/* <SettingsIcon /> */}
