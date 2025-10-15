@@ -20,6 +20,7 @@ import { THEME_COLORS, ThemeMode } from "@/styles/theme_colors";
 import ActionButton from "../ActionButton";
 import CompanySearch from "@/components/CompanySearch/CompanySearch";
 import { devError, devWarn } from "@/utils/devLogger";
+import { useLocation } from "react-router-dom";
 
 
 
@@ -229,6 +230,10 @@ const GenericListUIInner = <T extends BaseRecord>(
   }: GenericListUIProps<T>,
   ref: React.Ref<{ refetch: () => void }>
 ) => {
+
+  // URL 기반 Company CMS 여부 확인
+  const location = useLocation();
+  const isCompanyCMS = location.pathname.includes('/cms');
 
   // --- 내부 상태 --- (API 관련 상태 제거, UI 상태만 유지)
   const [error, setError] = useState<string | null>(null);
@@ -550,7 +555,7 @@ const GenericListUIInner = <T extends BaseRecord>(
               title /* ReactNode 직접 렌더링 */
             )}
           </TitleContainer>
-          {enableCompanySearch && (
+          {enableCompanySearch && !isCompanyCMS && (
             <CompanySearch
               selectedCompanyCode={selectedCompanyCode}
               selectedCompanyName={selectedCompanyName}

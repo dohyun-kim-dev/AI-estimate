@@ -8,6 +8,7 @@ export type AdminLoginParams = {
     fromDate?: string;
     toDate?: string;
     companyCode?: string;
+    isRoot?: boolean;
   };
 
   export type AdminGetListParams = {
@@ -132,6 +133,7 @@ export type AdminLoginParams = {
     cellphone?: string;
     email?: string;
     memo?: string;
+    companyCode?: string;
   };
 
   // 고객사 생성 관련 타입

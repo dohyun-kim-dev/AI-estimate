@@ -156,6 +156,12 @@ const ProposalDownloadPage: React.FC = () => {
   const fetchData = useCallback(
     async (params: FetchParams): Promise<FetchResult<ProposalDownload>> => {
       try {
+        // selectedCompanyCode가 빈 문자열이면 API 호출하지 않고 빈 결과 반환
+        if (selectedCompanyCode === '') {
+          devLog('🚫 [견적 다운로드] CompanyCode가 선택되지 않아 API 호출을 건너뜁니다.');
+          return { data: [], totalItems: 0, allItems: 0 };
+        }
+
         // 키워드가 전달되면 현재 키워드 업데이트 (빈 문자열 포함)
         let searchKeyword = '';
         if (params.keyword !== undefined) {
@@ -168,14 +174,14 @@ const ProposalDownloadPage: React.FC = () => {
         const fromDate = params.fromDate || dateRange?.fromDate || dayjs().subtract(3, 'month').format('YYYY-MM-DD');
         const toDate = params.toDate || dateRange?.toDate || dayjs().format('YYYY-MM-DD');
         
-        devLog('🔍 [견적 다운로드 fetchData 호출]', { searchKeyword, fromDate, toDate });
+        devLog('🔍 [견적 다운로드 fetchData 호출]', { searchKeyword, fromDate, toDate, selectedCompanyCode });
         
         // API 호출
         const response = await getEstimateDownloadList({
           keyword: searchKeyword,
           fromDate: fromDate,
           toDate: toDate,
-          companyCode: selectedCompanyCode || undefined,
+          companyCode: selectedCompanyCode,
         });
         
         devLog('✅ [견적 다운로드 fetchData 응답 받음]', response);

@@ -351,6 +351,17 @@ export async function createCompany(params: CompanyCreateParams) {
   });
 }
 
+// 개별 고객사 조회 API
+export async function getCompany(companyCode: string) {
+  return callAdminApi({
+    title: '고객사 상세 조회',
+    url: `${BASE_URL}/cms/company/${companyCode}`,
+    method: 'GET',
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
 // 고객사 수정 API
 export async function updateCompany(companyCode: string, params: CompanyUpdateParams) {
   // undefined 값들을 제거한 body 객체 생성
@@ -402,6 +413,7 @@ export async function getUserList(
   if (params.fromDate) queryParams.append('fromDate', params.fromDate);
   if (params.toDate) queryParams.append('toDate', params.toDate);
   if (params.companyCode) queryParams.append('companyCode', params.companyCode);
+  if (params.isRoot !== undefined) queryParams.append('isRoot', params.isRoot.toString());
 
   const queryString = queryParams.toString();
   const url = `${BASE_URL}/cms/users${queryString ? `?${queryString}` : ''}`;

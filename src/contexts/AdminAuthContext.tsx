@@ -88,12 +88,13 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
   };
 
   const logout = () => {
+
+    clearAdminInfo();
     localStorage.removeItem('adminId');
     localStorage.removeItem('admin_access_token');
     localStorage.removeItem('admin_isRoot');
     
     // adminStore 정보도 삭제
-    clearAdminInfo();
     
     setIsLoggedIn(false);
     setIsRoot(false);

@@ -6,6 +6,7 @@ import RootLayout from '@app/layout';
 import AILayout from '@app/ai/layout';
 import AIEstimateLayout from '@app/ai-estimate/layout';
 import CMSLayout from '@app/superAdmin/layout';
+import CompanyCMSLayout from '@app/companyCMS/layout';
 
 // Pages
 import Home from '@app/page';
@@ -18,6 +19,7 @@ import CMS from '@app/superAdmin/page';
 import CMSAdminMng from '@app/superAdmin/adminMng/page';
 import CMSCompanyMng from '@app/superAdmin/companyMng/page';
 import CMSLogin from '@app/superAdmin/login/page';
+import CompanyCMSLogin from '@app/companyCMS/login/page';
 import CMSSuperAdminMng from '@app/superAdmin/superAdminMng/page';
 import CMSTerms from '@app/superAdmin/terms/page';
 import CMSUserMng from '@app/superAdmin/userMng/page';
@@ -110,6 +112,40 @@ export default function AppRoutes() {
 
       {/* 프롬프트 상세 페이지 - 레이아웃 없이 독립적으로 렌더링 */}
       <Route path="/prompt-detail" element={<PromptDetailPage />} />
+
+      {/* 새로운 고객사별 CMS 경로 - /:companyCode/cms */}
+      <Route path="/:companyCode/cms" element={<Outlet />}>
+        <Route element={<CompanyCMSLayout />}>
+          <Route index element={<Navigate to="admin-management" replace />} />
+          <Route path="login" element={<CompanyCMSLogin />} />
+          <Route path="admin-management" element={<CMSAdminMng />} />
+          <Route path="user-management" element={<CMSUserMng />} />
+          
+          <Route path="ai-data">
+            <Route index element={<Navigate to="survey" replace />} />
+            <Route path="survey" element={<SurveyPage />} />
+            <Route path="prompt" element={<PromptPage />} />
+            <Route path="wrong-answer" element={<TreeGridPage />} />
+            <Route path="conversation-history" element={<AiChatHistoryPage />} />
+          </Route>
+
+          <Route path="ai-setting">
+            <Route index element={<Navigate to="company-info" replace />} />
+            <Route path="company-info" element={<CompanyInfoSettingsPage />} />
+            <Route path="management" element={<AigoSettingsPage />} />
+          </Route>
+
+          <Route path="user-data">
+            <Route index element={<Navigate to="price" replace />} />
+            <Route path="price" element={<PriceListPage />} />
+            <Route path="proposal" element={<ProposalDownloadPage />} />
+            <Route path="inquiry" element={<InquiryPage />} />
+          </Route>
+
+          <Route path="faq" element={<FAQPage />} />
+          <Route path="terms" element={<CMSTerms />} />
+        </Route>
+      </Route>
 
       <Route element={<CMSLayout />}>
           <Route path="superadmin" element={<CMS />} />

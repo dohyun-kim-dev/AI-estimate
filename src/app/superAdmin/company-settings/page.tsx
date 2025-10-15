@@ -5,7 +5,8 @@ import styled from 'styled-components';
 import TextField from '@/components/common/TextField';
 import { useToast } from '@/components/common/ToastProvider';
 import CompanySearch from '@/components/CompanySearch/CompanySearch';
-import { updateCompanyInfo, getCompanyList } from '@/lib/api/admin/adminApi';
+import { updateCompanyInfo, getCompany } from '@/lib/api/admin/adminApi';
+import { uploadFiles } from '@/lib/api/user/userApi';
 
 // 회사 정보 인터페이스
 interface CompanyInfo {
@@ -38,7 +39,7 @@ const initialCompanyInfo: CompanyInfo = {
   aiProfile: '/ai-estimate/pretty.png',
   aiName: 'AI 에이전트',
   signature: '',
-  etc: ['견적 비고란을 입력해주세요', '비고란 설명', '견적 시 유의사항']
+  etc: ['견적 비고란을 입력해주세요'] // 기본값을 1개로 수정
 };
 
 const SettingsContainer = styled.div`
@@ -312,11 +313,13 @@ const HiddenInput = styled.input`
 
 export default function CompanyInfoSettingsPage() {
   const [companyInfo, setCompanyInfo] = useState(initialCompanyInfo);
-  const [estimateNotes, setEstimateNotes] = useState(['견적 비고란을 입력해주세요', '비고란 설명', '견적 시 유의사항']);
+  const [estimateNotes, setEstimateNotes] = useState(['견적 비고란을 입력해주세요']);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string | null>('heredot');
-  const [selectedCompanyName, setSelectedCompanyName] = useState<string>('여기닷');
+  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string | null>('');
+  const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadedProfileImage, setUploadedProfileImage] = useState<string | null>(null);
+  const [uploadedSignatureImage, setUploadedSignatureImage] = useState<string | null>(null);
   const { show: showToast } = useToast();
   
   const profileImageRef = useRef<HTMLInputElement>(null);
@@ -332,17 +335,40 @@ export default function CompanyInfoSettingsPage() {
     profileImageRef.current?.click();
   };
 
-  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setCompanyInfo(prev => ({ 
-          ...prev, 
-          aiProfile: event.target?.result as string 
-        }));
-      };
-      reader.readAsDataURL(file);
+      try {
+        setIsLoading(true);
+        showToast('프로필 이미지 업로드 중...', 'info');
+        
+        // 서버에 파일 업로드
+        const uploadResponse = await uploadFiles([file]);
+        
+        if (uploadResponse.statusCode === 200 && uploadResponse.data && uploadResponse.data.length > 0) {
+          const uploadedFileName = uploadResponse.data[0];
+          setUploadedProfileImage(uploadedFileName);
+          
+          // 미리보기용 로컬 이미지 표시
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            setCompanyInfo(prev => ({ 
+              ...prev, 
+              aiProfile: event.target?.result as string 
+            }));
+          };
+          reader.readAsDataURL(file);
+          
+          showToast('프로필 이미지가 업로드되었습니다.', 'success');
+        } else {
+          showToast('프로필 이미지 업로드에 실패했습니다.', 'error');
+        }
+      } catch (error) {
+        console.error('프로필 이미지 업로드 실패:', error);
+        showToast('프로필 이미지 업로드에 실패했습니다.', 'error');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -350,18 +376,40 @@ export default function CompanyInfoSettingsPage() {
     businessImageRef.current?.click();
   };
 
-  const handleBusinessImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBusinessImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setCompanyInfo(prev => ({ 
-          ...prev, 
-          signature: event.target?.result as string 
-        }));
-        showToast('회사 직인이 업로드되었습니다.', 'success');
-      };
-      reader.readAsDataURL(file);
+      try {
+        setIsLoading(true);
+        showToast('회사 직인 업로드 중...', 'info');
+        
+        // 서버에 파일 업로드
+        const uploadResponse = await uploadFiles([file]);
+        
+        if (uploadResponse.statusCode === 200 && uploadResponse.data && uploadResponse.data.length > 0) {
+          const uploadedFileName = uploadResponse.data[0];
+          setUploadedSignatureImage(uploadedFileName);
+          
+          // 미리보기용 로컬 이미지 표시
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            setCompanyInfo(prev => ({ 
+              ...prev, 
+              signature: event.target?.result as string 
+            }));
+          };
+          reader.readAsDataURL(file);
+          
+          showToast('회사 직인이 업로드되었습니다.', 'success');
+        } else {
+          showToast('회사 직인 업로드에 실패했습니다.', 'error');
+        }
+      } catch (error) {
+        console.error('회사 직인 업로드 실패:', error);
+        showToast('회사 직인 업로드에 실패했습니다.', 'error');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -384,12 +432,15 @@ export default function CompanyInfoSettingsPage() {
   };
 
   const handleDeleteNote = (index: number) => {
+    // 최소 1개는 유지하도록 수정
     if (estimateNotes.length > 1) {
       const newNotes = estimateNotes.filter((_, i) => i !== index);
       setEstimateNotes(newNotes);
       
       // companyInfo.etc도 함께 업데이트
       setCompanyInfo(prev => ({ ...prev, etc: newNotes }));
+    } else {
+      showToast('견적 비고란은 최소 1개 이상 필요합니다.', 'info');
     }
   };
 
@@ -423,37 +474,42 @@ export default function CompanyInfoSettingsPage() {
   };
 
   // 회사 데이터 로드
-  const loadCompanyData = async () => {
-    if (!selectedCompanyCode) return;
+  const loadCompanyData = async (companyCode?: string) => {
+    // 매개변수가 있으면 사용하고, 없으면 현재 선택된 회사코드 사용
+    const companyId = companyCode || selectedCompanyCode || '';
+
+    // 컴퍼니 코드가 없거나 빈 문자열이면 API 호출하지 않음
+    if (!companyId || companyId.trim() === '') {
+      console.log('컴퍼니 코드가 없어 회사 데이터 로드를 건너뜁니다.');
+      return;
+    }
 
     setIsLoading(true);
     try {
-      const result = await getCompanyList();
+      const result = await getCompany(companyId);
       
-      let companies: any[] = [];
+      let company: any = null;
       if (result && typeof result === 'object') {
         if (Array.isArray(result)) {
           const firstItem = result[0];
           if (firstItem && typeof firstItem === 'object' && 'data' in firstItem) {
             const responseData = firstItem.data as any;
             if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-              companies = responseData.data || [];
+              company = responseData.data;
             }
           }
         } else if ('data' in result) {
           const resultData = result as any;
-          companies = resultData.data || [];
+          company = resultData.data;
         }
       }
-
-      const company = companies.find((c: any) => c.companyCode === selectedCompanyCode);
       
       if (company) {
         setCompanyInfo({
           id: company.companyCode || '',
           name: company.companyName || '',
-          ceo: company.ceo || '',
-          businessNo: company.businessNo || '',
+          ceo: company.name || company.ceo || '', // name을 대표명(ceo)으로 매핑
+          businessNo: company.businessNumber || company.businessNo || '', // businessNumber을 사업자등록번호(businessNo)로 매핑
           cellphone: company.cellphone || '',
           address: company.address || '',
           detailAddress: company.detailAddress || '',
@@ -462,12 +518,14 @@ export default function CompanyInfoSettingsPage() {
           aiProfile: company.aiProfile || '/ai-estimate/pretty.png',
           aiName: company.aiName || 'AI 에이전트',
           signature: company.signature || '',
-          etc: company.etc || ['견적 비고란을 입력해주세요', '비고란 설명', '견적 시 유의사항']
+          etc: company.etc || [''] // 기본값을 1개로 수정
         });
         
-        // 견적 비고란 설정
-        if (company.etc && Array.isArray(company.etc)) {
+        // 견적 비고란 설정 (최소 1개 보장)
+        if (company.etc && Array.isArray(company.etc) && company.etc.length > 0) {
           setEstimateNotes(company.etc);
+        } else {
+          setEstimateNotes(['']); // 빈 배열이어도 최소 1개 보장
         }
       }
     } catch (error) {
@@ -480,8 +538,33 @@ export default function CompanyInfoSettingsPage() {
 
   // 회사 선택 핸들러
   const handleCompanySelect = (company: { id: string; name: string }) => {
+    // 동일한 회사가 선택된 경우 아무 작업하지 않음
+    if (selectedCompanyCode === company.id) {
+      return;
+    }
+    
+    // 새로운 회사 선택 시 모든 값 초기화
     setSelectedCompanyCode(company.id);
     setSelectedCompanyName(company.name);
+    
+    // 회사 정보 초기화
+    setCompanyInfo(initialCompanyInfo);
+    
+    // 견적 비고란 초기화
+    setEstimateNotes(['견적 비고란을 입력해주세요']);
+    
+    // 업로드된 이미지 상태 초기화
+    setUploadedProfileImage(null);
+    setUploadedSignatureImage(null);
+    
+    // 편집 상태 초기화
+    setIsEditingTitle(false);
+    
+    // 새로운 회사의 데이터 로드
+    // 컴퍼니 코드가 유효한 경우에만 API 호출
+    if (company.id && company.id.trim() !== '') {
+      loadCompanyData(company.id);
+    }
   };
 
   // 전체 저장
@@ -491,18 +574,27 @@ export default function CompanyInfoSettingsPage() {
       return;
     }
 
+    // 견적 비고란이 비어있으면 기본값 추가
+    const finalEstimateNotes = estimateNotes.length > 0 ? estimateNotes : ['견적 비고란을 입력해주세요'];
+
     setIsLoading(true);
     try {
       await updateCompanyInfo(selectedCompanyCode, {
-        aiProfile: companyInfo.aiProfile,
+        // 업로드된 이미지가 있으면 파일명을, 없으면 기존 이미지를 사용
+        aiProfile: uploadedProfileImage || companyInfo.aiProfile,
         aiName: companyInfo.aiName,
         businessCategory: companyInfo.businessCategory,
         businessType: companyInfo.businessType,
-        signature: companyInfo.signature,
-        etc: estimateNotes
+        // 업로드된 직인 이미지가 있으면 파일명을, 없으면 기존 이미지를 사용
+        signature: uploadedSignatureImage || companyInfo.signature,
+        etc: finalEstimateNotes
       });
       
       showToast('회사 정보가 저장되었습니다.', 'success');
+      
+      // 저장 후 업로드된 이미지 상태 초기화
+      setUploadedProfileImage(null);
+      setUploadedSignatureImage(null);
     } catch (error) {
       console.error('회사 정보 저장 실패:', error);
       showToast('회사 정보 저장에 실패했습니다.', 'error');
@@ -511,12 +603,13 @@ export default function CompanyInfoSettingsPage() {
     }
   };
 
-  // 회사 선택 시 데이터 로드
+  // 페이지 로드 시 데이터 로드 - 컴퍼니 코드가 있을 때만 호출
   useEffect(() => {
-    if (selectedCompanyCode) {
+    // selectedCompanyCode가 존재하고 빈 문자열이 아닐 때만 로드
+    if (selectedCompanyCode && selectedCompanyCode.trim() !== '') {
       loadCompanyData();
     }
-  }, [selectedCompanyCode]);
+  }, []);
 
   return (
     <SettingsContainer>
@@ -630,7 +723,6 @@ export default function CompanyInfoSettingsPage() {
                   value={companyInfo.businessCategory || ''}
                   onChange={handleChange}
                   placeholder="예) 도메인, 제조업"
-                  readOnly={true}
                 />
                 <TextField
                   id="businessType"
@@ -639,7 +731,6 @@ export default function CompanyInfoSettingsPage() {
                   value={companyInfo.businessType || ''}
                   onChange={handleChange}
                   placeholder="예) 소프트웨어 개발, 의류 유통"
-                  readOnly={true}
                 />
               </InfoGrid>
             </Card>

@@ -9,7 +9,7 @@ import CompanySearch from '@/components/CompanySearch/CompanySearch';
 import { AppColors } from '@styles/colors';
 import { ThemeProvider } from "styled-components";
 import { lightTheme } from "@styles/theme";
-import { getAISettings, updateAISettings } from '@/lib/api/admin/adminApi';
+import { getCompany, updateAISettings } from '@/lib/api/admin/adminApi';
 import { useToast } from '@/components/common/ToastProvider';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
@@ -460,8 +460,8 @@ const SecureKeyInput: React.FC<SecureKeyInputProps> = ({
 export default function AigoSettingsPage() {
   const { show: showToast } = useToast();
   const [showTooltip, setShowTooltip] = useState(true);
-  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string | null>('heredot'); // 기본값 설정
-  const [selectedCompanyName, setSelectedCompanyName] = useState<string>('여기닷'); // 기본값 설정
+  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string | null>(''); // 빈 값으로 초기화
+  const [selectedCompanyName, setSelectedCompanyName] = useState<string>(''); // 기본값 설정
   const [isLoading, setIsLoading] = useState(false);
   const bidUnitSettingRef = React.useRef<{ getCheckpointList: () => Array<{checkpoint: number; discountRate: number}> } | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -492,26 +492,60 @@ export default function AigoSettingsPage() {
     rateRule: 'FIXED' as 'FIXED' | 'DYNAMIC'
   });
 
+  // checkpointList 데이터를 별도로 관리
+  const [checkpointList, setCheckpointList] = useState<Array<{checkpoint: number; discountRate: number}>>([]);
+
   // AI 설정 로드 함수
   const loadAISettings = async (companyCode: string) => {
-    if (!companyCode) return;
+    // 컴퍼니 코드가 없거나 빈 문자열이면 API 호출하지 않음
+    if (!companyCode || companyCode.trim() === '') {
+      console.log('컴퍼니 코드가 없어 AI 설정 로드를 건너뜁니다.');
+      return;
+    }
     
     setIsLoading(true);
     try {
-      const settings = await getAISettings(companyCode);
-      setFormData(prev => ({
-        ...prev,
-        maxGuestQueries: settings.guestDailyQueryLimit.toString(),
-        maxMemberQueries: settings.userDailyQueryLimit.toString(),
-        maxMonthlyMemberQueries: settings.userMonthlyQueryLimit.toString(),
-        maxStaffQueries: settings.employeeDailyQueryLimit.toString(),
-        maxMonthlyStaffQueries: settings.employeeMonthlyQueryLimit.toString(),
-        inferencePerformance: settings.aiConfidence,
-        licenseKey: settings.geminiApiKey,
-        theme: settings.mode.toLowerCase(),
-        discountRate: settings.discountRate,
-        rateRule: settings.rateRule,
-      }));
+      const result = await getCompany(companyCode);
+      
+      let company: any = null;
+      if (result && typeof result === 'object') {
+        if (Array.isArray(result)) {
+          const firstItem = result[0];
+          if (firstItem && typeof firstItem === 'object' && 'data' in firstItem) {
+            const responseData = firstItem.data as any;
+            if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+              company = responseData.data;
+            }
+          }
+        } else if ('data' in result) {
+          const resultData = result as any;
+          company = resultData.data;
+        }
+      }
+      
+      if (company) {
+        setFormData(prev => ({
+          ...prev,
+          maxGuestQueries: (company.guestDailyQueryLimit || 0).toString(),
+          maxMemberQueries: (company.userDailyQueryLimit || 0).toString(),
+          maxMonthlyMemberQueries: (company.userMonthlyQueryLimit || 0).toString(),
+          maxStaffQueries: (company.employeeDailyQueryLimit || 0).toString(),
+          maxMonthlyStaffQueries: (company.employeeMonthlyQueryLimit || 0).toString(),
+          inferencePerformance: company.aiConfidence || 50,
+          licenseKey: company.geminiApiKey || '',
+          theme: (company.mode || 'LIGHT').toLowerCase(),
+          discountRate: company.discountRate || 'MONTH',
+          rateRule: company.rateRule || 'FIXED',
+        }));
+        
+        // checkpointList 데이터 설정
+        if (company.checkpointList && Array.isArray(company.checkpointList)) {
+          setCheckpointList(company.checkpointList);
+          console.log('Loaded checkpointList:', company.checkpointList);
+        } else {
+          setCheckpointList([]);
+        }
+      }
       
     } catch (error) {
       console.error('AI 설정 로드 실패:', error);
@@ -523,7 +557,8 @@ export default function AigoSettingsPage() {
 
   // 컴포넌트 마운트 시 기본 설정 로드
   useEffect(() => {
-    if (selectedCompanyCode) {
+    // selectedCompanyCode가 존재하고 빈 문자열이 아닐 때만 로드
+    if (selectedCompanyCode && selectedCompanyCode.trim() !== '') {
       loadAISettings(selectedCompanyCode);
     }
   }, [selectedCompanyCode]);
@@ -574,7 +609,8 @@ export default function AigoSettingsPage() {
   };
 
   const handleSaveAll = () => {
-    if (!selectedCompanyCode) {
+    // 컴퍼니 코드 검증
+    if (!selectedCompanyCode || selectedCompanyCode.trim() === '') {
       showToast('고객사를 선택해주세요.', 'error');
       return;
     }
@@ -590,6 +626,13 @@ export default function AigoSettingsPage() {
 
   const handleConfirmSave = async () => {
     setShowConfirmModal(false);
+    
+    // 컴퍼니 코드가 없으면 저장하지 않음
+    if (!selectedCompanyCode || selectedCompanyCode.trim() === '') {
+      showToast('고객사를 선택해주세요.', 'error');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const updateParams = {
@@ -607,6 +650,7 @@ export default function AigoSettingsPage() {
         checkpointList: bidUnitSettingRef.current?.getCheckpointList() || [], // 저장 시 동적으로 가져오기
       };
 
+      // 컴퍼니 코드와 함께 API 호출
       await updateAISettings(selectedCompanyCode, updateParams);
       showToast('설정이 성공적으로 저장되었습니다.', 'success');
     } catch (error) {
@@ -621,8 +665,12 @@ export default function AigoSettingsPage() {
   const handleCompanySelect = (company: { id: string; name: string }) => {
     setSelectedCompanyCode(company.id);
     setSelectedCompanyName(company.name);
+    
     // 새로운 고객사 선택 시 해당 고객사의 설정을 로드
-    loadAISettings(company.id);
+    // 컴퍼니 코드가 유효한 경우에만 API 호출
+    if (company.id && company.id.trim() !== '') {
+      loadAISettings(company.id);
+    }
   };
 
   // 할인율 validation 함수들
@@ -1004,6 +1052,7 @@ export default function AigoSettingsPage() {
                   settingType={formData.rateRule}
                   minUnit={formData.projectName1}
                   maxUnit={formData.projectName2}
+                  initialCheckpoints={checkpointList}
                 />
               </div>
               
@@ -1043,7 +1092,10 @@ export default function AigoSettingsPage() {
           )}
 
         <SaveButtonContainer>
-          <SaveAllButton onClick={handleSaveAll} disabled={isLoading || !selectedCompanyCode}>
+          <SaveAllButton 
+            onClick={handleSaveAll} 
+            disabled={isLoading || !selectedCompanyCode || selectedCompanyCode.trim() === ''}
+          >
             {isLoading ? '저장 중...' : '전체 저장'}
           </SaveAllButton>
         </SaveButtonContainer>

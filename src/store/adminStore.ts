@@ -50,6 +50,10 @@ export const useAdminStore = create<AdminStore>()(
       clearAdminInfo: () => {
         devLog('🚪 [AdminStore] 관리자 정보 삭제 (로그아웃)');
         
+        // 토큰도 함께 제거
+        localStorage.removeItem('admin_access_token');
+        devLog('🗑️ [AdminStore] 관리자 토큰 삭제 완료');
+        
         set({
           adminInfo: null,
           isLoggedIn: false

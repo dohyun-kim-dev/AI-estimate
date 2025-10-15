@@ -38,43 +38,101 @@ const BidUnitSetting = React.forwardRef<
   maxUnit = '',
   initialCheckpoints = []
 }, ref) => {
-  // settingType에 따른 초기 데이터 설정 (처음 한 번만)
-  const getInitialData = useCallback(() => {
-    if (settingType === 'FIXED') {
-      return [{
-        index: 1,
-        minAmount: "",
-        maxAmount: "",
-        unitAmount: "",
-      }];
-    } else {
-      // 동적 설정일 때는 빈 값으로 시작 (첫 번째는 최소 단위, 마지막은 최대 단위 고정)
-      return [
-        {
-          index: 1,
-          minAmount: "",
-          maxAmount: "",
-          unitAmount: "",
-        },
-        {
-          index: 2,
-          minAmount: "",
-          maxAmount: "", // 마지막 구간
-          unitAmount: "",
-        },
-      ];
-    }
-  }, [settingType]); // minUnit, maxUnit 의존성 제거
+  // 고정설정과 동적설정 데이터를 별도로 관리
+  const [fixedData, setFixedData] = useState<BidUnitRange[]>([{
+    index: 1,
+    minAmount: "",
+    maxAmount: "",
+    unitAmount: "",
+  }]);
 
-  const [bidUnitRanges, setBidUnitRanges] = useState<BidUnitRange[]>(() => getInitialData());
+  const [dynamicData, setDynamicData] = useState<BidUnitRange[]>([
+    {
+      index: 1,
+      minAmount: "",
+      maxAmount: "",
+      unitAmount: "",
+    },
+    {
+      index: 2,
+      minAmount: "",
+      maxAmount: "",
+      unitAmount: "",
+    },
+  ]);
+
+  // 현재 설정 타입에 따라 보여줄 데이터 결정
+  const bidUnitRanges = settingType === 'FIXED' ? fixedData : dynamicData;
+  const setBidUnitRanges = settingType === 'FIXED' ? setFixedData : setDynamicData;
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTargetIndex, setDeleteTargetIndex] = useState<number | null>(null);
 
-  // settingType 변경시에만 데이터 초기화
+  // initialCheckpoints가 변경될 때만 현재 settingType에 맞는 상태에 반영 (한 번만)
   React.useEffect(() => {
-    setBidUnitRanges(getInitialData());
-  }, [settingType]); // settingType만 의존성으로 설정
+    if (initialCheckpoints && initialCheckpoints.length > 0) {
+      // 현재 설정 타입에 해당하는 데이터만 설정
+      if (settingType === 'FIXED') {
+        // 고정 설정: 첫 번째 체크포인트만 사용
+        const firstCheckpoint = initialCheckpoints[0];
+        setFixedData([{
+          index: 1,
+          minAmount: firstCheckpoint.checkpoint.toString(),
+          maxAmount: "",
+          unitAmount: firstCheckpoint.discountRate.toString(),
+        }]);
+        
+        // 동적 설정은 빈 값으로 초기화
+        setDynamicData([
+          {
+            index: 1,
+            minAmount: "",
+            maxAmount: "",
+            unitAmount: "",
+          },
+          {
+            index: 2,
+            minAmount: "",
+            maxAmount: "",
+            unitAmount: "",
+          },
+        ]);
+      } else {
+        // 동적 설정: 모든 체크포인트 사용
+        const dynamicRanges = initialCheckpoints.map((checkpoint, index) => ({
+          index: index + 1,
+          minAmount: "",
+          maxAmount: checkpoint.checkpoint.toString(),
+          unitAmount: checkpoint.discountRate.toString(),
+        }));
+        
+        // 마지막에 빈 구간 하나 더 추가 (필요시)
+        
+        setDynamicData(dynamicRanges.length > 0 ? dynamicRanges : [
+          {
+            index: 1,
+            minAmount: "",
+            maxAmount: "",
+            unitAmount: "",
+          },
+          {
+            index: 2,
+            minAmount: "",
+            maxAmount: "",
+            unitAmount: "",
+          },
+        ]);
+        
+        // 고정 설정은 빈 값으로 초기화
+        setFixedData([{
+          index: 1,
+          minAmount: "",
+          maxAmount: "",
+          unitAmount: "",
+        }]);
+      }
+    }
+  }, [initialCheckpoints]); // settingType 의존성 제거 - 초기 데이터 로드 시에만 실행
 
   // checkpointList 생성 및 상위 컴포넌트로 전달
   const generateCheckpointList = React.useCallback((ranges: BidUnitRange[]): Checkpoint[] => {

@@ -30,6 +30,8 @@ import { SwitchInput } from '@/components/SwitchInput';
 import { devLog } from '@/lib/utils/devLogger';
 import CmsResponsiveContainer from '@components/CustomList/ResponsiveList/CmsResponsiveContainer';
 import ConfirmButton from '@/components/ConfirmButton';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import { useCompanyCode } from '@/hooks/useCompanyCode';
 import 'dayjs/locale/ko';
 
 dayjs.locale('ko');
@@ -332,6 +334,10 @@ const UserMngPage: React.FC = () => {
     null
   );
   const { show: showToast } = useToast(); // 토스트 훅 추가
+  
+  // 권한 및 URL 기반 상태 관리
+  const { isRoot } = useAdminAuth();
+  const urlCompanyCode = useCompanyCode();
 
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
@@ -527,11 +533,13 @@ const UserMngPage: React.FC = () => {
       
       if (isEditMode) {
         // 회원 정보 수정
+        const apiCompanyCode = isRoot ? selectedCompanyCode : urlCompanyCode;
         response = await updateUser({
           id: selectedUser._id!,
           cellphone: cellphone,
           email: email,
           memo: description,
+          companyCode: apiCompanyCode || '', // 권한에 따른 companyCode 사용
         });
         
         devLog('회원 정보 수정 응답', response);
@@ -612,14 +620,18 @@ const UserMngPage: React.FC = () => {
         const fromDate = params.fromDate || dateRange?.fromDate || dayjs().subtract(3, 'month').format('YYYY-MM-DD');
         const toDate = params.toDate || dateRange?.toDate || dayjs().format('YYYY-MM-DD');
         
-        devLog('🔍 [fetchData 호출]', { searchKeyword, fromDate, toDate, selectedCompanyCode });
+        // API 호출 시 사용할 companyCode 결정
+        const apiCompanyCode = isRoot ? selectedCompanyCode : urlCompanyCode;
+        
+        devLog('🔍 [fetchData 호출]', { searchKeyword, fromDate, toDate, apiCompanyCode, isRoot });
         
         // API 호출
         const response = await getUserList({
           keyword: searchKeyword,
           fromDate: fromDate,
           toDate: toDate,
-          companyCode: selectedCompanyCode || '',
+          companyCode: apiCompanyCode || '',
+          isRoot: isRoot, // 권한 정보도 함께 전달
         });
         
         devLog('✅ [fetchData 응답 받음]', response);
@@ -659,7 +671,7 @@ const UserMngPage: React.FC = () => {
         return { data: [], totalItems: 0, allItems: 0 };
       }
     },
-    [currentKeyword, selectedCompanyCode, dateRange]
+    [currentKeyword, selectedCompanyCode, dateRange, isRoot, urlCompanyCode]
   );
 
   const handleDropdownChange = useCallback(
@@ -670,6 +682,9 @@ const UserMngPage: React.FC = () => {
   );
 
   const handleCompanySelect = useCallback((company: { id: string; name: string }) => {
+    // 통합관리자만 회사 선택 가능
+    if (!isRoot) return;
+    
     devLog('=== Company selected ===:', company);
     
     if (!company.id) {
@@ -680,15 +695,20 @@ const UserMngPage: React.FC = () => {
     // 상태 업데이트
     setSelectedCompanyCode(company.id);
     setSelectedCompanyName(company.name);
-  }, [showToast]);
+    
+    // 고객사 변경 시 리스트 새로고침
+    setTimeout(() => {
+      listRef.current?.refetch();
+    }, 100);
+  }, [showToast, isRoot]);
 
-  // selectedCompanyCode 변경 시 refetch 실행
+  // selectedCompanyCode 변경 시 refetch 실행 (통합관리자만)
   React.useEffect(() => {
-    if (selectedCompanyCode && listRef.current) {
+    if (isRoot && selectedCompanyCode && listRef.current) {
       devLog('🏢 Company 변경 감지, refetch 실행:', selectedCompanyCode);
       listRef.current.refetch();
     }
-  }, [selectedCompanyCode]);
+  }, [selectedCompanyCode, isRoot]);
 
   const columns: ColumnDefinition<User>[] = useMemo(
     () => [
@@ -785,7 +805,7 @@ const UserMngPage: React.FC = () => {
         
         onRowClick={handleRowClick}
         themeMode="light"
-        enableCompanySearch={true}
+        enableCompanySearch={isRoot} // 통합관리자만 CompanySearch 표시
         onCompanySelect={handleCompanySelect}
         dateRangeOptions={['3개월', '6개월', '1년', '지정']}
         onDateChange={(fromDate, toDate) => {

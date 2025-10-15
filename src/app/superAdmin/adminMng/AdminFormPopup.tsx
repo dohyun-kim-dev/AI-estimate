@@ -178,6 +178,8 @@ interface AdminFormPopupProps {
   selectedCompanyCode: string;
   selectedCompanyName: string;
   onCompanySelect: (company: { id: string; name: string }) => void;
+  // 권한 관련 props 추가
+  isRoot: boolean;
 }
 
 const AdminFormPopup: React.FC<AdminFormPopupProps> = ({
@@ -215,11 +217,13 @@ const AdminFormPopup: React.FC<AdminFormPopupProps> = ({
   selectedCompanyCode,
   selectedCompanyName,
   onCompanySelect,
+  // 권한 관련 props
+  isRoot,
 }) => {
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   return (
     <CmsPopup
-      title={selectedUser ? "고객사 관리자 수정" : "고객사 관리자 등록"}
+      title={selectedUser ? "관리자 수정" : "관리자 등록"}
       isOpen={isOpen}
       onClose={onClose}
       isWide={false}
@@ -282,22 +286,24 @@ const AdminFormPopup: React.FC<AdminFormPopupProps> = ({
         {/* 관리자 정보 섹션 */}
         <Title>관리자 정보</Title>
         
-        {/* 고객사 조회 */}
-        <CompanySearchInput>
-          <CompanyTextField
-            id="companySearch"
-            value={selectedCompanyName}
-            label="* 고객사"
-            placeholder="고객사를 선택하세요"
-            readOnly
-            onClick={() => setIsCompanyModalOpen(true)}
-          />
-          <SearchIcon onClick={() => setIsCompanyModalOpen(true)}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M19.6 21L13.3 14.7C12.8 15.1 12.225 15.4167 11.575 15.65C10.925 15.8833 10.2333 16 9.5 16C7.68333 16 6.146 15.3707 4.888 14.112C3.63 12.8533 3.00067 11.316 3 9.5C2.99933 7.684 3.62867 6.14667 4.888 4.888C6.14733 3.62933 7.68467 3 9.5 3C11.3153 3 12.853 3.62933 14.113 4.888C15.373 6.14667 16.002 7.684 16 9.5C16 10.2333 15.8833 10.925 15.65 11.575C15.4167 12.225 15.1 12.8 14.7 13.3L21 19.6L19.6 21ZM9.5 14C10.75 14 11.8127 13.5627 12.688 12.688C13.5633 11.8133 14.0007 10.7507 14 9.5C13.9993 8.24933 13.562 7.187 12.688 6.313C11.814 5.439 10.7513 5.00133 9.5 5C8.24867 4.99867 7.18633 5.43633 6.313 6.313C5.43967 7.18967 5.002 8.252 5 9.5C4.998 10.748 5.43567 11.8107 6.313 12.688C7.19033 13.5653 8.25267 14.0027 9.5 14Z" fill="#9E9E9E"/>
-            </svg>
-          </SearchIcon>
-        </CompanySearchInput>
+        {/* 통합관리자만 고객사 조회 필드 표시 */}
+        {isRoot && (
+          <CompanySearchInput>
+            <CompanyTextField
+              id="companySearch"
+              value={selectedCompanyName}
+              label="* 고객사"
+              placeholder="고객사를 선택하세요"
+              readOnly
+              onClick={() => setIsCompanyModalOpen(true)}
+            />
+            <SearchIcon onClick={() => setIsCompanyModalOpen(true)}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M19.6 21L13.3 14.7C12.8 15.1 12.225 15.4167 11.575 15.65C10.925 15.8833 10.2333 16 9.5 16C7.68333 16 6.146 15.3707 4.888 14.112C3.63 12.8533 3.00067 11.316 3 9.5C2.99933 7.684 3.62867 6.14667 4.888 4.888C6.14733 3.62933 7.68467 3 9.5 3C11.3153 3 12.853 3.62933 14.113 4.888C15.373 6.14667 16.002 7.684 16 9.5C16 10.2333 15.8833 10.925 15.65 11.575C15.4167 12.225 15.1 12.8 14.7 13.3L21 19.6L19.6 21ZM9.5 14C10.75 14 11.8127 13.5627 12.688 12.688C13.5633 11.8133 14.0007 10.7507 14 9.5C13.9993 8.24933 13.562 7.187 12.688 6.313C11.814 5.439 10.7513 5.00133 9.5 5C8.24867 4.99867 7.18633 5.43633 6.313 6.313C5.43967 7.18967 5.002 8.252 5 9.5C4.998 10.748 5.43567 11.8107 6.313 12.688C7.19033 13.5653 8.25267 14.0027 9.5 14Z" fill="#9E9E9E"/>
+              </svg>
+            </SearchIcon>
+          </CompanySearchInput>
+        )}
 
         <CommonTextField
           id="adminId"
@@ -396,16 +402,18 @@ const AdminFormPopup: React.FC<AdminFormPopupProps> = ({
         />
       </FormContainer>
 
-      {/* 고객사 검색 모달 */}
-      <CompanySearchModal
-        isOpen={isCompanyModalOpen}
-        onClose={() => setIsCompanyModalOpen(false)}
-        onSelect={(company) => {
-          onCompanySelect({ id: company.companyCode, name: company.companyName });
-          setIsCompanyModalOpen(false);
-        }}
-        themeMode="light"
-      />
+      {/* 통합관리자만 고객사 검색 모달 표시 */}
+      {isRoot && (
+        <CompanySearchModal
+          isOpen={isCompanyModalOpen}
+          onClose={() => setIsCompanyModalOpen(false)}
+          onSelect={(company) => {
+            onCompanySelect({ id: company.companyCode, name: company.companyName });
+            setIsCompanyModalOpen(false);
+          }}
+          themeMode="light"
+        />
+      )}
     </CmsPopup>
   );
 };

@@ -113,6 +113,14 @@ export async function loginAdminService({
       message,
       showMessage,
       onSuccess: () => {
+        // ✅ 토큰 저장
+        if (token) {
+          localStorage.setItem('admin_access_token', token);
+          devLog('🔐 [loginAdminService] 관리자 토큰 저장 완료:', token.substring(0, 10) + '...');
+        } else {
+          devWarn('⚠️ [loginAdminService] 토큰이 없습니다');
+        }
+        
         // ✅ 외부로 로그인 정보 전달 (관리자 데이터 포함)
         onSuccess?.({ id, token, isRoot, adminData: adminInfo });
       },

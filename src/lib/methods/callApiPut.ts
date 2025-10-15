@@ -1,5 +1,6 @@
 import { pageLoaderController } from "@/contexts/PageLoaderContext";
 import { devLog, devWarn } from '../utils/devLogger';
+import { triggerAdminLogout } from "@/contexts/AdminAuthContext";
 
 interface CallApiPutParams {
   title: string;
@@ -44,9 +45,19 @@ export async function callApiPut<T = unknown>({
     devLog(`📱 [${title}] 응답 상태:`, response.status, response.statusText);
     if (response.status === 401) {
       devLog(`❌ [${title}] 인증 오류:`, response.status, response.statusText);
-      localStorage.removeItem('adminId');
+      triggerAdminLogout();
       alert('인증이 만료되었습니다. 다시 로그인 해주세요.');
-      window.location.href = '/superadmin/login';
+      
+      // URL에 'cms'가 포함되어 있으면 회사별 CMS 로그인으로, 아니면 슈퍼어드민 로그인으로
+      const currentPath = window.location.pathname;
+      const cmsMatch = currentPath.match(/\/([^/]+)\/cms/);
+      
+      if (cmsMatch) {
+        const companyCode = cmsMatch[1];
+        window.location.href = `/${companyCode}/cms/login`;
+      } else {
+        window.location.href = '/superadmin/login';
+      }
     } else if (!response.ok) {
       devLog(`❌ [${title}] HTTP 에러:`, response.status, response.statusText);
     }

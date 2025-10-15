@@ -15,6 +15,26 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { companyCode } = useParams();
 
+  // 페이지 로드 시 body 스타일 초기화
+  useEffect(() => {
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    document.body.style.backgroundColor = '#ffffff';
+    document.documentElement.style.margin = '0';
+    document.documentElement.style.padding = '0';
+    document.documentElement.style.backgroundColor = '#ffffff';
+    
+    return () => {
+      // 컴포넌트 언마운트 시 원래 스타일 복원
+      document.body.style.margin = '';
+      document.body.style.padding = '';
+      document.body.style.backgroundColor = '';
+      document.documentElement.style.margin = '';
+      document.documentElement.style.padding = '';
+      document.documentElement.style.backgroundColor = '';
+    };
+  }, []);
+
   const navigate = useNavigate();
   const { login, isLoggedIn } = useAdminAuth();
 
@@ -75,23 +95,29 @@ export default function LoginPage() {
   };
 
   return (
-    <form
-  onSubmit={(e) => {
-    e.preventDefault(); // 새로고침 방지
-    handleLogin();
-  }}
-  style={{ width: "100%" }}
->
     <div
       style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
         height: '100vh',
-        width: '100vw', // 화면 전체를 감싸도록 설정
-        backgroundColor: '#fff', // 배경 흰색
+        width: '100vw',
+        backgroundColor: '#ffffff',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
+        margin: 0,
+        padding: 0,
+        zIndex: 9999,
       }}
     >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault(); // 새로고침 방지
+          handleLogin();
+        }}
+        style={{ width: "100%" }}
+      >
       <div
         style={{
           padding: '16px',
@@ -201,7 +227,7 @@ export default function LoginPage() {
           pauseOnHover
         />
       </div>
+      </form>
     </div>
-    </form>
   );
 }
