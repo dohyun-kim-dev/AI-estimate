@@ -18,7 +18,7 @@ import GenericDateRangePicker from "./GenericDateRangePicker"; // 경로 확인
 import DropdownCustom from "./DropdownCustom";
 import { THEME_COLORS, ThemeMode } from "@/styles/theme_colors";
 import ActionButton from "../ActionButton";
-import CompanySearchModal from "./CompanySearchModal";
+import CompanySearch from "@/components/CompanySearch/CompanySearch";
 import { devError, devWarn } from "@/utils/devLogger";
 
 
@@ -148,9 +148,7 @@ const PrimaryButton = styled(ActionButton)<{ $themeMode: ThemeMode }>`
   background: #214a72;
   color: #ffffff;
   border: none;
-  &:hover:not(:disabled) {
-    background-color: ${({ $themeMode }) => ($themeMode === 'light' ? '#1a3c5e' : '#1a3c5e')};
-  }
+  
 `;
 
 // 삭제, 업로드 버튼 (어두운 톤)
@@ -160,9 +158,7 @@ const SecondaryButton = styled(ActionButton)<{ $themeMode: ThemeMode }>`
   background: ${({ $themeMode }) => ($themeMode === "light" ? "#FFFFFF" : "#333333")};
   color: ${({ $themeMode }) => ($themeMode === "light" ? "#214A72" : "#eeeeee")};
   border: none;
-  &:hover:not(:disabled) {
-    background-color: ${({ $themeMode }) => ($themeMode === "light" ? "#dddddd" : "#555555")};
-  }
+  
 `;
 
 // 다운로드 버튼 (특정 색)
@@ -299,7 +295,6 @@ const GenericListUIInner = <T extends BaseRecord>(
   const [fromDate, setFromDate] = useState(initialDates.fromDate);
   const [toDate, setToDate] = useState(initialDates.toDate);
   const [searchTermInput, setSearchTermInput] = useState(initialState.keyword ?? "");
-  const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   
   // 상태 필터 state 추가
   const [selectedStatus, setSelectedStatus] = useState(statusFilter?.defaultValue || '');
@@ -371,7 +366,6 @@ const GenericListUIInner = <T extends BaseRecord>(
   const handleCompanySelect = (company: { id: string; name: string }) => {
     setSelectedCompanyCode(company.id);
     setSelectedCompanyName(company.name);
-    setIsCompanyModalOpen(false);
     
     // 부모에게도 알림 (필요한 경우)
     if (onCompanySelect) {
@@ -557,21 +551,12 @@ const GenericListUIInner = <T extends BaseRecord>(
             )}
           </TitleContainer>
           {enableCompanySearch && (
-            <CompanySearchContainer>
-              <Flex>
-                <CompanySearchInput
-                  type="text"
-                  placeholder="고객사를 선택하세요"
-                  value={selectedCompanyName || ''}
-                  readOnly
-                  onClick={() => setIsCompanyModalOpen(true)}
-                  $themeMode={themeMode}
-                />
-                <SearchButton onClick={() => setIsCompanyModalOpen(true)} $themeMode={themeMode}>
-                  검색
-                </SearchButton>
-              </Flex>
-            </CompanySearchContainer>
+            <CompanySearch
+              selectedCompanyCode={selectedCompanyCode}
+              selectedCompanyName={selectedCompanyName}
+              onCompanySelect={handleCompanySelect}
+              themeMode={themeMode}
+            />
           )}
         </HeaderMainRow>
         {renderTabs && <TabsWrapper>{renderTabs()}</TabsWrapper>}
@@ -759,18 +744,7 @@ const GenericListUIInner = <T extends BaseRecord>(
           </RightControls>
         </EventControls>
 
-          {/* 고객사 검색 모달 */}
-          {enableCompanySearch && (
-            <CompanySearchModal
-              isOpen={isCompanyModalOpen}
-              onClose={() => setIsCompanyModalOpen(false)}
-              onSelect={(company) => {
-                // 내부 핸들러 사용 (날짜처럼 내부 상태 관리)
-                handleCompanySelect({ id: company.companyCode, name: company.companyName });
-              }}
-              themeMode={themeMode}
-            />
-          )}
+
       </ControlHeader>
 
         {isDynamicData ? (
@@ -842,14 +816,6 @@ const HeaderMainRow = styled.div`
   margin-top: 0px;
   width: 100%;
   position: relative;
-`;
-
-const CompanySearchContainer = styled.div`
-  display: flex;
-  align-items: center;
-  position: absolute;
-  right: 0;
-  top: 0;
 `;
 
 const TitleContainer = styled.div`
@@ -988,19 +954,6 @@ const SearchInput = styled(BaseInput)`
 
   &:focus {
     background-image: url("/icon_search.png");
-  }
-`;
-
-const CompanySearchInput = styled(BaseInput)`
-  cursor: pointer;
-  background-image: url("/icon_search.png");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 16px 16px;
-  
-  &:hover {
-    background-color: ${({ $themeMode }) =>
-      $themeMode === "light" ? "#f5f5f5" : THEME_COLORS.dark.background};
   }
 `;
 

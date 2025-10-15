@@ -62,7 +62,7 @@ const PopupContainer = styled.div<{
   width: ${({ $isWide }) => ($isWide ? '1200px' : '800px')};
   min-width: ${({ $isWide }) => ($isWide ? '1200px' : '800px')};
   height: ${({ $customHeight }) => $customHeight ?? '94vh'};
-  max-height: 85vh;
+  max-height: 93vh;
   background: ${({ $backgroundColor }) => $backgroundColor ?? '#2c2e3c'}; // ✅ 배경색
   border-radius: 4px;
   padding-bottom: ${({ $hasBottomFloating }) => ($hasBottomFloating ? '100px' : '0')};
@@ -71,6 +71,7 @@ const PopupContainer = styled.div<{
   flex-direction: column;
   overflow: hidden;
   flex-shrink: 0;
+  margin: 0 auto;
 
   @media (max-width: 768px) {
     width: 90vw !important;

@@ -204,7 +204,7 @@ const CloseButton = styled.button`
 const ChatIdWrapper = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 8px;
 `;
 
@@ -601,9 +601,10 @@ dayjs.locale('ko');
         accessor: 'chatSessionId', 
         sortable: true,
         allowWrap: true,
+        width: 80,
         formatter: (value, row) => (
           <ChatIdWrapper>
-            <ChatIdText>{value || '-'}</ChatIdText>
+            {/* <ChatIdText>{value || '-'}</ChatIdText> */}
             {value && (
               <CopyIconButton
                 onClick={(e) => handleCopyToClipboard(value, e)}

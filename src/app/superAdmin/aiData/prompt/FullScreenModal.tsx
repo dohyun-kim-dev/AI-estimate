@@ -127,9 +127,9 @@ const Description = styled.p`
 const ContentTextarea = styled.textarea`
   flex: 1;
   width: 100%;
-  background-color: #fff;
+  background-color: #F4F4F4;
   border: 1px solid #e9ecef;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 24px;
   font-size: 15px;
   line-height: 1.8;

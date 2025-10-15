@@ -18,6 +18,7 @@ import {
   UserIcon,
   AIDataIcon,
   CustomerDataIcon,
+  FAQIcon, 
   TermsIcon,
   LogoutIcon,
 } from '@/components/icons/AdminMenuIcons';
@@ -120,6 +121,7 @@ const handleMenuToggle = (menuId: string) => {
         { id: 'user-data-inquiry', title: '상담 요청 관리', path: `/superadmin/user-data/inquiry` },
       ],
     },
+    { id: 'faq', icon: <FAQIcon />, title: 'FAQ', path: `/superadmin/faq` },
     { id: 'terms', icon: <TermsIcon />, title: '이용 약관', path: `/superadmin/terms` },
   ];
 

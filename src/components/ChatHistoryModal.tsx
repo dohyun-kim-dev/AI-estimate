@@ -8,6 +8,7 @@ import CmsPopup from '@/components/CmsPopup';
 import { devLog } from '@/utils/devLogger'
 import ImageGrid from '@/components/ai-esti/ImageGrid';
 import { ImageData } from '@/store/chatStore';
+import { useThemeStore } from '@/store/themeStore';
  
 // 메시지 타입 정의
 import type { FileUploadData } from '@/firebase.functions';
@@ -26,44 +27,48 @@ interface ChatMessage {
   files?: FileUploadData[]; // 클라이언트에서 변환된 파일 정보
 }
  
-const Container = styled.div`
+const Container = styled.div<{ $isDarkMode: boolean }>`
   max-width: 100%;
   width: 100%;
-  padding: 1px;
-  padding-bottom: 20px;
-  max-height: 90vh;
+  padding: 0 4px 20px 4px;
+  max-height: 80vh;
   overflow-y: auto;
-  overflow-x: hidden; /* 가로 스크롤 방지 */
+  overflow-x: hidden;
   box-sizing: border-box;
  
-  /* 윈도우/크롬 스크롤바 */
+  /* 웹킷 브라우저 스크롤바 */
   &::-webkit-scrollbar {
-    width: 8px;
+    width: 12px;
   }
  
   &::-webkit-scrollbar-track {
-    background: #000;
-    border-radius: 4px;
+    background: ${({ $isDarkMode }) => $isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'};
+    border-radius: 6px;
   }
  
   &::-webkit-scrollbar-thumb {
-    background: #868686;
-    border-radius: 4px;
+    background: ${({ $isDarkMode }) => $isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'};
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: content-box;
   }
  
   &::-webkit-scrollbar-thumb:hover {
-    background: #999;
+    background: ${({ $isDarkMode }) => $isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)'};
+    background-clip: content-box;
   }
  
   /* 파이어폭스 스크롤바 */
   scrollbar-width: thin;
-  scrollbar-color: #868686 #000;
+  scrollbar-color: ${({ $isDarkMode }) => 
+    $isDarkMode ? 'rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.3) rgba(0, 0, 0, 0.1)'
+  };
 `;
  
 const ChatBox = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 20px;
   border-radius: 8px;
   padding: 12px;
@@ -71,35 +76,12 @@ const ChatBox = styled.div`
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  overflow-x: hidden; /* 가로 스크롤 방지 */
- 
-  /* 윈도우/크롬 스크롤바 */
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
- 
-  &::-webkit-scrollbar-track {
-    background: #000;
-    border-radius: 4px;
-  }
- 
-  &::-webkit-scrollbar-thumb {
-    background: #868686;
-    border-radius: 4px;
-  }
- 
-  &::-webkit-scrollbar-thumb:hover {
-    background: #999;
-  }
- 
-  /* 파이어폭스 스크롤바 */
-  scrollbar-width: thin;
-  scrollbar-color: #868686 #000;
+  overflow-x: hidden;
 `;
  
-const UserMessage = styled.div`
+const UserMessage = styled.div<{ $isDarkMode: boolean }>`
   align-self: flex-end;
-  background: #383838;
+  background: ${({ $isDarkMode }) => $isDarkMode ? '#383838' : '#007AFF'};
   color: #fff;
   padding: 10px 12px;
   border-radius: 12px;
@@ -137,39 +119,39 @@ const StyledAiMessage = styled(ShareAiResponseMessage)<{ isFullWidth?: boolean }
   overflow-x: hidden; /* 내부 콘텐츠 가로 스크롤 방지 */
 `;
  
-const LoadingContainer = styled.div`
+const LoadingContainer = styled.div<{ $isDarkMode: boolean }>`
   text-align: center;
-  color: #fff;
+  color: ${({ $isDarkMode }) => $isDarkMode ? '#fff' : '#000'};
   padding: 40px 20px;
 `;
  
-const ErrorContainer = styled.div`
+const ErrorContainer = styled.div<{ $isDarkMode: boolean }>`
   text-align: center;
-  color: #d32f2f;
+  color: ${({ $isDarkMode }) => $isDarkMode ? '#d32f2f' : '#c62828'};
   padding: 20px;
-`;
- 
-const PopupFooter = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
 `;
  
 const ChatHeader = styled.div`
   padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 `;
 
-const ChatTitle = styled.h2`
-  color: #fff;
+const ChatHeaderContent = styled.div`
+  flex: 1;
+`;
+
+const ChatTitle = styled.h2<{ $isDarkMode: boolean }>`
+  color: ${({ $isDarkMode }) => $isDarkMode ? '#fff' : '#000'};
   font-size: 18px;
   font-weight: 600;
   margin: 0;
   margin-bottom: 8px;
 `;
 
-const ChatSubtitle = styled.div`
-  color: #999;
+const ChatSubtitle = styled.div<{ $isDarkMode: boolean }>`
+  color: ${({ $isDarkMode }) => $isDarkMode ? '#999' : '#666'};
   font-size: 14px;
   display: flex;
   align-items: center;
@@ -184,22 +166,25 @@ const UserBadge = styled.span`
   font-size: 12px;
 `;
 
-const CloseButton = styled.button`
-  width: 120px;
-  height: 48px;
-  border-radius: 6px;
-  font-weight: bold;
-  font-size: 16px;
+const CloseIcon = styled.button<{ $isDarkMode: boolean }>`
+  background: none;
+  border: none;
   cursor: pointer;
-  background-color: #ffffff;
-  color: #2D2E3C;
-  border: 1px solid #2D2E3C;
+  padding: 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   
   &:hover {
-    opacity: 0.8;
+    background-color: ${({ $isDarkMode }) => $isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'};
+  }
+  
+  svg path {
+    fill: ${({ $isDarkMode }) => $isDarkMode ? '#fff' : '#000'};
   }
 `;
- 
+
 interface ChatHistoryModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -216,8 +201,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
   chatTitle
 }) => {
   const { setSessionId, addMessage, messages, clearMessages } = useShareChatStore();
-  // 항상 다크모드로 설정
-  const isDarkMode = true;
+  const { isDarkMode } = useThemeStore();
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
  
@@ -476,7 +460,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
   const renderContent = () => {
     if (loading) {
       return (
-        <LoadingContainer>
+        <LoadingContainer $isDarkMode={isDarkMode}>
           <p>채팅 메시지를 불러오는 중...</p>
         </LoadingContainer>
       );
@@ -484,7 +468,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
  
     if (errorMessage) {
       return (
-        <ErrorContainer>
+        <ErrorContainer $isDarkMode={isDarkMode}>
           <p>{errorMessage}</p>
         </ErrorContainer>
       );
@@ -512,7 +496,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
                 )}
                 {/* 텍스트가 있으면 말풍선으로 표시 */}
                 {parsedContent.text && (
-                  <UserMessage>{parsedContent.text}</UserMessage>
+                  <UserMessage $isDarkMode={isDarkMode}>{parsedContent.text}</UserMessage>
                 )}
               </UserMessageContainer>
             );
@@ -540,26 +524,26 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       isWide
-      backgroundColor="#000"
-      bottomFloating={
-        <PopupFooter>
-          <CloseButton onClick={onClose}>닫기</CloseButton>
-        </PopupFooter>
-      }
-
-      
+      backgroundColor={isDarkMode ? "#000" : "#ffffff"}
     >
 
               {/* 채팅방 제목 헤더 */}
       <ChatHeader>
-        <ChatTitle>{chatTitle || '채팅방'}</ChatTitle>
-        <ChatSubtitle>
-          <UserBadge>{userName || '사용자'}</UserBadge>
-          <span>세션 ID: {chatSessionId}</span>
-        </ChatSubtitle>
+        <ChatHeaderContent>
+          <ChatTitle $isDarkMode={isDarkMode}>{chatTitle || '채팅방'}</ChatTitle>
+          <ChatSubtitle $isDarkMode={isDarkMode}>
+            <UserBadge>{userName || '사용자'}</UserBadge>
+            <span>세션 ID: {chatSessionId}</span>
+          </ChatSubtitle>
+        </ChatHeaderContent>
+        <CloseIcon $isDarkMode={isDarkMode} onClick={onClose}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M7.00078 8.40078L2.10078 13.3008C1.91745 13.4841 1.68411 13.5758 1.40078 13.5758C1.11745 13.5758 0.884114 13.4841 0.700781 13.3008C0.517448 13.1174 0.425781 12.8841 0.425781 12.6008C0.425781 12.3174 0.517448 12.0841 0.700781 11.9008L5.60078 7.00078L0.700781 2.10078C0.517448 1.91745 0.425781 1.68411 0.425781 1.40078C0.425781 1.11745 0.517448 0.884114 0.700781 0.700781C0.884114 0.517448 1.11745 0.425781 1.40078 0.425781C1.68411 0.425781 1.91745 0.517448 2.10078 0.700781L7.00078 5.60078L11.9008 0.700781C12.0841 0.517448 12.3174 0.425781 12.6008 0.425781C12.8841 0.425781 13.1174 0.517448 13.3008 0.700781C13.4841 0.884114 13.5758 1.11745 13.5758 1.40078C13.5758 1.68411 13.4841 1.91745 13.3008 2.10078L8.40078 7.00078L13.3008 11.9008C13.4841 12.0841 13.5758 12.3174 13.5758 12.6008C13.5758 12.8841 13.4841 13.1174 13.3008 13.3008C13.1174 13.4841 12.8841 13.5758 12.6008 13.5758C12.3174 13.5758 12.0841 13.4841 11.9008 13.3008L7.00078 8.40078Z" fill="white"/>
+          </svg>
+        </CloseIcon>
       </ChatHeader>
       
-      <Container>
+      <Container $isDarkMode={isDarkMode}>
         {renderContent()}
       </Container>
     </CmsPopup>

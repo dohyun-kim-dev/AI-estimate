@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import styled from "styled-components";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 
@@ -12,39 +12,149 @@ interface BidUnitRange {
   isNew?: boolean;
 }
 
-interface BidUnitSettingProps {
-  onSave?: (ranges: BidUnitRange[]) => void;
-  unitType?: 'week' | 'month' | 'amount'; // 단위 기준 설정
-  settingType?: 'fixed' | 'dynamic'; // 단위 설정
+interface Checkpoint {
+  checkpoint: number;
+  discountRate: number;
 }
 
-const BidUnitSetting: React.FC<BidUnitSettingProps> = ({ onSave, unitType = 'month', settingType = 'dynamic' }) => {
-  const [bidUnitRanges, setBidUnitRanges] = useState<BidUnitRange[]>([
-    {
-      index: 1,
-      minAmount: "1",
-      maxAmount: "10",
-      unitAmount: "10",
-    },
-    {
-      index: 2,
-      minAmount: "3",
-      maxAmount: "", // 마지막 구간은 빈값으로 두고 화면에서 "이상"으로 표시
-      unitAmount: "",
-    },
-  ]);
+interface BidUnitSettingProps {
+  onSave?: (ranges: BidUnitRange[]) => void;
+  ref?: React.MutableRefObject<{ getCheckpointList: () => Checkpoint[] } | null>; // ref를 통한 함수 노출
+  unitType?: 'WEEK' | 'MONTH' | 'QUANTITY'; // 단위 기준 설정
+  settingType?: 'FIXED' | 'DYNAMIC'; // 단위 설정
+  minUnit?: string; // 최소 단위
+  maxUnit?: string; // 최대 단위
+  initialCheckpoints?: Checkpoint[]; // 초기 checkpoint 데이터
+}
+
+const BidUnitSetting = React.forwardRef<
+  { getCheckpointList: () => Checkpoint[] } | null,
+  BidUnitSettingProps
+>(({ 
+  onSave,
+  unitType = 'MONTH', 
+  settingType = 'DYNAMIC', 
+  minUnit = '', 
+  maxUnit = '',
+  initialCheckpoints = []
+}, ref) => {
+  // settingType에 따른 초기 데이터 설정 (처음 한 번만)
+  const getInitialData = useCallback(() => {
+    if (settingType === 'FIXED') {
+      return [{
+        index: 1,
+        minAmount: "",
+        maxAmount: "",
+        unitAmount: "",
+      }];
+    } else {
+      // 동적 설정일 때는 빈 값으로 시작 (첫 번째는 최소 단위, 마지막은 최대 단위 고정)
+      return [
+        {
+          index: 1,
+          minAmount: "",
+          maxAmount: "",
+          unitAmount: "",
+        },
+        {
+          index: 2,
+          minAmount: "",
+          maxAmount: "", // 마지막 구간
+          unitAmount: "",
+        },
+      ];
+    }
+  }, [settingType]); // minUnit, maxUnit 의존성 제거
+
+  const [bidUnitRanges, setBidUnitRanges] = useState<BidUnitRange[]>(() => getInitialData());
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTargetIndex, setDeleteTargetIndex] = useState<number | null>(null);
 
+  // settingType 변경시에만 데이터 초기화
+  React.useEffect(() => {
+    setBidUnitRanges(getInitialData());
+  }, [settingType]); // settingType만 의존성으로 설정
+
+  // checkpointList 생성 및 상위 컴포넌트로 전달
+  const generateCheckpointList = React.useCallback((ranges: BidUnitRange[]): Checkpoint[] => {
+    if (settingType === 'FIXED') {
+      // 고정 설정: 1개의 checkpoint - minAmount 값을 checkpoint로 사용
+      const firstRange = ranges[0];
+      if (firstRange && firstRange.minAmount) {
+        return [{
+          checkpoint: parseInt(firstRange.minAmount) || 1,
+          discountRate: parseFloat(firstRange.unitAmount) || 0 // 비어있어도 0으로 설정
+        }];
+      }
+      return [];
+    } else {
+      // 동적 설정: 각 구간별로 checkpoint 생성
+      const checkpoints: Checkpoint[] = [];
+      
+      ranges.forEach((range, index) => {
+        const isFirstRange = index === 0;
+        const isLastRange = index === ranges.length - 1;
+        
+        // 할인율이 비어있어도 checkpoint를 생성 (validation에서 체크하기 위해)
+        let checkpointValue = 0;
+        let hasValidCheckpoint = false;
+
+        if (isLastRange) {
+          // 마지막 구간: maxUnit 값을 checkpoint로 사용 (이상 구간)
+          if (maxUnit) {
+            checkpointValue = parseInt(maxUnit) || 0;
+            hasValidCheckpoint = true;
+          }
+        } else if (isFirstRange) {
+          // 첫 번째 구간: minUnit 값을 checkpoint로 사용 (minUnit이 설정되어 있는 경우)
+          if (minUnit) {
+            checkpointValue = parseInt(minUnit) || 0;
+            hasValidCheckpoint = true;
+          } else if (range.maxAmount) {
+            // minUnit이 없으면 maxAmount 사용
+            checkpointValue = parseInt(range.maxAmount) || 0;
+            hasValidCheckpoint = true;
+          }
+        } else {
+          // 중간 구간들: maxAmount 값을 checkpoint로 사용
+          if (range.maxAmount) {
+            checkpointValue = parseInt(range.maxAmount) || 0;
+            hasValidCheckpoint = true;
+          }
+        }
+
+        // 유효한 checkpoint가 있으면 추가 (할인율이 비어있어도 추가)
+        if (hasValidCheckpoint) {
+          checkpoints.push({
+            checkpoint: checkpointValue,
+            discountRate: parseFloat(range.unitAmount) || 0 // 비어있으면 0으로 설정
+          });
+        }
+      });
+      
+      return checkpoints;
+    }
+  }, [settingType, maxUnit, minUnit]);
+
+  // checkpointList를 외부에서 가져올 수 있도록 함수를 ref로 노출
+  const getCheckpointList = React.useCallback(() => {
+    return generateCheckpointList(bidUnitRanges);
+  }, [bidUnitRanges, generateCheckpointList]);
+
+  // ref를 통해 getCheckpointList 함수를 외부에 노출
+  React.useImperativeHandle(ref, () => ({
+    getCheckpointList
+  }), [getCheckpointList]);
+
   // 단위 타입에 따른 단위 텍스트
   const getUnitText = () => {
     switch (unitType) {
-      case 'week':
+      case 'WEEK':
         return '주';
-      case 'month':
+      case 'MONTH':
         return '개월';
-      case 'amount':
+      case 'QUANTITY':
         return '개';
       default:
         return '개월';
@@ -53,7 +163,7 @@ const BidUnitSetting: React.FC<BidUnitSettingProps> = ({ onSave, unitType = 'mon
 
   // 설정 타입에 따른 단위 텍스트
   const getSettingUnitText = () => {
-    return settingType === 'fixed' ? '원' : '%';
+    return settingType === 'FIXED' ? '%' : '%';
   };
 
   const validateRange = (currentRange: BidUnitRange) => {
@@ -78,7 +188,21 @@ const BidUnitSetting: React.FC<BidUnitSettingProps> = ({ onSave, unitType = 'mon
 
   const handleValueChange = (index: number, field: keyof BidUnitRange, value: string) => {
     if (field === "minAmount" || field === "maxAmount" || field === "unitAmount") {
-      const numericValue = value.toString().replace(/[^0-9]/g, "");
+      let numericValue: string;
+      
+      if (field === "unitAmount") {
+        // 할인율은 소수점 허용
+        numericValue = value.toString().replace(/[^0-9.]/g, "");
+        // 소수점이 2개 이상 있으면 첫 번째만 유지
+        const parts = numericValue.split('.');
+        if (parts.length > 2) {
+          numericValue = parts[0] + '.' + parts.slice(1).join('');
+        }
+      } else {
+        // 단위는 정수만 허용
+        numericValue = value.toString().replace(/[^0-9]/g, "");
+      }
+      
       const limitedValue = numericValue.slice(0, 10);
       
       setBidUnitRanges((ranges) => {
@@ -116,42 +240,49 @@ const BidUnitSetting: React.FC<BidUnitSettingProps> = ({ onSave, unitType = 'mon
     }
   };
 
-  const formatNumber = (value: string) => {
-    const number = value.replace(/[^0-9]/g, "");
-    return number ? Number(number).toLocaleString() : "";
-  };
-
-  const handleAddRange = () => {
-    const newIndex = bidUnitRanges.length;
-    const secondLastRange = bidUnitRanges[bidUnitRanges.length - 2];
+  // 숫자만 입력 허용하는 키 이벤트 핸들러
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>, allowDecimal: boolean = false) => {
+    // 기본 허용 키들
+    const allowedKeys = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
     
-    const newMinAmount = secondLastRange?.maxAmount ? 
-      (Number(secondLastRange.maxAmount) + 1).toString() : "";
-    
-    let rangeSize = 100000;
-    if (secondLastRange?.maxAmount && secondLastRange?.minAmount) {
-      rangeSize = Number(secondLastRange.maxAmount) - Number(secondLastRange.minAmount) + 1;
-      rangeSize = Math.max(rangeSize, 10000);
+    // 할인율 필드인 경우 소수점도 허용
+    if (allowDecimal) {
+      allowedKeys.push('.');
     }
     
+    if (!allowedKeys.includes(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  const formatNumber = (value: string, allowDecimal: boolean = false) => {
+    if (allowDecimal) {
+      // 할인율의 경우 소수점 유지
+      return value;
+    } else {
+      // 단위의 경우 정수만 허용하고 콤마 포맷팅
+      const number = value.replace(/[^0-9]/g, "");
+      return number ? Number(number).toLocaleString() : "";
+    }
+  };
+
+  const handleAddRange = (afterIndex?: number) => {
+    const currentRangeIndex = afterIndex 
+      ? bidUnitRanges.findIndex(r => r.index === afterIndex)
+      : bidUnitRanges.length - 2; // 마지막에서 두 번째 위치
+    
+    // 새로운 빈 범위 생성 (자동완성 숫자 제거)
     const newRange = {
-      index: newIndex,
-      minAmount: newMinAmount,
-      maxAmount: newMinAmount ? (Number(newMinAmount) + rangeSize - 1).toString() : "",
+      index: 0, // 임시값, 나중에 재인덱싱
+      minAmount: "",
+      maxAmount: "",
       unitAmount: "",
     };
     
     const updatedRanges = [...bidUnitRanges];
-    updatedRanges.splice(-1, 0, newRange);
+    updatedRanges.splice(currentRangeIndex + 1, 0, newRange);
     
-    if (newRange.maxAmount) {
-      const lastRangeIndex = updatedRanges.length - 1;
-      updatedRanges[lastRangeIndex] = {
-        ...updatedRanges[lastRangeIndex],
-        minAmount: (Number(newRange.maxAmount) + 1).toString()
-      };
-    }
-    
+    // 인덱스 재설정
     const reindexedRanges = updatedRanges.map((range, idx) => ({
       ...range,
       index: idx + 1
@@ -191,61 +322,72 @@ const BidUnitSetting: React.FC<BidUnitSettingProps> = ({ onSave, unitType = 'mon
       <RangesContainer>
         {bidUnitRanges.map((range, idx) => {
           const isLastRange = idx === bidUnitRanges.length - 1;
+          const isFixedSetting = settingType === 'FIXED';
+          
           return (
             <RangeItem key={range.index}>
               <InputGroup>
                 <AmountGroup>
-                  {/* <InputWrapper>
-                    <InputLabel>{getUnitText()}</InputLabel>
-                    <Input
-                      type="text"
-                      value={range.minAmount === "1" && idx === 0 ? "1" : formatNumber(range.minAmount)}
-                      onChange={(e) => handleValueChange(range.index, "minAmount", e.target.value)}
-                      placeholder={`${getUnitText()}를 입력해주세요`}
-                      readOnly={idx === 0}
-                    />
-                  </InputWrapper>
-                  <Separator>~</Separator> */}
                   <InputWrapper>
                     <InputLabel>{getUnitText()}</InputLabel>
                     <Input
                       type="text"
-                      value={isLastRange ? "이상" : formatNumber(range.maxAmount)}
-                      onChange={isLastRange ? undefined : (e) => handleValueChange(range.index, "maxAmount", e.target.value)}
-                      placeholder={isLastRange ? "이상" : `${getUnitText()}를 입력해주세요`}
-                      readOnly={isLastRange}
+                      value={isFixedSetting 
+                        ? formatNumber(range.minAmount)
+                        : (isLastRange 
+                          ? (maxUnit ? formatNumber(maxUnit) : "")
+                          : (idx === 0 && minUnit ? formatNumber(minUnit) : formatNumber(range.maxAmount))
+                        )
+                      }
+                      onChange={isFixedSetting 
+                        ? (e) => handleValueChange(range.index, "minAmount", e.target.value)
+                        : (isLastRange || (idx === 0 && minUnit) ? undefined : (e) => handleValueChange(range.index, "maxAmount", e.target.value))
+                      }
+                      onKeyPress={handleKeyPress}
+                      placeholder={isFixedSetting 
+                        ? `숫자만 입력해주세요` 
+                        : (isLastRange ? (maxUnit ? "" : "") : `숫자만 입력해주세요`)
+                      }
+                      readOnly={isFixedSetting 
+                        ? false
+                        : (isLastRange || (idx === 0 && !!minUnit))
+                      }
                     />
                   </InputWrapper>
-                                                      <Separator>{getUnitText()}</Separator>
+                  <Separator>{getUnitText()}</Separator>
 
                   <InputWrapper>
-                    <InputLabel>{settingType === 'fixed' ? '금액' : '할인율'}</InputLabel>
+                    <InputLabel>{settingType === 'FIXED' ? '할인율' : '할인율'}</InputLabel>
                     <Input
                       type="text"
-                      value={formatNumber(range.unitAmount)}
+                      value={formatNumber(range.unitAmount, true)}
                       onChange={(e) => handleValueChange(range.index, "unitAmount", e.target.value)}
-                      placeholder={settingType === 'fixed' ? '금액을 입력해주세요' : '할인율을 입력해주세요'}
+                      onKeyPress={(e) => handleKeyPress(e, true)}
+                      placeholder="숫자만 입력해주세요"
                     />
                   </InputWrapper>
-                                    <Separator>{getSettingUnitText()}</Separator>
+                  <Separator>{getSettingUnitText()}</Separator>
                 </AmountGroup>
-                <UnitGroup>
-                  <ActionButtons>
-                    {idx > 0 && (
-                      <ActionButton onClick={() => handleDeleteClick(range.index)}>삭제</ActionButton>
-                    )}
-                  </ActionButtons>
-                </UnitGroup>
+                
+                {!isFixedSetting && (
+                  <UnitGroup>
+                    <ActionButtons $isFirstIndex={idx === 0}>
+                      {idx > 0 && (
+                        <ActionButton onClick={() => handleDeleteClick(range.index)}>삭제</ActionButton>
+                      )}
+                      <ActionButton 
+                        $isWide={idx === 0}
+                        onClick={() => handleAddRange(range.index)}
+                      >
+                        추가
+                      </ActionButton>
+                    </ActionButtons>
+                  </UnitGroup>
+                )}
               </InputGroup>
             </RangeItem>
           );
         })}
-        
-        <AddRangeContainer>
-          <AddButton onClick={handleAddRange}>
-            + 구간 추가
-          </AddButton>
-        </AddRangeContainer>
       </RangesContainer>
 
       <DeleteConfirmModal
@@ -259,7 +401,7 @@ const BidUnitSetting: React.FC<BidUnitSettingProps> = ({ onSave, unitType = 'mon
       />
     </Wrapper>
   );
-};
+});
 
 export default BidUnitSetting;
 
@@ -364,7 +506,7 @@ const Input = styled.input<{ readOnly?: boolean }>`
   }
 
   ${({ readOnly }) => readOnly && `
-    background-color: #f9f9f9;
+    background-color: #ffffff;
     cursor: not-allowed;
   `}
 `;
@@ -385,23 +527,27 @@ const UnitGroup = styled.div`
   flex-shrink: 0;
 `;
 
-const ActionButtons = styled.div`
+const ActionButtons = styled.div<{ $isFirstIndex?: boolean }>`
   display: flex;
   gap: 8px;
-  width: 60px;
+  width: ${({ $isFirstIndex }) => ($isFirstIndex ? '120px' : '120px')};
 `;
 
-const ActionButton = styled.button`
+const ActionButton = styled.button<{ $isWide?: boolean }>`
   padding: 8px 12px;
   background-color: white;
   color: #666;
+  height: 40px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
+  flex: ${({ $isWide }) => ($isWide ? '1' : 'none')};
+  width: ${({ $isWide }) => ($isWide ? '100%' : '56px')};
 
   &:hover {
-    background-color: #f5f5f5;
+    border-color: #ddd;
     color: #333;
   }
 `;

@@ -34,6 +34,7 @@ import PDFPreview from './pdfPreview';
 import ExcelPreview from './excelPreview';
 import CompletedPage from '@app/completed/page';
 import PromptDetailPage from '@app/prompt-detail/page';
+import FAQPage from '../app/superAdmin/faq/page';
 
 export default function AppRoutes() {
   const location = useLocation();
@@ -141,6 +142,7 @@ export default function AppRoutes() {
 
           <Route path="superadmin/company-settings" element={<CompanyInfoSettingsPage />} />
           <Route path="superadmin/aigo-settings" element={<AigoSettingsPage />} />
+          <Route path="superadmin/faq" element={<FAQPage />} />
           <Route path="superadmin/terms" element={<CMSTerms />} />
           <Route path="superadmin/pdf-preview" element={<PDFPreview />} />
           <Route path="superadmin/excel-preview" element={<ExcelPreview />} />

@@ -34,6 +34,7 @@ interface EstimateInquiryModalProps {
 
 // 처리상태 옵션
 const STATUS_OPTIONS = [
+  { value: 'received', label: '접수' },
   { value: 'pending', label: '진행' },
   { value: 'rejected', label: '실패' },
   { value: 'approved', label: '완료' },
@@ -42,10 +43,11 @@ const STATUS_OPTIONS = [
 // 상태 텍스트 변환 함수
 const getStatusValue = (statusText?: string) => {
   switch (statusText) {
+    case '접수': return 'received';
     case '진행': return 'pending';
     case '실패': return 'rejected';
     case '완료': return 'approved';
-    default: return 'pending';
+    default: return 'received';
   }
 };
 
@@ -272,11 +274,11 @@ const EstimateInquiryModal: React.FC<EstimateInquiryModalProps> = ({
             left: dropdownPosition.left,
           }}
         >
-          {STATUS_OPTIONS.map((option) => (
+          {STATUS_OPTIONS.filter(option => option.value !== status).map((option) => (
             <DropdownItem
               key={option.value}
               onClick={() => handleOptionSelect(option.value)}
-              $isSelected={status === option.value}
+              $isSelected={false}
             >
               {option.label}
             </DropdownItem>

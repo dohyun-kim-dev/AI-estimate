@@ -296,7 +296,10 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
               : 'heredot';
 
             const userServices = userData.usingService || [];
-            const needsCompanyRegistration = !userServices.includes(currentCompanyCode);
+            // usingService 구조 변경: 배열 안의 객체에서 companyInfo.companyCode 확인
+            const needsCompanyRegistration = !userServices.some((service: any) => 
+              service.companyInfo?.companyCode === currentCompanyCode
+            );
 
             if (needsCompanyRegistration) {
               try {

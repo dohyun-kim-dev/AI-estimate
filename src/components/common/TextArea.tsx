@@ -20,6 +20,28 @@ const StyledTextArea = styled.textarea<{ $height?: string }>`
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   resize: vertical; /* 사용자가 세로 크기를 조절할 수 있도록 함 */
   
+  /* 스크롤바 투명화 처리 - 웹킷 기반 브라우저 (Safari, Chrome) */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Firefox 스크롤바 투명화 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  
   &::placeholder {
     color: #666666;
     opacity: 0.6;
@@ -65,8 +87,6 @@ export default function TextArea({
   id, 
   label, 
   errorMessage,
-  minLines, 
-  maxLines,
   ...props 
 }: TextAreaProps) {
   return (

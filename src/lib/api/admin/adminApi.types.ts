@@ -191,3 +191,39 @@ export type AdminLoginParams = {
     companyCode: string; // 헤더에 필요한 필수 값
   };
 
+  // AI 설정 관련 타입들
+  export type AISettingsUpdateParams = {
+    guestDailyQueryLimit?: number;
+    guestMonthlyQueryLimit?: number;
+    userDailyQueryLimit?: number;
+    userMonthlyQueryLimit?: number;
+    employeeDailyQueryLimit?: number;
+    employeeMonthlyQueryLimit?: number;
+    geminiApiKey?: string;
+    discountRate?: 'WEEK' | 'MONTH' | 'QUANTITY';
+    rateRule?: 'FIXED' | 'DYNAMIC';
+    aiConfidence?: number;
+    mode?: 'LIGHT' | 'DARK';
+    checkpointList?: AICheckpoint[];
+  };
+
+  export type AICheckpoint = {
+    checkpoint: number;
+    discountRate: number;
+  };
+
+  export type AISettingsResponse = {
+    guestDailyQueryLimit: number;
+    guestMonthlyQueryLimit: number;
+    userDailyQueryLimit: number;
+    userMonthlyQueryLimit: number;
+    employeeDailyQueryLimit: number;
+    employeeMonthlyQueryLimit: number;
+    geminiApiKey: string;
+    discountRate: 'WEEK' | 'MONTH' | 'QUANTITY';
+    rateRule: 'FIXED' | 'DYNAMIC';
+    aiConfidence: number;
+    mode: 'LIGHT' | 'DARK';
+    checkpointList: AICheckpoint[];
+  };
+

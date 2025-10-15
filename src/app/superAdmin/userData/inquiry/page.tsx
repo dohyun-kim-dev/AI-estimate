@@ -134,6 +134,7 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ currentStatus, onStatus
   const dropdownRef = useRef<HTMLUListElement>(null);
 
   const statusOptions = [
+    { value: '접수', color: '#FF9800', apiValue: 'received' },
     { value: '진행', color: '#2196F3', apiValue: 'pending' },
     { value: '실패', color: '#F44336', apiValue: 'rejected' },
     { value: '완료', color: '#4CAF50', apiValue: 'approved' },
@@ -205,12 +206,12 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ currentStatus, onStatus
             left: position.left,
           }}
         >
-          {statusOptions.map((option) => (
+          {statusOptions.filter(option => option.value !== currentStatus).map((option) => (
             <StatusDropdownItem
               key={option.value}
               onClick={() => handleSelect(option.value)}
               $statusColor={option.color}
-              $isSelected={currentStatus === option.value}
+              $isSelected={false}
             >
               {option.value}
             </StatusDropdownItem>
@@ -392,10 +393,11 @@ const InquiryPage: React.FC = () => {
   // 상태 텍스트 변환 함수 (서버 영어 상태 -> 한글 상태)
   const getStatusText = (status?: string) => {
     switch (status) {
+      case 'received': return '접수';
       case 'pending': return '진행';
       case 'rejected': return '실패';
       case 'approved': return '완료';
-      default: return status || '진행';
+      default: return status || '접수';
     }
   };
 

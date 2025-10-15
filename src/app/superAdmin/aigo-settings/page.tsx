@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import TextField from '@/components/common/TextField';
 import TextArea from '@/components/common/TextArea';
 import CheckBox from '@/components/common/CheckBox';
 import BidUnitSetting from '@/components/BidUnitSetting';
 import Switch from '@components/Switch';
+import CompanySearch from '@/components/CompanySearch/CompanySearch';
 import { AppColors } from '@styles/colors';
 import { ThemeProvider } from "styled-components";
 import { lightTheme } from "@styles/theme";
+import { getAISettings, updateAISettings } from '@/lib/api/admin/adminApi';
+import { useToast } from '@/components/common/ToastProvider';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
 const Slider = styled.input.attrs({ type: 'range' })<{ value: number }>`
   width: 100%;
@@ -55,11 +59,25 @@ const MainContent = styled.div`
   width: 840px;
 `;
 
+const HeaderContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  position: relative;
+`;
+
 const Heading = styled.h2`
   color: ${({ theme }) => theme.text};
   font-size: 24px;
   font-weight: bold;
-  margin-bottom: 24px;
+  margin: 0;
+`;
+
+const CompanySearchWrapper = styled.div`
+  position: absolute;
+  right: 0;
+  top: 0;
 `;
 
 
@@ -149,7 +167,7 @@ const ExternalLink = styled.a`
   float: right;
   
   &:hover {
-    opacity: 0.9;
+  color: white;
   }
 `;
 
@@ -332,8 +350,122 @@ const CollapseContent = styled.div<{ $isVisible: boolean }>`
   `}
 `;
 
+// 보안 키 입력 컴포넌트 스타일
+const SecureKeyContainer = styled.div`
+  position: relative;
+  width: 100%;
+`;
+
+const SecureKeyLabel = styled.label`
+  position: absolute;
+  top: -8px;
+  left: 12px;
+  background-color: white;
+  padding: 0 4px;
+  font-size: 12px;
+  color: #79747E;
+  z-index: 1;
+`;
+
+const SecureKeyTextArea = styled.textarea`
+  width: 100%;
+  min-height: 120px;
+  padding: 16px;
+  border: 1px solid #79747E;
+  border-radius: 8px;
+  font-size: 16px;
+  resize: vertical;
+  box-sizing: border-box;
+  background: white;
+  color: #000;
+  
+  /* 복사 방지 */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  
+  /* 우클릭 방지 */
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+
+`;
+
+// 보안 키 입력 컴포넌트
+interface SecureKeyInputProps {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}
+
+const SecureKeyInput: React.FC<SecureKeyInputProps> = ({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder
+}) => {
+  // 마스킹된 값을 표시하는 함수
+  const getMaskedValue = (inputValue: string) => {
+    if (!inputValue) return '';
+    
+    if (inputValue.length <= 8) {
+      return inputValue; // 8글자 이하면 그대로 표시
+    }
+    
+    const firstFour = inputValue.substring(0, 4);
+    const lastFour = inputValue.substring(inputValue.length - 4);
+    const middleLength = inputValue.length - 8;
+    const maskedMiddle = '●'.repeat(middleLength);
+    
+    return `${firstFour}${maskedMiddle}${lastFour}`;
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+    onChange(pastedText);
+  };
+
+  const handleContextMenu = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+    e.preventDefault(); // 우클릭 메뉴 방지
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Ctrl+C, Ctrl+A 등 복사 관련 단축키 방지
+    if (e.ctrlKey && (e.key === 'c' || e.key === 'a' || e.key === 'x')) {
+      e.preventDefault();
+    }
+  };
+
+  return (
+    <SecureKeyContainer>
+      <SecureKeyLabel htmlFor={id}>{label}</SecureKeyLabel>
+      <SecureKeyTextArea
+        id={id}
+        value={getMaskedValue(value)}
+        onPaste={handlePaste}
+        onContextMenu={handleContextMenu}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        readOnly
+        title="붙여넣기만 가능합니다"
+      />
+    </SecureKeyContainer>
+  );
+};
+
 export default function AigoSettingsPage() {
+  const { show: showToast } = useToast();
   const [showTooltip, setShowTooltip] = useState(true);
+  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string | null>('heredot'); // 기본값 설정
+  const [selectedCompanyName, setSelectedCompanyName] = useState<string>('여기닷'); // 기본값 설정
+  const [isLoading, setIsLoading] = useState(false);
+  const bidUnitSettingRef = React.useRef<{ getCheckpointList: () => Array<{checkpoint: number; discountRate: number}> } | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  
   const [formData, setFormData] = useState({
     theme: 'light',
     maxGuestQueries: '',
@@ -355,14 +487,58 @@ export default function AigoSettingsPage() {
     advancedRate: '',
     premiumRate: '',
     // 단위 기준 설정 (단일 선택)
-    unitBasisType: 'month' as 'week' | 'month' | 'amount',
+    discountRate: 'MONTH' as 'WEEK' | 'MONTH' | 'QUANTITY',
     // 단위 설정 (단일 선택)
-    unitSettingType: '' as '' | 'fixed' | 'dynamic'
+    rateRule: 'FIXED' as 'FIXED' | 'DYNAMIC'
   });
+
+  // AI 설정 로드 함수
+  const loadAISettings = async (companyCode: string) => {
+    if (!companyCode) return;
+    
+    setIsLoading(true);
+    try {
+      const settings = await getAISettings(companyCode);
+      setFormData(prev => ({
+        ...prev,
+        maxGuestQueries: settings.guestDailyQueryLimit.toString(),
+        maxMemberQueries: settings.userDailyQueryLimit.toString(),
+        maxMonthlyMemberQueries: settings.userMonthlyQueryLimit.toString(),
+        maxStaffQueries: settings.employeeDailyQueryLimit.toString(),
+        maxMonthlyStaffQueries: settings.employeeMonthlyQueryLimit.toString(),
+        inferencePerformance: settings.aiConfidence,
+        licenseKey: settings.geminiApiKey,
+        theme: settings.mode.toLowerCase(),
+        discountRate: settings.discountRate,
+        rateRule: settings.rateRule,
+      }));
+      
+    } catch (error) {
+      console.error('AI 설정 로드 실패:', error);
+      showToast('AI 설정을 불러오는데 실패했습니다.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 기본 설정 로드
+  useEffect(() => {
+    if (selectedCompanyCode) {
+      loadAISettings(selectedCompanyCode);
+    }
+  }, [selectedCompanyCode]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // 숫자 전용 입력 핸들러
+  const handleNumericChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    // 숫자만 허용 (빈 문자열도 허용)
+    const numericValue = value.replace(/[^0-9]/g, '');
+    setFormData(prev => ({ ...prev, [name]: numericValue }));
   };
 
   const handleToggle = (name: string) => {
@@ -379,17 +555,17 @@ export default function AigoSettingsPage() {
     }));
   };
 
-  const handleUnitBasisChange = (unitType: 'week' | 'month' | 'amount') => {
+  const handleUnitBasisChange = (unitType: 'WEEK' | 'MONTH' | 'QUANTITY') => {
     setFormData(prev => ({
       ...prev,
-      unitBasisType: unitType
+      discountRate: unitType
     }));
   };
 
-  const handleUnitSettingChange = (settingType: 'fixed' | 'dynamic') => {
+  const handleUnitSettingChange = (settingType: 'FIXED' | 'DYNAMIC') => {
     setFormData(prev => ({
       ...prev,
-      unitSettingType: prev.unitSettingType === settingType ? '' : settingType
+      rateRule: settingType
     }));
   };
 
@@ -398,8 +574,147 @@ export default function AigoSettingsPage() {
   };
 
   const handleSaveAll = () => {
-    console.log('전체 설정 저장:', formData);
-    // 실제 저장 로직 구현
+    if (!selectedCompanyCode) {
+      showToast('고객사를 선택해주세요.', 'error');
+      return;
+    }
+
+    // validation 체크
+    if (!validateDiscountRates()) {
+      return;
+    }
+
+    // 확인 모달 표시
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmSave = async () => {
+    setShowConfirmModal(false);
+    setIsLoading(true);
+    try {
+      const updateParams = {
+        guestDailyQueryLimit: parseInt(formData.maxGuestQueries) || 0,
+        guestMonthlyQueryLimit: 10000, // 기본값 - 필요시 formData에 추가
+        userDailyQueryLimit: parseInt(formData.maxMemberQueries) || 0,
+        userMonthlyQueryLimit: parseInt(formData.maxMonthlyMemberQueries) || 0,
+        employeeDailyQueryLimit: parseInt(formData.maxStaffQueries) || 0,
+        employeeMonthlyQueryLimit: parseInt(formData.maxMonthlyStaffQueries) || 0,
+        geminiApiKey: formData.licenseKey,
+        discountRate: formData.discountRate,
+        rateRule: formData.rateRule,
+        aiConfidence: formData.inferencePerformance,
+        mode: formData.theme.toUpperCase() as 'LIGHT' | 'DARK',
+        checkpointList: bidUnitSettingRef.current?.getCheckpointList() || [], // 저장 시 동적으로 가져오기
+      };
+
+      await updateAISettings(selectedCompanyCode, updateParams);
+      showToast('설정이 성공적으로 저장되었습니다.', 'success');
+    } catch (error) {
+      console.error('설정 저장 실패:', error);
+      showToast('설정 저장에 실패했습니다.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 고객사 선택 핸들러
+  const handleCompanySelect = (company: { id: string; name: string }) => {
+    setSelectedCompanyCode(company.id);
+    setSelectedCompanyName(company.name);
+    // 새로운 고객사 선택 시 해당 고객사의 설정을 로드
+    loadAISettings(company.id);
+  };
+
+  // 할인율 validation 함수들
+  const validateDiscountRates = () => {
+    // 1. 필수 필드 체크 (최소/최대 단위)
+    if (formData.projectRateEnabled) {
+      if (!formData.projectName1 || formData.projectName1.trim() === '') {
+        showToast('최소 단위를 입력해주세요.', 'error');
+        return false;
+      }
+      if (!formData.projectName2 || formData.projectName2.trim() === '') {
+        showToast('최대 단위를 입력해주세요.', 'error');
+        return false;
+      }
+    }
+
+    // 2. BidUnitSetting에서 checkpointList 가져오기
+    const checkpointList = bidUnitSettingRef.current?.getCheckpointList() || [];
+    
+    if (formData.projectRateEnabled && checkpointList.length === 0) {
+      showToast('할인율을 입력해주세요.', 'error');
+      return false;
+    }
+
+    // 3. 할인율 빈 칸 체크
+    console.log('🔍 Validation Debug - checkpointList:', checkpointList);
+    const emptyDiscountRates = checkpointList.filter(item => {
+      const discountRate = item.discountRate;
+      const isEmpty = discountRate === undefined || 
+                     discountRate === null || 
+                     discountRate === 0 || 
+                     isNaN(Number(discountRate)) ||
+                     Number(discountRate) <= 0;
+      console.log('🔍 Discount Rate Check:', { 
+        checkpoint: item.checkpoint, 
+        discountRate: discountRate,
+        type: typeof discountRate,
+        isEmpty: isEmpty 
+      });
+      return isEmpty;
+    });
+    
+    if (emptyDiscountRates.length > 0) {
+      console.log('🔍 Empty discount rates found:', emptyDiscountRates);
+      showToast('모든 구간의 할인율을 입력해주세요.', 'error');
+      return false;
+    }
+
+    // 4. 할인율이 100%를 초과하는지 확인
+    const invalidRates = checkpointList.filter(item => item.discountRate > 100);
+    if (invalidRates.length > 0) {
+      showToast('할인율은 100%를 초과할 수 없습니다.', 'error');
+      return false;
+    }
+
+    // 5. 고정 설정일 경우 특별 계산
+    if (formData.rateRule === 'FIXED') {
+      const minUnit = parseInt(formData.projectName1) || 0;
+      const maxUnit = parseInt(formData.projectName2) || 0;
+      const discountRate = checkpointList[0]?.discountRate || 0;
+      
+      if (minUnit > 0 && maxUnit > 0 && minUnit < maxUnit) {
+        // 단위 범위가 있는 경우의 validation
+        const unitRange = maxUnit - minUnit + 1;
+        const totalDiscountRate = discountRate * unitRange;
+        
+        if (totalDiscountRate > 100) {
+          showToast(`고정 설정에서 총 할인율(${discountRate}% × ${unitRange}단위 = ${totalDiscountRate}%)이 100%를 초과합니다.`, 'error');
+          return false;
+        }
+      }
+    }
+
+    // 6. checkpoint 값들이 유효한지 확인
+    const invalidCheckpoints = checkpointList.filter(item => item.checkpoint <= 0);
+    if (invalidCheckpoints.length > 0) {
+      showToast('구간별 체크포인트 값이 올바르지 않습니다.', 'error');
+      return false;
+    }
+
+    // 7. checkpoint 값들이 오름차순인지 확인 (각 checkpoint는 다음 checkpoint보다 작아야 함)
+    for (let i = 0; i < checkpointList.length - 1; i++) {
+      const currentCheckpoint = checkpointList[i].checkpoint;
+      const nextCheckpoint = checkpointList[i + 1].checkpoint;
+      
+      if (currentCheckpoint >= nextCheckpoint) {
+        showToast(`구간별 체크포인트는 오름차순이어야 합니다. (${currentCheckpoint} < ${nextCheckpoint})`, 'error');
+        return false;
+      }
+    }
+
+    return true;
   };
 
   const handleCloseTooltip = () => {
@@ -409,7 +724,19 @@ export default function AigoSettingsPage() {
   return (
     <ThemeProvider theme={lightTheme}>
       <SettingsContainer>
-        <Heading>AIGO 설정 관리</Heading>
+        <HeaderContainer>
+          <Heading>AIGO 설정 관리</Heading>
+          <CompanySearchWrapper>
+            <CompanySearch
+              selectedCompanyCode={selectedCompanyCode}
+              selectedCompanyName={selectedCompanyName}
+              onCompanySelect={handleCompanySelect}
+              themeMode="light"
+              placeholder="고객사를 선택하세요"
+              width="300px"
+            />
+          </CompanySearchWrapper>
+        </HeaderContainer>
         
         <CardsWrapper>
           <MainContent>
@@ -430,35 +757,40 @@ export default function AigoSettingsPage() {
                 label="[1일] 비회원 최대 질의 횟수"
                 name="maxGuestQueries"
                 value={formData.maxGuestQueries}
-                onChange={handleChange}
+                onChange={handleNumericChange}
+                placeholder="숫자만 입력해주세요"
               />
               <TextField
                 id="maxMemberQueries"
                 label="[1일] 로그인 회원 최대 질의 횟수"
                 name="maxMemberQueries"
                 value={formData.maxMemberQueries}
-                onChange={handleChange}
+                onChange={handleNumericChange}
+                placeholder="숫자만 입력해주세요"
               />
               <TextField
                 id="maxMonthlyMemberQueries"
                 label="[한달] 회원 최대 질의 횟수"
                 name="maxMonthlyMemberQueries"
                 value={formData.maxMonthlyMemberQueries}
-                onChange={handleChange}
+                onChange={handleNumericChange}
+                placeholder="숫자만 입력해주세요"
               />
               <TextField
                 id="maxStaffQueries"
                 label="[1일] 직원 최대 질의 횟수"
                 name="maxStaffQueries"
                 value={formData.maxStaffQueries}
-                onChange={handleChange}
+                onChange={handleNumericChange}
+                placeholder="숫자만 입력해주세요"
               />
               <TextField
                 id="maxMonthlyStaffQueries"
                 label="[한달] 직원 최대 질의 횟수"
                 name="maxMonthlyStaffQueries"
                 value={formData.maxMonthlyStaffQueries}
-                onChange={handleChange}
+                onChange={handleNumericChange}
+                placeholder="숫자만 입력해주세요"
               />
             </Group>
           </Card>
@@ -492,8 +824,8 @@ export default function AigoSettingsPage() {
                   href="https://ai.google.dev/gemini-api/docs/pricing?hl=ko#standard_1" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  onMouseEnter={() => setShowTooltip(true)}
-                  onMouseLeave={() => setShowTooltip(false)}
+                  // onMouseEnter={() => setShowTooltip(true)}
+                  // onMouseLeave={() => setShowTooltip(false)}
                 >
                   가격표 보기
                 </ExternalLink>
@@ -549,14 +881,12 @@ export default function AigoSettingsPage() {
               Google Cloud Vertex AI에서 발급받은 API Key를 입력해주세요.
             </Description>
             <Group>
-              <TextArea
+              <SecureKeyInput
                 id="licenseKey"
                 label="AI Key"
-                name="licenseKey"
                 value={formData.licenseKey}
-                onChange={handleChange}
+                onChange={(value) => setFormData(prev => ({ ...prev, licenseKey: value }))}
                 placeholder="AI Key를 입력해주세요"
-                height="120px"
               />
             </Group>
           </Card>
@@ -587,22 +917,22 @@ export default function AigoSettingsPage() {
                     <CheckBox
                       id="unitWeek"
                       label="주"
-                      checked={formData.unitBasisType === 'week'}
-                      onChange={() => handleUnitBasisChange('week')}
+                      checked={formData.discountRate === 'WEEK'}
+                      onChange={() => handleUnitBasisChange('WEEK')}
                       color="#636994"
                     />
                     <CheckBox
                       id="unitMonth"
                       label="달"
-                      checked={formData.unitBasisType === 'month'}
-                      onChange={() => handleUnitBasisChange('month')}
+                      checked={formData.discountRate === 'MONTH'}
+                      onChange={() => handleUnitBasisChange('MONTH')}
                       color="#636994"
                     />
                     <CheckBox
                       id="unitAmount"
                       label="수량"
-                      checked={formData.unitBasisType === 'amount'}
-                      onChange={() => handleUnitBasisChange('amount')}
+                      checked={formData.discountRate === 'QUANTITY'}
+                      onChange={() => handleUnitBasisChange('QUANTITY')}
                       color="#636994"
                     />
                   </div>
@@ -617,8 +947,8 @@ export default function AigoSettingsPage() {
                         label="최소 단위"
                         name="projectName1"
                         value={formData.projectName1}
-                        onChange={handleChange}
-                        placeholder="최소 단위를 입력해주세요"
+                        onChange={handleNumericChange}
+                        placeholder="숫자만 입력해주세요"
                       />
                     </div>
                     <div style={{ marginTop: '16px' }}>
@@ -627,8 +957,8 @@ export default function AigoSettingsPage() {
                         label="최대 단위"
                         name="projectName2"
                         value={formData.projectName2}
-                        onChange={handleChange}
-                        placeholder="최대 단위를 입력해주세요"
+                        onChange={handleNumericChange}
+                        placeholder="숫자만 입력해주세요"
                       />
                     </div>
                   </div>
@@ -654,26 +984,27 @@ export default function AigoSettingsPage() {
                 <div style={{ marginTop: '16px', display: 'flex', gap: '24px', alignItems: 'center' }}>
                   <CheckBox
                     id="unitFixed"
-                    label="단위고정설정"
-                    checked={formData.unitSettingType === 'fixed'}
-                    onChange={() => handleUnitSettingChange('fixed')}
+                    label="단위 고정 설정"
+                    checked={formData.rateRule === 'FIXED'}
+                    onChange={() => handleUnitSettingChange('FIXED')}
                     color="#636994"
                   />
                   <CheckBox
                     id="unitDynamic"
-                    label="단위 동작 설정"
-                    checked={formData.unitSettingType === 'dynamic'}
-                    onChange={() => handleUnitSettingChange('dynamic')}
+                    label="단위 동적 설정"
+                    checked={formData.rateRule === 'DYNAMIC'}
+                    onChange={() => handleUnitSettingChange('DYNAMIC')}
                     color="#636994"
                   />
                 </div>
                 
-                {formData.unitSettingType && (
-                  <BidUnitSetting
-                    unitType={formData.unitBasisType}
-                    settingType={formData.unitSettingType}
-                  />
-                )}
+                <BidUnitSetting
+                  ref={bidUnitSettingRef}
+                  unitType={formData.discountRate}
+                  settingType={formData.rateRule}
+                  minUnit={formData.projectName1}
+                  maxUnit={formData.projectName2}
+                />
               </div>
               
               <div>
@@ -712,8 +1043,8 @@ export default function AigoSettingsPage() {
           )}
 
         <SaveButtonContainer>
-          <SaveAllButton onClick={handleSaveAll}>
-            전체 저장
+          <SaveAllButton onClick={handleSaveAll} disabled={isLoading || !selectedCompanyCode}>
+            {isLoading ? '저장 중...' : '전체 저장'}
           </SaveAllButton>
         </SaveButtonContainer>
       </MainContent>
@@ -721,6 +1052,18 @@ export default function AigoSettingsPage() {
         </CardsWrapper>
 
       </SettingsContainer>
+
+      {/* 전체 저장 확인 모달 */}
+      <DeleteConfirmModal
+        open={showConfirmModal}
+        title="설정 저장 확인"
+        content={`${selectedCompanyName}의 AIGO 설정을 저장하시겠습니까?`}
+        confirmText="저장"
+        cancelText="취소"
+        onConfirm={handleConfirmSave}
+        onCancel={() => setShowConfirmModal(false)}
+        reverseButtons={false}
+      />
     </ThemeProvider>
   );
 }

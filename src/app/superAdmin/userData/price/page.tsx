@@ -98,8 +98,8 @@ type PriceList = {
   frontend_period: number;
   backend_period: number;
   price: number;
-  createdTime: string | null;
-  updateTime: string | null;
+  createAt: string | null;
+  updateAt: string | null;
   createdId: string;
   updateId: string;
 };
@@ -725,20 +725,20 @@ const PriceListPage: React.FC = () => {
           // 작성일시 컬럼 추가
           {
             header: '작성일시',
-            accessor: 'createdTime',
+            accessor: 'createAt',
             sortable: true,
             flex: 1,
             allowWrap: true,
-            formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd) HH:mm') : '-'),
+            formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd)\nHH:mm') : '-'),
           },
           // 수정일시 컬럼 추가
           {
             header: '수정일시',
-            accessor: 'updateTime',
+            accessor: 'updateAt',
             sortable: true,
             flex: 1,
             allowWrap: true,
-            formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd) HH:mm') : '-'),
+            formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd)\nHH:mm') : '-'),
           },
           ...allColumnsForTable
             .sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0))
@@ -748,6 +748,18 @@ const PriceListPage: React.FC = () => {
                 accessor: col.name,
                 sortable: true,
               };
+
+              // 컬럼별 최대 너비 설정
+              if (col.name.includes('카테고리')) {
+                columnDef.cellStyle = { maxWidth: '125px' };
+              } else if (col.name.includes('제목') || col.name.includes('기능명')) {
+                columnDef.cellStyle = { maxWidth: '200px' };
+              } else if (col.name.includes('설명')) {
+                columnDef.cellStyle = { maxWidth: '300px' };
+              } else if (col.name.includes('메모')) {
+                columnDef.cellStyle = { maxWidth: '300px' };
+              }
+
               if (col.type === 'number') {
                 if (col.name === '금액' || col.name.toLowerCase().includes('price')) {
                   columnDef.formatter = (value) => {
@@ -796,12 +808,12 @@ const PriceListPage: React.FC = () => {
                     handleDeleteSingleItem(record.id, record);
                   }}
                   style={{
-                    background: '#dc3545',
+                    background: '#214A72',
                     color: '#ffffff',
                     border: 'none',
-                    padding: '4px 8px',
+                    padding: '8px 12px',
                     borderRadius: '4px',
-                    fontSize: '12px',
+                    fontSize: '14px',
                     cursor: 'pointer',
                   }}
                 >
@@ -1040,7 +1052,7 @@ const PriceListPage: React.FC = () => {
   const handleExcelUpload = useCallback(() => {
     // 고객사가 선택되지 않은 경우 먼저 체크
     if (!selectedCompanyCode) {
-      showToast('먼저 고객사를 선택해주세요.', 'error');
+      showToast('먼저 고객사를 선택해주세요', 'error');
       return;
     }
     
@@ -1053,13 +1065,13 @@ const PriceListPage: React.FC = () => {
     try {
       // 회사 코드가 선택되지 않은 경우
       if (!selectedCompanyCode) {
-        showToast('먼저 고객사를 선택해주세요.', 'error');
+        showToast('먼저 고객사를 선택해주세요', 'error');
         return;
       }
 
       // 컬럼 정보가 없는 경우 (에러 또는 아직 조회하지 않음)
       if (!currentColumnsInfo || currentColumnsInfo.length === 0) {
-        showToast('먼저 고객사를 선택하여 데이터를 조회해주세요.', 'error');
+        showToast('먼저 고객사를 선택하여 데이터를 조회해주세요', 'error');
         return;
       }
 
@@ -1330,7 +1342,7 @@ const PriceListPage: React.FC = () => {
   const handleDeleteAll = async () => {
     try {
       if (!selectedCompanyCode) {
-        showToast('고객사를 먼저 선택해주세요.', 'error');
+        showToast('먼저 고객사를 선택해주세요.', 'error');
         return;
       }
 
@@ -1383,6 +1395,15 @@ const PriceListPage: React.FC = () => {
     // 새로운 항목 추가를 위해 빈 객체 설정
     setSelectedItem({});
     setIsPopupOpen(true);
+  };
+
+  // 단가표 비우기 핸들러 (클릭 시)
+  const handleDeleteAllClick = () => {
+    if (!selectedCompanyCode) {
+      showToast('먼저 고객사를 선택해주세요.', 'error');
+      return;
+    }
+    setIsDeleteConfirmOpen(true);
   };
 
   // 개별 삭제 핸들러 (버튼 클릭 시)
@@ -1445,8 +1466,7 @@ const PriceListPage: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
       <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
         <button
-          onClick={() => setIsDeleteConfirmOpen(true)}
-          disabled={!selectedCompanyCode}
+          onClick={handleDeleteAllClick}
           style={{
             background: '#214A72',
             color: '#ffffff',
@@ -1454,23 +1474,20 @@ const PriceListPage: React.FC = () => {
             padding: '10px 18px',
             fontSize: '14px',
             fontWeight: '500',
-            cursor: selectedCompanyCode ? 'pointer' : 'not-allowed',
-            opacity: selectedCompanyCode ? 1 : 0.5,
+            cursor: 'pointer',
           }}
         >
           단가표 비우기
         </button>
         <button
           onClick={handleAddPriceData}
-          disabled={!selectedCompanyCode}
           style={{
             background: '#ffffff',
             color: '#214A72',
             padding: '10px 18px',
             fontSize: '14px',
             fontWeight: '500',
-            cursor: selectedCompanyCode ? 'pointer' : 'not-allowed',
-            opacity: selectedCompanyCode ? 1 : 0.5,
+            cursor: 'pointer',
           }}
         >
           단가표 등록

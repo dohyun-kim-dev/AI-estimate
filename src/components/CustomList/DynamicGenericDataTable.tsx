@@ -41,6 +41,37 @@ const getPropertyValue = <T,>(obj: T, path: keyof T | string): any => {
   return keys.reduce((acc: any, key: string) => acc?.[key], obj);
 };
 
+// 텍스트를 2줄로 제한하는 함수
+const truncateToTwoLines = (text: string, maxCharsPerLine: number = 30): string => {
+  if (!text || typeof text !== 'string') return text;
+  
+  // 이미 줄바꿈이 있는 경우 처리
+  const lines = text.split('\n');
+  if (lines.length <= 2) {
+    // 각 줄이 너무 길면 자르기
+    const truncatedLines = lines.map(line => 
+      line.length > maxCharsPerLine ? line.substring(0, maxCharsPerLine) + '...' : line
+    );
+    return truncatedLines.join('\n');
+  }
+  
+  // 2줄을 넘는 경우
+  const firstTwoLines = lines.slice(0, 2);
+  const secondLine = firstTwoLines[1];
+  
+  if (secondLine && secondLine.length > maxCharsPerLine - 3) {
+    firstTwoLines[1] = secondLine.substring(0, maxCharsPerLine - 3) + '...';
+  } else if (lines.length > 2) {
+    if (secondLine) {
+      firstTwoLines[1] = secondLine + '...';
+    } else {
+      firstTwoLines.push('...');
+    }
+  }
+  
+  return firstTwoLines.join('\n');
+};
+
 const DynamicGenericDataTable = <T extends object>({
   data,
   columns,
@@ -59,6 +90,11 @@ const DynamicGenericDataTable = <T extends object>({
 
   // 동적 테이블에서는 각 컬럼의 최소 너비를 계산
   const calculateMinWidth = (column: ColumnDefinition<T>) => {
+    // cellStyle에 maxWidth가 설정된 경우 우선 적용
+    if (column.cellStyle && typeof column.cellStyle === 'object' && 'maxWidth' in column.cellStyle) {
+      return column.cellStyle.maxWidth as string;
+    }
+    
     const headerLength = column.header.length;
     const minWidth = Math.max(headerLength * 8, 100); // 최소 100px, 헤더 길이에 따라 조정
     return `${minWidth}px`;
@@ -146,7 +182,17 @@ const DynamicGenericDataTable = <T extends object>({
             <TableRow key={keyExtractor(item, rowIdx)}>
               {columns.map((col, colIdx) => {
                 const value = getPropertyValue(item, col.accessor);
-                const content = col.formatter ? col.formatter(value, item, rowIdx) : String(value ?? "-");
+                let content = col.formatter ? col.formatter(value, item, rowIdx) : String(value ?? "-");
+                
+                // 문자열인 경우에만 2줄 제한 적용
+                if (typeof content === 'string') {
+                  const maxWidth = col.cellStyle && typeof col.cellStyle === 'object' && 'maxWidth' in col.cellStyle 
+                    ? parseInt(col.cellStyle.maxWidth as string) 
+                    : 300;
+                  const charsPerLine = Math.floor(maxWidth / 12); // 대략적인 문자 수 계산 (12px per char)
+                  content = truncateToTwoLines(content, charsPerLine);
+                }
+                
                 const style = typeof col.cellStyle === "function" ? col.cellStyle(value, item) : col.cellStyle;
                 
                 return (
@@ -155,6 +201,9 @@ const DynamicGenericDataTable = <T extends object>({
                     style={{
                       ...style,
                       cursor: col.noPopup ? "default" : "pointer",
+                      maxWidth: col.cellStyle && typeof col.cellStyle === 'object' && 'maxWidth' in col.cellStyle 
+                        ? col.cellStyle.maxWidth 
+                        : '300px', // 기본 최대 너비
                     }}
                     onClick={() => {
                       if (!col.noPopup && onRowClick) onRowClick(item, rowIdx);
@@ -254,10 +303,12 @@ const Td = styled.td`
   color: #221d12;
   text-align: center;
   border: 1px solid #E6E7E9;
-  overflow: hidden; /* 넘치는 내용 숨김 */
-  text-overflow: ellipsis; /* 말줄임표 표시 */
-  white-space: nowrap; /* 텍스트 줄바꿈 방지 */
   position: relative; /* 툴팁 위치 기준점 */
+  max-width: 300px; /* 최대 가로 길이 제한 */
+  word-wrap: break-word;
+  word-break: break-word;
+  line-height: 1.4;
+  white-space: pre-line; /* \n을 줄바꿈으로 처리 */
 `;
 
 const TdNoData = styled.td`

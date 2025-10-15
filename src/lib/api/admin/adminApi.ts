@@ -23,6 +23,8 @@ import {
   CompanyUpdateParams,
   EstimateRequestGetListParams,
   SiteEstimateRequestGetListParams,
+  AISettingsUpdateParams,
+  AISettingsResponse,
 } from './adminApi.types';
 import { devLog } from '@/lib/utils/devLogger';
 
@@ -358,6 +360,30 @@ export async function updateCompany(companyCode: string, params: CompanyUpdatePa
 
   return callAdminApi({
     title: '고객사 수정',
+    url: `${BASE_URL}/cms/company?companyCode=${companyCode}`,
+    method: 'PATCH',
+    body: body,
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// 회사 정보 수정 API
+export async function updateCompanyInfo(companyCode: string, params: {
+  aiProfile?: string;
+  aiName?: string;
+  businessCategory?: string;
+  businessType?: string;
+  signature?: string;
+  etc?: string[];
+}) {
+  // undefined 값들을 제거한 body 객체 생성
+  const body = Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value !== undefined)
+  );
+
+  return callAdminApi({
+    title: '회사 정보 수정',
     url: `${BASE_URL}/cms/company?companyCode=${companyCode}`,
     method: 'PATCH',
     body: body,
@@ -960,4 +986,143 @@ export async function updateEstimateRequestStatus(estimateRequestId: string, par
     isCallPageLoader: true,
     isWithToken: true,
   });
+}
+
+// ***************** FAQ 관리
+
+// FAQ 목록 조회 API
+export async function getFAQList(companyCode?: string) {
+  const url = companyCode 
+    ? `${BASE_URL}/cms/faqs?companyCode=${companyCode}`
+    : `${BASE_URL}/cms/faqs`;
+    
+  return callAdminApi({
+    title: 'FAQ 목록 조회',
+    url: url,
+    method: 'GET',
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// FAQ 생성 API
+export async function createFAQ(params: {
+  title: string;
+  content: string;
+  isPublic?: boolean;
+  language?: 'KOR' | 'ENG';
+  companyCode?: string;
+}) {
+  return callAdminApi({
+    title: 'FAQ 생성',
+    url: `${BASE_URL}/cms/faqs`,
+    method: 'POST',
+    body: {
+      title: params.title,
+      content: params.content,
+      language: params.language || 'KOR',
+      isPublic: params.isPublic !== undefined ? params.isPublic : true,
+      companyCode: params.companyCode,
+    },
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// FAQ 수정 API
+export async function updateFAQ(id: string, params: {
+  title?: string;
+  content?: string;
+  isPublic?: boolean;
+  language?: 'KOR' | 'ENG';
+  companyCode?: string;
+}) {
+  return callAdminApi({
+    title: 'FAQ 수정',
+    url: `${BASE_URL}/cms/faqs/${id}`,
+    method: 'PATCH',
+    body: params,
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// FAQ 삭제 API
+export async function deleteFAQ(id: string) {
+  return callAdminApi({
+    title: 'FAQ 삭제',
+    url: `${BASE_URL}/cms/faqs/${id}`,
+    method: 'DELETE',
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// ***************** AI 설정 관리
+
+// AI 설정 업데이트 API
+export async function updateAISettings(companyCode: string, params: AISettingsUpdateParams) {
+  return callAdminApi({
+    title: 'AI 설정 업데이트',
+    url: `${BASE_URL}/cms/company/ai-settings?companyCode=${companyCode}`,
+    method: 'PATCH',
+    body: params,
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// AI 설정 조회 API (고객사 조회 API를 사용하되 필요한 필드만 추출)
+export async function getAISettings(companyCode: string): Promise<AISettingsResponse> {
+  try {
+    // 고객사 목록 조회 API 사용
+    const result = await getCompanyList();
+    
+    // 응답 구조 확인 및 데이터 추출
+    let companies: any[] = [];
+    if (result && typeof result === 'object') {
+      if (Array.isArray(result)) {
+        // 배열인 경우 첫 번째 요소에서 data 추출
+        const firstItem = result[0];
+        if (firstItem && typeof firstItem === 'object' && 'data' in firstItem) {
+          const responseData = firstItem.data as any;
+          if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+            companies = responseData.data || [];
+          }
+        }
+      } else if ('data' in result) {
+        const resultData = result as any;
+        companies = resultData.data || [];
+      }
+    }
+
+    // 특정 companyCode에 해당하는 회사 찾기
+    const company = companies.find((c: any) => c.companyCode === companyCode);
+    
+    if (!company) {
+      throw new Error(`Company with code ${companyCode} not found`);
+    }
+
+    // AI 설정 관련 필드만 추출하여 반환
+    const aiSettings = {
+      guestDailyQueryLimit: company.guestDailyQueryLimit || 0,
+      guestMonthlyQueryLimit: company.guestMonthlyQueryLimit || 0,
+      userDailyQueryLimit: company.userDailyQueryLimit || 0,
+      userMonthlyQueryLimit: company.userMonthlyQueryLimit || 0,
+      employeeDailyQueryLimit: company.employeeDailyQueryLimit || 0,
+      employeeMonthlyQueryLimit: company.employeeMonthlyQueryLimit || 0,
+      geminiApiKey: company.geminiApiKey || '',
+      discountRate: company.discountRate || 'MONTH',
+      rateRule: company.rateRule || 'FIXED',
+      aiConfidence: company.aiConfidence || 0,
+      mode: company.mode || 'LIGHT',
+      checkpointList: company.checkpointList || [],
+    };
+
+    devLog('🚀 [getAISettings] AI 설정 조회 완료:', { companyCode, aiSettings });
+    return aiSettings;
+  } catch (error) {
+    devLog('❌ [getAISettings] AI 설정 조회 에러:', error);
+    throw error;
+  }
 }
