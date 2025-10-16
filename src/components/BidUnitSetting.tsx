@@ -68,7 +68,7 @@ const BidUnitSetting = React.forwardRef<
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTargetIndex, setDeleteTargetIndex] = useState<number | null>(null);
 
-  // initialCheckpoints가 변경될 때만 현재 settingType에 맞는 상태에 반영 (한 번만)
+  // initialCheckpoints가 변경될 때마다 상태 초기화 및 설정
   React.useEffect(() => {
     if (initialCheckpoints && initialCheckpoints.length > 0) {
       // 현재 설정 타입에 해당하는 데이터만 설정
@@ -106,7 +106,15 @@ const BidUnitSetting = React.forwardRef<
           unitAmount: checkpoint.discountRate.toString(),
         }));
         
-        // 마지막에 빈 구간 하나 더 추가 (필요시)
+        // 마지막에 빈 구간 하나 더 추가 (필요시) - 필요없음 안해도됨
+        // if (dynamicRanges.length > 0) {
+        //   dynamicRanges.push({
+        //     index: dynamicRanges.length + 1,
+        //     minAmount: "",
+        //     maxAmount: "",
+        //     unitAmount: "",
+        //   });
+        // }
         
         setDynamicData(dynamicRanges.length > 0 ? dynamicRanges : [
           {
@@ -131,8 +139,31 @@ const BidUnitSetting = React.forwardRef<
           unitAmount: "",
         }]);
       }
+    } else {
+      // initialCheckpoints가 빈 배열이거나 없을 때 - 모든 상태 초기화
+      setFixedData([{
+        index: 1,
+        minAmount: "",
+        maxAmount: "",
+        unitAmount: "",
+      }]);
+      
+      setDynamicData([
+        {
+          index: 1,
+          minAmount: "",
+          maxAmount: "",
+          unitAmount: "",
+        },
+        {
+          index: 2,
+          minAmount: "",
+          maxAmount: "",
+          unitAmount: "",
+        },
+      ]);
     }
-  }, [initialCheckpoints]); // settingType 의존성 제거 - 초기 데이터 로드 시에만 실행
+  }, [initialCheckpoints, settingType]); // settingType도 의존성에 추가하여 설정 변경 시에도 반응
 
   // checkpointList 생성 및 상위 컴포넌트로 전달
   const generateCheckpointList = React.useCallback((ranges: BidUnitRange[]): Checkpoint[] => {

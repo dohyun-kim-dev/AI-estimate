@@ -201,7 +201,7 @@ const Tooltip = styled.div`
     padding-right: 36px; /* X 버튼 자리 확보 */
 
   white-space: nowrap;
-  z-index: 1000;
+  z-index: 900;
   
   /* 말풍선 꼬리 */
   &::after {
@@ -312,7 +312,7 @@ const SaveAllButton = styled.button`
   background-color: #2C2E3C;
   color: white;
   border: none;
-  border-radius: 0px;
+  border-radius: 4px;
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
@@ -663,8 +663,41 @@ export default function AigoSettingsPage() {
 
   // 고객사 선택 핸들러
   const handleCompanySelect = (company: { id: string; name: string }) => {
+    // 동일한 회사가 선택된 경우 아무 작업하지 않음
+    if (selectedCompanyCode === company.id) {
+      return;
+    }
+    
     setSelectedCompanyCode(company.id);
     setSelectedCompanyName(company.name);
+    
+    // 새로운 고객사 선택 시 모든 상태 초기화
+    setFormData({
+      theme: 'light',
+      maxGuestQueries: '',
+      maxMemberQueries: '',
+      maxMonthlyMemberQueries: '',
+      maxStaffQueries: '',
+      maxMonthlyStaffQueries: '',
+      inferencePerformance: 50,
+      licenseKey: '',
+      projectRateEnabled: true,
+      projectName1: '',
+      projectRate1: '',
+      projectName2: '',
+      projectRate2: '',
+      projectName3: '',
+      projectRate3: '',
+      rateIncrease: 'simple',
+      basicRate: '',
+      advancedRate: '',
+      premiumRate: '',
+      discountRate: 'MONTH' as 'WEEK' | 'MONTH' | 'QUANTITY',
+      rateRule: 'FIXED' as 'FIXED' | 'DYNAMIC'
+    });
+    
+    // checkpointList 초기화
+    setCheckpointList([]);
     
     // 새로운 고객사 선택 시 해당 고객사의 설정을 로드
     // 컴퍼니 코드가 유효한 경우에만 API 호출
@@ -1091,7 +1124,11 @@ export default function AigoSettingsPage() {
             </Card>
           )}
 
-        <SaveButtonContainer>
+    
+      </MainContent>
+
+        </CardsWrapper>
+    <SaveButtonContainer>
           <SaveAllButton 
             onClick={handleSaveAll} 
             disabled={isLoading || !selectedCompanyCode || selectedCompanyCode.trim() === ''}
@@ -1099,10 +1136,6 @@ export default function AigoSettingsPage() {
             {isLoading ? '저장 중...' : '전체 저장'}
           </SaveAllButton>
         </SaveButtonContainer>
-      </MainContent>
-
-        </CardsWrapper>
-
       </SettingsContainer>
 
       {/* 전체 저장 확인 모달 */}

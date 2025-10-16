@@ -1,17 +1,22 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { getGuestToken, updateGuestUsage } from '@/lib/api/user/userApi';
+import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
 
 interface UsageState {
   remainingCount: number;
   hasUsedExtraCount: boolean;
   lastResetDate: string;
   maxSubmissions: number;
+  isLoading: boolean;
   setRemainingCount: (count: number) => void;
   decreaseCount: () => void;
   setHasUsedExtraCount: (used: boolean) => void;
   addExtraCount: () => void;
   resetDailyCount: () => void;
   checkAndResetIfNewDay: () => void;
+  fetchGuestUsage: (companyCode: string) => Promise<void>;
+  setLoading: (loading: boolean) => void;
 }
 
 const generateUUID = () => {
@@ -28,6 +33,7 @@ export const useUsageStore = create<UsageState>()(
       hasUsedExtraCount: false,
       lastResetDate: new Date().toDateString(),
       maxSubmissions: 10,
+      isLoading: false,
       
       setRemainingCount: (count: number) => {
         set({ remainingCount: count });
@@ -94,7 +100,43 @@ export const useUsageStore = create<UsageState>()(
             set({ hasUsedExtraCount: false });
           }
         }
-      }
+      },
+
+      setLoading: (loading: boolean) => {
+        set({ isLoading: loading });
+      },
+
+      fetchGuestUsage: async (companyCode: string) => {
+        try {
+          set({ isLoading: true });
+          
+          // guest-uuid 가져오기
+          const guestUuid = localStorage.getItem('guest-uuid');
+          if (!guestUuid) {
+            console.log('게스트 UUID가 없어 서버 사용량 조회를 건너뜁니다.');
+            return;
+          }
+
+          const response = await getGuestToken(guestUuid, companyCode);
+          
+          if (response.statusCode === 200 && response.data) {
+            const { dailyQueryCount } = response.data;
+            
+            // 서버에서 받은 사용량으로 업데이트
+            set({ remainingCount: dailyQueryCount });
+            localStorage.setItem('remainingCount', String(dailyQueryCount));
+            
+            console.log('서버에서 게스트 사용량 업데이트:', dailyQueryCount);
+          } else {
+            console.error('게스트 토큰 조회 실패:', response.error);
+          }
+        } catch (error) {
+          console.error('게스트 사용량 조회 중 오류:', error);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
     }),
     {
       name: 'usage-storage',
@@ -102,6 +144,7 @@ export const useUsageStore = create<UsageState>()(
         remainingCount: state.remainingCount,
         hasUsedExtraCount: state.hasUsedExtraCount,
         lastResetDate: state.lastResetDate,
+        maxSubmissions: state.maxSubmissions,
       }),
     }
   )

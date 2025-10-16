@@ -27,6 +27,9 @@ import { usePromptStore } from '@/store/promptStore';
 import { useAuthStore } from '@/store/authStore';
 import { useThemeStore } from '@/store/themeStore';
 import { transformMessageForDisplay } from '@/utils/messageTransform';
+import { useCompanyInfo } from '@/hooks/useCompanyInfo';
+import { useUsageStore } from '@/store/usageStore';
+import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -1042,6 +1045,12 @@ export default function AiChatPage() {
   const isCrawlingUrl = useChatStore((s) => s.isCrawlingUrl); // 추가: URL 크롤링 상태 가져오기
   const { isAuthenticated, user } = useAuthStore(); // user 상태도 가져오기
   
+  // 회사 정보 훅 사용
+  const { companyInfo, isLoading: isCompanyLoading, fetchCompanyInfo } = useCompanyInfo();
+  
+  // 게스트 사용량 관리
+  const { fetchGuestUsage } = useUsageStore();
+  
   // URL에 superadmin이 포함되면 항상 다크모드, 그렇지 않으면 테마 스토어 값 사용
   const location2 = useLocation();
   const pathname = location2.pathname;
@@ -1153,6 +1162,29 @@ export default function AiChatPage() {
 
   // 인풋 복원용 state
   const [restoreInput, setRestoreInput] = useState<string | null>(null);
+
+  // 회사 정보 및 게스트 사용량 불러오기 - 페이지 진입 시 한 번만 실행
+  useEffect(() => {
+    const initializeData = async () => {
+      // 회사 정보 불러오기
+      if (!companyInfo && !isCompanyLoading) {
+        fetchCompanyInfo();
+      }
+
+      // 게스트 사용량 불러오기 (로그인하지 않은 경우에만)
+      if (!isAuthenticated) {
+        const companyCode = getCompanyCodeFromUrl();
+        const guestUuid = localStorage.getItem('guest-uuid');
+        devLog('초기화 - companyCode:', companyCode, 'guestUuid:', guestUuid);
+        if (guestUuid && companyCode) {
+          devLog('게스트 사용량을 불러옵니다.');
+          await fetchGuestUsage(companyCode);
+        }
+      }
+    };
+
+    initializeData();
+  }, [companyInfo, isCompanyLoading, fetchCompanyInfo, isAuthenticated, fetchGuestUsage]);
 
   // 정지 버튼 핸들러: ai 메시지 정리 + 인풋 복원
   const handleRestoreInput = (input: string) => {

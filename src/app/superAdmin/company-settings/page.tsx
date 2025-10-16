@@ -39,7 +39,7 @@ const initialCompanyInfo: CompanyInfo = {
   aiProfile: '/ai-estimate/pretty.png',
   aiName: 'AI 에이전트',
   signature: '',
-  etc: ['견적 비고란을 입력해주세요'] // 기본값을 1개로 수정
+  etc: [''] // 기본값을 1개로 수정
 };
 
 const SettingsContainer = styled.div`
@@ -287,7 +287,7 @@ const ActionButton = styled.button<{ $variant: 'add' | 'delete' }>`
 const SaveAllButton = styled.button`
   position: fixed;
   bottom: 24px;
-  right: 24px;
+  right: 32px;
   padding: 16px 20px;
   background-color: #2C2E3C;
   color: white;
@@ -311,29 +311,166 @@ const HiddenInput = styled.input`
   display: none;
 `;
 
+// 미리보기 이미지 스타일
+const PreviewImageWrapper = styled.div`
+  position: relative;
+  display: inline-block;
+  margin-top: 16px;
+  cursor: pointer;
+  
+`;
+
+const PreviewImage = styled.img`
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  object-fit: cover;
+  cursor: pointer;
+`;
+
+//리무브 스타일 수정 하지마 이대로 유지
+const RemoveImageButton = styled.button`
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 24px;
+  border-radius: 50%;
+  background-color: #777777;
+  color: white;
+  font-size: 14px;
+  line-height: 1;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background-color: #555555;
+  }
+  
+  &:before {
+    content: "×";
+    font-weight: bold;
+  }
+`;
+
+// PDF 파일 미리보기
+const PdfPreview = styled.div`
+  display: inline-block;
+  padding: 12px 16px;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-top: 16px;
+  position: relative;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+`;
+
+// 드롭다운 메뉴 스타일
+const DropdownMenu = styled.div<{ $isOpen: boolean }>`
+  position: absolute;
+  top: 130px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  min-width: 180px;
+  opacity: ${({ $isOpen }) => $isOpen ? 1 : 0};
+  visibility: ${({ $isOpen }) => $isOpen ? 'visible' : 'hidden'};
+  transform: ${({ $isOpen }) => $isOpen ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(-10px)'};
+  transition: all 0.2s ease;
+`;
+
+const DropdownItem = styled.div`
+  padding: 12px 16px;
+  color: #333333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: #f5f5f5;
+  }
+  
+  &:first-child {
+    border-radius: 8px 8px 0 0;
+  }
+  
+  &:last-child {
+    border-radius: 0 0 8px 8px;
+  }
+  
+  &:only-child {
+    border-radius: 8px;
+  }
+`;
+
+// 카메라 아이콘 스타일
+const CameraIcon = styled.div`
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 40px;
+  height: 40px;
+  background-color: #AAAAAA;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+`;
+
 export default function CompanyInfoSettingsPage() {
   const [companyInfo, setCompanyInfo] = useState(initialCompanyInfo);
-  const [estimateNotes, setEstimateNotes] = useState(['견적 비고란을 입력해주세요']);
+  const [estimateNotes, setEstimateNotes] = useState(['']);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [selectedCompanyCode, setSelectedCompanyCode] = useState<string | null>('');
   const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [uploadedProfileImage, setUploadedProfileImage] = useState<string | null>(null);
   const [uploadedSignatureImage, setUploadedSignatureImage] = useState<string | null>(null);
+  
+  // 미리보기 상태 추가
+  const [profilePreview, setProfilePreview] = useState<string>('');
+  const [signaturePreview, setSignaturePreview] = useState<string>('');
+  const [signatureFileName, setSignatureFileName] = useState<string>('');
+  
+  // 프로필 이미지 드롭다운 상태
+  const [showImageDropdown, setShowImageDropdown] = useState(false);
+  
   const { show: showToast } = useToast();
   
   const profileImageRef = useRef<HTMLInputElement>(null);
   const businessImageRef = useRef<HTMLInputElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
+  // 파일 URL 생성 헬퍼 함수
+  const getFileUrl = (filename: string) => {
+    if (!filename) return '';
+    if (filename.startsWith('http://') || filename.startsWith('https://') || filename.startsWith('/')) {
+      return filename;
+    }
+    return `/api/file/${filename}`;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setCompanyInfo(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleProfileImageClick = () => {
-    profileImageRef.current?.click();
-  };
+
 
   const handleProfileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -342,22 +479,24 @@ export default function CompanyInfoSettingsPage() {
         setIsLoading(true);
         showToast('프로필 이미지 업로드 중...', 'info');
         
+        // 미리보기용 로컬 이미지 표시
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const result = event.target?.result as string;
+          setProfilePreview(result);
+          setCompanyInfo(prev => ({ 
+            ...prev, 
+            aiProfile: result 
+          }));
+        };
+        reader.readAsDataURL(file);
+        
         // 서버에 파일 업로드
         const uploadResponse = await uploadFiles([file]);
         
         if (uploadResponse.statusCode === 200 && uploadResponse.data && uploadResponse.data.length > 0) {
           const uploadedFileName = uploadResponse.data[0];
           setUploadedProfileImage(uploadedFileName);
-          
-          // 미리보기용 로컬 이미지 표시
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            setCompanyInfo(prev => ({ 
-              ...prev, 
-              aiProfile: event.target?.result as string 
-            }));
-          };
-          reader.readAsDataURL(file);
           
           showToast('프로필 이미지가 업로드되었습니다.', 'success');
         } else {
@@ -373,7 +512,68 @@ export default function CompanyInfoSettingsPage() {
   };
 
   const handleBusinessImageUpload = () => {
+    if (!selectedCompanyCode) {
+      showToast('먼저 고객사를 선택하세요', 'error');
+      return;
+    }
     businessImageRef.current?.click();
+  };
+
+  // 프로필 이미지 제거 핸들러
+  const handleRemoveProfileImage = () => {
+    setProfilePreview('');
+    setUploadedProfileImage(null);
+    setCompanyInfo(prev => ({ 
+      ...prev, 
+      aiProfile: '/ai-estimate/pretty.png' // 기본 이미지로 복원
+    }));
+    showToast('프로필 이미지가 제거되었습니다', 'info');
+  };
+
+  // 회사 직인 제거 핸들러
+  const handleRemoveSignatureImage = () => {
+    setSignaturePreview('');
+    setSignatureFileName('');
+    setUploadedSignatureImage(null);
+    setCompanyInfo(prev => ({ 
+      ...prev, 
+      signature: '' 
+    }));
+    showToast('회사 직인이 제거되었습니다', 'info');
+  };
+
+  // 프로필 이미지 드롭다운 관련 핸들러
+  const handleImageClick = () => {
+    if (!selectedCompanyCode) {
+      showToast('먼저 고객사를 선택하세요', 'error');
+      return;
+    }
+    setShowImageDropdown(!showImageDropdown);
+  };
+
+  const handleImageUpload = () => {
+    if (!selectedCompanyCode) {
+      showToast('먼저 고객사를 선택하세요', 'error');
+      return;
+    }
+    profileImageRef.current?.click();
+    setShowImageDropdown(false);
+  };
+
+  const handleSetDefaultImage = () => {
+    if (!selectedCompanyCode) {
+      showToast('먼저 고객사를 선택하세요', 'error');
+      setShowImageDropdown(false);
+      return;
+    }
+    setShowImageDropdown(false);
+    setProfilePreview('');
+    setUploadedProfileImage(null);
+    setCompanyInfo(prev => ({ 
+      ...prev, 
+      aiProfile: '/ai-estimate/pretty.png' // 기본 이미지로 설정
+    }));
+    showToast('기본 이미지로 설정되었습니다', 'success');
   };
 
   const handleBusinessImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -383,22 +583,32 @@ export default function CompanyInfoSettingsPage() {
         setIsLoading(true);
         showToast('회사 직인 업로드 중...', 'info');
         
+        // 미리보기 처리
+        if (file.type === 'application/pdf') {
+          // PDF 파일인 경우 파일명만 표시
+          setSignaturePreview('');
+          setSignatureFileName(file.name);
+        } else {
+          // 이미지 파일인 경우 미리보기 생성
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const result = event.target?.result as string;
+            setSignaturePreview(result);
+            setCompanyInfo(prev => ({ 
+              ...prev, 
+              signature: result 
+            }));
+          };
+          reader.readAsDataURL(file);
+          setSignatureFileName('');
+        }
+        
         // 서버에 파일 업로드
         const uploadResponse = await uploadFiles([file]);
         
         if (uploadResponse.statusCode === 200 && uploadResponse.data && uploadResponse.data.length > 0) {
           const uploadedFileName = uploadResponse.data[0];
           setUploadedSignatureImage(uploadedFileName);
-          
-          // 미리보기용 로컬 이미지 표시
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            setCompanyInfo(prev => ({ 
-              ...prev, 
-              signature: event.target?.result as string 
-            }));
-          };
-          reader.readAsDataURL(file);
           
           showToast('회사 직인이 업로드되었습니다.', 'success');
         } else {
@@ -521,6 +731,29 @@ export default function CompanyInfoSettingsPage() {
           etc: company.etc || [''] // 기본값을 1개로 수정
         });
         
+        // 프로필 이미지 미리보기 설정
+        if (company.aiProfile && !company.aiProfile.startsWith('/ai-estimate/')) {
+          setProfilePreview(getFileUrl(company.aiProfile));
+        } else {
+          setProfilePreview('');
+        }
+        
+        // 회사 직인 미리보기 설정
+        if (company.signature) {
+          const fileUrl = getFileUrl(company.signature);
+          // 파일 확장자를 확인하여 PDF 파일인지 판단
+          if (company.signature.toLowerCase().endsWith('.pdf')) {
+            setSignaturePreview('');
+            setSignatureFileName(company.signature);
+          } else {
+            setSignaturePreview(fileUrl);
+            setSignatureFileName('');
+          }
+        } else {
+          setSignaturePreview('');
+          setSignatureFileName('');
+        }
+        
         // 견적 비고란 설정 (최소 1개 보장)
         if (company.etc && Array.isArray(company.etc) && company.etc.length > 0) {
           setEstimateNotes(company.etc);
@@ -551,11 +784,16 @@ export default function CompanyInfoSettingsPage() {
     setCompanyInfo(initialCompanyInfo);
     
     // 견적 비고란 초기화
-    setEstimateNotes(['견적 비고란을 입력해주세요']);
+    setEstimateNotes(['']);
     
     // 업로드된 이미지 상태 초기화
     setUploadedProfileImage(null);
     setUploadedSignatureImage(null);
+    
+    // 미리보기 상태 초기화
+    setProfilePreview('');
+    setSignaturePreview('');
+    setSignatureFileName('');
     
     // 편집 상태 초기화
     setIsEditingTitle(false);
@@ -570,12 +808,12 @@ export default function CompanyInfoSettingsPage() {
   // 전체 저장
   const handleSaveAll = async () => {
     if (!selectedCompanyCode) {
-      showToast('회사를 선택해주세요.', 'error');
+      showToast('먼저 고객사를 선택하세요', 'error');
       return;
     }
 
     // 견적 비고란이 비어있으면 기본값 추가
-    const finalEstimateNotes = estimateNotes.length > 0 ? estimateNotes : ['견적 비고란을 입력해주세요'];
+    const finalEstimateNotes = estimateNotes.length > 0 ? estimateNotes : [''];
 
     setIsLoading(true);
     try {
@@ -611,6 +849,23 @@ export default function CompanyInfoSettingsPage() {
     }
   }, []);
 
+  // 드롭다운 외부 클릭 감지
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showImageDropdown && !(event.target as Element).closest('.profile-image-container')) {
+        setShowImageDropdown(false);
+      }
+    };
+    
+    if (showImageDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showImageDropdown]);
+
   return (
     <SettingsContainer>
       <HeaderWrapper>
@@ -628,15 +883,28 @@ export default function CompanyInfoSettingsPage() {
             <Card>
                             <SectionTitle>프로필</SectionTitle>
               <ProfileSection>
-                <ProfileImageWrapper onClick={handleProfileImageClick}>
-                  <ProfileImage 
-                    src={companyInfo.aiProfile || '/ai-estimate/pretty.png'} 
-                    alt="프로필 이미지" 
-                  />
-                  <ProfileImageOverlay>
-                    이미지 변경
-                  </ProfileImageOverlay>
-                </ProfileImageWrapper>
+                <div className="profile-image-container" style={{ position: 'relative' }}>
+                  <ProfileImageWrapper>
+                    <ProfileImage 
+                      src={profilePreview || companyInfo.aiProfile || '/ai-estimate/pretty.png'} 
+                      alt="프로필 이미지" 
+                    />
+                    <CameraIcon onClick={handleImageClick}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="25" height="24" viewBox="0 0 25 24" fill="none">
+                        <path d="M20.5 4H17.33L15.5 2H9.5L7.67 4H4.5C3.96957 4 3.46086 4.21071 3.08579 4.58579C2.71071 4.96086 2.5 5.46957 2.5 6V18C2.5 18.5304 2.71071 19.0391 3.08579 19.4142C3.46086 19.7893 3.96957 20 4.5 20H20.5C21.0304 20 21.5391 19.7893 21.9142 19.4142C22.2893 19.0391 22.5 18.5304 22.5 18V6C22.5 5.46957 22.2893 4.96086 21.9142 4.58579C21.5391 4.21071 21.0304 4 20.5 4ZM20.5 18H4.5V6H8.55L10.38 4H14.62L16.45 6H20.5V18ZM12.5 7C11.1739 7 9.90215 7.52678 8.96447 8.46447C8.02678 9.40215 7.5 10.6739 7.5 12C7.5 13.3261 8.02678 14.5979 8.96447 15.5355C9.90215 16.4732 11.1739 17 12.5 17C13.8261 17 15.0979 16.4732 16.0355 15.5355C16.9732 14.5979 17.5 13.3261 17.5 12C17.5 10.6739 16.9732 9.40215 16.0355 8.46447C15.0979 7.52678 13.8261 7 12.5 7ZM12.5 15C11.7044 15 10.9413 14.6839 10.3787 14.1213C9.81607 13.5587 9.5 12.7956 9.5 12C9.5 11.2044 9.81607 10.4413 10.3787 9.87868C10.9413 9.31607 11.7044 9 12.5 9C13.2956 9 14.0587 9.31607 14.6213 9.87868C15.1839 10.4413 15.5 11.2044 15.5 12C15.5 12.7956 15.1839 13.5587 14.6213 14.1213C14.0587 14.6839 13.2956 15 12.5 15Z" fill="white"/>
+                      </svg>
+                    </CameraIcon>
+                  </ProfileImageWrapper>
+                  
+                  <DropdownMenu $isOpen={showImageDropdown}>
+                    <DropdownItem onClick={handleImageUpload}>
+                      사진 불러오기
+                    </DropdownItem>
+                    <DropdownItem onClick={handleSetDefaultImage}>
+                      기본 이미지로 설정
+                    </DropdownItem>
+                  </DropdownMenu>
+                </div>
                 <ProfileTitleWrapper>
                   {isEditingTitle ? (
                     <ProfileTitleInput
@@ -764,14 +1032,46 @@ export default function CompanyInfoSettingsPage() {
             <Card>
               <ImageUploadSection>
                 <ImageUploadTitle>회사 직인 첨부</ImageUploadTitle>
-                <ImageUploadBox onClick={handleBusinessImageUpload}>
-                  <ImageUploadText>파일을 업로드해주세요</ImageUploadText>
-                  <ImageUploadSubText>
-                    <p style={{color: '#CA7575'}}>1장의 이미지만 첨부 가능합니다</p>
-                    <p>1MB 이하의 Jpg, Jpeg, Png 파일만 등록 가능</p>
-                  </ImageUploadSubText>
-                  <UploadButton type="button">파일 열기</UploadButton>
-                </ImageUploadBox>
+                
+                {/* 업로드된 이미지나 파일이 없을 때만 업로드 박스 표시 */}
+                {!signaturePreview && !signatureFileName && (
+                  <ImageUploadBox onClick={handleBusinessImageUpload}>
+                    <ImageUploadText>파일을 업로드해주세요</ImageUploadText>
+                    <ImageUploadSubText>
+                      <p style={{color: '#CA7575'}}>1장의 이미지만 첨부 가능합니다</p>
+                      <p>1MB 이하의 Jpg, Jpeg, Png 파일만 등록 가능</p>
+                    </ImageUploadSubText>
+                    <UploadButton type="button">파일 열기</UploadButton>
+                  </ImageUploadBox>
+                )}
+                
+                {/* 직인 이미지 미리보기 */}
+                {signaturePreview && (
+                  <PreviewImageWrapper onClick={handleBusinessImageUpload}>
+                    <PreviewImage src={signaturePreview} alt="회사 직인 미리보기" />
+                    <RemoveImageButton 
+                      onClick={(e) => {
+                        e.stopPropagation(); // 부모 클릭 이벤트 방지
+                        handleRemoveSignatureImage();
+                      }} 
+                    />
+                  </PreviewImageWrapper>
+                )}
+                
+                {/* PDF 파일 미리보기 */}
+                {signatureFileName && (
+                  <PreviewImageWrapper onClick={handleBusinessImageUpload}>
+                    <PdfPreview>
+                      PDF: {signatureFileName}
+                    </PdfPreview>
+                    <RemoveImageButton 
+                      onClick={(e) => {
+                        e.stopPropagation(); // 부모 클릭 이벤트 방지
+                        handleRemoveSignatureImage();
+                      }} 
+                    />
+                  </PreviewImageWrapper>
+                )}
               </ImageUploadSection>
               
               <HiddenInput

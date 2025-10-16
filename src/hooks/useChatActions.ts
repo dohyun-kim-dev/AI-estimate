@@ -943,13 +943,17 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         }
         
         // 🔥 스트리밍 중에도 chatTitle 태그와 백틱 실시간 제거
-        let displayContent = aiReply
-          .replace(/<chatTitle>.*?<\/chatTitle>/gs, '') // chatTitle 태그 제거
-          .replace(/```\s*\n?/g, '') // 백틱 코드 블록 마커 제거  
-          .replace(/`([^`]*)`/g, '$1') // 인라인 백틱 제거
-          .replace(/^\s*\n+/g, '') // 시작 부분 빈 줄 제거
-          .trim();
-        
+        let displayContent = aiReply;
+
+// chatTitle 태그가 발견된 경우에만 처리
+          if (/<chatTitle>.*?<\/chatTitle>/gs.test(aiReply)) {
+            displayContent = aiReply
+              .replace(/<chatTitle>.*?<\/chatTitle>/gs, '') // chatTitle 태그 제거
+              .replace(/```\s*\n?/g, '') // 백틱 코드 블록 마커 제거  
+              .replace(/`([^`]*)`/g, '$1') // 인라인 백틱 제거
+              .replace(/^\s*\n+/g, '') // 시작 부분 빈 줄 제거
+              .trim();
+          } 
         // 일반 텍스트 스트리밍 표시 (정리된 내용으로)
         updateLastMessage({
           content: displayContent,

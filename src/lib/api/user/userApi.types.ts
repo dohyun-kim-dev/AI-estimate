@@ -39,3 +39,66 @@ export interface GoogleLoginResponse {
   isNew: boolean;
 }
 
+// 회사 정보 응답 타입
+export interface CompanyInfoResponse {
+  _id: string;
+  name: string;
+  companyName: string;
+  cellphone: string;
+  email: string;
+  companyCode: string;
+  dbName: string;
+  address: string;
+  detailAddress: string;
+  ciImage: string;
+  businessImage: string;
+  contractType: string;
+  contractStartDate: string;
+  contractEndDate: string;
+  aiConfidence: number;
+  mode: string;
+  category: {
+    _id: string;
+    name: string;
+    code: string;
+  };
+  createAt: string;
+  updateAt: string;
+  memo: string;
+  checkpointList: Array<{
+    checkpoint: number;
+    discountRate: number;
+    _id: string;
+  }>;
+  discountRate: string;
+  employeeDailyQueryLimit: number;
+  employeeMonthlyQueryLimit: number;
+  geminiApiKey: string;
+  guestDailyQueryLimit: number;
+  guestMonthlyQueryLimit: number;
+  rateRule: string;
+  userDailyQueryLimit: number;
+  userMonthlyQueryLimit: number;
+  aiName: string;
+  aiProfile: string;
+  businessCategory: string;
+  businessType: string;
+  etc: string[];
+  signature: string;
+}
+
+// 게스트 토큰 응답 타입
+export interface GuestTokenResponse {
+  _id: string;
+  company: {
+    _id: string;
+    name: string;
+    companyCode: string;
+  };
+  user: string;
+  dailyQueryCount: number;
+  monthlyQueryCount: number;
+  createAt: string;
+  updateAt: string;
+}
+

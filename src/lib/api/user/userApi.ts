@@ -30,6 +30,27 @@ export async function termsGetList() {
   });
 }
 
+// ***************** 회사 정보 관련
+export async function getCompanyInfo(): Promise<ApiResponse<import('./userApi.types').CompanyInfoResponse>> {
+  return callUserApi({
+    title: '회사 정보 조회',
+    url: getApiUrl('/users/company/info'),
+    method: 'GET',
+    isCallPageLoader: false,
+  });
+}
+
+// ***************** 게스트 토큰 관련
+export async function getGuestToken(user: string, companyCode: string): Promise<ApiResponse<import('./userApi.types').GuestTokenResponse>> {
+  return callUserApi({
+    title: '게스트 토큰 조회',
+    url: getApiUrl('/users/guest/token'),
+    method: 'POST',
+    body: { user, companyCode },
+    isCallPageLoader: false,
+  });
+}
+
 // ***************** 휴대폰 인증 관련
 export async function sendAuthCode(cellphone) {
   return callUserApi({
