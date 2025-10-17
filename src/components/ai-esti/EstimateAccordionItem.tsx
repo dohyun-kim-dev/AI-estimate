@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import { IoChevronDown, IoChevronForward } from 'react-icons/io5';
 import { formatPrice, parsePrice } from '@/utils/utils';
 import { useLocation } from 'react-router-dom';
+import { calculateDiscountInfo, isNonDiscountableItem, type DiscountSettings } from '@/utils/discountCalculator';
 
 const ItemWrapper = styled.div<{ depth: number; $isOpen?: boolean }>`
   position: relative;
@@ -250,7 +251,9 @@ interface EstimateAccordionItemProps {
   onItemSelect?: (itemId: string) => void;
   chatRoomId?: string;
   estimateId?: string;
-  discountRate?: number; // 0~1, 0.1이면 10% 할인
+  discountRate?: number; // 0~1, 0.1이면 10% 할인 (기존 호환성)
+  periodValue?: number; // 연장 기간 값 (주, 월, 수량)
+  discountSettings?: DiscountSettings; // 할인 설정
   isOpen?: boolean; // 외부에서 제어되는 열림/닫힘 상태
 }
 
@@ -270,6 +273,8 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
   chatRoomId,
   estimateId,
   discountRate,
+  periodValue = 0,
+  discountSettings,
   isOpen: externalIsOpen
 }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
@@ -285,25 +290,28 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
   }, [location]);
 
 
-  // 각 아이템별 할인 적용 (화면설계/화면디자인/화면퍼블리싱 제외)
-  // discountRate가 undefined일 경우 0으로 처리
-  const safeDiscountRate = typeof discountRate === 'number' ? discountRate : 0;
+  // 기본 할인 설정 (discountSettings가 없을 때)
+  const defaultDiscountSettings: DiscountSettings = {
+    checkpointList: [{ checkpoint: 1, discountRate: 1.25 }],
+    discountRate: 'WEEK',
+    rateRule: 'FIXED'
+  };
+
+  const finalDiscountSettings = discountSettings || defaultDiscountSettings;
+
+  // 각 아이템별 할인 적용 (새로운 FIXED/DYNAMIC 방식)
   const getDiscountedPrice = (item: EstimateItem) => {
     const originalPrice = parsePrice(item.price);
-    // 정확한 매칭 대신 부분 매칭으로 변경하여 "화면설계(스토리보드)" 같은 경우도 처리
-    const isExcluded = NON_DISCOUNT_ITEMS.some(excludeItem => 
-      item.name.includes(excludeItem) || excludeItem.includes(item.name)
-    );
     
-    // console.log(`Item: ${item.name}, Original: ${originalPrice}, Excluded: ${isExcluded}, Rate: ${safeDiscountRate}`);
+    // 할인 제외 항목 체크
+    if (isNonDiscountableItem(item)) return originalPrice;
     
-    if (isExcluded) return originalPrice;
-    if (safeDiscountRate > 0) {
-      const discounted = Math.round(originalPrice * (1 - safeDiscountRate));
-      // console.log(`Discounted: ${originalPrice} -> ${discounted}`);
-      return discounted;
-    }
-    return originalPrice;
+    // 연장 기간이 0이면 할인 없음
+    if (periodValue === 0) return originalPrice;
+    
+    // 새로운 할인 계산 방식 사용
+    const discountInfo = calculateDiscountInfo(periodValue, originalPrice, finalDiscountSettings);
+    return originalPrice - discountInfo.amount;
   };
 
   const totalAmount = useMemo(() => {
@@ -329,7 +337,7 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
     }, 0);
     // console.log(`Final total (depth ${depth}): ${total}, formatted: ${formatPrice(total)}`);
     return formatPrice(total);
-  }, [items, price, safeDiscountRate, depth]);
+  }, [items, price, periodValue, discountSettings, depth]);
 
   const handleHeaderClick = () => {
     // 외부에서 제어되는 경우 onSelect만 호출, 내부 상태인 경우 토글
@@ -389,9 +397,8 @@ const EstimateAccordionItem: React.FC<EstimateAccordionItemProps> = ({
         <ContentInner>
           {children || (hasItems && items.map((item, index) => {
             const discounted = getDiscountedPrice(item);
-            const isDiscounted = !NON_DISCOUNT_ITEMS.some(excludeItem => 
-              item.name.includes(excludeItem) || excludeItem.includes(item.name)
-            ) && safeDiscountRate > 0;
+            // 할인 적용 여부 확인 (새로운 방식)
+            const isDiscounted = !isNonDiscountableItem(item) && periodValue > 0;
             return (
               <ListItem
                 key={item.item_id || index} 

@@ -35,7 +35,15 @@ export interface GoogleLoginResponse {
   email?: string;
   name?: string;
   cellphone?: string;
-  usingService: string[];
+  usingService: Array<{
+    _id: string;
+    user: string;
+    company: string;
+    monthlyQueryUsage: number;
+    dailyQueryUsage: number;
+    createAt: string;
+    updateAt: string;
+  }>;
   isNew: boolean;
 }
 
@@ -100,5 +108,26 @@ export interface GuestTokenResponse {
   monthlyQueryCount: number;
   createAt: string;
   updateAt: string;
+}
+
+// 사용자 정보 응답 타입
+export interface UserInfoResponse {
+  _id: string;
+  providerId: string;
+  createAt: string;
+  updateAt: string;
+  cellphone?: string;
+  email?: string;
+  name?: string;
+  profileImage?: string;
+  usingService: Array<{
+    _id: string;
+    user: string;
+    company: string;
+    monthlyQueryUsage: number;
+    dailyQueryUsage: number;
+    createAt: string;
+    updateAt: string;
+  }>;
 }
 

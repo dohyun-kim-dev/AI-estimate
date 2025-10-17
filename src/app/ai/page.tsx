@@ -30,6 +30,7 @@ import { transformMessageForDisplay } from '@/utils/messageTransform';
 import { useCompanyInfo } from '@/hooks/useCompanyInfo';
 import { useUsageStore } from '@/store/usageStore';
 import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
+import { useCompanyStore } from '@/store/companyStore';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -973,6 +974,7 @@ const userId = getUserId() || '';
                       userId={userId}
                       title={(updatedEstimateData || estimateData)?.project_name || '견적서'}
                       discountRate={discountPercentage}
+                      periodValue={Math.max(0, (projectPeriod || 0) - (effectiveBasePeriod || 0))}
                       onEstimateChange={handleEstimateChange}
                     />
                   </AnimatedContainer>
@@ -1111,7 +1113,6 @@ export default function AiChatPage() {
   // 스크롤 버튼 관련 상태
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
-
   const {
     handleSubmit: originalHandleSubmit,
     handlePaste, // 🔥 이미지 붙여넣기 함수 추가
@@ -1163,12 +1164,47 @@ export default function AiChatPage() {
   // 인풋 복원용 state
   const [restoreInput, setRestoreInput] = useState<string | null>(null);
 
+  useEffect(() => {
+    const initializeData = async () => {
+      // 회사 정보 불러오기
+      // if (!companyInfo && !isCompanyLoading) {
+        devLog('회사정보 fetch 호출 - 테마 모드 적용 예정');
+        await fetchCompanyInfo();
+        
+        // fetchCompanyInfo 완료 후 최신 회사정보로 테마 적용
+        const latestCompanyInfo = useCompanyStore.getState().companyInfo;
+        if (latestCompanyInfo && latestCompanyInfo.mode) {
+          devLog('fetchCompanyInfo 완료 - 테마 모드 적용:', latestCompanyInfo.mode);
+          if (latestCompanyInfo.mode === 'LIGHT') {
+            useThemeStore.setState({ isDarkMode: false });
+          } else if (latestCompanyInfo.mode === 'DARK') {
+            useThemeStore.setState({ isDarkMode: true });
+          }
+        }
+      // }
+    };
+
+    initializeData();
+  }, []);
+
   // 회사 정보 및 게스트 사용량 불러오기 - 페이지 진입 시 한 번만 실행
   useEffect(() => {
     const initializeData = async () => {
       // 회사 정보 불러오기
       if (!companyInfo && !isCompanyLoading) {
-        fetchCompanyInfo();
+        devLog('회사정보 fetch 호출 - 테마 모드 적용 예정');
+        await fetchCompanyInfo();
+        
+        // fetchCompanyInfo 완료 후 최신 회사정보로 테마 적용
+        const latestCompanyInfo = useCompanyStore.getState().companyInfo;
+        if (latestCompanyInfo && latestCompanyInfo.mode) {
+          devLog('fetchCompanyInfo 완료 - 테마 모드 적용:', latestCompanyInfo.mode);
+          if (latestCompanyInfo.mode === 'LIGHT') {
+            useThemeStore.setState({ isDarkMode: false });
+          } else if (latestCompanyInfo.mode === 'DARK') {
+            useThemeStore.setState({ isDarkMode: true });
+          }
+        }
       }
 
       // 게스트 사용량 불러오기 (로그인하지 않은 경우에만)
@@ -1330,6 +1366,63 @@ useEffect(() => {
   })();
 }, []);
 
+  // 🔥 페이지 진입 시 사용자 정보 및 사용량 초기화
+  useEffect(() => {
+    const initializeUserInfoAndUsage = async () => {
+      const { isAuthenticated, fetchAndUpdateUserInfo } = useAuthStore.getState();
+      const { fetchGuestUsage, fetchUserUsage } = useUsageStore.getState();
+      const companyCode = getCompanyCodeFromUrl();
+      
+      console.log('초기화 시작 - companyCode:', companyCode);
+      console.log('companyInfo:', companyInfo);
+      console.log('isAuthenticated:', isAuthenticated());
+
+      if (isAuthenticated()) {
+        // 🟢 로그인한 사용자
+        console.log('로그인 사용자 - 사용자 정보 업데이트 중...');
+        
+        try {
+          // 사용자 정보 업데이트
+          await fetchAndUpdateUserInfo();
+          console.log('사용자 정보 업데이트 완료');
+          
+          // 회사 정보가 있고 사용자 정보가 업데이트되면 회원 사용량 조회
+          if (companyInfo?._id) {
+            console.log('회원 사용량 조회 시작 - companyId:', companyInfo._id);
+            await fetchUserUsage(companyInfo._id);
+            console.log('회원 사용량 조회 완료');
+          } else {
+            console.log('회사 정보가 없어 회원 사용량 조회를 건너뜁니다.');
+          }
+        } catch (error) {
+          console.error('사용자 정보 업데이트 실패:', error);
+        }
+      } else {
+        // 🟡 비로그인 사용자 (게스트)
+        console.log('게스트 사용자 - 게스트 사용량 조회 중...');
+        
+        if (companyCode) {
+          try {
+            await fetchGuestUsage(companyCode);
+            console.log('게스트 사용량 조회 완료');
+          } catch (error) {
+            console.error('게스트 사용량 조회 실패:', error);
+          }
+        } else {
+          console.log('회사 코드가 없어 게스트 사용량 조회를 건너뜁니다.');
+        }
+      }
+      
+      console.log('초기화 프로세스 완료');
+    };
+
+    console.log('초기화 useEffect 시작');
+    // 초기화 함수 실행 (await 사용)
+    initializeUserInfoAndUsage().catch(error => {
+      console.error('초기화 중 오류 발생:', error);
+    });
+  }, [companyInfo]); // companyInfo 변화를 감지하도록 의존성 배열에 추가
+
   useEffect(() => {
     // 메시지 목록을 역순으로 순회하여 가장 최근의 견적서를 찾습니다.
     const lastEstimateMessage = messages.slice().reverse().find(m => m.estimateId);
@@ -1397,15 +1490,8 @@ useEffect(() => {
     }
   }, [error, success]);
   
-  const [initialAiMessage, setInitialAiMessage] = useState(`안녕하세요, (주)여기닷 AI 기술영업팀 강유하입니다 
+  const [initialAiMessage, setInitialAiMessage] = useState(`안녕하세요, AI 에이전트입니다.
 견적 발행을 위해 프로젝트의 큰 그림을 한 줄로 알려주시겠어요?`)
-//   `AI 컨설턴트 강유하 입니다 만나 뵙게 되어 반갑습니다
-// 어떤 종류의 프로젝트를 만들고 싶으신가요?
-// devLog('initialAiMessage', initialAiMessage);
-//   프로젝트의 큰 그림을 알려주세요
-//   <ul style="padding-left: 30px;"><li>프로젝트의 핵심 목표는 무엇인가요?</li><li>주요 사용자층은 누구인가요?
-// </li><li>꼭 필요한 핵심 기능은 무엇인가요?</li></ul>
-// 궁금하신 점이나 추가로 설명하고 싶으신 내용이 있다면 언제든지 편하게 이야기해주세요.`;
   const [hasShownInitialMessage, setHasShownInitialMessage] = useState(false);
 
   // 세션 관리 로직 추가
@@ -1440,9 +1526,9 @@ useEffect(() => {
             }));
             startChatWithHistory(chatHistory);
             
-            // 기존 메시지가 있으면 clear하지 않고, 없을 때만 DB에서 로드
+            // 기존 메시지가 1개 이하이면(AI 첫 인사말만 있거나 없으면) DB에서 로드
             const currentMessages = useChatStore.getState().messages;
-            if (currentMessages.length === 0 || !hasShownInitialMessage) {
+            if (currentMessages.length <= 1 || !hasShownInitialMessage) {
               clear();
               addMessage({ role: 'ai', content: initialAiMessage });
               chatMessages.forEach((msg: any) => addMessage(msg));
@@ -1539,9 +1625,9 @@ useEffect(() => {
                   };
                 });
                 
-                // 기존 메시지가 있으면 clear하지 않고, 없을 때만 DB에서 로드
+                // 기존 메시지가 1개 이하이면(AI 첫 인사말만 있거나 없으면) DB에서 로드
                 const currentMessages = useChatStore.getState().messages;
-                if (currentMessages.length === 0 || !hasShownInitialMessage) {
+                if (currentMessages.length <= 1 || !hasShownInitialMessage) {
                   clear();
                   addMessage({ role: 'ai', content: initialAiMessage });
                   chatMessages.forEach((msg: any) => addMessage(msg));
@@ -1597,9 +1683,9 @@ useEffect(() => {
                 };
               });
               
-              // 기존 메시지가 있으면 clear하지 않고, 없을 때만 DB에서 로드
+              // 기존 메시지가 1개 이하이면(AI 첫 인사말만 있거나 없으면) DB에서 로드
               const currentMessages = useChatStore.getState().messages;
-              if (currentMessages.length === 0 || !hasShownInitialMessage) {
+              if (currentMessages.length <= 1 || !hasShownInitialMessage) {
                 clear();
                 addMessage({ role: 'ai', content: initialAiMessage });
                 chatMessages.forEach((msg: any) => addMessage(msg));
@@ -1774,14 +1860,20 @@ useEffect(() => {
                   key={idx}
                   content={
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                      <ProfileSpinner src="/ai-estimate/pretty.png" />
+                      <ProfileSpinner src={
+                        companyInfo?.aiProfile 
+                          ? (companyInfo.aiProfile.startsWith('/ai-estimate/') 
+                              ? companyInfo.aiProfile 
+                              : `/api/file/${companyInfo.aiProfile}`)
+                          : "/ai-estimate/pretty.png"
+                      } />
                       <GradientText>
                         {loadingMessage}
                       </GradientText>
                     </div>
                   }
                   profileImage={null}
-                  name="강유하"
+                  name={companyInfo?.aiName || "AI 에이전트"}
                   isFullWidth={false}
                 />
               );
@@ -1794,8 +1886,14 @@ useEffect(() => {
                   chatSessionId={chatSessionId} 
                   onSubmit={handleSubmit}
                 />} 
-                profileImage="/ai-estimate/pretty.png"
-                name="강유하"
+                profileImage={
+                  companyInfo?.aiProfile 
+                    ? (companyInfo.aiProfile.startsWith('/ai-estimate/') 
+                        ? companyInfo.aiProfile 
+                        : `/api/file/${companyInfo.aiProfile}`)
+                    : "/ai-estimate/pretty.png"
+                }
+                name={companyInfo?.aiName || "AI 에이전트"}
                 isFullWidth={isEstimateMessage(m.content)}
               />
             );

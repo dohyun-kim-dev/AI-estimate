@@ -9,6 +9,7 @@ import { devLog } from '@/utils/devLogger'
 import ImageGrid from '@/components/ai-esti/ImageGrid';
 import { ImageData } from '@/store/chatStore';
 import { useThemeStore } from '@/store/themeStore';
+import { useCompanyStore } from '@/store/companyStore';
  
 // 메시지 타입 정의
 import type { FileUploadData } from '@/firebase.functions';
@@ -202,6 +203,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
 }) => {
   const { setSessionId, addMessage, messages, clearMessages } = useShareChatStore();
   const { isDarkMode } = useThemeStore();
+  const { companyInfo } = useCompanyStore();
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
  
@@ -505,8 +507,14 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
               <StyledAiMessage
                 key={index}
                 content={<AiMessageContent content={message.content}/>}
-                profileImage="/ai-estimate/pretty.png"
-                name="강유하"
+                profileImage={
+                  companyInfo?.aiProfile 
+                    ? (companyInfo.aiProfile.startsWith('/ai-estimate/') 
+                        ? companyInfo.aiProfile 
+                        : `/api/file/${companyInfo.aiProfile}`)
+                    : "/ai-estimate/pretty.png"
+                }
+                name={companyInfo?.aiName || "AI 에이전트"}
                 chatSessionId={chatSessionId}
                 isFullWidth={isEstimateMessage(message.content)}
               />

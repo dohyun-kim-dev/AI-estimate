@@ -3,6 +3,7 @@ import { getAI, getGenerativeModel, GenerativeModel, ChatSession, SchemaType } f
 import { app } from '@/firebaseConfig'
 import { devLog } from '@/utils/devLogger'
 import { FileUploadData } from '@/firebase.functions'
+import { useCompanyStore } from '@/store/companyStore'
 
 export type SimpleModel =
   | 'gemini-2.5-flash'
@@ -253,12 +254,23 @@ export interface TokenUsage {
 export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
   const [modelName, setModelName] = useState<SimpleModel>(initialModel)
   const [systemInstruction, setSystemInstruction] = useState<string | undefined>(undefined)
-  // maximum output tokens / thinking budget
-  const [thinkingBudget, setThinkingBudget] = useState<number>(500)
+  // companyStore에서 aiConfidence 값 가져오기
+  const { companyInfo } = useCompanyStore()
+  // maximum output tokens / thinking budget - companyStore의 aiConfidence 값 참조
+  const [thinkingBudget, setThinkingBudget] = useState<number>(companyInfo?.aiConfidence || 500)
 
   const modelRef = useRef<GenerativeModel | null>(null)
   const chatRef = useRef<ChatSession | null>(null)
   const initialized = useRef(false)
+
+  // companyStore의 aiConfidence 값이 변경되면 thinkingBudget 업데이트
+  useEffect(() => {
+    const newThinkingBudget = companyInfo?.aiConfidence * 10 || 500;
+    if (newThinkingBudget !== thinkingBudget) {
+      devLog('[useAI] aiConfidence 변경 감지:', thinkingBudget, '->', newThinkingBudget);
+      setThinkingBudget(newThinkingBudget);
+    }
+  }, [companyInfo?.aiConfidence, thinkingBudget]);
 
   // thinkingBudget 또는 systemInstruction이 바뀌면 다음 전송 시 새 세션으로 시작되도록 리셋
   useEffect(() => {

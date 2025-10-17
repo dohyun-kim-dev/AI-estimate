@@ -8,6 +8,8 @@ import { ChatMessage, useChatStore } from "@/store/chatStore";
 import { calculateEstimatedPeriod, updateDesignItemPrices, calculateTotalPages } from "@/utils/estimateCalculator";
 import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
 import { devLog } from "../../utils/devLogger";
+import { useCompanyStore } from '@/store/companyStore';
+import { calculateDiscountInfo, isNonDiscountableItem, type DiscountSettings } from '@/utils/discountCalculator';
 
 const AccordionWrapper = styled.div`
   display: flex;
@@ -55,7 +57,8 @@ interface EstimateAccordionProps {
   title?: string;                 // 없으면 project_name 사용
   onItemDelete?: (itemId: string, updatedItem: any) => void; 
   onItemRestore?: (itemId: string, updatedItem: any) => void; 
-  discountRate?: number; // 각 기능별 할인율 적용
+  discountRate?: number; // 각 기능별 할인율 적용 (기존 호환성)
+  periodValue?: number; // 연장 기간 값 (주, 월, 수량)
   onEstimateChange?: (updatedEstimate: ProjectEstimate) => void; // 견적 변경 콜백
 }
 
@@ -162,93 +165,23 @@ type EstimateItem = {
   page_count: number; // 페이지 수
 };
 
-// 🔧 1) 정규화: 제로폭 문자까지 제거
-const normalize = (s: string) =>
-  (s ?? '')
-    .normalize('NFKC')
-    // 제로폭 문자 제거 (U+200B~U+200D, U+FEFF)
-    .replace(/[\u200B-\u200D\uFEFF]/g, '')
-    // 괄호 안 보조설명 제거
-    .replace(/\(.*?\)/g, '')
-    // 공백/구두점/슬래시류 제거
-    .replace(/[\s\-_./|\\,[\]{}:;'"`~!@#$%^&*+?<>·•]/g, '')
-    // uxui를 uiux로 통일
-    .toLowerCase()
-    .replace(/uxui/g, 'uiux');
-
-// 2) 토큰(동의어/파생어)
-const NON_DISCOUNT_TOKENS = [
-  '화면설계', '화면디자인', '화면퍼블리싱','설계',
-  'uiux디자인', 'uidesign', 'uxdesign', 'guidesign',
-  '스토리보드', '와이어프레임', '프로토타입', '프로토타이핑', '시안',
-  '퍼블리싱', '퍼블', '마크업', 'markup', '정적코딩', 'htmlcss', 'html코딩', 'css코딩',
-  // 기획 파생(안전빵으로 추가)
-  '화면기획', '기획설계', '기획',
-];
-
-// 3) 정규식: 공백 대신 제로폭 문자까지 허용
-const zws = '[\\s\\u200B-\\u200D\\uFEFF]*';
-
-const NON_DISCOUNT_REGEX: RegExp[] = [
-  new RegExp(`화면${zws}(설계|디자인|퍼블리싱)`, 'i'),
-  new RegExp(`(ui${zws}\\/?${zws}ux|ux${zws}\\/?${zws}ui|uiux|uxui)${zws}(디자인|design)?`, 'i'),
-  new RegExp(`(스토리보드|와이어${zws}프레임|프로토타입|프로토타이핑|gui${zws}디자인|시안)`, 'i'),
-  new RegExp(`(퍼블리싱|퍼블|마크업|markup|정적${zws}코딩|html${zws}\\/?${zws}css)`, 'i'),
-  // 👉 화면 + 기획 조합도 직접 허용
-  new RegExp(`화면${zws}(기획)`, 'i'),
-  // 👉 기획 단독 및 괄호 포함 패턴
-  new RegExp(`기획`, 'i'),
-  new RegExp(`화면${zws}설계${zws}\\(${zws}기획${zws}\\)`, 'i'),
-];
-
-// 4) 휴리스틱: 화면 + (설계|디자인|퍼블리싱|마크업|기획)
-const heuristicScreenDesign = (raw: string) => {
-  const clean = raw.replace(/[\u200B-\u200D\uFEFF]/g, '');
-  return /화면/i.test(clean) && /(설계|디자인|퍼블리싱|마크업|기획)/i.test(clean);
-};
-
-const isNonDiscountableItem = (item: EstimateItem): boolean => {
-  if (!item?.name) return false;
-
-  const raw = String(item.name);
-  const norm = normalize(raw);
-
-  // 카테고리 기반(있으면 바로 제외)
-  if (item?.category && /(디자인|퍼블리싱|기획|화면)/i.test(item.category)) {
-    return true;
-  }
-
-  // 태그 기반
-  if (Array.isArray(item?.tags) && item.tags.some(Boolean)) {
-    for (const t of item.tags) {
-      const tRaw = String(t ?? '');
-      const tNorm = normalize(tRaw);
-      if (NON_DISCOUNT_REGEX.some((re) => re.test(tRaw))) return true;
-      if (NON_DISCOUNT_TOKENS.some((tok) => tNorm.includes(normalize(tok)))) return true;
-    }
-  }
-
-  // 원문 정규식 (normalize 전에 먼저 체크)
-  if (NON_DISCOUNT_REGEX.some((re) => re.test(raw))) return true;
-
-  // 정규화 토큰 포함
-  if (NON_DISCOUNT_TOKENS.some((tok) => norm.includes(normalize(tok)))) return true;
-
-  // 휴리스틱
-  if (heuristicScreenDesign(raw)) return true;
-
-  // 추가: 괄호 안에 기획이 포함된 경우 체크
-  if (/\([^)]*기획[^)]*\)/i.test(raw)) return true;
-
-  return false;
-};
-
-// ===== 기존 시그니처 유지 =====
-export const getDiscountedPrice = (item: any, discountRate: number) => {
+/**
+ * 새로운 할인 계산 함수 - FIXED/DYNAMIC 방식 지원
+ * @param item - 견적 항목
+ * @param periodValue - 연장 기간 값
+ * @param discountSettings - 할인 설정
+ * @returns 할인 적용된 가격
+ */
+export const getDiscountedPrice = (item: any, periodValue: number, discountSettings: DiscountSettings) => {
   const base = toNumberLike(item?.price);
   if (!item) return base;
   if (isNonDiscountableItem(item)) return base;
-  return discountRate > 0 ? Math.round(base * (1 - discountRate)) : base;
+  
+  // 연장 기간이 0이면 할인 없음
+  if (periodValue === 0) return base;
+  
+  const discountInfo = calculateDiscountInfo(periodValue, base, discountSettings);
+  return base - discountInfo.amount;
 };
 
 const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
@@ -260,7 +193,8 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
   onItemDelete,
   onItemRestore,
   onEstimateChange,
-  discountRate
+  discountRate,
+  periodValue = 0 // 기본값 0
 }) => {
   // 화면에 쓰는 소스 오브 트루스
   const [estimate, setEstimate] = useState<ProjectEstimate>(data);
@@ -271,6 +205,26 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
   const [allExpanded, setAllExpanded] = useState<boolean>(false);
   const [accordionStates, setAccordionStates] = useState<{[key: string]: boolean}>({});
   const [isInitialUpdate, setIsInitialUpdate] = useState<boolean>(false);
+  
+  // 회사 할인 설정 가져오기
+  const { companyInfo } = useCompanyStore();
+  
+  // 할인 설정 계산
+  const discountSettings: DiscountSettings = useMemo(() => {
+    if (!companyInfo) {
+      return {
+        checkpointList: [{ checkpoint: 1, discountRate: 1.25 }],
+        discountRate: 'WEEK',
+        rateRule: 'FIXED'
+      };
+    }
+
+    return {
+      checkpointList: companyInfo.checkpointList || [{ checkpoint: 1, discountRate: 1.25 }],
+      discountRate: companyInfo.discountRate || 'WEEK',
+      rateRule: companyInfo.rateRule || 'FIXED'
+    };
+  }, [companyInfo]);
 
   const handleSubItemSelect = (categoryName: string, subItemId: string) => {
     setSelectedCategory(categoryName);
@@ -625,7 +579,8 @@ useEffect(() => {
                 price: sub.items
                   .filter((i) => !i.is_deleted)
                   .reduce((sum, item) => {
-                    const discountedPrice = getDiscountedPrice(item, typeof discountRate === 'number' ? discountRate : 0);
+                    // 새로운 할인 계산 방식 사용
+                    const discountedPrice = getDiscountedPrice(item, periodValue, discountSettings);
                     return sum + discountedPrice;
                   }, 0)
                   .toLocaleString(),
@@ -638,6 +593,8 @@ useEffect(() => {
             chatRoomId={chatSessionId}
             estimateId={estimateId}
             discountRate={typeof (discountRate) === 'number' ? discountRate : 0}
+            periodValue={periodValue}
+            discountSettings={discountSettings}
           >
             {/* depth=2 : 실제 항목 리스트 (여기서 삭제/복구 콜백 전달) */}
             {category.sub_categories.map((subCategory, subIndex) => (
@@ -672,6 +629,8 @@ useEffect(() => {
                 chatRoomId={chatSessionId}
                 estimateId={estimateId}
                 discountRate={typeof (discountRate) === 'number' ? discountRate : 0}
+                periodValue={periodValue}
+                discountSettings={discountSettings}
               />
             ))}
             

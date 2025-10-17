@@ -646,7 +646,7 @@ export default function AigoSettingsPage() {
         discountRate: formData.discountRate,
         rateRule: formData.rateRule,
         aiConfidence: formData.inferencePerformance,
-        mode: formData.theme.toUpperCase() as 'LIGHT' | 'DARK',
+        mode: formData.theme.toUpperCase() as 'DARK' | 'LIGHT',
         checkpointList: bidUnitSettingRef.current?.getCheckpointList() || [], // 저장 시 동적으로 가져오기
       };
 
@@ -764,9 +764,16 @@ export default function AigoSettingsPage() {
       const minUnit = parseInt(formData.projectName1) || 0;
       const maxUnit = parseInt(formData.projectName2) || 0;
       const discountRate = checkpointList[0]?.discountRate || 0;
+      const checkpoint = checkpointList[0]?.checkpoint || 0;
       
       if (minUnit > 0 && maxUnit > 0 && minUnit < maxUnit) {
-        // 단위 범위가 있는 경우의 validation
+        // 5-1. 최대 단위가 체크포인트로 나누어떨어지는지 확인
+        if (checkpoint > 0 && maxUnit % checkpoint !== 0) {
+          showToast(`고정 설정에서 최대 단위(${maxUnit})는 체크포인트(${checkpoint})로 나누어떨어져야 합니다.`, 'error');
+          return false;
+        }
+        
+        // 5-2. 단위 범위가 있는 경우의 validation
         const unitRange = maxUnit - minUnit + 1;
         const totalDiscountRate = discountRate * unitRange;
         
@@ -942,10 +949,10 @@ export default function AigoSettingsPage() {
             <ModeText>
             라이트모드
               <SwitchFrom><Switch
-                checked={formData.theme === 'dark'}
+                checked={formData.theme === 'light'}
                 onToggle={() => setFormData(prev => ({ 
                   ...prev, 
-                  theme: prev.theme === 'light' ? 'dark' : 'light' 
+                  theme: prev.theme === 'dark' ? 'light' : 'dark' 
                 }))}
               /></SwitchFrom>
               </ModeText>

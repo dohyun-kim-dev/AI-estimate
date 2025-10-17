@@ -6,6 +6,7 @@ import { callApiDelete } from '@/lib/methods/callApiDelete';
 import { callNullCheck } from '@/lib/utils/nullChecker';
 import { triggerAdminLogout } from '@/contexts/AdminAuthContext';
 import { devLog } from '@/lib/utils/devLogger';
+import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
 import { de } from 'date-fns/locale';
 
 export async function callAdminApi<T = unknown>({
@@ -23,13 +24,8 @@ export async function callAdminApi<T = unknown>({
   isCallPageLoader?: boolean;
   isWithToken?: boolean;
 }): Promise<T[]> {
-  // Company Code 설정
-  let companyCode = 'heredot';  // 기본값
-  const pathParts = window.location.pathname.split('/');
-  const companyCodeIndex = pathParts.indexOf('aiclient') + 1;
-  if (companyCodeIndex > 0 && pathParts.length > companyCodeIndex) {
-    companyCode = pathParts[companyCodeIndex];
-  }
+  // Company Code 설정 - 유틸 함수 사용
+  const companyCode = getCompanyCodeFromUrl();
 
 devLog('🔍 [API 요청]', { title, method, url });  
 devLog('📄 [요청 body]:', body);

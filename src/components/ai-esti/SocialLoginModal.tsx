@@ -296,10 +296,39 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
               : 'heredot';
 
             const userServices = userData.usingService || [];
-            // usingService 구조 변경: 배열 안의 객체에서 companyInfo.companyCode 확인
+            // usingService 구조 확인: 배열 안의 객체에서 company.companyCode 확인
             const needsCompanyRegistration = !userServices.some((service: any) => 
-              service.companyInfo?.companyCode === currentCompanyCode
+              service.company?.companyCode === currentCompanyCode
             );
+            
+            console.log('회사 등록 체크:', {
+              currentCompanyCode,
+              userServices: userServices.map(s => s.company?.companyCode),
+              needsCompanyRegistration
+            });
+
+            // 로그인 완료 후 유저 정보 및 사용량 업데이트 (바텀 인풋 업데이트를 위해)
+            try {
+              const { fetchAndUpdateUserInfo } = useAuthStore.getState();
+              await fetchAndUpdateUserInfo();
+              devLog('[SocialLoginModal] 로그인 후 유저 정보 업데이트 완료');
+              
+              // 사용량 정보도 업데이트 (회사 코드 대신 실제 회사 ID 사용)
+              const { useUsageStore } = await import('@/store/usageStore');
+              const { fetchUserUsage } = useUsageStore.getState();
+              // 실제 사용자의 회사 ID를 사용 (첫 번째 usingService의 company)
+              const userCompanyId = userData.usingService?.[0]?.company;
+              if (typeof userCompanyId === 'string') {
+                await fetchUserUsage(userCompanyId);
+              } else if (typeof userCompanyId === 'object' && userCompanyId?._id) {
+                await fetchUserUsage(userCompanyId._id);
+              } else {
+                await fetchUserUsage(currentCompanyCode); // 폴백
+              }
+              devLog('[SocialLoginModal] 로그인 후 사용량 정보 업데이트 완료');
+            } catch (error) {
+              console.error('로그인 후 유저 정보/사용량 업데이트 실패:', error);
+            }
 
             if (needsCompanyRegistration) {
               try {

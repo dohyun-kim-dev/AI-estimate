@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import styled from 'styled-components';
+import { useCompanyStore } from '@/store/companyStore';
+import { calculateDiscountInfo, type DiscountSettings } from '@/utils/discountCalculator';
 
 const SliderWrapper = styled.div<{ $isvisible: boolean }>`
   max-height: ${({ $isvisible }) => ($isvisible ? '1000px' : '0')};
@@ -182,42 +184,150 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({ value = 0, onChange, $isvis
     return null;
   }
   
+  const { companyInfo } = useCompanyStore();
   const [isDragging, setIsDragging] = useState(false);
-  const discountPercentage = ((value - min) / (max - min)) * 10;
-  const discountAmount = basePrice - discountedPrice;
+
+  // 컴퍼니 데이터에서 할인 설정 가져오기
+  const discountSettings = useMemo(() => {
+    if (!companyInfo) {
+      return {
+        checkpointList: [{ checkpoint: 1, discountRate: 1.25 }],
+        discountRate: 'WEEK',
+        rateRule: 'FIXED',
+        minValue: 1,
+        maxValue: 8
+      };
+    }
+
+    return {
+      checkpointList: companyInfo.checkpointList || [{ checkpoint: 1, discountRate: 1.25 }],
+      discountRate: companyInfo.discountRate || 'WEEK',
+      rateRule: companyInfo.rateRule || 'FIXED',
+      minValue: (companyInfo as any).minValue || 0, // 임시로 any 타입 사용
+      maxValue: (companyInfo as any).maxValue || 8   // 임시로 any 타입 사용
+    };
+  }, [companyInfo]);
+
+  // 슬라이더 설정 계산
+  const sliderConfig = useMemo(() => {
+    const { checkpointList, rateRule, minValue, maxValue } = discountSettings;
+
+    if (rateRule === 'FIXED') {
+      return {
+        min: 0,
+        max: maxValue - minValue,
+        step: checkpointList[0]?.checkpoint || 1
+      };
+    } else {
+      // DYNAMIC의 경우 체크포인트만 선택 가능하도록 설정
+      const checkpoints = [0, ...checkpointList.map(cp => cp.checkpoint)].sort((a, b) => a - b);
+      return {
+        min: 0,
+        max: checkpoints.length - 1, // 인덱스 기반으로 설정
+        step: 1,
+        checkpoints // 실제 체크포인트 값들
+      };
+    }
+  }, [discountSettings]);
+
+  // DYNAMIC 모드에서 실제 값과 슬라이더 인덱스 변환
+  const getActualValue = (sliderIndex: number) => {
+    if (discountSettings.rateRule === 'DYNAMIC' && sliderConfig.checkpoints) {
+      return sliderConfig.checkpoints[sliderIndex] || 0;
+    }
+    return sliderIndex;
+  };
+
+  const getSliderIndex = (actualValue: number) => {
+    if (discountSettings.rateRule === 'DYNAMIC' && sliderConfig.checkpoints) {
+      const index = sliderConfig.checkpoints.indexOf(actualValue);
+      return index >= 0 ? index : 0; // 찾지 못하면 0 반환
+    }
+    return actualValue;
+  };
+
+  // 현재 슬라이더 인덱스와 실제 값
+  const currentSliderIndex = getSliderIndex(value);
+  const actualValue = discountSettings.rateRule === 'DYNAMIC' ? value : value;
+
+  // 할인율 계산
+  const discountInfo = useMemo(() => {
+    return calculateDiscountInfo(value, basePrice || 0, discountSettings);
+  }, [value, discountSettings, basePrice]);
+
+  // 단위 텍스트 생성
+  const getUnitText = () => {
+    switch (discountSettings.discountRate) {
+      case 'WEEK':
+        return '주';
+      case 'MONTH':
+        return '월';
+      case 'QUANTITY':
+        return '수량';
+      default:
+        return '주';
+    }
+  };
+
+  const getDisplayText = () => {
+    const unit = getUnitText();
+    if (value === 0) {
+      return `기본 ${unit}`;
+    }
+    switch (discountSettings.discountRate) {
+      case 'WEEK':
+        return `${value}주 연장`;
+      case 'MONTH':
+        return `${value}개월 연장`;
+      case 'QUANTITY':
+        return `${value}개 추가`;
+      default:
+        return `${value}주 연장`;
+    }
+  };
   // const tooltipPosition = `calc(${((value - min) / (max - min)) * 50}% + 75px)`;
   const tooltipPosition = `238px`;
+  
   return (
     <SliderWrapper $isvisible={$isvisible}>
       <InnerContainer>
-        <Title>프로젝트 기간 설정 <span className="p">(주 단위)</span></Title>
+        <Title>프로젝트 기간 설정 <span className="p">({getUnitText()} 단위)</span></Title>
         <Description>견적기간을 늘릴 경우 할인된 금액으로 변경됩니다</Description>
         <SliderContainer className={`slider-container ${isDragging ? 'dragging' : ''}`}>
           <Tooltip $left={tooltipPosition}>
-            {discountPercentage.toFixed(1)}% 할인이 적용되었어요! 
-          {value > min && (
+            {discountInfo.percentage.toFixed(1)}% 할인이 적용되었어요! 
+          {value > 0 && (
             <DiscountDisplay>
-              (- {Math.floor(discountAmount).toLocaleString()}원)
+              (- {discountInfo.amount.toLocaleString()}원)
             </DiscountDisplay>
           )}
             <TooltipArrow />
           </Tooltip>
-          <WeekDisplay>{value}주 연장</WeekDisplay>
-          {value > min && (
+          <WeekDisplay>{getDisplayText()}</WeekDisplay>
+          {value > 0 && (
             <DiscountDisplay>
-              {/* {discountPercentage.toFixed(1)}% 할인 ({Math.floor(discountAmount).toLocaleString()}원) */}
+              {/* {discountInfo.percentage.toFixed(1)}% 할인 ({discountInfo.amount.toLocaleString()}원) */}
             </DiscountDisplay>
           )}
           <Slider 
-          min={0}
-          max={8}
-          value={value}
-          step={1}
+          min={sliderConfig.min}
+          max={sliderConfig.max}
+          value={currentSliderIndex}
+          step={sliderConfig.step}
           type="range"
-          $value={value}
-          $min={min}
-          $max={max}
-            onChange={e => onChange(Number(e.target.value))}
+          $value={currentSliderIndex}
+          $min={sliderConfig.min}
+          $max={sliderConfig.max}
+            onChange={e => {
+              const sliderIndex = Number(e.target.value);
+              if (discountSettings.rateRule === 'DYNAMIC') {
+                // DYNAMIC 모드에서는 슬라이더 인덱스를 실제 체크포인트 값으로 변환해서 전달
+                const actualValue = getActualValue(sliderIndex);
+                onChange(actualValue);
+              } else {
+                onChange(sliderIndex);
+              }
+            }}
             onMouseDown={() => setIsDragging(true)}
             onMouseUp={() => setIsDragging(false)}
             onTouchStart={() => setIsDragging(true)}
@@ -225,8 +335,17 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({ value = 0, onChange, $isvis
           />
   
           <Labels>
-            <span>{min}주</span>
-            <span>{max}주</span>
+            {discountSettings.rateRule === 'DYNAMIC' && sliderConfig.checkpoints ? (
+              <>
+                <span>{sliderConfig.checkpoints[0]}{getUnitText()}</span>
+                <span>{sliderConfig.checkpoints[sliderConfig.checkpoints.length - 1]}{getUnitText()}</span>
+              </>
+            ) : (
+              <>
+                <span>{sliderConfig.min}{getUnitText()}</span>
+                <span>{sliderConfig.max}{getUnitText()}</span>
+              </>
+            )}
           </Labels>
         </SliderContainer>
       </InnerContainer>

@@ -487,30 +487,30 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     let messageContent = input; // 원본 input (AI 프롬프트 등 포함)
     
     // 이미지와 텍스트를 분리해서 메시지 추가
-    console.log('🔍 handleSubmit 시작:', { input, uploadedFilesCount: uploadedFiles.length });
+    devLog('🔍 handleSubmit 시작:', { input, uploadedFilesCount: uploadedFiles.length });
     
     const messageId = uuidv4();
     
     // 이미지 파일이 있는 경우 이미지 데이터 생성
     if (uploadedFiles.length > 0) {
-      console.log('🔍 업로드된 파일들:', uploadedFiles);
+      devLog('🔍 업로드된 파일들:', uploadedFiles);
       const imageFiles = uploadedFiles.filter((file: FileUploadData) => 
         /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name)
       );
-      console.log('🔍 필터링된 이미지 파일들:', imageFiles);
+      devLog('🔍 필터링된 이미지 파일들:', imageFiles);
       
       if (imageFiles.length > 0) {
         // ⚠️ 먼저 실제 파일 업로드를 수행하여 UUID 파일명 획득
-        console.log('📤 이미지 URL 생성을 위한 파일 업로드 시작...');
+        devLog('📤 이미지 URL 생성을 위한 파일 업로드 시작...');
         let serverFileNames: string[] = [];
         
         if (selectedFiles.length > 0) {
           const uploadResponse = await uploadFiles(selectedFiles);
           if (uploadResponse && uploadResponse.statusCode === 200 && Array.isArray(uploadResponse.data)) {
             serverFileNames = uploadResponse.data;
-            console.log('✅ 서버에서 반환된 UUID 파일명들:', serverFileNames);
+            devLog('✅ 서버에서 반환된 UUID 파일명들:', serverFileNames);
           } else {
-            console.error('❌ 파일 업로드 실패:', uploadResponse);
+            devLog('❌ 파일 업로드 실패:', uploadResponse);
             throw new Error('이미지 업로드에 실패했습니다.');
           }
         }
@@ -531,18 +531,18 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         const images = imageFiles.map((file: FileUploadData, index: number) => {
           const serverFileName = serverFileNames[index] || file.name; // fallback to original name
           const imageUrl = getImageUrl(serverFileName);
-          console.log(`🔗 이미지 URL 생성: ${file.name} -> ${serverFileName} -> ${imageUrl}`);
-          
+          devLog(`🔗 이미지 URL 생성: ${file.name} -> ${serverFileName} -> ${imageUrl}`);
+
           return {
             url: imageUrl,
             fileName: file.name, // 원본 파일명은 화면 표시용으로 유지
             mimeType: file.mimeType || `image/${file.name.split('.').pop()?.toLowerCase() || 'png'}`
           };
         });
-        
-        console.log('🔍 이미지 파일들 처리됨:', images);
-        console.log('🔍 originalImages (업로드된 파일들):', imageFiles.map(f => ({ name: f.name, fileUri: f.fileUri })));
-        
+
+        devLog('🔍 이미지 파일들 처리됨:', images);
+        devLog('🔍 originalImages (업로드된 파일들):', imageFiles.map(f => ({ name: f.name, fileUri: f.fileUri })));
+
         // 이미지와 텍스트가 모두 있는 경우 두 개의 메시지로 분리
         // 1. 이미지만 있는 메시지
         const imageMessage = {
@@ -551,7 +551,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           images,
           messageId: messageId + '_image'
         };
-        console.log('🔍 이미지 메시지 생성:', imageMessage);
+        devLog('🔍 이미지 메시지 생성:', imageMessage);
         addMessage(imageMessage);
         
         // 2. 텍스트가 있으면 별도 메시지
@@ -561,7 +561,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
             content: userDisplayContent,
             messageId: messageId + '_text'
           };
-          console.log('🔍 텍스트 메시지 생성:', textMessage);
+          devLog('🔍 텍스트 메시지 생성:', textMessage);
           addMessage(textMessage);
         }
       } else {
@@ -996,6 +996,45 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       if (abortSignal?.aborted) {
         handleAbort();
         return;
+      }
+
+      // 🔥 사용자 메시지 저장 후 사용량 업데이트 (응답에서 queryUsage 확인)
+      console.log('🔍 사용자 메시지 응답 전체 구조:', userMessageResponse);
+      console.log('🔍 응답 데이터 존재 여부:', !!userMessageResponse);
+      console.log('🔍 data 존재 여부:', !!(userMessageResponse as any)?.data);
+      console.log('🔍 queryUsage 존재 여부:', !!(userMessageResponse as any)?.data?.queryUsage);
+      console.log('🔍 dailyQueryUsage 값:', (userMessageResponse as any)?.data?.queryUsage?.dailyQueryUsage);
+      
+      if (userMessageResponse && (userMessageResponse as any).data?.queryUsage?.dailyQueryUsage !== undefined) {
+        const { remainingCount: currentCount, setRemainingCount } = useUsageStore.getState();
+        const messageData = (userMessageResponse as any).data;
+        const newRemainingCount = messageData.queryUsage.dailyQueryUsage;
+
+        console.log('📊 사용량 업데이트 시작:', {
+          이전카운트: currentCount,
+          새로운카운트: newRemainingCount,
+          전체응답: messageData.queryUsage
+        });
+        
+        setRemainingCount(newRemainingCount);
+        
+        // 업데이트 후 확인
+        setTimeout(() => {
+          const updatedCount = useUsageStore.getState().remainingCount;
+          const localStorageCount = localStorage.getItem('remainingCount');
+          console.log('📊 사용량 업데이트 완료 확인:', {
+            스토어값: updatedCount,
+            로컬스토리지값: localStorageCount,
+            업데이트성공: updatedCount === newRemainingCount
+          });
+        }, 100);
+      } else {
+        console.warn('⚠️ 사용량 정보가 응답에 없습니다:', {
+          hasResponse: !!userMessageResponse,
+          hasData: !!(userMessageResponse as any)?.data,
+          hasQueryUsage: !!(userMessageResponse as any)?.data?.queryUsage,
+          dailyQueryUsage: (userMessageResponse as any)?.data?.queryUsage?.dailyQueryUsage
+        });
       }
 
       // Zustand 스토어에서 마지막 사용자 메시지를 업데이트하여 messageId 추가

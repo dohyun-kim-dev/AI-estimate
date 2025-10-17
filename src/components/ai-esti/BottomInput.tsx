@@ -274,6 +274,12 @@ const BottomInput: React.FC<BottomInputProps> = ({
 
   useEffect(() => {
     remainingCountRef.current = remainingCount;
+    console.log('🎯 BottomInput remainingCount 변화 감지:', {
+      새로운값: remainingCount,
+      이전값: remainingCountRef.current,
+      로그인상태: isLoggedIn,
+      타임스탬프: new Date().toISOString()
+    });
   }, [remainingCount]);
 
   useEffect(() => {
@@ -459,14 +465,14 @@ const BottomInput: React.FC<BottomInputProps> = ({
   };
 
   const renderRemainingCountText = () => {
-    if (isLoggedIn) {
-      return null;
-    }
-
     if (remainingCount > 0) {
-      return `오늘 남은 횟수(비회원): ${remainingCount}회`;
+      return isLoggedIn 
+        ? `오늘 남은 횟수: ${remainingCount}회`
+        : `오늘 남은 횟수(비회원): ${remainingCount}회`;
     } else {
-      return "비회원 사용 한도를 전부 사용하셨습니다";
+      return isLoggedIn 
+        ? "오늘 사용 한도를 전부 사용하셨습니다"
+        : "비회원 사용 한도를 전부 사용하셨습니다";
     }
   };
   
@@ -493,15 +499,17 @@ const BottomInput: React.FC<BottomInputProps> = ({
     }
   };
 
-  // 사용량 체크 함수 (외부에서 호출 가능)
+  // 사용량 체크 함수 (회원/비회원 공통)
   const checkUsage = () => {
-    if (isLoggedIn) {
-      return { canProceed: true, showModal: false, modalPurpose: 'limitReached' };
-    }
-    
     if (remainingCount > 0) {
       return { canProceed: true, showModal: false, modalPurpose: 'limitReached' };
     } else {
+      // 로그인 사용자는 한도 도달 시 바로 차단
+      if (isLoggedIn) {
+        return { canProceed: false, showModal: false, modalPurpose: 'limitReached' };
+      }
+      
+      // 비로그인 사용자는 추가 횟수 제공 로직
       const purpose = hasUsedExtraCount ? 'limitExceeded' : 'limitReached';
       return { canProceed: false, showModal: true, modalPurpose: purpose };
     }

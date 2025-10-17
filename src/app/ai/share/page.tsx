@@ -6,6 +6,11 @@ import { useShareChatStore } from '@/store/shareChatStore';
 import { getChatMessages } from '@/lib/api/user/userApi';
 import { useToast } from '@/components/common/ToastProvider';
 import { useThemeStore } from '@/store/themeStore';
+import { useCompanyStore } from '@/store/companyStore';
+import { useCompanyInfo } from '@/hooks/useCompanyInfo';
+import { useUsageStore } from '@/store/usageStore';
+import { useAuthStore } from '@/store/authStore';
+import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
 import Icon from '@/components/ai-esti/Icon';
 import ShareAiResponseMessage from '@/components/ai-esti/ShareAiResponseMessage';
 import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
@@ -304,6 +309,8 @@ const SharePage: React.FC = () => {
   const { success } = useToast();
   const { setSessionId, addMessage, messages, clearMessages } = useShareChatStore();
   const { isDarkMode } = useThemeStore();
+  const { companyInfo } = useCompanyStore();
+  const { fetchCompanyInfo } = useCompanyInfo();
 
   // sessionId에 uuid가 아닌 안내문구 등이 붙어있을 경우, uuid만 추출해서 쿼리스트링으로 리다이렉트 (pdfPreview.tsx와 동일한 방식)
   const [searchParams] = useSearchParams();
@@ -467,6 +474,28 @@ const SharePage: React.FC = () => {
 
     loadSharedMessages();
   }, [sessionId, companyCode, setSessionId, addMessage, clearMessages]); // messages 제거
+
+  // 회사 정보 및 게스트 사용량 불러오기 - 페이지 진입 시 한 번만 실행
+  useEffect(() => {
+    const initializeData = async () => {
+      // 회사 정보 불러오기
+      devLog('회사정보 fetch 호출 - 테마 모드 적용 예정');
+      await fetchCompanyInfo();
+      
+      // fetchCompanyInfo 완료 후 최신 회사정보로 테마 적용
+      const latestCompanyInfo = useCompanyStore.getState().companyInfo;
+      if (latestCompanyInfo && latestCompanyInfo.mode) {
+        devLog('fetchCompanyInfo 완료 - 테마 모드 적용:', latestCompanyInfo.mode);
+        if (latestCompanyInfo.mode === 'LIGHT') {
+          useThemeStore.setState({ isDarkMode: false });
+        } else if (latestCompanyInfo.mode === 'DARK') {
+          useThemeStore.setState({ isDarkMode: true });
+        }
+      }
+    };
+
+    initializeData();
+  }, []); // 페이지 진입 시 한 번만 실행
 
   const handleRetry = () => {
     setLoading(true);
@@ -643,8 +672,14 @@ const SharePage: React.FC = () => {
                 <StyledAiMessage
                   key={index}
                   content={<AiMessageContent content={message.content}/>} 
-                  profileImage="/ai-estimate/pretty.png"
-                  name="강유하"
+                  profileImage={
+                    companyInfo?.aiProfile 
+                      ? (companyInfo.aiProfile.startsWith('/ai-estimate/') 
+                          ? companyInfo.aiProfile 
+                          : `/api/file/${companyInfo.aiProfile}`)
+                      : "/ai-estimate/pretty.png"
+                  }
+                  name={companyInfo?.aiName || "AI 에이전트"}
                   chatSessionId={sessionId}
                   // estimateDataForConsult={estimateDataForConsult}
                   isFullWidth={isEstimateMessage(message.content)}

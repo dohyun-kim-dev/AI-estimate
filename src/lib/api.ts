@@ -1,5 +1,6 @@
 import { pageLoaderController } from '@/contexts/PageLoaderContext'
 import { devLog, devWarn } from '../utils/devLogger'
+import { getCompanyCodeFromUrl } from '../utils/companyUtils'
 
 // API 경로 생성 함수
 const createApiUrl = (endpoint: string) => {
@@ -40,13 +41,16 @@ export async function callApiPost<T = unknown>({
   let returnValue = ''
 
   try {
-    // ⭐️ 기존 headers 객체와 병합 (여기에 'x-company-code' 하드코딩 추가)
+    // ⭐️ URL에서 company code 동적 추출 후 기존 headers 객체와 병합
+    const companyCode = getCompanyCodeFromUrl()
     const mergedHeaders = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'x-company-code': 'heredot', 
+      'x-company-code': companyCode, 
       ...headers, 
     }
+
+    devLog(`📱 [${title}] Company Code:`, companyCode)
 
     const response = await fetch(url, {
       method: 'POST',

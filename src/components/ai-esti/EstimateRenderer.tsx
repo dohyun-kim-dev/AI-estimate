@@ -177,7 +177,7 @@ const EstimateRenderer: React.FC<{ content: string }> = ({ content }) => {
               <EstimateAccordion
                 data={estimateData}
                 onItemClick={handleItemClick}
-
+                periodValue={projectPeriod}
               />
             </AnimatedContainer>
           </MainContent>

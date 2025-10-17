@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getGuestToken, updateGuestUsage } from '@/lib/api/user/userApi';
 import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
+import { useAuthStore } from './authStore';
 
 interface UsageState {
   remainingCount: number;
@@ -16,6 +17,7 @@ interface UsageState {
   resetDailyCount: () => void;
   checkAndResetIfNewDay: () => void;
   fetchGuestUsage: (companyCode: string) => Promise<void>;
+  fetchUserUsage: (companyId: string) => Promise<void>;
   setLoading: (loading: boolean) => void;
 }
 
@@ -132,6 +134,35 @@ export const useUsageStore = create<UsageState>()(
           }
         } catch (error) {
           console.error('게스트 사용량 조회 중 오류:', error);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      fetchUserUsage: async (companyId: string) => {
+        try {
+          set({ isLoading: true });
+          
+          // AuthStore에서 사용자 정보 및 사용량 가져오기
+          const authStore = useAuthStore.getState();
+          console.log('🔄 fetchUserUsage - companyId:', companyId);
+          console.log('🔄 authStore.user:', authStore.user);
+          console.log('🔄 authStore.user.usingService:', authStore.user?.usingService);
+          
+          const dailyLimit = authStore.getUserDailyQueryLimit(companyId);
+          console.log('🔄 getUserDailyQueryLimit 결과:', dailyLimit);
+          
+          if (dailyLimit > 0) {
+            // 회원의 일일 사용량 제한으로 설정
+            set({ remainingCount: dailyLimit });
+            localStorage.setItem('remainingCount', String(dailyLimit));
+            
+            console.log('🔄 회원 사용량 업데이트 완료:', dailyLimit);
+          } else {
+            console.log('🔄 회원 사용량 정보를 찾을 수 없습니다.');
+          }
+        } catch (error) {
+          console.error('회원 사용량 조회 중 오류:', error);
         } finally {
           set({ isLoading: false });
         }

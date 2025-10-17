@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useAuthStore } from '@/store/authStore';
+import { useCompanyStore } from '@/store/companyStore';
 import { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import { calculateEstimatedPeriod } from '@/utils/estimateCalculator';
 import { devLog } from '@/utils/devLogger'
@@ -32,6 +33,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
 
   const currentDate = formatDate(new Date());
   const user = useAuthStore((state) => state.user);
+  const { companyInfo } = useCompanyStore(); // 회사정보에서 etc 배열 가져오기
 //세션스토리지 guestInfo 안에 name과 email 뽑기
   const guestInfo = sessionStorage.getItem('guestInfo');
   let guestName = '';
@@ -304,15 +306,26 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
         <tbody>
           <tr>
             <td style={{ ...valueCellStyle, padding: '12px' }}>
-              • 검수기간 : 개발 완료 익일부터 2주(이후 요청 별도 협의 필요)​<br />
-              • 하자보수: 검수 종료일 익일부터 6개월 (기획과 디자인 변경 별도 협의 필요)<br />
-              • 크로스 플랫폼: 윈도우10 이상 및 맥 운영체제 / 갤럭시 및 아이폰 출시 5년 이하 기기<br />
-              • 자사 보유 기술스택: (앱)hybridapp, Flutter, webview, (웹)Flutter, react.js, (백)express.js, node.js, Python <br />   
-              &nbsp;&nbsp;&nbsp;(서버) 네이버 클라우드, 카페24클라우드, AWS등​
-                DB: Mysql , Postgre , 몽고DB등<br /><br />
-              * 견적서는 작성일로부터 일주일간 유효합니다.<br />
-              * 도메인/서버비용/개발자 계정/알림 수단/유료API 등에 따라 발생하는 비용은 별도입니다.<br />
-              * AI 견적은 실제 계약 시 금액과 일부 상이할 수 있으며, 보다 정확한 견적은 담당자와의 최종 협의를 통해 확정됩니다.
+              {companyInfo?.etc && companyInfo.etc.length > 0 ? (
+                companyInfo.etc.map((item, index) => (
+                  <React.Fragment key={index}>
+                    {item}
+                    {index < companyInfo.etc.length - 1 && <br />}
+                  </React.Fragment>
+                ))
+              ) : (
+                <>
+                  • 검수기간 : 개발 완료 익일부터 2주(이후 요청 별도 협의 필요)​<br />
+                  • 하자보수: 검수 종료일 익일부터 6개월 (기획과 디자인 변경 별도 협의 필요)<br />
+                  • 크로스 플랫폼: 윈도우10 이상 및 맥 운영체제 / 갤럭시 및 아이폰 출시 5년 이하 기기<br />
+                  • 자사 보유 기술스택: (앱)hybridapp, Flutter, webview, (웹)Flutter, react.js, (백)express.js, node.js, Python <br />   
+                  &nbsp;&nbsp;&nbsp;(서버) 네이버 클라우드, 카페24클라우드, AWS등​
+                    DB: Mysql , Postgre , 몽고DB등<br /><br />
+                  * 견적서는 작성일로부터 일주일간 유효합니다.<br />
+                  * 도메인/서버비용/개발자 계정/알림 수단/유료API 등에 따라 발생하는 비용은 별도입니다.<br />
+                  * AI 견적은 실제 계약 시 금액과 일부 상이할 수 있으며, 보다 정확한 견적은 담당자와의 최종 협의를 통해 확정됩니다.
+                </>
+              )}
             </td>
           </tr>
         </tbody>

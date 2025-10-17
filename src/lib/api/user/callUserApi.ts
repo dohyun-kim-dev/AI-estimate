@@ -9,7 +9,8 @@ import { callNullCheck } from '@/lib/utils/nullChecker';
 import { ApiResponse } from './userApi.types';
 import { useAuthStore } from '@/store/authStore';
 import { interceptApiResponse } from '@/utils/authHandler';
-import { devLog } from '@/utils/devLogger'
+import { devLog } from '@/utils/devLogger';
+import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
 
 export async function callUserApi<T>({
   title,
@@ -31,20 +32,11 @@ export async function callUserApi<T>({
     const usingServices = user?.usingService;
 
     
-    // Company Code 설정
-    let companyCode = 'heredot';  // 기본값
-    
-    // URL에서 company code 추출 시도
-    const pathParts = window.location.pathname.split('/');
-    const companyCodeIndex = pathParts.indexOf('aiclient') + 1;
-    if (companyCodeIndex > 0 && pathParts.length > companyCodeIndex) {
-      companyCode = pathParts[companyCodeIndex];
-    }
+    // Company Code 설정 - 유틸 함수 사용
+    const companyCode = getCompanyCodeFromUrl();
     
     devLog('[Company Code]', {
       path: window.location.pathname,
-      pathParts,
-      companyCodeIndex,
       finalCompanyCode: companyCode
     });
 

@@ -1,5 +1,9 @@
 /**
  * 현재 URL에서 회사 코드를 추출하는 함수
+ * 지원하는 패턴:
+ * - /aiclient/{companyCode}/...
+ * - /{companyCode}/cms/...
+ * 
  * @returns {string} 회사 코드 (기본값: 'heredot')
  */
 export function getCompanyCodeFromUrl(): string {
@@ -9,14 +13,28 @@ export function getCompanyCodeFromUrl(): string {
   }
 
   const pathname = window.location.pathname;
-  const parts = pathname.split('/');
   
-  // /aiclient/{companyCode} 패턴에서 companyCode 추출
-  const aiclientIndex = parts.indexOf('aiclient');
-  if (aiclientIndex !== -1 && parts.length > aiclientIndex + 1) {
-    return parts[aiclientIndex + 1];
+  // /aiclient/{companyCode}/... 패턴 매칭
+  const aiClientMatch = pathname.match(/^\/aiclient\/([^\/]+)/);
+  if (aiClientMatch) {
+    return aiClientMatch[1];
+  }
+  
+  // /{companyCode}/cms 패턴 매칭
+  const cmsMatch = pathname.match(/^\/([^\/]+)\/cms/);
+  if (cmsMatch) {
+    return cmsMatch[1];
   }
   
   // 기본값으로 'heredot' 반환
   return 'heredot';
 }
+
+/**
+ * API 요청용 company code 헤더를 생성합니다
+ * @returns x-company-code 헤더 객체
+ */
+export const getCompanyHeaders = (): Record<string, string> => {
+  const companyCode = getCompanyCodeFromUrl();
+  return { 'x-company-code': companyCode };
+};

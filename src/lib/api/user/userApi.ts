@@ -51,6 +51,16 @@ export async function getGuestToken(user: string, companyCode: string): Promise<
   });
 }
 
+// ***************** 사용자 정보 관련
+export async function getUserInfo(): Promise<ApiResponse<import('./userApi.types').UserInfoResponse>> {
+  return callUserApi({
+    title: '사용자 정보 조회',
+    url: getApiUrl('/users/info'),
+    method: 'GET',
+    isCallPageLoader: false,
+  });
+}
+
 // ***************** 휴대폰 인증 관련
 export async function sendAuthCode(cellphone) {
   return callUserApi({

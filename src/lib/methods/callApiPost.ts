@@ -1,6 +1,7 @@
 import { pageLoaderController } from "@/contexts/PageLoaderContext";
 import { devLog, devWarn } from "../utils/devLogger";
 import { triggerAdminLogout } from "@/contexts/AdminAuthContext";
+import { getCompanyCodeFromUrl } from "@/utils/companyUtils";
 
 interface CallApiPostParams {
   title: string;
@@ -48,7 +49,7 @@ export async function callApiPost<T = unknown>({
 
     // 상위에서 전달받은 헤더 사용
     fetchOptions.headers = { 
-      'x-company-code': 'heredot',
+      'x-company-code': getCompanyCodeFromUrl(),
       ...headers 
     };
     
