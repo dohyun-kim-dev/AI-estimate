@@ -51,6 +51,16 @@ export async function getGuestToken(user: string, companyCode: string): Promise<
   });
 }
 
+export async function addGuestAdditionalCharge(user: string): Promise<ApiResponse<any>> {
+  return callUserApi({
+    title: '게스트 추가 횟수 충전',
+    url: getApiUrl('/company/chat/guest/additional-charge'),
+    method: 'POST',
+    body: { user },
+    isCallPageLoader: false,
+  });
+}
+
 // ***************** 사용자 정보 관련
 export async function getUserInfo(): Promise<ApiResponse<import('./userApi.types').UserInfoResponse>> {
   return callUserApi({

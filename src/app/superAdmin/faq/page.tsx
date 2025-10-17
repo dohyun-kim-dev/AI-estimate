@@ -10,6 +10,8 @@ import { ColumnDefinition } from '@/components/CustomList/GenericDataTable';
 import type { FetchParams, FetchResult } from '@/components/CustomList/GenericListUI';
 import { getFAQList } from '@/lib/api/admin/adminApi';
 import FAQFormPopup from './FAQFormPopup';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import { useCompanyCode } from '@/hooks/useCompanyCode';
 
 // dayjs 한국어 설정
 dayjs.locale('ko');
@@ -30,9 +32,13 @@ type FAQ = {
 const FAQPage: React.FC = () => {
   const [selectedFAQ, setSelectedFAQ] = useState<Partial<FAQ> | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-    const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('');
-    const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
+  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('');
+  const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
   const { show: showToast } = useToast();
+  
+  // 권한 및 URL 기반 상태 관리
+  const { isRoot } = useAdminAuth();
+  const urlCompanyCode = useCompanyCode();
 
   const genericListRef = useRef<{ refetch: () => void }>(null);
 
@@ -52,22 +58,29 @@ const FAQPage: React.FC = () => {
   };
 
 
-    const handleCompanySelect = useCallback((company: { id: string; name: string }) => {
+  const handleCompanySelect = useCallback((company: { id: string; name: string }) => {
+    // 통합관리자만 회사 선택 가능
+    if (isRoot) {
       setSelectedCompanyCode(company.id);
       setSelectedCompanyName(company.name);
       // 고객사 변경 시 리스트 새로고침
       setTimeout(() => {
         genericListRef.current?.refetch();
       }, 100);
-    }, []);
+    }
+  }, [isRoot]);
 
   const fetchData = useCallback(
     async (params: FetchParams): Promise<FetchResult<FAQ>> => {
       try {
         devLog('=== FAQ 목록 조회 시작 ===');
-        devLog('선택된 고객사 코드:', selectedCompanyCode);
         
-        const response = await getFAQList(selectedCompanyCode);
+        // API 호출 시 사용할 companyCode 결정
+        const apiCompanyCode = isRoot ? selectedCompanyCode : urlCompanyCode;
+        devLog('선택된 고객사 코드:', apiCompanyCode);
+        devLog('검색 키워드:', params.keyword);
+        
+        const response = await getFAQList(apiCompanyCode || '', params.keyword || '');
         devLog('FAQ API 응답:', response);
 
         let faqData: FAQ[] = [];
@@ -113,7 +126,7 @@ const FAQPage: React.FC = () => {
         };
       }
     },
-    [selectedCompanyCode]
+    [selectedCompanyCode, isRoot, urlCompanyCode]
   );
 
   const columns: ColumnDefinition<FAQ>[] = useMemo(
@@ -187,6 +200,7 @@ const FAQPage: React.FC = () => {
         compactFieldCount={4}
         defaultViewMode="detail"
         enableDateFilter={false}
+        enableCompanySearch={isRoot} // 통합관리자만 CompanySearch 표시
         onCompanySelect={handleCompanySelect}
         renderMiddleContent={() => (
           <div style={{ flex: 1, textAlign: 'end', fontWeight: 'bold' }}>
@@ -201,7 +215,7 @@ const FAQPage: React.FC = () => {
         isOpen={isPopupOpen}
         onClose={closePopup}
         selectedFAQ={selectedFAQ}
-        companyCode={selectedCompanyCode}
+        companyCode={isRoot ? selectedCompanyCode : urlCompanyCode || ''}
         onSuccess={() => {
           genericListRef.current?.refetch();
           closePopup();
@@ -215,7 +229,7 @@ export default FAQPage;
 
 // 스타일 컴포넌트
 const AddButton = styled.button`
-  background-color: #2C2E3C;
+  background-color: #214A72;
   color: white;
   border: none;
   width: 110px;

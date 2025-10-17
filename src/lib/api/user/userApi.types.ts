@@ -106,6 +106,7 @@ export interface GuestTokenResponse {
   user: string;
   dailyQueryCount: number;
   monthlyQueryCount: number;
+  isAdditionalCharge: boolean; // 추가 과금 여부 (hasUsedExtraCount와 동일)
   createAt: string;
   updateAt: string;
 }

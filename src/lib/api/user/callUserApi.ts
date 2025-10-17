@@ -32,11 +32,20 @@ export async function callUserApi<T>({
     const usingServices = user?.usingService;
 
     
-    // Company Code 설정 - 유틸 함수 사용
-    const companyCode = getCompanyCodeFromUrl();
+    // Company Code 설정
+    let companyCode = 'heredot';  // 기본값
+    
+    // URL에서 company code 추출 시도
+    const pathParts = window.location.pathname.split('/');
+    const companyCodeIndex = pathParts.indexOf('aiclient') + 1;
+    if (companyCodeIndex > 0 && pathParts.length > companyCodeIndex) {
+      companyCode = pathParts[companyCodeIndex];
+    }
     
     devLog('[Company Code]', {
       path: window.location.pathname,
+      pathParts,
+      companyCodeIndex,
       finalCompanyCode: companyCode
     });
 
@@ -223,111 +232,9 @@ export async function callUserApi<T>({
         }
       };
     }
-
-    devLogI Response] Title: ${title}`);
-    devLog('API Response:', response);
-
-    // 인증 에러 인터셉터 적용
-    if (interceptApiResponse(response)) {
-      // 인증 에러가 처리되면 응답 그대로 반환
-      return response as ApiResponse<T>;
-    }
-
-    // HTTP 상태 코드에 따른 에러 처리
-    if (response.statusCode >= 400) {
-      let errorMessage = '알 수 없는 오류가 발생했습니다.';
-      
-      switch (response.statusCode) {
-        case 400:
-          errorMessage = '잘못된 요청입니다. 입력값을 확인해주세요.';
-          break;
-        case 401:
-          errorMessage = '인증이 필요합니다. 다시 로그인해주세요.';
-          break;
-        case 403:
-          errorMessage = '접근 권한이 없습니다.';
-          break;
-        case 404:
-          errorMessage = '요청한 리소스를 찾을 수 없습니다.';
-          break;
-        case 408:
-          errorMessage = '요청 시간이 초과되었습니다. 다시 시도해주세요.';
-          break;
-        case 413:
-          errorMessage = '업로드 파일 크기가 너무 큽니다.';
-          break;
-        case 422:
-          errorMessage = '입력 데이터 형식이 올바르지 않습니다.';
-          break;
-        case 429:
-          errorMessage = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
-          break;
-        case 500:
-          errorMessage = '서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
-          break;
-        case 502:
-          errorMessage = '서버 게이트웨이 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
-          break;
-        case 503:
-          errorMessage = '서비스를 사용할 수 없습니다. 잠시 후 다시 시도해주세요.';
-          break;
-        case 504:
-          errorMessage = '서버 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.';
-          break;
-        default:
-          if (response.statusCode >= 500) {
-            errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
-          } else if (response.statusCode >= 400) {
-            errorMessage = '요청 처리 중 오류가 발생했습니다.';
-          }
-          break;
-      }
-
-      console.error(`[API Error] ${title}: ${response.statusCode} - ${errorMessage}`);
-      
-      return {
-        statusCode: response.statusCode,
-        message: errorMessage,
-        data: null as T,
-        metadata: null,
-        error: {
-          statusCode: response.statusCode,
-          message: response.message || 'API Error',
-          customMessage: errorMessage
-        }
-      };
-    }
-
-    // 성공 응답인 경우
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return response as ApiResponse<T>;
-    }
-
-    // 기타 상태 코드 처리
-    return {
-      statusCode: response.statusCode || 500,
-      message: response.message || '알 수 없는 응답입니다.',
-      data: response.data || null as T,
-      metadata: response.metadata || null,
-      error: null
-    };
-
   } catch (error) {
-    console.error('[API Unexpected Error]', error);
-    
-    // 예기치 않은 에러 처리
-    const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
-    
-    return {
-      statusCode: 500,
-      message: '예기치 않은 오류가 발생했습니다.',
-      data: null as T,
-      metadata: null,
-      error: {
-        statusCode: 500,
-        message: errorMessage,
-        customMessage: '예기치 않은 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
-      }
-    };
+    console.error('❌ [API 호출 에러]', error);
+    devLog('❌ [API 호출 에러]', error);
+    throw error;
   }
 }

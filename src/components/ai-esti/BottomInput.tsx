@@ -476,10 +476,10 @@ const BottomInput: React.FC<BottomInputProps> = ({
     }
   };
   
-  const handlePrimaryButtonClick = () => {
+  const handlePrimaryButtonClick = async () => {
     setIsLoginModalOpen(false);
     if (loginModalPurpose === 'limitReached') {
-      addExtraCount();
+      await addExtraCount();
     } else if (loginModalPurpose === 'limitExceeded') {
       setIsInfoModalOpen(true);
     }

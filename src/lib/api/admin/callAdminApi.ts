@@ -39,24 +39,46 @@ devLog('📄 [요청 body]:', body);
     'x-company-code': companyCode,
   };
 
-  // 로컬/HTTP 환경에서 토큰이 필요한 경우 localStorage에서 가져오기
-  if (isWithToken && (import.meta.env.VITE_ENV_NAME === 'dev' || window.location.protocol === 'http:')) {
+  // 토큰이 필요한 경우 localStorage에서 가져오기
+  if (isWithToken) {
     const adminToken = localStorage.getItem('admin_access_token');
+    const adminStorage = localStorage.getItem('admin-storage');
+    const currentPath = window.location.pathname;
+    const isCompanyCMS = currentPath.match(/^\/([^\/]+)\/cms/);
+    
     devLog('🔑 [callAdminApi 토큰 체크]', {
       title,
       url,
       isWithToken,
       envName: import.meta.env.VITE_ENV_NAME,
       protocol: window.location.protocol,
-      adminToken: adminToken ? 'exists' : 'not found'
+      adminToken: adminToken ? `exists (${adminToken.length} chars)` : 'not found',
+      adminStorage: adminStorage ? 'exists' : 'not found',
+      currentPath,
+      isCompanyCMS: !!isCompanyCMS
     });
     
     if (adminToken) {
-      // 서버가 기대하는 헤더명 사용 (admin_token으로 수정)
-      headers['admin_token'] = adminToken;
-      devLog('🔑 [admin_token 토큰 추가됨]', { admin_token: adminToken });
+      if (isCompanyCMS) {
+        // 회사별 CMS: company_admin_token 헤더 사용
+        headers['company_admin_token'] = adminToken;
+        devLog('🔑 [company_admin_token 헤더 추가됨]', { 
+          company_admin_token: adminToken.substring(0, 20) + '...'
+        });
+      } else {
+        // 슈퍼어드민: admin_token 헤더 사용
+        headers['Authorization'] = `Bearer ${adminToken}`;
+        headers['admin_token'] = adminToken;
+        devLog('🔑 [admin_token 헤더 추가됨]', { 
+          Authorization: `Bearer ${adminToken.substring(0, 20)}...`,
+          admin_token: adminToken.substring(0, 20) + '...'
+        });
+      }
     } else {
       devLog('⚠️ [토큰 없음] localStorage에 admin_access_token이 없습니다');
+      // 디버깅용: localStorage의 모든 키 확인
+      const allKeys = Object.keys(localStorage);
+      devLog('📦 [localStorage 키 목록]', allKeys);
     }
   }
 

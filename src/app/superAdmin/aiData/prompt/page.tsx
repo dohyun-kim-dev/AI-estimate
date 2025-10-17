@@ -191,6 +191,17 @@ const PromptPage: React.FC = () => {
 
   const fetchData = useCallback(
     async (params: FetchParams): Promise<FetchResult<Prompt>> => {
+
+
+          if (!selectedCompanyCode) {
+            devLog('No company selected, returning empty data');
+            return {
+              data: [],
+              totalItems: 0,
+              allItems: 0,
+            };
+          }
+          
       try {
         // 키워드가 전달되면 현재 키워드 업데이트 (빈 문자열 포함)
         let searchKeyword = '';

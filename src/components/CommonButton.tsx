@@ -82,14 +82,9 @@ const StyledButton = styled.button<{
 
   background: ${({ $backgroundColor }) => $backgroundColor};
   color: ${AppColors.onPrimary};
-  border: 1px solid ${({ $borderColor }) => $borderColor};
+  border: none;
   cursor: pointer;
   transition: color 0.3s ease, border-color 0.3s ease;
-
-  &:hover {
-    color: ${AppColors.hoverText};
-    border-color: ${AppColors.hoverText};
-  }
 
   svg {
     font-size: 25px;

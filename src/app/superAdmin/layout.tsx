@@ -60,6 +60,7 @@ function ProtectedCmsLayout() {
   const handleLogout = () => {
     logout();
     navigate(`/superadmin/login`, { replace: true });
+    console.log('handleLogout LayoutPage 로그아웃 되었습니다');
     toast.success('로그아웃 되었습니다');
   };
 

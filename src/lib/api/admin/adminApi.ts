@@ -30,15 +30,26 @@ import { devLog } from '@/lib/utils/devLogger';
 
 // API URL 생성 헬퍼 함수
 const getBaseUrl = () => {
-  const ENV_NAME = import.meta.env.VITE_ENV_NAME;
+  // 브라우저 환경에서만 window 객체 사용
+  if (typeof window === 'undefined') {
+    return '/api'; // 서버 사이드에서는 기본값
+  }
+  
+  const pathname = window.location.pathname;
+  
+  // superadmin 경로인 경우: /api
+  if (pathname.includes('/superAdmin')) {
+    return '/api';
+  }
+  
+  // 회사별 CMS 경로인 경우 (/{companyCode}/cms): /api/company
+  const companyMatch = pathname.match(/^\/([^\/]+)\/cms/);
+  if (companyMatch) {
+    return '/api/company';
+  }
+  
+  // 기본값: /api
   return '/api';
-  // if (ENV_NAME === 'dev') {
-  //   // 개발 환경: /api 프리픽스 사용
-  //   return '/api';
-  // } else {
-  //   // 운영 환경: 직접 API 서버로 요청
-  //   return 'https://api.aigopartners.com';
-  // }
 };
 
 const BASE_URL = getBaseUrl();
@@ -53,6 +64,43 @@ export async function adminLogin(
     body: { adminId: params.userId, password: params.password },
     isCallPageLoader: true,
   });
+}
+
+// 회사별 CMS 관리자 로그인 (헤더 포함)
+export async function companyCMSLogin(params: AdminLoginParams) {
+  const url = `${BASE_URL}/cms/login`;
+  const body = { adminId: params.userId, password: params.password };
+  
+  // 환경에 따른 URL 설정
+  let fullUrl = url;
+  if (import.meta.env.VITE_ENV_NAME !== 'dev' && !url.startsWith('http')) {
+    fullUrl = `${import.meta.env.VITE_API_HOST}${url}`;
+  }
+
+  try {
+    const response = await fetch(fullUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'x-company-code': 'heredot',
+      },
+      body: JSON.stringify(body),
+      credentials: 'include',
+      mode: 'cors',
+    });
+
+    const data = await response.json();
+    
+    return {
+      data: data,
+      headers: response.headers,
+      status: response.status,
+    };
+  } catch (error) {
+    console.error('회사별 CMS 로그인 API 에러:', error);
+    throw error;
+  }
 }
 
 // 헤더 정보도 함께 반환하는 로그인 함수
@@ -1003,10 +1051,16 @@ export async function updateEstimateRequestStatus(estimateRequestId: string, par
 // ***************** FAQ 관리
 
 // FAQ 목록 조회 API
-export async function getFAQList(companyCode?: string) {
-  const url = companyCode 
+export async function getFAQList(companyCode?: string, keyword?: string) {
+  let url = companyCode 
     ? `${BASE_URL}/cms/faqs?companyCode=${companyCode}`
     : `${BASE_URL}/cms/faqs`;
+    
+  // keyword가 있으면 쿼리 파라미터에 추가
+  if (keyword) {
+    const separator = companyCode ? '&' : '?';
+    url += `${separator}keyword=${encodeURIComponent(keyword)}`;
+  }
     
   return callAdminApi({
     title: 'FAQ 목록 조회',

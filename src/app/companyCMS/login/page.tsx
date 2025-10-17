@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from "react-router-dom";
 import { TextField } from '@/components/TextField';
-import { companyCMSLoginService } from '@/lib/api/companyApi';
+import { companyCMSLoginService } from '@/lib/services/companyCMSLoginService';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import CommonButton from '@/components/CommonButton';
 import { toast, ToastContainer } from 'react-toastify';

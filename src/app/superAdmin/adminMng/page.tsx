@@ -24,8 +24,6 @@ import AdminFormPopup from './AdminFormPopup';
 import Switch from '@/components/Switch';
 import 'dayjs/locale/ko';
 import { useToast } from '@/components/common/ToastProvider';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
-import { useCompanyCode } from '@/hooks/useCompanyCode';
 
 dayjs.locale('ko');
 
@@ -92,10 +90,6 @@ const AdminMngPage: React.FC = () => {
   const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('');
   const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
   const { show: showToast } = useToast(); // 토스트 훅 추가
-  
-  // 권한 및 URL 기반 상태 관리
-  const { isRoot } = useAdminAuth();
-  const urlCompanyCode = useCompanyCode();
 
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
@@ -205,11 +199,10 @@ const AdminMngPage: React.FC = () => {
       if (selectedUser) {
         // 수정 모드
         // 변경된 필드만 포함하는 payload 생성
-        const apiCompanyCode = isRoot ? selectedCompanyCode : urlCompanyCode;
         const updatePayload: AdminUpdateParams = {
           _id: selectedUser._id || '',
           targetAdminId: userId,
-          companyCode: apiCompanyCode || '', // 권한에 따른 companyCode 사용
+          companyCode: selectedCompanyCode || '', // 고객사 코드 추가
         };
 
         // 각 필드가 기존 값과 다른 경우에만 포함
@@ -276,7 +269,6 @@ const AdminMngPage: React.FC = () => {
         }
       } else {
         // 신규 등록 모드
-        const apiCompanyCode = isRoot ? selectedCompanyCode : urlCompanyCode;
         const createPayload = {
           adminId: userId,
           password,
@@ -286,7 +278,7 @@ const AdminMngPage: React.FC = () => {
           email,
           receiveEmail: receiveEmail,
           receiveAlimtalk: receiveAlimtalk,
-          companyCode: apiCompanyCode, // 권한에 따른 companyCode 사용
+          companyCode: selectedCompanyCode, // 고객사 코드 추가
         };
 
         devLog('✨ [생성 요청 데이터]', {
@@ -335,15 +327,12 @@ const AdminMngPage: React.FC = () => {
         const fromDate = '2000-01-01';
         const toDate = dayjs().format('YYYY-MM-DD');
 
-        // API 호출 시 사용할 companyCode 결정
-        const apiCompanyCode = isRoot ? selectedCompanyCode : urlCompanyCode;
-
         const response = await adminGetList({
-          isRoot: isRoot, // 권한에 따른 조회 모드
+          isRoot: false, // 고객사 관리자 조회
           keyword: params.keyword || '',
           fromDate: fromDate,
           toDate: toDate,
-          companyCode: apiCompanyCode || '', // 권한에 따른 companyCode 사용
+          companyCode: selectedCompanyCode || '', // 선택된 고객사 코드
         });
 
         devLog('response', response);
@@ -398,7 +387,7 @@ const AdminMngPage: React.FC = () => {
         };
       }
     },
-    [selectedCompanyCode, isRoot, urlCompanyCode]
+    [selectedCompanyCode]
   );
 
   // 관리자 삭제 함수
@@ -451,12 +440,11 @@ const AdminMngPage: React.FC = () => {
       try {
         devLog('handleDropdownChange', _id, type, newValue);
 
-        const apiCompanyCode = isRoot ? selectedCompanyCode : urlCompanyCode;
         const updateParams: AdminUpdateParams = {
           _id: _id,
           targetAdminId: _id,
           [type]: newValue, // 변경하려는 필드만 포함
-          companyCode: apiCompanyCode || '', // 권한에 따른 companyCode 사용
+          companyCode: selectedCompanyCode || '', // 고객사 코드 추가
         };
 
         const response = await adminUpdate(updateParams);
@@ -486,20 +474,17 @@ const AdminMngPage: React.FC = () => {
         throw error;
       }
     },
-    [selectedCompanyCode, isRoot, urlCompanyCode]
+    [selectedCompanyCode]
   );
 
   const handleCompanySelect = useCallback((company: { id: string; name: string }) => {
-    // 통합관리자만 회사 선택 가능
-    if (isRoot) {
-      setSelectedCompanyCode(company.id);
-      setSelectedCompanyName(company.name);
-      // 고객사 변경 시 리스트 새로고침
-      setTimeout(() => {
-        genericListRef.current?.refetch();
-      }, 100);
-    }
-  }, [isRoot]);
+    setSelectedCompanyCode(company.id);
+    setSelectedCompanyName(company.name);
+    // 고객사 변경 시 리스트 새로고침
+    setTimeout(() => {
+      genericListRef.current?.refetch();
+    }, 100);
+  }, []);
 
   const columns: ColumnDefinition<AdminUser>[] = useMemo(
     () => [
@@ -584,7 +569,7 @@ const AdminMngPage: React.FC = () => {
         compactFieldCount={3} // 모바일 compact 모드에서 보여줄 필드 수
         defaultViewMode="detail" // 모바일 기본 보기 모드
         enableDateFilter={false}
-        enableCompanySearch={isRoot} // 통합관리자만 CompanySearch 표시
+        enableCompanySearch={true}
         onCompanySelect={handleCompanySelect}
         renderMiddleContent={() => (
           <div style={{ flex: 1, textAlign: 'end', fontWeight: 'bold' }}>
@@ -631,7 +616,6 @@ const AdminMngPage: React.FC = () => {
         selectedCompanyCode={selectedCompanyCode}
         selectedCompanyName={selectedCompanyName}
         onCompanySelect={handleCompanySelect}
-        isRoot={isRoot}
       />
 
       <PasswordPopup

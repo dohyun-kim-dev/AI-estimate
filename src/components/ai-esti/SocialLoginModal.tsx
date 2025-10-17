@@ -15,12 +15,13 @@ import { EstimateConfirmModal } from './EstimateConfirmModal';
 import IssuerInfoModal, { IssuerInfo } from './IssuerInfoModal';
 import { useAuthStore } from '@/store/authStore';
 import { useToast } from '@/components/common/ToastProvider';
-import { googleLoginInitial, googleLoginUpdate, companyRegister } from '@/lib/api/user/userApi';
+import { googleLoginInitial, googleLoginUpdate, companyRegister, addGuestAdditionalCharge } from '@/lib/api/user/userApi';
 import { setToken } from '@/lib/utils/tokenUtils';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useModalStore } from '@store/modalStore';
 import {requestEstimateConsult} from '@/lib/api/user/userApi';
-import { devLog } from '@/utils/devLogger'
+import { devLog } from '@/utils/devLogger';
+import { useCompanyStore } from '@/store/companyStore';
 
 const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
@@ -207,6 +208,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
   const [infoModalPurpose, setInfoModalPurpose] = useState<SocialLoginModalProps['purpose']>('default');
   const { login, setUser, persistUser, openAdditionalInfoModal, openEstimateModal } = useAuthStore();
   const { success, error: showError } = useToast();
+  const { companyInfo } = useCompanyStore();
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -450,12 +452,13 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
           secondaryButtonSubText: '',
         };
       case 'limitReached':
+        const additionalCount = companyInfo?.guestDailyQueryLimit || 10;
         return {
           title:(<>로그인 후 견적 질문​<br/>
            <Highlight> 무제한 이용 ​</Highlight>혜택받기
           </>),
           subtitle: `AIGO 비회원 질문을​ \n모두 사용 하셨네요​`,
-          primaryButtonText: '10회 추가 후 더 사용하기',
+          primaryButtonText: `${additionalCount}회 추가 후 더 사용하기`,
           secondaryButtonText: '가입하고 혜택 받기',
           secondaryButtonSubText: '',
         };

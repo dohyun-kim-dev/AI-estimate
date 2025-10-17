@@ -391,43 +391,6 @@ dayjs.locale('ko');
   // );
 
   // 대화 상세 이력을 가져오는 함수
-  const fetchChatDetails = useCallback(
-    async (params: FetchParams): Promise<FetchResult<ChatDetail>> => {
-      devLog('Fetching chat details for user:', selectedChat?._id);
-
-      // 더미 대화 상세 데이터
-      const mockChatDetails: ChatDetail[] = [
-        {
-          no: 1,
-          timestamp: '2025-08-14T10:30:00Z',
-          userMessage: '안녕하세요, AI에게 견적 문의드리고 싶습니다.',
-          aiResponse: '안녕하세요! 견적 문의에 대해 도움드리겠습니다. 어떤 프로젝트에 대한 견적을 원하시나요?',
-          chatType: '일반 문의'
-        },
-        {
-          no: 2,
-          timestamp: '2025-08-14T10:32:00Z',
-          userMessage: '웹사이트 개발 견적을 알고 싶어요.',
-          aiResponse: '웹사이트 개발 견적을 도와드리겠습니다. 어떤 종류의 웹사이트를 원하시는지 더 자세히 알려주세요.',
-          chatType: '견적 문의'
-        },
-        {
-          no: 3,
-          timestamp: '2025-08-14T10:35:00Z',
-          userMessage: '쇼핑몰 사이트입니다.',
-          aiResponse: '쇼핑몰 사이트 개발 견적을 계산해드리겠습니다. 필요한 기능들을 선택해주세요: 상품 관리, 주문 관리, 결제 시스템 등이 있습니다.',
-          chatType: '견적 문의'
-        }
-      ];
-
-      return {
-        data: mockChatDetails,
-        totalItems: mockChatDetails.length,
-        allItems: mockChatDetails.length,
-      };
-    },
-    [selectedChat?._id]
-  );
 
   // 대화 상세 이력 컬럼 정의
   const chatDetailColumns: ColumnDefinition<ChatDetail>[] = useMemo(
@@ -465,6 +428,15 @@ dayjs.locale('ko');
   // 실제 API 호출로 채팅방 목록 가져오기
   const fetchData = useCallback(
     async (params: FetchParams): Promise<FetchResult<ChatHistory>> => {
+
+          if (!selectedCompanyCode) {
+            devLog('No company selected, returning empty data');
+            return {
+              data: [],
+              totalItems: 0,
+              allItems: 0,
+            };
+          }
       try {
         // 키워드가 전달되면 현재 키워드 업데이트 (빈 문자열 포함)
         let searchKeyword = '';
