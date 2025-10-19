@@ -14,6 +14,7 @@ import { devLog } from '@/utils/devLogger';
 
 export interface FileUploadData extends FileData {
   name: string;
+  size?: number;
 }
 
 export interface UploadImageOptions {

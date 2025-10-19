@@ -1,7 +1,7 @@
 
 import useAI from '@/hooks/useAI';
 import { useToast } from '@/components/common/ToastProvider';
-import { useChatStore, ImageData } from '@/store/chatStore';
+import { useChatStore, ImageData, FileData } from '@/store/chatStore';
 import BottomInput from '@/components/ai-esti/BottomInput';
 import AiResponseMessage from '@/components/ai-esti/AiResponseMessage';
 import EstimateCard from '@/components/ai-esti/EstimateCard';
@@ -10,6 +10,7 @@ import { calculateEstimatedPeriod } from '@/utils/estimateCalculator';
 import DetailModal from '@/components/ai-esti/DetailModal';
 import EstimateActionButtons from '@/components/ai-esti/EstimateActionButtons';
 import ImageGrid from '@/components/ai-esti/ImageGrid';
+import FileList from '@/components/ai-esti/FileList';
 import PeriodSlider from '@/components/ai-esti/PeriodSlider';
 import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
 import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
@@ -441,15 +442,17 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
   }
 };
 
-const parseMessageContent = (content: string, images?: ImageData[]) => {
-  // devLog('🔍 parseMessageContent 호출:', { content, images });
+const parseMessageContent = (content: string, images?: ImageData[], files?: FileData[]) => {
+  // devLog('🔍 parseMessageContent 호출:', { content, images, files });
 
   // content가 undefined나 null인 경우 처리
   if (!content || typeof content !== 'string') {
     const result = {
       text: '',
       images: images || [],
-      hasImages: (images && images.length > 0) || false
+      files: files || [],
+      hasImages: (images && images.length > 0) || false,
+      hasFiles: (files && files.length > 0) || false
     };
     // devLog('🔍 parseMessageContent 결과 (빈 content):', result);
     return result;
@@ -466,40 +469,52 @@ const parseMessageContent = (content: string, images?: ImageData[]) => {
     return cleanedText;
   };
   
-  // 첨부파일 패턴을 찾아서 제거하되, 이미지는 images 배열로 처리
+  // 첨부파일 패턴을 찾아서 제거하되, 이미지와 문서 파일로 분리
   const fileMatches = content.match(/\[첨부파일: (.+?)\]/g);
   let textContent = content;
   const extractedImages: ImageData[] = [];
+  const extractedFiles: FileData[] = [];
   
   if (fileMatches) {
     fileMatches.forEach(match => {
       const fileName = match.match(/\[첨부파일: (.+?)\]/)?.[1];
       if (fileName) {
         const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
+        const isPdf = /\.pdf$/i.test(fileName);
+        const isText = /\.txt$/i.test(fileName);
+        
+        // 환경에 따른 파일 URL 생성
+        const getFileUrl = (fileName: string) => {
+          // 이미 full URL인 경우 (http로 시작)
+          if (fileName.startsWith('http')) {
+            return fileName;
+          }
+          
+          // 개발 환경에서는 프록시 설정에 의해 /api/file/로 접근
+          if (process.env.NODE_ENV === 'development') {
+            return `/api/file/${fileName}`;
+          }
+          
+          // 프로덕션 환경에서는 file 경로로 직접 접근
+          const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+          return `${apiHost}/file/${fileName}`;
+        };
+        
+        const fileUrl = getFileUrl(fileName);
+        
         if (isImage) {
-          // 환경에 따른 이미지 URL 생성
-          const getImageUrl = (fileName: string) => {
-            // 이미 full URL인 경우 (http로 시작)
-            if (fileName.startsWith('http')) {
-              return fileName;
-            }
-            
-            // 개발 환경에서는 프록시 설정에 의해 /api/file/로 접근
-            if (process.env.NODE_ENV === 'development') {
-              return `/api/file/${fileName}`;
-            }
-            
-            // 프로덕션 환경에서는 file 경로로 직접 접근
-            const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
-            return `${apiHost}/file/${fileName}`;
-          };
-          
-          const imageUrl = getImageUrl(fileName);
-          
+          // 이미지는 ImageData로 추가
           extractedImages.push({
-            url: imageUrl,
+            url: fileUrl,
             fileName: fileName,
             mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'png'}`
+          });
+        } else if (isPdf || isText) {
+          // PDF, TXT는 FileData로 추가
+          extractedFiles.push({
+            url: fileUrl,
+            fileName: fileName,
+            mimeType: isPdf ? 'application/pdf' : 'text/plain'
           });
         }
       }
@@ -508,15 +523,18 @@ const parseMessageContent = (content: string, images?: ImageData[]) => {
     });
   }
   
-  // images prop과 추출된 이미지를 합치기
+  // images/files prop과 추출된 파일들을 합치기
   const allImages = [...(images || []), ...extractedImages];
+  const allFiles = [...(files || []), ...extractedFiles];
   
   const result = {
     text: stripAiPrompt(textContent),
     images: allImages,
-    hasImages: allImages.length > 0
+    files: allFiles,
+    hasImages: allImages.length > 0,
+    hasFiles: allFiles.length > 0
   };
-  // console.log('🔍 parseMessageContent 결과 (일반):', result);
+  // console.log('🔍 parseMessageContent 결과:', result);
   return result;
 };
 
@@ -1511,13 +1529,80 @@ useEffect(() => {
         try {
           const messagesResponse = await getChatSessionMessages(urlSessionId) as any;
           if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
-            const chatMessages = messagesResponse.data.map((msg: any) => ({
-              role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
-              content: msg.content.value || msg.content.content || '',
-              messageId: msg._id,
-              title: msg.title,
-              estimateId: msg.content?.estimateId
-            }));
+            const chatMessages = messagesResponse.data.map((msg: any) => {
+              // 🔥 서버에서 files 정보를 가져와서 이미지와 파일 생성
+              let images: ImageData[] = [];
+              let files: FileData[] = [];
+              
+              // fileMetadata가 있으면 우선 사용 (한글 파일명 보존)
+              if (msg.content.fileMetadata && Array.isArray(msg.content.fileMetadata)) {
+                const getFileUrl = (fileName: string) => {
+                  if (process.env.NODE_ENV === 'development') {
+                    return `/api/file/${fileName}`;
+                  }
+                  const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+                  return `${apiHost}/file/${fileName}`;
+                };
+                
+                msg.content.fileMetadata.forEach((metadata: any) => {
+                  const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(metadata.serverFileName);
+                  
+                  if (isImage) {
+                    images.push({
+                      url: getFileUrl(metadata.serverFileName),
+                      fileName: metadata.originalFileName || metadata.serverFileName,
+                      mimeType: metadata.mimeType || `image/${metadata.serverFileName.split('.').pop()?.toLowerCase() || 'png'}`
+                    });
+                  } else {
+                    files.push({
+                      url: getFileUrl(metadata.serverFileName),
+                      fileName: metadata.originalFileName || metadata.serverFileName,
+                      mimeType: metadata.mimeType,
+                      size: metadata.size
+                    });
+                  }
+                });
+              } 
+              // fileMetadata가 없으면 기존 files 배열 사용 (하위 호환성)
+              else if (msg.content.files && Array.isArray(msg.content.files)) {
+                const getFileUrl = (fileName: string) => {
+                  if (process.env.NODE_ENV === 'development') {
+                    return `/api/file/${fileName}`;
+                  }
+                  const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+                  return `${apiHost}/file/${fileName}`;
+                };
+                
+                msg.content.files.forEach((fileName: string) => {
+                  const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
+                  
+                  if (isImage) {
+                    images.push({
+                      url: getFileUrl(fileName),
+                      fileName: fileName,
+                      mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'png'}`
+                    });
+                  } else {
+                    files.push({
+                      url: getFileUrl(fileName),
+                      fileName: fileName,
+                      mimeType: fileName.endsWith('.pdf') ? 'application/pdf' : 'text/plain',
+                      size: undefined
+                    });
+                  }
+                });
+              }
+              
+              return {
+                role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
+                content: msg.content.value || msg.content.content || '',
+                images: images.length > 0 ? images : undefined,
+                files: files.length > 0 ? files : undefined,
+                messageId: msg._id,
+                title: msg.title,
+                estimateId: msg.content?.estimateId
+              };
+            });
             
             // AI 세션에 과거 대화 이력 전달
             const chatHistory = chatMessages.map((msg: any) => ({
@@ -1549,13 +1634,80 @@ useEffect(() => {
             setChatSessionId(localChatSessionId);
             const messagesResponse = await getChatSessionMessages(localChatSessionId) as any;
             if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
-              const chatMessages = messagesResponse.data.map((msg: any) => ({
-                role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
-                content: msg.content.value || msg.content.content || '',
-                messageId: msg._id,
-                title: msg.title,
-                estimateId: msg.content?.estimateId
-              }));
+              const chatMessages = messagesResponse.data.map((msg: any) => {
+                // 🔥 서버에서 files 정보를 가져와서 이미지와 파일 생성
+                let images: ImageData[] = [];
+                let files: FileData[] = [];
+                
+                // fileMetadata가 있으면 우선 사용 (한글 파일명 보존)
+                if (msg.content.fileMetadata && Array.isArray(msg.content.fileMetadata)) {
+                  const getFileUrl = (fileName: string) => {
+                    if (process.env.NODE_ENV === 'development') {
+                      return `/api/file/${fileName}`;
+                    }
+                    const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+                    return `${apiHost}/file/${fileName}`;
+                  };
+                  
+                  msg.content.fileMetadata.forEach((metadata: any) => {
+                    const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(metadata.serverFileName);
+                    
+                    if (isImage) {
+                      images.push({
+                        url: getFileUrl(metadata.serverFileName),
+                        fileName: metadata.originalFileName || metadata.serverFileName,
+                        mimeType: metadata.mimeType || `image/${metadata.serverFileName.split('.').pop()?.toLowerCase() || 'png'}`
+                      });
+                    } else {
+                      files.push({
+                        url: getFileUrl(metadata.serverFileName),
+                        fileName: metadata.originalFileName || metadata.serverFileName,
+                        mimeType: metadata.mimeType,
+                        size: metadata.size
+                      });
+                    }
+                  });
+                } 
+                // fileMetadata가 없으면 기존 files 배열 사용 (하위 호환성)
+                else if (msg.content.files && Array.isArray(msg.content.files)) {
+                  const getFileUrl = (fileName: string) => {
+                    if (process.env.NODE_ENV === 'development') {
+                      return `/api/file/${fileName}`;
+                    }
+                    const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+                    return `${apiHost}/file/${fileName}`;
+                  };
+                  
+                  msg.content.files.forEach((fileName: string) => {
+                    const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
+                    
+                    if (isImage) {
+                      images.push({
+                        url: getFileUrl(fileName),
+                        fileName: fileName,
+                        mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'png'}`
+                      });
+                    } else {
+                      files.push({
+                        url: getFileUrl(fileName),
+                        fileName: fileName,
+                        mimeType: fileName.endsWith('.pdf') ? 'application/pdf' : 'text/plain',
+                        size: undefined
+                      });
+                    }
+                  });
+                }
+                
+                return {
+                  role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
+                  content: msg.content.value || msg.content.content || '',
+                  images: images.length > 0 ? images : undefined,
+                  files: files.length > 0 ? files : undefined,
+                  messageId: msg._id,
+                  title: msg.title,
+                  estimateId: msg.content?.estimateId
+                };
+              });
               
               // AI 세션에 과거 대화 이력 전달
               const chatHistory = chatMessages.map((msg: any) => ({
@@ -1588,37 +1740,75 @@ useEffect(() => {
               const messagesResponse = await getChatSessionMessages(latestSession._id) as any;
               if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
                 const chatMessages = messagesResponse.data.map((msg: any) => {
-                  // 🔥 서버에서 files 정보를 가져와서 이미지 생성
+                  // 🔥 서버에서 files 정보를 가져와서 이미지와 파일 생성
                   let images: ImageData[] = [];
-                  if (msg.content.files && Array.isArray(msg.content.files)) {
-                    // 파일 배열에서 이미지 파일만 필터링
-                    images = msg.content.files
-                      .filter((fileName: string) => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName))
-                      .map((fileName: string) => {
-                        // 환경에 따른 이미지 URL 생성
-                        const getImageUrl = (fileName: string) => {
-                          // 개발 환경에서는 프록시 설정에 의해 /api/file/로 접근
-                          if (process.env.NODE_ENV === 'development') {
-                            return `/api/file/${fileName}`;
-                          }
-                          
-                          // 프로덕션 환경에서는 file 경로로 직접 접근
-                          const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
-                          return `${apiHost}/file/${fileName}`;
-                        };
-                        
-                        return {
-                          url: getImageUrl(fileName),
+                  let files: FileData[] = [];
+                  
+                  // fileMetadata가 있으면 우선 사용 (한글 파일명 보존)
+                  if (msg.content.fileMetadata && Array.isArray(msg.content.fileMetadata)) {
+                    const getFileUrl = (fileName: string) => {
+                      if (process.env.NODE_ENV === 'development') {
+                        return `/api/file/${fileName}`;
+                      }
+                      const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+                      return `${apiHost}/file/${fileName}`;
+                    };
+                    
+                    msg.content.fileMetadata.forEach((metadata: any) => {
+                      const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(metadata.serverFileName);
+                      
+                      if (isImage) {
+                        images.push({
+                          url: getFileUrl(metadata.serverFileName),
+                          fileName: metadata.originalFileName || metadata.serverFileName,
+                          mimeType: metadata.mimeType || `image/${metadata.serverFileName.split('.').pop()?.toLowerCase() || 'png'}`
+                        });
+                      } else {
+                        files.push({
+                          url: getFileUrl(metadata.serverFileName),
+                          fileName: metadata.originalFileName || metadata.serverFileName,
+                          mimeType: metadata.mimeType,
+                          size: metadata.size
+                        });
+                      }
+                    });
+                  } 
+                  // fileMetadata가 없으면 기존 files 배열 사용 (하위 호환성)
+                  else if (msg.content.files && Array.isArray(msg.content.files)) {
+                    const getFileUrl = (fileName: string) => {
+                      if (process.env.NODE_ENV === 'development') {
+                        return `/api/file/${fileName}`;
+                      }
+                      const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+                      return `${apiHost}/file/${fileName}`;
+                    };
+                    
+                    msg.content.files.forEach((fileName: string) => {
+                      const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
+                      
+                      if (isImage) {
+                        images.push({
+                          url: getFileUrl(fileName),
                           fileName: fileName,
                           mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'png'}`
-                        };
-                      });
+                        });
+                      } else {
+                        // 기존 데이터는 originalFileName이 없으므로 UUID 파일명 표시
+                        files.push({
+                          url: getFileUrl(fileName),
+                          fileName: fileName,
+                          mimeType: fileName.endsWith('.pdf') ? 'application/pdf' : 'text/plain',
+                          size: undefined
+                        });
+                      }
+                    });
                   }
                   
                   return {
                     role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
                     content: msg.content.value || msg.content.content || '',
-                    images: images.length > 0 ? images : undefined, // 🔥 이미지 정보 추가
+                    images: images.length > 0 ? images : undefined,
+                    files: files.length > 0 ? files : undefined, // 🔥 파일 정보 추가
                     messageId: msg._id,
                     title: msg.title,
                     estimateId: msg.content?.estimateId
@@ -1646,37 +1836,74 @@ useEffect(() => {
             const messagesResponse = await getChatSessionMessages(localChatSessionId) as any;
             if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
               const chatMessages = messagesResponse.data.map((msg: any) => {
-                // 🔥 서버에서 files 정보를 가져와서 이미지 생성
+                // 🔥 서버에서 files 정보를 가져와서 이미지와 파일 생성
                 let images: ImageData[] = [];
-                if (msg.content.files && Array.isArray(msg.content.files)) {
-                  // 파일 배열에서 이미지 파일만 필터링
-                  images = msg.content.files
-                    .filter((fileName: string) => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName))
-                    .map((fileName: string) => {
-                      // 환경에 따른 이미지 URL 생성
-                      const getImageUrl = (fileName: string) => {
-                        // 개발 환경에서는 프록시 설정에 의해 /api/file/로 접근
-                        if (process.env.NODE_ENV === 'development') {
-                          return `/api/file/${fileName}`;
-                        }
-                        
-                        // 프로덕션 환경에서는 file 경로로 직접 접근
-                        const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
-                        return `${apiHost}/file/${fileName}`;
-                      };
-                      
-                      return {
-                        url: getImageUrl(fileName),
+                let files: FileData[] = [];
+                
+                // fileMetadata가 있으면 우선 사용 (한글 파일명 보존)
+                if (msg.content.fileMetadata && Array.isArray(msg.content.fileMetadata)) {
+                  const getFileUrl = (fileName: string) => {
+                    if (process.env.NODE_ENV === 'development') {
+                      return `/api/file/${fileName}`;
+                    }
+                    const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+                    return `${apiHost}/file/${fileName}`;
+                  };
+                  
+                  msg.content.fileMetadata.forEach((metadata: any) => {
+                    const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(metadata.serverFileName);
+                    
+                    if (isImage) {
+                      images.push({
+                        url: getFileUrl(metadata.serverFileName),
+                        fileName: metadata.originalFileName || metadata.serverFileName,
+                        mimeType: metadata.mimeType || `image/${metadata.serverFileName.split('.').pop()?.toLowerCase() || 'png'}`
+                      });
+                    } else {
+                      files.push({
+                        url: getFileUrl(metadata.serverFileName),
+                        fileName: metadata.originalFileName || metadata.serverFileName,
+                        mimeType: metadata.mimeType,
+                        size: metadata.size
+                      });
+                    }
+                  });
+                } 
+                // fileMetadata가 없으면 기존 files 배열 사용 (하위 호환성)
+                else if (msg.content.files && Array.isArray(msg.content.files)) {
+                  const getFileUrl = (fileName: string) => {
+                    if (process.env.NODE_ENV === 'development') {
+                      return `/api/file/${fileName}`;
+                    }
+                    const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+                    return `${apiHost}/file/${fileName}`;
+                  };
+                  
+                  msg.content.files.forEach((fileName: string) => {
+                    const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
+                    
+                    if (isImage) {
+                      images.push({
+                        url: getFileUrl(fileName),
                         fileName: fileName,
                         mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'png'}`
-                      };
-                    });
+                      });
+                    } else {
+                      files.push({
+                        url: getFileUrl(fileName),
+                        fileName: fileName,
+                        mimeType: fileName.endsWith('.pdf') ? 'application/pdf' : 'text/plain',
+                        size: undefined
+                      });
+                    }
+                  });
                 }
                 
                 return {
                   role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
                   content: msg.content.value || msg.content.content || '',
-                  images: images.length > 0 ? images : undefined, // 🔥 이미지 정보 추가
+                  images: images.length > 0 ? images : undefined,
+                  files: files.length > 0 ? files : undefined,
                   messageId: msg._id,
                   title: msg.title,
                   estimateId: msg.content?.estimateId
@@ -1816,7 +2043,7 @@ useEffect(() => {
         {messages.map((m, idx) => {
           if (m.role === 'user') {
             // 이미지와 텍스트를 분리해서 처리
-            const parsedContent = parseMessageContent(m.content, m.images);
+            const parsedContent = parseMessageContent(m.content, m.images, m.files);
             
             // console.log('🔍 사용자 메시지 파싱:', {
             //   originalContent: m.content,
@@ -1830,6 +2057,10 @@ useEffect(() => {
                 {/* 이미지가 있으면 그리드로 표시 */}
                 {parsedContent.hasImages && (
                   <ImageGrid images={parsedContent.images} />
+                )}
+                {/* 📄 문서 파일이 있으면 파일 목록으로 표시 */}
+                {parsedContent.hasFiles && (
+                  <FileList files={parsedContent.files} />
                 )}
                 {/* 텍스트가 있으면 말풍선으로 표시 */}
                 {parsedContent.text && (

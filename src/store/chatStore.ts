@@ -9,10 +9,19 @@ export interface ImageData {
   size?: number;
 }
 
+// 📄 문서 파일 데이터 타입 (PDF, TXT 등)
+export interface FileData {
+  url: string;
+  fileName: string;
+  mimeType: string;
+  size?: number;
+}
+
 export type ChatMessage = {
   role: 'user' | 'ai';
   content: string;
   images?: ImageData[]; // 이미지 배열 추가
+  files?: FileData[]; // 📄 문서 파일 배열 추가
   isLoading?: boolean;
   messageId?: string;
   estimateId?: string;

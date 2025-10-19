@@ -497,26 +497,39 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       const imageFiles = uploadedFiles.filter((file: FileUploadData) => 
         /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name)
       );
+      const documentFiles = uploadedFiles.filter((file: FileUploadData) => 
+        /\.(pdf|txt)$/i.test(file.name)
+      );
       devLog('🔍 필터링된 이미지 파일들:', imageFiles);
+      devLog('🔍 필터링된 문서 파일들:', documentFiles);
       
-      if (imageFiles.length > 0) {
+      if (imageFiles.length > 0 || documentFiles.length > 0) {
         // ⚠️ 먼저 실제 파일 업로드를 수행하여 UUID 파일명 획득
-        devLog('📤 이미지 URL 생성을 위한 파일 업로드 시작...');
+        devLog('📤 파일 URL 생성을 위한 파일 업로드 시작...');
         let serverFileNames: string[] = [];
         
         if (selectedFiles.length > 0) {
-          const uploadResponse = await uploadFiles(selectedFiles);
+          // 🔥 selectedFiles도 uploadedFiles와 동일한 순서로 정렬
+          // uploadedFiles의 name 순서대로 selectedFiles를 재정렬
+          const orderedSelectedFiles = uploadedFiles
+            .map(uploadedFile => selectedFiles.find(sf => sf.name === uploadedFile.name))
+            .filter((f): f is File => f !== undefined);
+          
+          devLog('🔍 정렬된 selectedFiles:', orderedSelectedFiles.map(f => f.name));
+          
+          const uploadResponse = await uploadFiles(orderedSelectedFiles);
           if (uploadResponse && uploadResponse.statusCode === 200 && Array.isArray(uploadResponse.data)) {
             serverFileNames = uploadResponse.data;
             devLog('✅ 서버에서 반환된 UUID 파일명들:', serverFileNames);
+            devLog('✅ 파일명 매핑:', orderedSelectedFiles.map((f, i) => `${f.name} -> ${serverFileNames[i]}`));
           } else {
             devLog('❌ 파일 업로드 실패:', uploadResponse);
-            throw new Error('이미지 업로드에 실패했습니다.');
+            throw new Error('파일 업로드에 실패했습니다.');
           }
         }
         
-        // 환경에 따른 이미지 URL 생성 (UUID 파일명 사용)
-        const getImageUrl = (serverFileName: string) => {
+        // 환경에 따른 파일 URL 생성 (UUID 파일명 사용)
+        const getFileUrl = (serverFileName: string) => {
           // 개발 환경에서는 프록시 설정에 의해 /api/file/로 접근
           if (process.env.NODE_ENV === 'development') {
             return `/api/file/${serverFileName}`;
@@ -527,34 +540,52 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           return `${apiHost}/file/${serverFileName}`;
         };
         
-        // 이미지 파일들과 서버 파일명을 매핑하여 올바른 URL 생성
+        // 🔥 이미지 파일들 처리 - uploadedFiles 순서대로 매핑
         const images = imageFiles.map((file: FileUploadData, index: number) => {
-          const serverFileName = serverFileNames[index] || file.name; // fallback to original name
-          const imageUrl = getImageUrl(serverFileName);
-          devLog(`🔗 이미지 URL 생성: ${file.name} -> ${serverFileName} -> ${imageUrl}`);
+          // uploadedFiles 전체에서 해당 이미지 파일의 인덱스를 찾기
+          const globalIndex = uploadedFiles.findIndex(uf => uf.name === file.name);
+          const serverFileName = serverFileNames[globalIndex] || file.name;
+          const fileUrl = getFileUrl(serverFileName);
+          devLog(`🔗 이미지 URL 생성 [${index}/${imageFiles.length}]: ${file.name} -> ${serverFileName} -> ${fileUrl} (전체 인덱스: ${globalIndex})`);
 
           return {
-            url: imageUrl,
-            fileName: file.name, // 원본 파일명은 화면 표시용으로 유지
+            url: fileUrl,
+            fileName: file.name,
             mimeType: file.mimeType || `image/${file.name.split('.').pop()?.toLowerCase() || 'png'}`
           };
         });
 
-        devLog('🔍 이미지 파일들 처리됨:', images);
-        devLog('🔍 originalImages (업로드된 파일들):', imageFiles.map(f => ({ name: f.name, fileUri: f.fileUri })));
+        // 🔥 문서 파일들 처리 - uploadedFiles 순서대로 매핑
+        const files = documentFiles.map((file: FileUploadData, index: number) => {
+          // uploadedFiles 전체에서 해당 문서 파일의 인덱스를 찾기
+          const globalIndex = uploadedFiles.findIndex(uf => uf.name === file.name);
+          const serverFileName = serverFileNames[globalIndex] || file.name;
+          const fileUrl = getFileUrl(serverFileName);
+          devLog(`🔗 문서 파일 URL 생성 [${index}/${documentFiles.length}]: ${file.name} -> ${serverFileName} -> ${fileUrl} (전체 인덱스: ${globalIndex})`);
 
-        // 이미지와 텍스트가 모두 있는 경우 두 개의 메시지로 분리
-        // 1. 이미지만 있는 메시지
-        const imageMessage = {
+          return {
+            url: fileUrl,
+            fileName: file.name,
+            mimeType: file.mimeType || (/\.pdf$/i.test(file.name) ? 'application/pdf' : 'text/plain'),
+            size: file.size
+          };
+        });
+
+        devLog('🔍 이미지 파일들 처리됨:', images);
+        devLog('🔍 문서 파일들 처리됨:', files);
+
+        // 이미지와/또는 문서 파일이 있는 경우 메시지 생성
+        const fileMessage = {
           role: 'user' as const,
           content: '',
-          images,
-          messageId: messageId + '_image'
+          ...(images.length > 0 && { images }),
+          ...(files.length > 0 && { files }),
+          messageId: messageId + '_files'
         };
-        devLog('🔍 이미지 메시지 생성:', imageMessage);
-        addMessage(imageMessage);
+        devLog('🔍 파일 메시지 생성:', fileMessage);
+        addMessage(fileMessage);
         
-        // 2. 텍스트가 있으면 별도 메시지
+        // 텍스트가 있으면 별도 메시지
         if (userDisplayContent.trim()) {
           const textMessage = {
             role: 'user' as const,
@@ -565,11 +596,11 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           addMessage(textMessage);
         }
       } else {
-        // 이미지가 아닌 파일들만 있는 경우 기존 로직 사용
+        // 지원하지 않는 파일 형식만 있는 경우
         addMessage({ role: 'user', content: userDisplayContent, messageId });
       }
     } else {
-      // 이미지가 없는 일반 메시지
+      // 파일이 없는 일반 메시지
       addMessage({ role: 'user', content: userDisplayContent, messageId });
     }
     // ai 메시지는 isLoading: true로 추가 (실시간 업데이트용)
@@ -813,9 +844,24 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       }
 
       // DB 저장용 메시지 내용
+      // 🔥 원본 파일명과 UUID 파일명을 매핑하여 저장
+      const fileMetadata = uploadedFileNames.length > 0 ? uploadedFileNames.map((serverFileName, index) => {
+        // orderedSelectedFiles에서 원본 파일 정보 가져오기
+        const originalFile = selectedFiles[index];
+        const uploadedFile = uploadedFiles[index];
+        
+        return {
+          serverFileName: serverFileName, // UUID 파일명
+          originalFileName: originalFile?.name || uploadedFile?.name || serverFileName, // 원본 파일명
+          mimeType: originalFile?.type || uploadedFile?.mimeType || '',
+          size: originalFile?.size || uploadedFile?.size
+        };
+      }) : undefined;
+      
       const messageContentForDB = {
         content: input, // AI에게 전달되는 원본 내용
-        files: uploadedFileNames.length > 0 ? uploadedFileNames : undefined  // 🔥 모든 파일명을 배열로 저장
+        files: uploadedFileNames.length > 0 ? uploadedFileNames : undefined,  // UUID 파일명 배열 (하위 호환성)
+        fileMetadata: fileMetadata  // 🔥 새로운 필드: 파일 메타데이터 (원본 파일명 포함)
       };
 
       const filesForAI = filesForGemini.map(file => ({

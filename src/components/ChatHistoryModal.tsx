@@ -7,12 +7,22 @@ import { AiMessageContent } from '@/app/ai/page';
 import CmsPopup from '@/components/CmsPopup';
 import { devLog } from '@/utils/devLogger'
 import ImageGrid from '@/components/ai-esti/ImageGrid';
-import { ImageData } from '@/store/chatStore';
+import FileList from '@/components/ai-esti/FileList';
+import { ImageData, FileData } from '@/store/chatStore';
 import { useThemeStore } from '@/store/themeStore';
 import { useCompanyStore } from '@/store/companyStore';
  
 // 메시지 타입 정의
 import type { FileUploadData } from '@/firebase.functions';
+
+// 파일 메타데이터 타입 정의
+interface FileMetadata {
+  serverFileName: string;  // UUID 파일명
+  originalFileName: string; // 원본 파일명 (한글 등)
+  mimeType: string;
+  size?: number;
+}
+
 interface ChatMessage {
   _id: string;
   session: string;
@@ -22,7 +32,8 @@ interface ChatMessage {
     value?: string;
     content?: string;
     file?: string;
-    files?: string[]; // 파일명 배열 추가
+    files?: string[]; // 파일명 배열 (UUID)
+    fileMetadata?: FileMetadata[]; // 🔥 새로 추가: 파일 메타데이터
   };
   createAt: string;
   files?: FileUploadData[]; // 클라이언트에서 변환된 파일 정보
@@ -272,53 +283,76 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
     
     // content가 undefined나 null인 경우 처리
     if (!content || typeof content !== 'string') {
+      // files prop에서 이미지와 문서 분리
+      const imageFiles = files ? files.filter(f => f.mimeType?.startsWith('image/')) : [];
+      const documentFiles = files ? files.filter(f => 
+        f.mimeType === 'application/pdf' || f.mimeType === 'text/plain'
+      ) : [];
+      
       const result = {
         text: '',
-        images: files ? files.filter(f => f.mimeType?.startsWith('image/')).map(f => ({
+        images: imageFiles.map(f => ({
           url: f.fileUri,
           fileName: f.name,
           mimeType: f.mimeType || 'image/png'
-        })) : [],
-        hasImages: files ? files.some(f => f.mimeType?.startsWith('image/')) : false
+        })),
+        files: documentFiles.map(f => ({
+          url: f.fileUri,
+          fileName: f.name,
+          mimeType: f.mimeType || 'application/pdf',
+          size: f.size
+        })),
+        hasImages: imageFiles.length > 0,
+        hasFiles: documentFiles.length > 0
       };
       // console.log('🔍 parseMessageContent 결과 (빈 content):', result);
       return result;
     }
     
-    // 첨부파일 패턴을 찾아서 제거하되, 이미지는 images 배열로 처리
+    // 첨부파일 패턴을 찾아서 제거하되, 이미지와 문서 파일로 분리
     const fileMatches = content.match(/\[첨부파일: (.+?)\]/g);
     let textContent = content;
     const extractedImages: ImageData[] = [];
+    const extractedFiles: FileData[] = [];
     
     if (fileMatches) {
       fileMatches.forEach(match => {
         const fileName = match.match(/\[첨부파일: (.+?)\]/)?.[1];
         if (fileName) {
           const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
+          const isPdf = /\.pdf$/i.test(fileName);
+          const isTxt = /\.txt$/i.test(fileName);
+          
+          // 환경에 따른 파일 URL 생성
+          const getFileUrl = (fileName: string) => {
+            // 이미 full URL인 경우 (http로 시작)
+            if (fileName.startsWith('http')) {
+              return fileName;
+            }
+            
+            // 개발 환경에서는 프록시 설정에 의해 /api/file/로 접근
+            if (process.env.NODE_ENV === 'development') {
+              return `/api/file/${fileName}`;
+            }
+            
+            // 프로덕션 환경에서는 file 경로로 직접 접근
+            const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+            return `${apiHost}/file/${fileName}`;
+          };
+          
+          const fileUrl = getFileUrl(fileName);
+          
           if (isImage) {
-            // 환경에 따른 이미지 URL 생성
-            const getImageUrl = (fileName: string) => {
-              // 이미 full URL인 경우 (http로 시작)
-              if (fileName.startsWith('http')) {
-                return fileName;
-              }
-              
-              // 개발 환경에서는 프록시 설정에 의해 /api/file/로 접근
-              if (process.env.NODE_ENV === 'development') {
-                return `/api/file/${fileName}`;
-              }
-              
-              // 프로덕션 환경에서는 file 경로로 직접 접근
-              const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
-              return `${apiHost}/file/${fileName}`;
-            };
-            
-            const imageUrl = getImageUrl(fileName);
-            
             extractedImages.push({
-              url: imageUrl,
+              url: fileUrl,
               fileName: fileName,
               mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'png'}`
+            });
+          } else if (isPdf || isTxt) {
+            extractedFiles.push({
+              url: fileUrl,
+              fileName: fileName,
+              mimeType: isPdf ? 'application/pdf' : 'text/plain'
             });
           }
         }
@@ -327,7 +361,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
       });
     }
     
-    // files prop과 추출된 이미지를 합치기 (files에서 이미지만 필터링)
+    // files prop에서 이미지와 문서 분리
     const filesImages = files ? files
       .filter(f => f.mimeType?.startsWith('image/'))
       .map(f => ({
@@ -336,12 +370,25 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
         mimeType: f.mimeType || 'image/png'
       })) : [];
     
+    const filesDocuments = files ? files
+      .filter(f => f.mimeType === 'application/pdf' || f.mimeType === 'text/plain')
+      .map(f => ({
+        url: f.fileUri,
+        fileName: f.name,
+        mimeType: f.mimeType || 'application/pdf',
+        size: f.size
+      })) : [];
+    
+    // 추출된 것과 prop으로 받은 것을 합치기
     const allImages = [...extractedImages, ...filesImages];
+    const allFiles = [...extractedFiles, ...filesDocuments];
     
     const result = {
       text: stripAiPrompt(textContent),
       images: allImages,
-      hasImages: allImages.length > 0
+      files: allFiles,
+      hasImages: allImages.length > 0,
+      hasFiles: allFiles.length > 0
     };
     // console.log('🔍 parseMessageContent 결과 (일반):', result);
     return result;
@@ -403,18 +450,37 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
               const userContent = message.content?.content || '';
               const fileInfo = message.content?.file ? `\n[첨부파일: ${message.content.file}]` : '';
               
-              // content.files 배열을 FileUploadData 형태로 변환
+              // 🔥 fileMetadata가 있으면 우선 사용, 없으면 기존 files 배열 사용
               let convertedFiles: FileUploadData[] = [];
-              if (message.content?.files && Array.isArray(message.content.files)) {
+              
+              if (message.content?.fileMetadata && Array.isArray(message.content.fileMetadata)) {
+                // 새로운 방식: fileMetadata 사용 (원본 파일명 포함)
+                devLog('🔥 fileMetadata 사용:', message.content.fileMetadata);
+                convertedFiles = message.content.fileMetadata.map((metadata: FileMetadata) => {
+                  // 환경에 따른 파일 URL 생성 (UUID 파일명 사용)
+                  const getFileUrl = (serverFileName: string) => {
+                    if (process.env.NODE_ENV === 'development') {
+                      return `/api/file/${serverFileName}`;
+                    }
+                    const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+                    return `${apiHost}/file/${serverFileName}`;
+                  };
+                  
+                  return {
+                    name: metadata.originalFileName, // 🔥 원본 파일명 사용!
+                    fileUri: getFileUrl(metadata.serverFileName), // UUID 파일명으로 URL 생성
+                    mimeType: metadata.mimeType,
+                    size: metadata.size
+                  };
+                });
+              } else if (message.content?.files && Array.isArray(message.content.files)) {
+                // 기존 방식: files 배열 사용 (하위 호환성)
+                devLog('⚠️ 기존 files 배열 사용 (fileMetadata 없음)');
                 convertedFiles = message.content.files.map(fileName => {
-                  // 환경에 따른 파일 URL 생성
                   const getFileUrl = (fileName: string) => {
-                    // 개발 환경에서는 프록시 설정에 의해 /api/file/로 접근
                     if (process.env.NODE_ENV === 'development') {
                       return `/api/file/${fileName}`;
                     }
-                    
-                    // 프로덕션 환경에서는 file 경로로 직접 접근
                     const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
                     return `${apiHost}/file/${fileName}`;
                   };
@@ -426,11 +492,12 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
                       return `image/${ext === 'jpg' ? 'jpeg' : ext}`;
                     }
                     if (ext === 'pdf') return 'application/pdf';
+                    if (ext === 'txt') return 'text/plain';
                     return 'application/octet-stream';
                   };
                   
                   return {
-                    name: fileName,
+                    name: fileName, // UUID 파일명 그대로 사용 (한글 깨짐 가능)
                     fileUri: getFileUrl(fileName),
                     mimeType: getFileType(fileName)
                   };
@@ -502,6 +569,10 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
                 {/* 이미지가 있으면 그리드로 표시 */}
                 {parsedContent.hasImages && (
                   <ImageGrid images={parsedContent.images} />
+                )}
+                {/* 📄 문서 파일이 있으면 파일 목록으로 표시 */}
+                {parsedContent.hasFiles && (
+                  <FileList files={parsedContent.files} />
                 )}
                 {/* 텍스트가 있으면 말풍선으로 표시 */}
                 {parsedContent.text && (

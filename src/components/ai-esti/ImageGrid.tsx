@@ -6,17 +6,6 @@ interface ImageGridProps {
   images: ImageData[];
   maxRows?: number;
 }
-
-// 파일 타입 확인 유틸리티
-const isImageFile = (mimeType?: string): boolean => {
-  if (!mimeType) return false;
-  return mimeType.startsWith('image/');
-};
-
-const isDocumentFile = (mimeType?: string): boolean => {
-  if (!mimeType) return false;
-  return mimeType === 'application/pdf' || mimeType === 'text/plain';
-};
  
 const GridContainer = styled.div<{ imageCount: number; totalRows: number }>`
   display: flex;
@@ -143,6 +132,30 @@ const Image = styled.img`
   
   &:hover {
     transform: scale(1.05) translateZ(0);
+  }
+`;
+
+// 이미지 로드 실패 시 표시할 No Image 아이콘
+const NoImagePlaceholder = styled.div`
+  width: 100%;
+  height: 100%;
+  background: ${({ theme }) => theme.surface1 || '#f5f5f5'};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: ${({ theme }) => theme.subtleText || '#999'};
+  
+  svg {
+    width: 48px;
+    height: 48px;
+    opacity: 0.5;
+  }
+  
+  span {
+    font-size: 12px;
+    opacity: 0.7;
   }
 `;
  
@@ -523,93 +536,6 @@ const PaginationDot = styled.button<{ $isActive: boolean }>`
   }
 `;
  
-const DocumentListContainer = styled.div`
-  width: 80%;
-  margin-top: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-`;
-
-// 문서 파일 아이템
-const DocumentItem = styled.a`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  background: #333333;
-  border: 1px solid #666666;
-  border-radius: 8px;
-  cursor: pointer;
-  text-decoration: none;
-  color: inherit;
-  transition: all 0.2s ease;
-  
-  
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-// 파일 아이콘
-const FileIcon = styled.div<{ fileType: string }>`
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: 14px;
-  font-weight: bold;
-  background: ${({ fileType }) => {
-    if (fileType === 'pdf') return '#E74C3C';
-    if (fileType === 'txt') return '#3498DB';
-    return '#95A5A6';
-  }};
-  color: white;
-`;
-
-// 파일 정보
-const FileInfo = styled.div`
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-`;
-
-// 파일 이름
-const FileName = styled.span`
-  font-size: 14px;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
-// 파일 크기
-const FileSize = styled.span`
-  font-size: 12px;
-  opacity: 0.6;
-`;
-
-// 다운로드 아이콘
-const DownloadIcon = styled.div`
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.5;
-  transition: opacity 0.2s ease;
-  
-  ${DocumentItem}:hover & {
-    opacity: 1;
-  }
-`;
- 
-
 const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
   const [showModal, setShowModal] = useState(false);
   const [modalIndex, setModalIndex] = useState(0);
@@ -624,31 +550,9 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
   // iOS 감지
   const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
   
-  // 이미지와 문서 파일 분리
-  const imageFiles = images.filter(img => isImageFile(img.mimeType));
-  const documentFiles = images.filter(img => isDocumentFile(img.mimeType));
-  
-  // 파일 크기 포맷 함수
-  const formatFileSize = (bytes?: number): string => {
-    if (!bytes) return '';
-    if (bytes < 1024) return `${bytes}B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
-  };
-  
-  // 파일 확장자 추출
-  const getFileExtension = (fileName: string, mimeType?: string): string => {
-    if (mimeType === 'application/pdf') return 'PDF';
-    if (mimeType === 'text/plain') return 'TXT';
-    const parts = fileName.split('.');
-    return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'FILE';
-  };
-  
   // 디버깅용 로그 추가
   console.log('🔍 ImageGrid 렌더링:', {
-    totalFiles: images?.length,
-    imageFiles: imageFiles.length,
-    documentFiles: documentFiles.length,
+    images: images?.length,
     maxRows,
     userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
     isIOS,
@@ -657,22 +561,21 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
   });
   
   if (!images || images.length === 0) {
-    console.log('🔍 ImageGrid: 파일이 없음');
+    console.log('🔍 ImageGrid: 이미지가 없음');
     return null;
   }
  
   // 최대 표시할 이미지 개수는 maxRows * 3 (3열)
   const maxImages = maxRows * 3;
-  const displayImages = imageFiles.slice(0, maxImages);
-  const remainingCount = imageFiles.length - maxImages;
-  const totalRows = Math.min(Math.ceil(imageFiles.length / 3), maxRows);
+  const displayImages = images.slice(0, maxImages);
+  const remainingCount = images.length - maxImages;
+  const totalRows = Math.min(Math.ceil(images.length / 3), maxRows);
   
   console.log('🔍 ImageGrid 계산된 값:', {
     maxImages,
     displayImagesLength: displayImages.length,
     remainingCount,
-    totalRows,
-    documentFilesCount: documentFiles.length
+    totalRows
   });
  
   const handleImageLoad = (index: number) => {
@@ -729,29 +632,15 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
   };
  
   const goToPrevious = () => {
-    setModalIndex(prev => (prev > 0 ? prev - 1 : imageFiles.length - 1));
+    setModalIndex(prev => (prev > 0 ? prev - 1 : images.length - 1));
   };
  
   const goToNext = () => {
-    setModalIndex(prev => (prev < imageFiles.length - 1 ? prev + 1 : 0));
+    setModalIndex(prev => (prev < images.length - 1 ? prev + 1 : 0));
   };
  
   const goToSlide = (index: number) => {
     setModalIndex(index);
-  };
-  
-  // 파일 다운로드 핸들러
-  const handleDownload = (e: React.MouseEvent<HTMLAnchorElement>, fileUrl: string, fileName: string) => {
-    e.preventDefault();
-    
-    // URL에서 직접 다운로드
-    const link = document.createElement('a');
-    link.href = fileUrl;
-    link.download = fileName || 'download';
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
  
   // 터치 이벤트 핸들러 (모달용)
@@ -835,96 +724,71 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
  
   return (
     <>
-      {/* 이미지 그리드 */}
-      {imageFiles.length > 0 && (
-        <GridContainer imageCount={displayImages.length} totalRows={totalRows}>
-          {displayImages.map((image, index) => {
-            if (process.env.NODE_ENV === 'development') {
-              console.log(`🔍 렌더링 이미지 ${index}:`, image.url);
-            }
-            return (
-              <ImageContainer
-                key={`${image.url}-${index}`}
-                isFirst={index === 0}
-                imageCount={displayImages.length}
-                onClick={() => openModal(index)}
-              >
-                <Image
-                  src={image.url}
-                  alt={image.fileName || `이미지 ${index + 1}`}
-                  onError={(e) => handleImageError(index, e)}
-                  onLoad={() => handleImageLoad(index)}
-                  loading={isIOS ? "eager" : "lazy"} // iOS에서는 즉시 로딩
-                  style={{
-                    opacity: loadedImages.has(index) ? 1 : 0.8,
-                    transition: 'opacity 0.2s ease',
-                    display: errorImages.has(index) ? 'none' : 'block'
-                  }}
-                />
-                {/* 로딩 인디케이터 */}
-                {!loadedImages.has(index) && !errorImages.has(index) && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-                    borderRadius: '4px',
-                    padding: '8px',
-                    fontSize: '12px',
-                    color: '#666'
-                  }}>
-                    로딩중...
-                  </div>
-                )}
-                {/* 마지막 이미지에 남은 개수 표시 */}
-                {index === maxImages - 1 && remainingCount > 0 && (
-                  <MoreIndicator onClick={() => openModal(index)}>
-                    +{remainingCount}
-                  </MoreIndicator>
-                )}
-              </ImageContainer>
-            );
-          })}
-        </GridContainer>
-      )}
-      
-      {/* 문서 파일 목록 */}
-      {documentFiles.length > 0 && (
-        <DocumentListContainer>
-          {documentFiles.map((doc, index) => {
-            const fileExt = getFileExtension(doc.fileName, doc.mimeType);
-            return (
-              <DocumentItem
-                key={`doc-${doc.url}-${index}`}
-                href={doc.url}
-                onClick={(e) => handleDownload(e, doc.url, doc.fileName)}
-                download={doc.fileName}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <FileIcon fileType={fileExt.toLowerCase()}>
-                  {fileExt}
-                </FileIcon>
-                <FileInfo>
-                  <FileName title={doc.fileName}>{doc.fileName}</FileName>
-                  {doc.size && <FileSize>{formatFileSize(doc.size)}</FileSize>}
-                </FileInfo>
-                <DownloadIcon>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
+      <GridContainer imageCount={displayImages.length} totalRows={totalRows}>
+        {displayImages.map((image, index) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`🔍 렌더링 이미지 ${index}:`, image.url);
+          }
+          return (
+            <ImageContainer
+              key={`${image.url}-${index}`}
+              isFirst={index === 0}
+              imageCount={displayImages.length}
+              onClick={() => openModal(index)}
+            >
+              {/* 이미지 로드 실패 시 No Image 플레이스홀더 표시 */}
+              {errorImages.has(index) ? (
+                <NoImagePlaceholder>
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 19V5C21 3.9 20.1 3 19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19ZM8.5 13.5L11 16.51L14.5 12L19 18H5L8.5 13.5Z" fill="currentColor" opacity="0.3"/>
+                    <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" opacity="0.3"/>
                   </svg>
-                </DownloadIcon>
-              </DocumentItem>
-            );
-          })}
-        </DocumentListContainer>
-      )}
+                  {/* <span>이미지를 불러올 수 없습니다.</span> */}
+                </NoImagePlaceholder>
+              ) : (
+                <>
+                  <Image
+                    src={image.url}
+                    alt={image.fileName || `이미지 ${index + 1}`}
+                    onError={(e) => handleImageError(index, e)}
+                    onLoad={() => handleImageLoad(index)}
+                    loading={isIOS ? "eager" : "lazy"} // iOS에서는 즉시 로딩
+                    style={{
+                      opacity: loadedImages.has(index) ? 1 : 0.8,
+                      transition: 'opacity 0.2s ease'
+                    }}
+                  />
+                  {/* 로딩 인디케이터 */}
+                  {!loadedImages.has(index) && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                      borderRadius: '4px',
+                      padding: '8px',
+                      fontSize: '12px',
+                      color: '#666'
+                    }}>
+                      로딩중...
+                    </div>
+                  )}
+                </>
+              )}
+              {/* 마지막 이미지에 남은 개수 표시 */}
+              {index === maxImages - 1 && remainingCount > 0 && (
+                <MoreIndicator onClick={() => openModal(index)}>
+                  +{remainingCount}
+                </MoreIndicator>
+              )}
+            </ImageContainer>
+          );
+        })}
+      </GridContainer>
  
-      {/* 전체화면 모달 (이미지만) */}
-      {showModal && imageFiles.length > 0 && (
+      {/* 전체화면 모달 */}
+      {showModal && (
         <FullScreenModal onClick={handleModalBackgroundClick}>
           <ModalContainer>
             <SliderContainer
@@ -933,7 +797,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
               onTouchEnd={handleTouchEnd}
             >
               <SliderWrapper $currentIndex={modalIndex}>
-                {imageFiles.map((image, index) => (
+                {images.map((image, index) => (
                   <SlideItem key={index}>
                     <ModalImage
                       src={image.url}
@@ -946,7 +810,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
             </SliderContainer>
  
             {/* 네비게이션 버튼 */}
-            {imageFiles.length > 1 && (
+            {images.length > 1 && (
               <>
                 <NavButton
                   $direction="prev"
@@ -964,9 +828,9 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
             )}
  
             {/* 페이지네이션 */}
-            {imageFiles.length > 1 && (
+            {images.length > 1 && (
               <Pagination>
-                {imageFiles.map((_, index) => (
+                {images.map((_, index) => (
                   <PaginationDot
                     key={index}
                     $isActive={index === modalIndex}
