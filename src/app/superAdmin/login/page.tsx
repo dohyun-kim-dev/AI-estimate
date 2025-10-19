@@ -135,9 +135,10 @@ export default function LoginPage() {
             display: 'flex',
             flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'space-between', // 양쪽 끝으로 정렬
+            justifyContent: 'center', // 양쪽 끝으로 정렬
             marginBottom: '20px',
             width: '100%', // 부모 컨테이너의 너비를 기준으로 정렬
+            gap: '12px',
           }}
         >
           {/* 로고 이미지 */}
@@ -146,13 +147,13 @@ export default function LoginPage() {
           {/* 설명 텍스트 */}
           <div
             style={{
-              fontSize: '18px',
-              fontWeight: 600,
+              fontSize: '24px',
+              fontWeight: 500,
               color: '#000', // 텍스트 색상 검정으로 변경
               whiteSpace: 'nowrap',
             }}
           >
-            AI 견적 통합관리자용
+            통합관리자용
           </div>
         </div>
 
