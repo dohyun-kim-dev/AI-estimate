@@ -5,8 +5,10 @@ import ResponsiveView from '@layout/ResponsiveView';
 import CustomSidebar, { MenuItemConfig } from './CustomSidebar';
 import { MenuIcon } from 'lucide-react';
 import { AppColors } from '@styles/colors';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import SettingsIcon from '@mui/icons-material/Settings';
+import { getCompanyInfo } from '@/lib/api/admin/adminApi';
+import { getFileUrl } from '@/lib/api/user/userApi';
 
 const recentNotices = [
   '서버 점검 안내: 8월 20일 00:00 ~ 02:00',
@@ -36,7 +38,9 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [currentTime, setCurrentTime] = useState(dayjs().format('YYYY.MM.DD. HH:mm:ss'));
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string>('/cms/no_logo_image.png');
   const navigate = useNavigate();
+  const location = useLocation();
 
   // 매초마다 시간 업데이트
   useEffect(() => {
@@ -47,6 +51,46 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({
     return () => clearInterval(timer);
   }, []);
 
+  // 페이지 경로 변경 시 회사 정보 로드
+  useEffect(() => {
+    const loadCompanyInfo = async () => {
+      const currentPath = location.pathname;
+      
+      // CMS 경로인지 확인
+      if (currentPath.includes('/cms/')) {
+        try {
+          const response = await getCompanyInfo();
+          
+          // API 응답 구조에 맞게 데이터 추출
+          let companyData = null;
+          const responseData = response as any;
+          
+          if (Array.isArray(responseData) && responseData[0]?.data) {
+            companyData = responseData[0].data.data;
+          } else if (responseData?.data?.data) {
+            companyData = responseData.data.data;
+          } else if (responseData?.data) {
+            companyData = responseData.data;
+          }
+          
+          // CI 이미지가 있으면 로고 업데이트
+          if (companyData?.ciImage) {
+            const logoUrl = getFileUrl(companyData.ciImage);
+            setCompanyLogoUrl(logoUrl);
+          }
+        } catch (error) {
+          console.error('회사 정보 로드 실패:', error);
+          // 에러 발생 시 기본 로고 유지
+        }
+      } else {
+        // CMS 경로가 아니면 기본 로고
+        setCompanyLogoUrl('/favicon.png');
+      }
+    };
+
+    loadCompanyInfo();
+  }, [location.pathname]); // URL 변경 시마다 실행
+
   const toggleMobileSidebar = (next: boolean) => {
     setIsOpen(next);
     onMobileSidebarOpenChange?.(next);
@@ -56,8 +100,28 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({
     setShowSettingsMenu(!showSettingsMenu);
   };
 
+  const handleLogoError = () => {
+    setCompanyLogoUrl('/favicon.png');
+  };
+
   const handleNavigate = (path: string) => {
-    navigate(path);
+    // 현재 URL에서 companyCode 추출 (cms가 포함된 경우)
+    const currentPath = window.location.pathname;
+    const cmsMatch = currentPath.match(/\/([^\/]+)\/cms/);
+    
+    let finalPath = path;
+    if (cmsMatch) {
+      const companyCode = cmsMatch[1];
+      
+      // 설정 메뉴에 따라 cms 경로로 변경
+      if (path === '/superadmin/company-settings') {
+        finalPath = `/${companyCode}/cms/company-settings`;
+      } else if (path === '/superadmin/aigo-settings') {
+        finalPath = `/${companyCode}/cms/aigo-settings`;
+      }
+    }
+    
+    navigate(finalPath);
     setShowSettingsMenu(false);
   };
 
@@ -72,7 +136,11 @@ const ResponsiveSidebar: React.FC<ResponsiveSidebarProps> = ({
           onFooterClick={onFooterClick}
         >
           <AppBar $sidebarWidth={isCollapsed ? 80 : 250}>
-            <LeftLogo src="/favicon.png" alt="logo" />
+            <LeftLogo 
+              src={companyLogoUrl} 
+              alt="logo" 
+              onError={handleLogoError}
+            />
             <CenterNotice>
               {/* {recentNotices.length > 0 ? recentNotices[0] : '최근 공지가 없습니다.'} */}
             </CenterNotice>
@@ -199,7 +267,13 @@ const AppBar = styled.div<{ $sidebarWidth: number }>`
 
 const LeftLogo = styled.img`
   height: 32px;
+  max-width: 120px;
   object-fit: contain;
+  
+  // 로고 로드 실패 시 기본 이미지 표시
+  &:error {
+    content: url('/favicon.png');
+  }
 `;
 
 const CenterNotice = styled.div`

@@ -112,10 +112,10 @@ const Header = ({ compact, title }: HeaderProps) => {
     e.preventDefault();
     const currentPath = window.location.pathname;
     if (
-      currentPath === '/aiclient/heredot/my-estimate' ||
-      currentPath === '/aiclient/heredot/settings'
+      currentPath === `/aiclient/${companyCode}/my-estimate` ||
+      currentPath === `/aiclient/${companyCode}/settings`
     ) {
-      navigate('/aiclient/heredot', { replace: true });
+      navigate(`/aiclient/${companyCode}`, { replace: true });
     } else {
       window.open('https://aigopartners.com/', '_blank', 'noopener,noreferrer');
     }

@@ -386,10 +386,10 @@ export default function Home() {
     if (window.innerWidth >= 1024) {
       // PC일 경우 /aiclient/:companyCode/ai로 이동하도록 수정
       // navigate(`/aiclient/${companyCode}/ai`);
-      navigate(`/aiclient/heredot/ai`);
+      navigate(`/aiclient/${companyCode}/ai`);
 
     }else{
-      navigate(`/aiclient/heredot/`);
+      navigate(`/aiclient/${companyCode}/`);
 
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });

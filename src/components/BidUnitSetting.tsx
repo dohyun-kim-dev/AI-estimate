@@ -82,7 +82,7 @@ const BidUnitSetting = React.forwardRef<
           unitAmount: firstCheckpoint.discountRate.toString(),
         }]);
         
-        // 동적 설정은 빈 값으로 초기화
+        // 동적 설정은 빈 값으로 초기화 (항상 2개)
         setDynamicData([
           {
             index: 1,
@@ -106,17 +106,8 @@ const BidUnitSetting = React.forwardRef<
           unitAmount: checkpoint.discountRate.toString(),
         }));
         
-        // 마지막에 빈 구간 하나 더 추가 (필요시) - 필요없음 안해도됨
-        // if (dynamicRanges.length > 0) {
-        //   dynamicRanges.push({
-        //     index: dynamicRanges.length + 1,
-        //     minAmount: "",
-        //     maxAmount: "",
-        //     unitAmount: "",
-        //   });
-        // }
-        
-        setDynamicData(dynamicRanges.length > 0 ? dynamicRanges : [
+        // 최소 2개는 보장
+        const finalDynamicRanges = dynamicRanges.length >= 2 ? dynamicRanges : [
           {
             index: 1,
             minAmount: "",
@@ -129,7 +120,9 @@ const BidUnitSetting = React.forwardRef<
             maxAmount: "",
             unitAmount: "",
           },
-        ]);
+        ];
+        
+        setDynamicData(finalDynamicRanges);
         
         // 고정 설정은 빈 값으로 초기화
         setFixedData([{
@@ -164,6 +157,26 @@ const BidUnitSetting = React.forwardRef<
       ]);
     }
   }, [initialCheckpoints, settingType]); // settingType도 의존성에 추가하여 설정 변경 시에도 반응
+
+  // settingType이 변경될 때 동적 설정으로 변경되면 최소 2개 리스트 보장
+  React.useEffect(() => {
+    if (settingType === 'DYNAMIC' && dynamicData.length < 2) {
+      setDynamicData([
+        {
+          index: 1,
+          minAmount: "",
+          maxAmount: "",
+          unitAmount: "",
+        },
+        {
+          index: 2,
+          minAmount: "",
+          maxAmount: "",
+          unitAmount: "",
+        },
+      ]);
+    }
+  }, [settingType]); // settingType 변경 시에만 실행
 
   // checkpointList 생성 및 상위 컴포넌트로 전달
   const generateCheckpointList = React.useCallback((ranges: BidUnitRange[]): Checkpoint[] => {

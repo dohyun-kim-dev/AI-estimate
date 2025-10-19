@@ -862,7 +862,7 @@ useEffect(() => {
 
   // 현재 경로가 /aiclient/heredot/ai가 아니면 상단에 뒤로가기 버튼 노출
   const locationPath = window.location.pathname;
-  const showTopBackButton = !locationPath.includes('/aiclient/heredot/ai');
+  const showTopBackButton = !locationPath.includes(`/aiclient/${companyCode}/ai`);
 
   return (
     <>

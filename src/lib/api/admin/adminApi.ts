@@ -27,6 +27,9 @@ import {
   AISettingsResponse,
 } from './adminApi.types';
 import { devLog } from '@/lib/utils/devLogger';
+import {getCompanyCodeFromUrl} from '@/utils/companyUtils';
+
+const companyCode = getCompanyCodeFromUrl();
 
 // API URL 생성 헬퍼 함수
 const getBaseUrl = () => {
@@ -83,7 +86,7 @@ export async function companyCMSLogin(params: AdminLoginParams) {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'x-company-code': 'heredot',
+        'x-company-code': `${companyCode}`,
       },
       body: JSON.stringify(body),
       credentials: 'include',
@@ -121,7 +124,7 @@ export async function adminLoginWithHeaders(
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'x-company-code': 'heredot',
+        'x-company-code': `${companyCode}`,
       },
       body: JSON.stringify(body),
       credentials: 'include',
@@ -227,8 +230,13 @@ export async function adminUpdate(params: AdminUpdateParams) {
     requestBody.password = params.password;
   }
 
-  // companyCode 필드도 선택적이므로, 존재할 때만 추가
-  if (params.companyCode !== undefined) {
+  // URL에 cms가 포함된 경우(고객사 관리자)에는 companyCode를 요청 바디에서 제외
+  // 브라우저 환경에서만 window 객체 사용
+  const isCompanyCMS = typeof window !== 'undefined' && 
+    window.location.pathname.match(/^\/([^\/]+)\/cms/);
+  
+  // companyCode 필드는 고객사 관리자가 아닐 때만 추가
+  if (!isCompanyCMS && params.companyCode !== undefined) {
     requestBody.companyCode = params.companyCode;
   }
 
@@ -406,6 +414,18 @@ export async function getCompany(companyCode: string) {
     url: `${BASE_URL}/cms/company/${companyCode}`,
     method: 'GET',
     isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// 회사 정보 조회 API (사이트 CMS 경로에서 사용)
+export async function getCompanyInfo() {
+  // CMS 경로에서만 사용하므로 /api/company/info 고정
+  return callAdminApi({
+    title: '회사 정보 조회',
+    url: `/api/company/info`,
+    method: 'GET',
+    isCallPageLoader: false,
     isWithToken: true,
   });
 }
@@ -770,7 +790,12 @@ export async function getEstimateRequestList(
   if (params.toDate) queryParams.append('toDate', params.toDate);
 
   const queryString = queryParams.toString();
-  const url = `${BASE_URL}/cms/company/estimate-requests${queryString ? `?${queryString}` : ''}`;
+  
+  // CMS 경로일 때 /company 중복 방지
+  const endpoint = BASE_URL.includes('/company') 
+    ? `${BASE_URL}/cms/estimate-requests` 
+    : `${BASE_URL}/cms/company/estimate-requests`;
+  const url = `${endpoint}${queryString ? `?${queryString}` : ''}`;
 
   try {
     devLog('🚀 [getEstimateRequestList API 호출]', { params, url });
@@ -803,7 +828,12 @@ export async function getSiteEstimateRequestList(
   if (params.toDate) queryParams.append('toDate', params.toDate);
 
   const queryString = queryParams.toString();
-  const url = `${BASE_URL}/company/cms/estimate-requests${queryString ? `?${queryString}` : ''}`;
+  
+  // CMS 경로일 때 /company 중복 방지
+  const endpoint = BASE_URL.includes('/company') 
+    ? `${BASE_URL}/cms/estimate-requests` 
+    : `${BASE_URL}/cms/company/estimate-requests`;
+  const url = `${endpoint}${queryString ? `?${queryString}` : ''}`;
   
   // 환경에 따른 URL 설정
   let fullUrl = url;
@@ -1023,7 +1053,7 @@ export async function downloadEstimateExcel(estimateId: string) {
 }
 
 // 채팅방 메시지 조회 API
-export async function getChatMessages(chatId: string, companyCode: string = 'heredot') {
+export async function getChatMessages(chatId: string, companyCode: string = '') {
   return callAdminApi({
     title: '채팅 메시지 조회',
     url: `${BASE_URL}/cms/company/chat/${chatId}/messages?companyCode=${companyCode}`,
@@ -1038,9 +1068,14 @@ export async function updateEstimateRequestStatus(estimateRequestId: string, par
   status: 'pending' | 'approved' | 'rejected';
   memo?: string;
 }) {
+  // CMS 경로일 때 /company 중복 방지
+  const endpoint = BASE_URL.includes('/company') 
+    ? `${BASE_URL}/cms/estimate-requests/${estimateRequestId}` 
+    : `${BASE_URL}/cms/company/estimate-requests/${estimateRequestId}`;
+    
   return callAdminApi({
     title: '견적요청 상태 업데이트',
-    url: `${BASE_URL}/cms/company/estimate-requests/${estimateRequestId}`,
+    url: endpoint,
     method: 'PATCH',
     body: params,
     isCallPageLoader: true,

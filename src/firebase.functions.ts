@@ -137,37 +137,38 @@ export async function getMimeType(fileUrl: string): Promise<string | null> {
 export function uploadFiles(files: File[], options: UploadImageOptions) {
   if (!files) return;
 
+  // 🔥 Gemini API가 실제로 지원하는 파일 형식만 포함
+  // 공식 문서: https://ai.google.dev/gemini-api/docs/files
   const allowedMimeTypes = [
     'image/jpeg',
     'image/png',
     'image/gif',
     'image/webp',
     'application/pdf',
-    'application/msword', // .doc
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-    'application/vnd.ms-excel', // .xls
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
     'text/plain', // .txt
-    'application/x-hwp', // .hwp
-    // 필요에 따라 다른 MIME 타입 추가
+    // ❌ Gemini API 미지원 형식 (Firebase Storage 업로드만 가능, AI 전달 불가):
+    // 'application/msword', // .doc
+    // 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+    // 'application/vnd.ms-excel', // .xls
+    // 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+    // 'application/x-hwp', // .hwp
   ];
 
   files.forEach((file) => {
     devLog('Attempting to upload file:', file.name, 'Type:', file.type);
-    // file.type이 비어있는 경우도 고려 (예: 일부 시스템에서 확장자만 있고 MIME 타입이 없는 경우)
-    // 이 경우 파일 확장자로 추가 검사를 할 수도 있지만, 우선은 MIME 타입 기준으로 처리합니다.
+    
     if (file && allowedMimeTypes.includes(file.type)) {
-      devLog('Allowed file type, proceeding with upload:', file.name);
+      devLog('✅ Gemini API 지원 파일 형식, 업로드 진행:', file.name);
       uploadFile(file, options);
     } else {
-      // console.warn(
-      //   'Disallowed file type or no file, skipping upload:',
-      //   file.name,
-      //   'Type:',
-      //   file.type
-      // );
-      // 사용자에게 알림을 줄 수도 있습니다.
-      // 예를 들어 options 객체에 onError 콜백을 추가하여 호출할 수 있습니다.
+      console.warn(
+        '❌ Gemini API 미지원 파일 형식, 업로드 스킵:',
+        file.name,
+        'Type:',
+        file.type,
+        '\n지원 형식: 이미지(jpg, png, gif, webp), PDF, 텍스트 파일만 가능합니다.'
+      );
+      // TODO: 사용자에게 알림 표시 필요
     }
   });
 }

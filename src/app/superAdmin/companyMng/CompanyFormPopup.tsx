@@ -158,9 +158,15 @@ const SaveButton = styled(FooterButton)`
   color: ${AppColors.onPrimary};
   border: 1px solid ${AppColors.border};
 
-  &:hover {
+  &:hover:not(:disabled) {
       border: 1px solid ${AppColors.border};
-
+  }
+  
+  &:disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+    border: 1px solid #cccccc;
   }
 `;
 
@@ -314,6 +320,7 @@ interface CompanyFormPopupProps {
       licence?: string;
       contractStartDate?: string;
       contractEndDate?: string;
+      homepage?: string;
     };
   };
   onFormChange: {
@@ -496,6 +503,81 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
   const isEditMode = !!selectedCustomer;
   const popupTitle = isEditMode ? "고객사 수정" : "고객사 등록";
 
+  // 로딩 상태
+  const [isSaving, setIsSaving] = React.useState(false);
+
+  // 저장 핸들러 (벨리데이션 포함)
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(); // 부모 컴포넌트의 저장 로직 실행
+    } catch (error) {
+      console.error('저장 실패:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // 입력 포맷팅 함수들
+  const formatBusinessNumber = (value: string) => {
+    // 숫자만 추출
+    const numbers = value.replace(/[^0-9]/g, '');
+    
+    // 10자리까지만 허용
+    if (numbers.length > 10) return businessNumber;
+    
+    // 000-00-00000 형식으로 포맷팅
+    if (numbers.length >= 6) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 5)}-${numbers.slice(5)}`;
+    } else if (numbers.length >= 4) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    } else {
+      return numbers;
+    }
+  };
+
+  const formatPhoneNumber = (value: string) => {
+    // 숫자만 추출
+    const numbers = value.replace(/[^0-9]/g, '');
+    
+    // 11자리까지만 허용
+    if (numbers.length > 11) return cellphone;
+    
+    // 전화번호 포맷팅
+    if (numbers.startsWith('02')) {
+      // 서울 지역번호 (02-XXXX-XXXX)
+      if (numbers.length >= 7) {
+        return `${numbers.slice(0, 2)}-${numbers.slice(2, 6)}-${numbers.slice(6)}`;
+      } else if (numbers.length >= 3) {
+        return `${numbers.slice(0, 2)}-${numbers.slice(2)}`;
+      }
+    } else if (numbers.startsWith('01')) {
+      // 휴대폰 번호 (010-XXXX-XXXX)
+      if (numbers.length >= 8) {
+        return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
+      } else if (numbers.length >= 4) {
+        return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+      }
+    } else if (numbers.length >= 7) {
+      // 기타 지역번호 (XXX-XXXX-XXXX)
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
+    } else if (numbers.length >= 4) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    }
+    
+    return numbers;
+  };
+
+  const handleBusinessNumberChange = (value: string) => {
+    const formatted = formatBusinessNumber(value);
+    if (setBusinessNumber) setBusinessNumber(formatted);
+  };
+
+  const handlePhoneNumberChange = (value: string) => {
+    const formatted = formatPhoneNumber(value);
+    if (setCellphone) setCellphone(formatted);
+  };
+
   // 파일 업로드 핸들러
   const handleCiImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -644,6 +726,11 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
       }
       if (selectedCustomer.contractEndDate) {
         setInternalEndDate(dayjs(selectedCustomer.contractEndDate).format('YYYY-MM-DD'));
+      }
+      
+      // 홈페이지 정보 설정
+      if (onFormChange?.setHomepage && selectedCustomer.homepage) {
+        onFormChange.setHomepage(selectedCustomer.homepage);
       }
       
     } else {
@@ -932,7 +1019,12 @@ const RemoveImageButton = styled.button`
         <PopupFooter>
           <div />
           <div style={{ display: 'flex', gap: '12px' }}>
-            <SaveButton onClick={onSave}>저장</SaveButton>
+            <SaveButton 
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? '저장 중...' : '저장'}
+            </SaveButton>
             <CancelButton onClick={() => {
               setCategoryModalOpen(false);
               onClose();
@@ -1051,20 +1143,20 @@ const RemoveImageButton = styled.button`
         {/* 고객사 기본 정보 */}
         <SectionTitle>고객사 기본 정보</SectionTitle>
         <CommonTextField
-          id="name"
-          value={name || ''}
-          label="* 고객사명(KR)"
-          onChange={(e) => setName && setName(e.target.value)}
-          placeholder="고객사명을 입력하세요"
-          errorMessage={errors?.name}
-        />
-        <CommonTextField
           id="companyName"
           value={companyName || ''}
-          label="* 고객사명(EN)"
+          label="* 고객사명(KR)"
           onChange={(e) => setCompanyName && setCompanyName(e.target.value)}
-          placeholder="고객사명(영문)을 입력하세요"
+          placeholder="고객사명을 입력하세요"
           errorMessage={errors?.companyName}
+        />
+        <CommonTextField
+          id="ceoName"
+          value={ceoName || ''}
+          label="* 고객사명(EN)"
+          onChange={(e) => setCeoName && setCeoName(e.target.value)}
+          placeholder="고객사명(영문)을 입력하세요"
+          errorMessage={errors?.ceoName}
         />
         <CommonTextField
           id="code"
@@ -1095,8 +1187,8 @@ const RemoveImageButton = styled.button`
           id="businessNumber"
           value={businessNumber || ''}
           label="* 사업자번호"
-          onChange={(e) => setBusinessNumber && setBusinessNumber(e.target.value)}
-          placeholder="사업자번호를 입력하세요"
+          onChange={(e) => handleBusinessNumberChange(e.target.value)}
+          placeholder="사업자번호를 입력하세요 (예: 123-45-67890)"
           errorMessage={errors?.businessNumber}
         />
         <CommonTextField
@@ -1104,7 +1196,8 @@ const RemoveImageButton = styled.button`
           value={homepage || ''}
           label="홈페이지"
           onChange={(e) => onFormChange?.setHomepage && onFormChange.setHomepage(e.target.value)}
-          placeholder="홈페이지 URL을 입력하세요"
+          placeholder="홈페이지 URL을 입력하세요 (예: www.example.com)"
+          errorMessage={errors?.homepage}
         />
 
         {/* 고객사 주소 */}
@@ -1135,18 +1228,18 @@ const RemoveImageButton = styled.button`
         <SectionTitle>고객사 대표 정보</SectionTitle>
         <CommonTextField
           id="representativeName"
-          value={ceoName || ''}
+          value={name || ''}
           label="* 고객사 대표명"
-          onChange={(e) => setCeoName && setCeoName(e.target.value)}
+          onChange={(e) => setName && setName(e.target.value)}
           placeholder="대표명을 입력하세요"
-          errorMessage={errors?.ceoName}
+          errorMessage={errors?.name}
         />
         <CommonTextField
           id="representativePhone"
           value={cellphone || ''}
           label="* 대표 전화번호"
-          onChange={(e) => setCellphone && setCellphone(e.target.value)}
-          placeholder="전화번호를 입력하세요"
+          onChange={(e) => handlePhoneNumberChange(e.target.value)}
+          placeholder="전화번호를 입력하세요 (예: 010-1234-5678)"
           errorMessage={errors?.cellphone}
         />
         <CommonTextField

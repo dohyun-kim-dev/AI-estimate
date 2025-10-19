@@ -12,11 +12,12 @@ import { THEME_COLORS } from '@/styles/theme_colors';
 import { AppColors } from '@/styles/colors';
 import { toast, ToastContainer } from 'react-toastify';
 import { devLog } from '@/lib/utils/devLogger';
+import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
 import CmsPopup from '@/components/CmsPopup';
 import CmsResponsiveContainer from '@/components/CustomList/ResponsiveList/CmsResponsiveContainer';
 import SimpleGenericList from '@/components/CustomList/SimpleGenericList';
 import ChatHistoryModal from '@/components/ChatHistoryModal';
-import { getChatRoomList } from '@/lib/api/admin/adminApi';
+import { getChatRoomList, getCompanyInfo, getCompany } from '@/lib/api/admin/adminApi';
 
 // 아이콘 컴포넌트들
 const PersonIcon = () => (
@@ -266,8 +267,63 @@ const AiChatHistoryPage: React.FC = () => {
   const [isChatHistoryModalOpen, setIsChatHistoryModalOpen] = useState(false); // 채팅 이력 모달 상태
   const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('');
   const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
+  const [aiProfile, setAiProfile] = useState<string>('');
+  const [aiName, setAiName] = useState<string>('');
 
   const listRef = useRef<{ refetch: () => void }>(null);
+
+  // AI 프로필 정보 로드 함수
+  const loadAIProfileInfo = async (companyCode: string) => {
+    try {
+      const currentPath = window.location.pathname;
+      let response;
+      
+      // URL에 /cms/가 포함되면 getCompanyInfo 호출
+      if (currentPath.includes('/cms/')) {
+        devLog('🔍 [getCompanyInfo 호출] - CMS 경로');
+        response = await getCompanyInfo();
+      } else {
+        // 슈퍼어드민 경로면 getCompany 호출
+        devLog('🔍 [getCompany 호출] - 슈퍼어드민 경로, companyCode:', companyCode);
+        response = await getCompany(companyCode);
+      }
+      
+      devLog('✅ [AI 프로필 정보 응답]:', response);
+      
+      // callAdminApi는 응답을 배열로 감싸서 반환
+      const actualResponse = Array.isArray(response) ? response[0] : response;
+      const apiData = (actualResponse as any)?.data;
+      
+      if (apiData && apiData.statusCode === 200) {
+        const companyData = apiData.data;
+        setAiProfile(companyData.aiProfile || '');
+        setAiName(companyData.aiName || '');
+        devLog('✅ [AI 프로필 설정 완료]:', { aiProfile: companyData.aiProfile, aiName: companyData.aiName });
+      }
+    } catch (error) {
+      console.error('❌ [AI 프로필 정보 로드 실패]:', error);
+    }
+  };
+
+  // URL에서 회사 코드 추출하여 초기화
+  React.useEffect(() => {
+    const currentPath = window.location.pathname;
+    
+    // URL에서 /cms/가 포함되면 회사 코드 자동 추출
+    if (currentPath.includes('/cms/')) {
+      const extractedCompanyCode = getCompanyCodeFromUrl();
+      if (extractedCompanyCode && extractedCompanyCode !== 'aigo') {
+        setSelectedCompanyCode(extractedCompanyCode);
+        setSelectedCompanyName(extractedCompanyCode.toUpperCase());
+        devLog('🏢 [대화 이력 관리] URL에서 회사 코드 자동 추출:', {
+          path: currentPath,
+          companyCode: extractedCompanyCode
+        });
+        // AI 프로필 정보 로드
+        loadAIProfileInfo(extractedCompanyCode);
+      }
+    }
+  }, []);
 dayjs.locale('ko'); 
 
   const handleRowClick = (item: ChatHistory) => {
@@ -295,6 +351,9 @@ dayjs.locale('ko');
     // 상태 업데이트
     setSelectedCompanyCode(company.id);
     setSelectedCompanyName(company.name);
+    
+    // AI 프로필 정보 로드
+    loadAIProfileInfo(company.id);
   }, []);
 
   // selectedCompanyCode 변경 시 refetch 실행
@@ -428,16 +487,32 @@ dayjs.locale('ko');
   // 실제 API 호출로 채팅방 목록 가져오기
   const fetchData = useCallback(
     async (params: FetchParams): Promise<FetchResult<ChatHistory>> => {
-
-          if (!selectedCompanyCode) {
-            devLog('No company selected, returning empty data');
-            return {
-              data: [],
-              totalItems: 0,
-              allItems: 0,
-            };
-          }
       try {
+        // URL에서 회사 코드 실시간 추출
+        const currentPath = window.location.pathname;
+        let companyCodeToUse = selectedCompanyCode;
+        
+        // URL에 /cms/가 포함되면 자동으로 회사 코드 추출
+        if (currentPath.includes('/cms/')) {
+          const extractedCompanyCode = getCompanyCodeFromUrl();
+          if (extractedCompanyCode && extractedCompanyCode !== 'aigo') {
+            companyCodeToUse = extractedCompanyCode;
+            devLog('🔄 [대화 이력 API] URL에서 회사 코드 추출:', {
+              path: currentPath,
+              companyCode: extractedCompanyCode
+            });
+          }
+        }
+
+        if (!companyCodeToUse) {
+          devLog('No company code available, returning empty data');
+          return {
+            data: [],
+            totalItems: 0,
+            allItems: 0,
+          };
+        }
+        
         // 키워드가 전달되면 현재 키워드 업데이트 (빈 문자열 포함)
         let searchKeyword = '';
         if (params.keyword !== undefined) {
@@ -450,14 +525,14 @@ dayjs.locale('ko');
         const fromDate = params.fromDate || dateRange?.fromDate || dayjs().subtract(3, 'month').format('YYYY-MM-DD');
         const toDate = params.toDate || dateRange?.toDate || dayjs().format('YYYY-MM-DD');
         
-        devLog('🔍 [fetchData 호출]', { searchKeyword, fromDate, toDate, selectedCompanyCode });
+        devLog('🔍 [fetchData 호출]', { searchKeyword, fromDate, toDate, companyCodeToUse });
         
         // API 호출
         const response = await getChatRoomList({
           keyword: searchKeyword,
           fromDate: fromDate,
           toDate: toDate,
-          companyCode: selectedCompanyCode || '',
+          companyCode: companyCodeToUse,
         });
         
         devLog('✅ [fetchData 응답 받음]', response);
@@ -629,6 +704,9 @@ dayjs.locale('ko');
         chatSessionId={selectedChat?.chatSessionId || ''}
         userName={selectedChat?.name}
         chatTitle={selectedChat?.title}
+        aiProfile={aiProfile}
+        companyCode={selectedCompanyCode}
+        aiName={aiName}
       />
     </>
   );

@@ -91,6 +91,7 @@ export interface CompanyInfoResponse {
   aiProfile: string;
   businessCategory: string;
   businessType: string;
+  businessNumber: string;
   etc: string[];
   signature: string;
 }

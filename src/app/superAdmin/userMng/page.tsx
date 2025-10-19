@@ -437,7 +437,18 @@ const UserMngPage: React.FC = () => {
 
   const handleRowClick = async (item: User) => {
     try {
-      // 회원 상세 정보 조회
+      // URL에 cms가 포함된 경우 상세 조회 API 호출하지 않고 기본 데이터 사용
+      const isCompanyCMS = typeof window !== 'undefined' && 
+        window.location.pathname.includes('/cms');
+      
+      if (isCompanyCMS) {
+        // cms URL인 경우 리스트 데이터만 사용
+        resetForm(item);
+        setIsPopupOpen(true);
+        return;
+      }
+      
+      // 통합관리자인 경우만 상세 조회 API 호출
       const response = await getUserDetail(item._id);
       
       devLog('회원 상세 정보 조회 응답:', response);
@@ -494,6 +505,10 @@ const UserMngPage: React.FC = () => {
     
     // 수정 모드인지 확인 (selectedUser가 있으면 수정, 없으면 신규 등록)
     const isEditMode = selectedUser && selectedUser._id;
+    
+    // URL에 cms가 포함되었는지 확인
+    const isCompanyCMS = typeof window !== 'undefined' && 
+      window.location.pathname.includes('/cms');
 
     // 신규 등록시에만 아이디와 비밀번호 검증
     if (!isEditMode) {
@@ -515,16 +530,18 @@ const UserMngPage: React.FC = () => {
       } else setNameError(null);
     }
 
-    // 이메일과 전화번호는 수정 모드에서도 검증
-    if (!Validators.email(email)) {
-      setEmailError('올바른 이메일 형식이 아닙니다.');
-      valid = false;
-    } else setEmailError(null);
+    // 이메일과 전화번호는 cms URL이 아닌 경우에만 검증
+    if (!isCompanyCMS) {
+      if (!Validators.email(email)) {
+        setEmailError('올바른 이메일 형식이 아닙니다.');
+        valid = false;
+      } else setEmailError(null);
 
-    if (!Validators.phone(cellphone)) {
-      setCellphoneError('연락처는 숫자 11자리여야 합니다.');
-      valid = false;
-    } else setCellphoneError(null);
+      if (!Validators.phone(cellphone)) {
+        setCellphoneError('연락처는 숫자 11자리여야 합니다.');
+        valid = false;
+      } else setCellphoneError(null);
+    }
 
     if (!valid) return;
 
@@ -534,13 +551,23 @@ const UserMngPage: React.FC = () => {
       if (isEditMode) {
         // 회원 정보 수정
         const apiCompanyCode = isRoot ? selectedCompanyCode : urlCompanyCode;
-        response = await updateUser({
-          id: selectedUser._id!,
-          cellphone: cellphone,
-          email: email,
-          memo: description,
-          companyCode: apiCompanyCode || '', // 권한에 따른 companyCode 사용
-        });
+        
+        // cms URL인 경우 memo만 포함하는 요청 바디
+        const updateParams = isCompanyCMS 
+          ? {
+              id: selectedUser._id!,
+              memo: description,
+              companyCode: apiCompanyCode || '',
+            }
+          : {
+              id: selectedUser._id!,
+              cellphone: cellphone,
+              email: email,
+              memo: description,
+              companyCode: apiCompanyCode || '',
+            };
+        
+        response = await updateUser(updateParams);
         
         devLog('회원 정보 수정 응답', response);
         
@@ -734,12 +761,12 @@ const UserMngPage: React.FC = () => {
         allowWrap: true,
         formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd) HH:mm') : '-'),
       },
-      {
-        header: '고객사명',
-        accessor: 'usingService',
-        flex: 1,
-        formatter: (value) => (Array.isArray(value) && value.length > 0 ? value.join(', ') : '-'),
-      },
+      // {
+      //   header: '고객사명',
+      //   accessor: 'usingService',
+      //   flex: 1,
+      //   formatter: (value) => (Array.isArray(value) && value.length > 0 ? value.join(', ') : '-'),
+      // },
       {
         header: '프로필',
         accessor: 'profileImage',
@@ -845,145 +872,188 @@ const UserMngPage: React.FC = () => {
       }
     >
       <FormContainer>
-        {/* 사용자 정보 섹션 */}
-        <Title>회원 정보</Title>
-        
-        <UserInfoSection>
-          <ProfileImage src={selectedUser?.profileImage || "/ai-estimate/no_profile.png"} alt="Profile" />
-          <UserDetails>
-            <DetailItem>
-              <DetailIcon><PersonIcon /></DetailIcon>
-              <NameText>{selectedUser?.name || '-'}</NameText>
-            </DetailItem>
-            <DetailItem>
-              <DetailIcon><svg xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 14 11" fill="none">
-  <path fill-rule="evenodd" clip-rule="evenodd" d="M0.332031 0.166992V10.8337H13.6653V0.166992H0.332031ZM6.21744 8.16699V2.63184H7.74869C8.39973 2.63184 8.92056 2.69434 9.31119 2.81934C9.8216 2.9834 10.2122 3.28809 10.4831 3.7334C10.7539 4.17611 10.8893 4.7321 10.8893 5.40137C10.8893 6.08887 10.7539 6.65006 10.4831 7.08496C10.1445 7.63444 9.62108 7.96777 8.91275 8.08496C8.58723 8.13965 8.17056 8.16699 7.66275 8.16699H6.21744ZM7.46353 7.19043H7.70181C8.26952 7.19043 8.69009 7.09798 8.96353 6.91309C9.20311 6.75423 9.37629 6.50814 9.48306 6.1748C9.56119 5.92743 9.60025 5.66441 9.60025 5.38574C9.60025 5.08628 9.55468 4.80894 9.46353 4.55371C9.37239 4.29852 9.24739 4.0993 9.08853 3.95605C8.93749 3.82064 8.76561 3.72949 8.57291 3.68262C8.3802 3.63314 8.08983 3.6084 7.70181 3.6084H7.46353V7.19043ZM3.65494 2.63184V8.16699H4.90103V2.63184H3.65494Z" fill="#AAAAAA"/>
-</svg></DetailIcon>
-              <span>ID: {selectedUser?._id || '-'}</span>
-            </DetailItem>
-            <DetailItem>
-              <DetailIcon><PhoneIcon /></DetailIcon>
-              <span>{selectedUser?.cellphone || '-'}</span>
-            </DetailItem>
-            <DetailItem>
-              <DetailIcon><EmailIcon /></DetailIcon>
-              <span>{selectedUser?.email || '-'}</span>
-            </DetailItem>
-            {selectedUser?.usingService && selectedUser.usingService.length > 0 && (
-              <DetailItem>
-                <DetailIcon><i className="fas fa-building"></i></DetailIcon>
-                {/* <span>사용 서비스: {selectedUser.usingService.join(', ')}</span> */}
-              </DetailItem>
-            )}
-          </UserDetails>
-        </UserInfoSection>
-
-        <Title>{selectedUser?._id ? "정보 수정" : "회원 등록"}</Title>
-
-        <FormSection>
-          {/* 신규 등록시에만 표시되는 필드들 */}
-          {!selectedUser?._id && (
+        {/* URL에 cms가 포함되었는지 확인 */}
+        {(() => {
+          const isCompanyCMS = typeof window !== 'undefined' && 
+            window.location.pathname.includes('/cms');
+          
+          return (
             <>
-              <CommonTextField
-                id="userId"
-                value={userId}
-                label="* 아이디"
-                onChange={(e) => setUserId(e.target.value)}
-                placeholder="영문자와 숫자를 포함한 6~20자"
-                errorMessage={idError ?? undefined}
-              />
-              <CommonTextField
-                id="password"
-                value={password}
-                label="* 비밀번호"
-                type="password"
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="영문, 숫자, 특수문자를 포함해 8자 이상"
-                errorMessage={pwdError ?? undefined}
-              />
-              <CommonTextField
-                id="name"
-                value={name}
-                label="* 이름"
-                onChange={(e) => setName(e.target.value)}
-                placeholder="이름을 입력하세요"
-                errorMessage={nameError ?? undefined}
-              />
-            </>
-          )}
-          
-          {/* 공통 필드들 */}
-          <CommonTextField
-            id="email"
-            value={email}
-            label="* 이메일"
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="이메일 형식으로 입력하세요"
-            errorMessage={emailError ?? undefined}
-          />
-          <CommonTextField
-            id="cellphone"
-            value={cellphone}
-            label="* 전화번호"
-            onChange={(e) => {
-              const input = e.target.value;
-              if (/^\d*$/.test(input) && input.length <= 11) {
-                setCellphone(input);
-              }
-            }}
-            placeholder="- 제외하고 입력하세요"
-            errorMessage={cellphoneError ?? undefined}
-          />
-          
-          {/* 가입이력 섹션 - 수정 모드일 때만 표시 */}
-          {selectedUser?._id && (
-            <JoinHistorySection>
-              <JoinHistoryHeader onClick={toggleJoinHistory}>
-                <JoinHistoryTitle>가입이력</JoinHistoryTitle>
-                <JoinHistoryIcon $isExpanded={isJoinHistoryExpanded}>
-                  <ArrowIcon />
-                </JoinHistoryIcon>
-              </JoinHistoryHeader>
+              {/* 사용자 정보 섹션 */}
+              <Title>회원 정보</Title>
               
-              <JoinHistoryContent $isExpanded={isJoinHistoryExpanded}>
-                {joinHistory.map((history, index) => (
-                  <JoinHistoryItem key={index}>
-                    <JoinHistoryItemHeader>
-                      <JoinHistoryCompany>{history.companyName}</JoinHistoryCompany>
-                      <JoinHistoryDate>
-                        {dayjs(history.joinDate).format('YY.MM.DD(ddd) HH:mm')} 가입 완료
-                      </JoinHistoryDate>
-                    </JoinHistoryItemHeader>
-                    <JoinHistoryMemoSection $isExpanded={expandedHistoryItems[index] || false}>
-                      <JoinHistoryMemo>                      <JoinHistoryLabel>비고</JoinHistoryLabel>
-{history.memo}</JoinHistoryMemo>
-                    </JoinHistoryMemoSection>
-                    <JoinHistoryToggleButton 
-                      $isExpanded={expandedHistoryItems[index] || false}
-                      onClick={() => toggleHistoryItemMemo(index)}
-                    >
-                      <span>{expandedHistoryItems[index] ? '접기' : '더보기'}</span>
-                      <ArrowIcon />
-                    </JoinHistoryToggleButton>
-                    
-                    
-                  </JoinHistoryItem>
-                ))}
-              </JoinHistoryContent>
-            </JoinHistorySection>
-          )}
+              <UserInfoSection>
+                <ProfileImage src={selectedUser?.profileImage || "/ai-estimate/no_profile.png"} alt="Profile" />
+                <UserDetails>
+                  <DetailItem>
+                    <DetailIcon><PersonIcon /></DetailIcon>
+                    <NameText>{selectedUser?.name || '-'}</NameText>
+                  </DetailItem>
+                  <DetailItem>
+                    <DetailIcon><svg xmlns="http://www.w3.org/2000/svg" width="20" height="18" viewBox="0 0 14 11" fill="none">
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M0.332031 0.166992V10.8337H13.6653V0.166992H0.332031ZM6.21744 8.16699V2.63184H7.74869C8.39973 2.63184 8.92056 2.69434 9.31119 2.81934C9.8216 2.9834 10.2122 3.28809 10.4831 3.7334C10.7539 4.17611 10.8893 4.7321 10.8893 5.40137C10.8893 6.08887 10.7539 6.65006 10.4831 7.08496C10.1445 7.63444 9.62108 7.96777 8.91275 8.08496C8.58723 8.13965 8.17056 8.16699 7.66275 8.16699H6.21744ZM7.46353 7.19043H7.70181C8.26952 7.19043 8.69009 7.09798 8.96353 6.91309C9.20311 6.75423 9.37629 6.50814 9.48306 6.1748C9.56119 5.92743 9.60025 5.66441 9.60025 5.38574C9.60025 5.08628 9.55468 4.80894 9.46353 4.55371C9.37239 4.29852 9.24739 4.0993 9.08853 3.95605C8.93749 3.82064 8.76561 3.72949 8.57291 3.68262C8.3802 3.63314 8.08983 3.6084 7.70181 3.6084H7.46353V7.19043ZM3.65494 2.63184V8.16699H4.90103V2.63184H3.65494Z" fill="#AAAAAA"/>
+      </svg></DetailIcon>
+                    <span>ID: {selectedUser?._id || '-'}</span>
+                  </DetailItem>
+                  <DetailItem>
+                    <DetailIcon><PhoneIcon /></DetailIcon>
+                    <span>{selectedUser?.cellphone || '-'}</span>
+                  </DetailItem>
+                  <DetailItem>
+                    <DetailIcon><EmailIcon /></DetailIcon>
+                    <span>{selectedUser?.email || '-'}</span>
+                  </DetailItem>
+                  {selectedUser?.usingService && selectedUser.usingService.length > 0 && (
+                    <DetailItem>
+                      <DetailIcon><i className="fas fa-building"></i></DetailIcon>
+                      {/* <span>사용 서비스: {selectedUser.usingService.join(', ')}</span> */}
+                    </DetailItem>
+                  )}
+                </UserDetails>
+              </UserInfoSection>
 
-          <Title>비고</Title>
-          
-          <TextArea
-            id="description"
-            value={description}
-            label="비고"
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="비고를 입력하세요"
-            height="200px"
-          />
-        </FormSection>
+              {/* "정보 수정" 헤더는 cms URL이 아닌 경우에만 표시 */}
+              {!isCompanyCMS && <Title>{selectedUser?._id ? "정보 수정" : "회원 등록"}</Title>}
+
+              <FormSection>
+                {/* 신규 등록시에만 표시되는 필드들 */}
+                {!selectedUser?._id && (
+                  <>
+                    <CommonTextField
+                      id="userId"
+                      value={userId}
+                      label="* 아이디"
+                      onChange={(e) => setUserId(e.target.value)}
+                      placeholder="영문자와 숫자를 포함한 6~20자"
+                      errorMessage={idError ?? undefined}
+                    />
+                    <CommonTextField
+                      id="password"
+                      value={password}
+                      label="* 비밀번호"
+                      type="password"
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="영문, 숫자, 특수문자를 포함해 8자 이상"
+                      errorMessage={pwdError ?? undefined}
+                    />
+                    <CommonTextField
+                      id="name"
+                      value={name}
+                      label="* 이름"
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="이름을 입력하세요"
+                      errorMessage={nameError ?? undefined}
+                    />
+                  </>
+                )}
+                
+                {/* 이메일/전화번호 입력란은 cms URL이 아닌 경우에만 표시 */}
+                {!isCompanyCMS && (
+                  <>
+                    <CommonTextField
+                      id="email"
+                      value={email}
+                      label="* 이메일"
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="이메일 형식으로 입력하세요"
+                      errorMessage={emailError ?? undefined}
+                    />
+                    <CommonTextField
+                      id="cellphone"
+                      value={cellphone}
+                      label="* 전화번호"
+                      onChange={(e) => {
+                        const input = e.target.value;
+                        if (/^\d*$/.test(input) && input.length <= 11) {
+                          setCellphone(input);
+                        }
+                      }}
+                      placeholder="- 제외하고 입력하세요"
+                      errorMessage={cellphoneError ?? undefined}
+                    />
+                  </>
+                )}
+                
+                {/* 가입이력 섹션 - 수정 모드이고 cms URL이 아닌 경우에만 표시 */}
+                {selectedUser?._id && !isCompanyCMS && (
+                  <JoinHistorySection>
+                    <JoinHistoryHeader onClick={toggleJoinHistory}>
+                      <JoinHistoryTitle>가입이력</JoinHistoryTitle>
+                      <JoinHistoryIcon $isExpanded={isJoinHistoryExpanded}>
+                        <ArrowIcon />
+                      </JoinHistoryIcon>
+                    </JoinHistoryHeader>
+                    
+                    <JoinHistoryContent $isExpanded={isJoinHistoryExpanded}>
+                      {joinHistory.length === 0 ? (
+                        <div style={{ 
+                          padding: '40px 20px', 
+                          textAlign: 'center', 
+                          color: '#999', 
+                          fontSize: '14px',
+                          backgroundColor: '#f8f9fa',
+                          borderRadius: '8px',
+                          border: '1px solid #e9ecef'
+                        }}>
+                          <svg 
+                            style={{ marginBottom: '12px' }} 
+                            width="48" 
+                            height="48" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path 
+                              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" 
+                              fill="#ccc"
+                            />
+                          </svg>
+                          <div style={{ fontWeight: '500', marginBottom: '4px' }}>가입이력이 없습니다</div>
+                          <div style={{ fontSize: '12px' }}>아직 등록된 가입이력 정보가 없습니다.</div>
+                        </div>
+                      ) : (
+                        joinHistory.map((history, index) => (
+                          <JoinHistoryItem key={index}>
+                            <JoinHistoryItemHeader>
+                              <JoinHistoryCompany>{history.companyName}</JoinHistoryCompany>
+                              <JoinHistoryDate>
+                                {dayjs(history.joinDate).format('YY.MM.DD(ddd) HH:mm')} 가입 완료
+                              </JoinHistoryDate>
+                            </JoinHistoryItemHeader>
+                            <JoinHistoryMemoSection $isExpanded={expandedHistoryItems[index] || false}>
+                              <JoinHistoryMemo>
+                                <JoinHistoryLabel>비고</JoinHistoryLabel>
+                                {history.memo}
+                              </JoinHistoryMemo>
+                            </JoinHistoryMemoSection>
+                            <JoinHistoryToggleButton 
+                              $isExpanded={expandedHistoryItems[index] || false}
+                              onClick={() => toggleHistoryItemMemo(index)}
+                            >
+                              <span>{expandedHistoryItems[index] ? '접기' : '더보기'}</span>
+                              <ArrowIcon />
+                            </JoinHistoryToggleButton>
+                          </JoinHistoryItem>
+                        ))
+                      )}
+                    </JoinHistoryContent>
+                  </JoinHistorySection>
+                )}
+
+                <Title>비고</Title>
+                
+                <TextArea
+                  id="description"
+                  value={description}
+                  label="비고"
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="비고를 입력하세요"
+                  height="200px"
+                />
+              </FormSection>
+            </>
+          );
+        })()}
       </FormContainer>
     </CmsPopup>
     </>

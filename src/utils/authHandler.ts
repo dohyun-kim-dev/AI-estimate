@@ -39,7 +39,7 @@ export function handleAuthError(statusCode: number, errorMessage?: string): bool
 }
 
 function resolveCompanyCode(): string {
-  let companyCode = 'heredot';
+  let companyCode = '';
   try {
     const parts = window.location.pathname.split('/');
     const idx = parts.indexOf('aiclient') + 1;

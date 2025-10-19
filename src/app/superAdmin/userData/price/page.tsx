@@ -19,6 +19,7 @@ import { getAllUnitPrices, uploadUnitPrices, deleteAllUnitPrices, deleteUnitPric
 import { useToast } from '@/components/common/ToastProvider';
 import { priceApiResponseToMarkdownTable } from '../../../../ai/prompts/priceDataToJson';
 import { devLog } from '@/utils/devLogger';
+import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
 
@@ -435,6 +436,24 @@ const PriceListPage: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>(''); // 초기값 빈 문자열
   const [selectedCompanyName, setSelectedCompanyName] = useState<string>(''); // 선택된 고객사명 추가
+
+  // URL에서 회사 코드 추출하여 초기화
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    
+    // URL에서 /cms/가 포함되면 회사 코드 자동 추출
+    if (currentPath.includes('/cms/')) {
+      const extractedCompanyCode = getCompanyCodeFromUrl();
+      if (extractedCompanyCode && extractedCompanyCode !== 'aigo') {
+        setSelectedCompanyCode(extractedCompanyCode);
+        setSelectedCompanyName(extractedCompanyCode.toUpperCase());
+        devLog('🏢 [단가표 관리] URL에서 회사 코드 자동 추출:', {
+          path: currentPath,
+          companyCode: extractedCompanyCode
+        });
+      }
+    }
+  }, []);
   const [dynamicColumns, setDynamicColumns] = useState<ColumnDefinition<any>[]>([]);
   const [currentTableData, setCurrentTableData] = useState<any[]>([]); // 현재 테이블 데이터 저장
   const [currentColumnsInfo, setCurrentColumnsInfo] = useState<any[]>([]); // 현재 컬럼 정보 저장
@@ -595,8 +614,24 @@ const PriceListPage: React.FC = () => {
       toDate: params.toDate,
     });
     
-    if (!selectedCompanyCode) {
-      devLog('No company selected, returning empty data');
+    // URL에서 회사 코드 실시간 추출
+    const currentPath = window.location.pathname;
+    let companyCodeToUse = selectedCompanyCode;
+    
+    // URL에 /cms/가 포함되면 자동으로 회사 코드 추출
+    if (currentPath.includes('/cms/')) {
+      const extractedCompanyCode = getCompanyCodeFromUrl();
+      if (extractedCompanyCode && extractedCompanyCode !== 'aigo') {
+        companyCodeToUse = extractedCompanyCode;
+        devLog('🔄 [단가표 API] URL에서 회사 코드 추출:', {
+          path: currentPath,
+          companyCode: extractedCompanyCode
+        });
+      }
+    }
+    
+    if (!companyCodeToUse) {
+      devLog('No company code available, returning empty data');
       return {
         data: [],
         totalItems: 0,
@@ -613,7 +648,7 @@ const PriceListPage: React.FC = () => {
       });
       
       const response = await getAllUnitPrices({
-        companyCode: selectedCompanyCode,
+        companyCode: companyCodeToUse,
         keyword: params.keyword,
         fromDate: params.fromDate,
         toDate: params.toDate,

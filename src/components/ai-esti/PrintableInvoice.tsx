@@ -6,6 +6,39 @@ import { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import { calculateEstimatedPeriod } from '@/utils/estimateCalculator';
 import { devLog } from '@/utils/devLogger'
 
+// 사업자번호 포맷팅 함수 (000-00-00000)
+const formatBusinessNumber = (businessNumber: string) => {
+  if (!businessNumber) return '';
+  
+  // 모든 '-' 제거하고 숫자만 추출
+  const numbers = businessNumber.replace(/[^0-9]/g, '');
+  
+  // 10자리가 아니면 원본 반환
+  if (numbers.length !== 10) return businessNumber;
+  
+  // 000-00-00000 형식으로 포맷팅
+  return `${numbers.substring(0, 3)}-${numbers.substring(3, 5)}-${numbers.substring(5, 10)}`;
+};
+
+// 셀폰 번호 포맷팅 함수 (010-0000-0000 또는 01-0000-0000)
+const formatCellphone = (cellphone: string) => {
+  if (!cellphone) return '';
+  
+  // 모든 '-' 제거하고 숫자만 추출
+  const numbers = cellphone.replace(/[^0-9]/g, '');
+  
+  if (numbers.length === 11) {
+    // 11자리: 010-0000-0000
+    return `${numbers.substring(0, 3)}-${numbers.substring(3, 7)}-${numbers.substring(7, 11)}`;
+  } else if (numbers.length === 10) {
+    // 10자리: 02-0000-0000
+    return `${numbers.substring(0, 2)}-${numbers.substring(2, 6)}-${numbers.substring(6, 10)}`;
+  }
+  
+  // 다른 길이면 원본 반환
+  return cellphone;
+};
+
 const PrintableInvoiceWrapper = styled.div`
   width: 780px;
   padding: 40px;
@@ -34,6 +67,21 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
   const currentDate = formatDate(new Date());
   const user = useAuthStore((state) => state.user);
   const { companyInfo } = useCompanyStore(); // 회사정보에서 etc 배열 가져오기
+
+  // companyStore에서 동적 회사 정보 가져오기
+  const companyName = companyInfo?.name || '주식회사 여기닷';
+  const representativeName = companyInfo?.name 
+    ? `${companyInfo.name} ${companyInfo.cellphone ? '82+' + formatCellphone(companyInfo.cellphone) : ''}`
+    : '강태원 82+031-8039-7981';
+  const companyAddress = companyInfo?.address && companyInfo?.detailAddress
+    ? `${companyInfo.address} ,${companyInfo.detailAddress}`
+    : '경기도 성남시 수정구 대학판교로 815, 7호 (시흥동, 판교창조경제밸리)';
+  const companyRegistrationNumber = companyInfo?.businessNumber 
+    ? formatBusinessNumber(companyInfo.businessNumber)
+    : '289-86-03278';
+  const industryType = companyInfo?.businessCategory && companyInfo?.businessType
+    ? `${companyInfo.businessCategory}, ${companyInfo.businessType}`
+    : '응용소프트웨어 개발 및 공급업, 서비스업';
 //세션스토리지 guestInfo 안에 name과 email 뽑기
   const guestInfo = sessionStorage.getItem('guestInfo');
   let guestName = '';
@@ -127,7 +175,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
             <td style={{ ...headerCellStyle, width: '15%' }}>견적 발행일</td>
             <td style={{ ...valueCellStyle, width: '25%' }}>{currentDate}</td>
             <td style={{ ...headerCellStyle, width: '15%' }}>상호명</td>
-            <td style={{ ...valueCellStyle, width: '30%' }}>주식회사 여기닷</td>
+            <td style={{ ...valueCellStyle, width: '30%' }}>{companyName}</td>
             <td style={{ 
               width: '15%', 
               border: '1px solid #BFBFBF',
@@ -162,25 +210,25 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
             <td style={headerCellStyle}>고객명</td>
             <td style={valueCellStyle}>{user?.name || '비회원'}</td>
             <td style={headerCellStyle}>대표자명</td>
-            <td style={valueCellStyle}>강태원 82+031-8039-7981</td>
+            <td style={valueCellStyle}>{representativeName}</td>
           </tr>
           <tr>
             <td style={headerCellStyle}>메일주소</td>
             <td style={valueCellStyle}>{user?.email || '비회원'}</td>
             <td style={headerCellStyle}>사업자번호</td>
-            <td style={valueCellStyle}>289-86-03278</td>
+            <td style={valueCellStyle}>{companyRegistrationNumber}</td>
           </tr>
           <tr>
             <td style={headerCellStyle}>견적명</td>
             <td style={valueCellStyle}>{estimate.project_name}</td>
             <td style={headerCellStyle}>업종·업태</td>
-            <td style={valueCellStyle}>응용소프트웨어 개발 및 공급업, 서비스업</td>
+            <td style={valueCellStyle}>{industryType}</td>
           </tr>
           <tr>
             <td style={headerCellStyle}>총 금액 <br/>(VAT포함)</td>
             <td style={valueCellStyle}>KRW {vatIncludedPrice.toLocaleString()}</td>
             <td style={headerCellStyle}>주소</td>
-            <td style={valueCellStyle}>경기도 성남시 수정구 대학판교로 815, 777호 (시흥동, 판교창조경제밸리)</td>
+            <td style={valueCellStyle}>{companyAddress}</td>
           </tr>
         </tbody>
       </table>

@@ -7,6 +7,8 @@ import { useToast } from '@/components/common/ToastProvider';
 import CompanySearch from '@/components/CompanySearch/CompanySearch';
 import { updateCompanyInfo, getCompany } from '@/lib/api/admin/adminApi';
 import { uploadFiles } from '@/lib/api/user/userApi';
+import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
+import { devLog } from '@/utils/devLogger';
 
 // 회사 정보 인터페이스
 interface CompanyInfo {
@@ -456,6 +458,31 @@ export default function CompanyInfoSettingsPage() {
   const businessImageRef = useRef<HTMLInputElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
+  // URL에서 회사 코드 추출하여 초기화
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    
+    // URL에서 /cms/가 포함되면 회사 코드 자동 추출
+    if (currentPath.includes('/cms/')) {
+      const extractedCompanyCode = getCompanyCodeFromUrl();
+      if (extractedCompanyCode && extractedCompanyCode !== 'aigo') {
+        setSelectedCompanyCode(extractedCompanyCode);
+        setSelectedCompanyName(extractedCompanyCode.toUpperCase());
+        devLog('🏢 [회사정보 설정] URL에서 회사 코드 자동 추출:', {
+          path: currentPath,
+          companyCode: extractedCompanyCode
+        });
+      }
+    }
+  }, []);
+
+  // 회사 코드가 변경되면 데이터 자동 로드
+  useEffect(() => {
+    if (selectedCompanyCode) {
+      loadCompanyData(selectedCompanyCode);
+    }
+  }, [selectedCompanyCode]);
+
   // 파일 URL 생성 헬퍼 함수
   const getFileUrl = (filename: string) => {
     if (!filename) return '';
@@ -870,11 +897,14 @@ export default function CompanyInfoSettingsPage() {
     <SettingsContainer>
       <HeaderWrapper>
         <Heading>회사 정보 관리</Heading>
-        <CompanySearch
-          selectedCompanyCode={selectedCompanyCode}
-          selectedCompanyName={selectedCompanyName}
-          onCompanySelect={handleCompanySelect}
-        />
+        {/* CMS 환경이 아닐 때만 CompanySearch 표시 */}
+        {!window.location.pathname.includes('/cms/') && (
+          <CompanySearch
+            selectedCompanyCode={selectedCompanyCode}
+            selectedCompanyName={selectedCompanyName}
+            onCompanySelect={handleCompanySelect}
+          />
+        )}
       </HeaderWrapper>
       
       <CardsWrapper>

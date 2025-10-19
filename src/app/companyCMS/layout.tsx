@@ -24,6 +24,7 @@ import {
 import ScrollAwareWrapper from '@layout/ScrollAwareWrapper';
 import PageWrapper from '@components/PageWrapper';
 import { devLog } from '@/utils/devLogger';
+import { useThemeStore } from '@/store/themeStore';
 
 export default function CompanyCMSLayout() {
   return (
@@ -40,6 +41,11 @@ function ProtectedCompanyCMSLayout() {
   const { companyCode } = useParams<{ companyCode: string }>();
   const device = useDevice();
   const isLoginPage = location.pathname.includes(`/cms/login`);
+
+  // 🔥 고객사 CMS는 항상 라이트 모드 강제
+  useEffect(() => {
+    useThemeStore.setState({ isDarkMode: false });
+  }, []);
 
   useEffect(() => {
     if (ready && !isLoggedIn && !isLoginPage) {
@@ -128,8 +134,8 @@ function ProtectedCompanyCMSLayout() {
         { id: 'inquiry', title: '상담 요청 관리', path: `/${companyCode}/cms/user-data/inquiry` },
       ],
     },
-    { id: 'faq', icon: <FAQIcon />, title: 'FAQ', path: `/${companyCode}/cms/faq` },
-    { id: 'terms', icon: <TermsIcon />, title: '이용 약관', path: `/${companyCode}/cms/terms` },
+    // { id: 'faq', icon: <FAQIcon />, title: 'FAQ', path: `/${companyCode}/cms/faq` },
+    // { id: 'terms', icon: <TermsIcon />, title: '이용 약관', path: `/${companyCode}/cms/terms` },
   ];
 
   const pageTitle = useMemo(() => {
@@ -179,7 +185,7 @@ function ProtectedCompanyCMSLayout() {
         >
           <CustomSidebarHeader
             isCollapsed={isCollapsed}
-            iconSrc={`/ai-estimate/logo_${companyCode}.png`} // 고객사별 로고
+            iconSrc='/icon.png' // 고객사별 로고
             showTime={false}
           />
         </ResponsiveSidebar>

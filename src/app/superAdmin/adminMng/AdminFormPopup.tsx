@@ -221,6 +221,11 @@ const AdminFormPopup: React.FC<AdminFormPopupProps> = ({
   isRoot,
 }) => {
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
+  
+  // URL에 cms가 포함되면 고객사 검색 필드 숨김
+  const isCompanyCMS = typeof window !== 'undefined' && 
+    window.location.pathname.includes('/cms');
+  const showCompanySearch = !isCompanyCMS;
   return (
     <CmsPopup
       title={selectedUser ? "관리자 수정" : "관리자 등록"}
@@ -286,8 +291,8 @@ const AdminFormPopup: React.FC<AdminFormPopupProps> = ({
         {/* 관리자 정보 섹션 */}
         <Title>관리자 정보</Title>
         
-        {/* 통합관리자만 고객사 조회 필드 표시 */}
-        {isRoot && (
+        {/* URL에 cms가 포함되지 않은 경우만 고객사 조회 필드 표시 */}
+        {showCompanySearch && (
           <CompanySearchInput>
             <CompanyTextField
               id="companySearch"
@@ -402,8 +407,8 @@ const AdminFormPopup: React.FC<AdminFormPopupProps> = ({
         />
       </FormContainer>
 
-      {/* 통합관리자만 고객사 검색 모달 표시 */}
-      {isRoot && (
+      {/* URL에 cms가 포함되지 않은 경우만 고객사 검색 모달 표시 */}
+      {showCompanySearch && (
         <CompanySearchModal
           isOpen={isCompanyModalOpen}
           onClose={() => setIsCompanyModalOpen(false)}

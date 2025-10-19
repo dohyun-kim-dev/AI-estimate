@@ -150,7 +150,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
     const companyCodeIndex = pathParts.indexOf('aiclient') + 1;
     return (companyCodeIndex > 0 && pathParts.length > companyCodeIndex)
       ? pathParts[companyCodeIndex]
-      : 'heredot';
+      : '';
   };
   const companyCode = getCompanyCode();
 

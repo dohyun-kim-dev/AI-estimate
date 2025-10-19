@@ -25,6 +25,7 @@ import SimpleGenericList from '@/components/CustomList/\bSimpleGenericList';
 import PromptPopup from './popup';
 import PromptFormPopup from './PromptFormPopup';
 import CmsResponsiveContainer from '@/components/CustomList/ResponsiveList/CmsResponsiveContainer';
+import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
 
 type Prompt = {
   _id: string;
@@ -131,10 +132,28 @@ const PromptPage: React.FC = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isFormPopupOpen, setIsFormPopupOpen] = useState(false);
   const [currentKeyword, setCurrentKeyword] = useState<string>('');
-  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>(''); // 기본값을 heredot으로 설정
-  const [selectedCompanyName, setSelectedCompanyName] = useState<string>(''); // 기본 회사명
+  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>(''); 
+  const [selectedCompanyName, setSelectedCompanyName] = useState<string>(''); 
 
   const listRef = useRef<{ refetch: () => void }>(null);
+
+  // URL에서 회사 코드 추출하여 초기화
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    
+    // URL에서 /cms/가 포함되면 회사 코드 자동 추출
+    if (currentPath.includes('/cms/')) {
+      const extractedCompanyCode = getCompanyCodeFromUrl();
+      if (extractedCompanyCode && extractedCompanyCode !== 'aigo') {
+        setSelectedCompanyCode(extractedCompanyCode);
+        setSelectedCompanyName(extractedCompanyCode.toUpperCase());
+        devLog('🏢 [프롬프트 관리] URL에서 회사 코드 자동 추출:', {
+          path: currentPath,
+          companyCode: extractedCompanyCode
+        });
+      }
+    }
+  }, []);
 
   const handleHeaderButtonClick = () => {
     setSelectedItem(null); // 신규 등록
@@ -191,18 +210,32 @@ const PromptPage: React.FC = () => {
 
   const fetchData = useCallback(
     async (params: FetchParams): Promise<FetchResult<Prompt>> => {
-
-
-          if (!selectedCompanyCode) {
-            devLog('No company selected, returning empty data');
-            return {
-              data: [],
-              totalItems: 0,
-              allItems: 0,
-            };
-          }
-          
       try {
+        // URL에서 회사 코드 실시간 추출
+        const currentPath = window.location.pathname;
+        let companyCodeToUse = selectedCompanyCode;
+        
+        // URL에 /cms/가 포함되면 자동으로 회사 코드 추출
+        if (currentPath.includes('/cms/')) {
+          const extractedCompanyCode = getCompanyCodeFromUrl();
+          if (extractedCompanyCode && extractedCompanyCode !== 'aigo') {
+            companyCodeToUse = extractedCompanyCode;
+            devLog('🔄 [프롬프트 API] URL에서 회사 코드 추출:', {
+              path: currentPath,
+              companyCode: extractedCompanyCode
+            });
+          }
+        }
+
+        if (!companyCodeToUse) {
+          devLog('No company code available, returning empty data');
+          return {
+            data: [],
+            totalItems: 0,
+            allItems: 0,
+          };
+        }
+          
         // 키워드가 전달되면 현재 키워드 업데이트 (빈 문자열 포함)
         let searchKeyword = '';
         if (params.keyword !== undefined) {
@@ -213,11 +246,9 @@ const PromptPage: React.FC = () => {
         }
 
         const response = await getAIPromptList({
-          companyCode: selectedCompanyCode || '',
+          companyCode: companyCodeToUse,
           keyword: searchKeyword,
-        });
-        
-        devLog('AI 프롬프트 조회 응답:', response);
+        });        devLog('AI 프롬프트 조회 응답:', response);
         
         // 응답 처리 (응답 구조에 맞게 수정)
         if (response && typeof response === 'object') {
@@ -321,7 +352,13 @@ const PromptPage: React.FC = () => {
   isOpen={isPopupOpen}
   onClose={closePopup}
   selectedPrompt={selectedItem as any}
-  companyCode={selectedCompanyCode || 'heredot'}
+  companyCode={(() => {
+    const currentPath = window.location.pathname;
+    if (currentPath.includes('/cms/')) {
+      return getCompanyCodeFromUrl() || selectedCompanyCode || '';
+    }
+    return selectedCompanyCode || '';
+  })()}
 />
 
 <PromptFormPopup
@@ -329,7 +366,13 @@ const PromptPage: React.FC = () => {
   onClose={closeFormPopup}
   onSave={handleFormSave}
   selectedPrompt={selectedItem}
-  companyCode={selectedCompanyCode || 'heredot'}
+  companyCode={(() => {
+    const currentPath = window.location.pathname;
+    if (currentPath.includes('/cms/')) {
+      return getCompanyCodeFromUrl() || selectedCompanyCode || '';
+    }
+    return selectedCompanyCode || '';
+  })()}
 />
 
     </>

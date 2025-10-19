@@ -144,6 +144,8 @@ export default function AppRoutes() {
 
           <Route path="faq" element={<FAQPage />} />
           <Route path="terms" element={<CMSTerms />} />
+          <Route path="company-settings" element={<CompanyInfoSettingsPage />} />
+          <Route path="aigo-settings" element={<AigoSettingsPage />} />
         </Route>
       </Route>
 

@@ -43,8 +43,8 @@ const FullScreenModal: React.FC<FullScreenModalProps> = ({
           <Title>{title}</Title>
 
             <TitleButtonForm>
-          <CloseButton onClick={onClose}>닫기</CloseButton>
           <ApplyButton onClick={handleApply}>적용</ApplyButton>
+          <CloseButton onClick={onClose}>닫기</CloseButton>
         </TitleButtonForm>
       </Header>
 

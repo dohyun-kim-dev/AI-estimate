@@ -282,7 +282,7 @@ useEffect(() => {
           const companyCodeIndex = pathParts.indexOf('aiclient') + 1;
           const currentCompanyCode = (companyCodeIndex > 0 && pathParts.length > companyCodeIndex)
             ? pathParts[companyCodeIndex]
-            : 'heredot';
+            : '';
 
           const userServices = updatedUser.usingService || [];
           const needsCompanyRegistration = !userServices.includes(currentCompanyCode);

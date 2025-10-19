@@ -124,6 +124,7 @@ const CustomerMngPage: React.FC = () => {
     mode?: string;
     contractStartDate?: string;
     contractEndDate?: string;
+    homepage?: string;
   }>({});
  
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -135,7 +136,7 @@ const CustomerMngPage: React.FC = () => {
   const resetForm = useCallback(
     (initial?: Partial<Company>) => {
       setSelectedCustomer(initial ?? null);
-      setName(initial?.name ?? ''); // 대표명
+      setName(initial?.name ?? ''); // 고객사 대표명
       setCompanyName(initial?.companyName ?? ''); // 고객사명(KR)
       setCode(initial?.companyCode ?? ''); // 고객사코드
       setCategory(initial?.category?.name ?? '');
@@ -148,7 +149,7 @@ const CustomerMngPage: React.FC = () => {
       setCellphone(initial?.cellphone ?? '');
       setAddress(initial?.address ?? '');
       setDetailAddress(initial?.detailAddress ?? '');
-      setCeoName(initial?.dbName ?? ''); // 고객사명(EN)을 ceoName 필드에 매핑
+      setCeoName(initial?.dbName ?? ''); // 고객사명(EN)
       setCeoPhone(''); // 추가된 필드 초기화
       setCeoEmail(''); // 추가된 필드 초기화
       setContractType(initial?.contractType ?? 'MONTH');
@@ -184,10 +185,105 @@ const CustomerMngPage: React.FC = () => {
   };
 
   const handleCompanyRegisterClick = () => {
+    resetForm(); // 고객사 등록 시 모든 상태 초기화
     setIsCompanyRegisterOpen(true);
   };
 
+  // 폼 벨리데이션 함수
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {};
+    
+    // 필수 필드 검증
+    if (!companyName.trim()) {
+      newErrors.companyName = '고객사명(KR)은 필수입니다.';
+    }
+    
+    if (!ceoName.trim()) {
+      newErrors.ceoName = '고객사명(EN)은 필수입니다.';
+    }
+    
+    if (!code.trim()) {
+      newErrors.code = '고객사코드는 필수입니다.';
+    }
+    
+    if (!categoryId.trim()) {
+      newErrors.category = '카테고리는 필수입니다.';
+    }
+    
+    // 사업자번호 검증 (10자리 숫자, 하이픈 포함 12자리)
+    if (!businessNumber.trim()) {
+      newErrors.businessNumber = '사업자번호는 필수입니다.';
+    } else {
+      const businessNumberPattern = /^\d{3}-\d{2}-\d{5}$|^\d{10}$/;
+      if (!businessNumberPattern.test(businessNumber.trim())) {
+        newErrors.businessNumber = '사업자번호는 10자리 숫자 또는 000-00-00000 형식으로 입력하세요.';
+      }
+    }
+    
+    if (!name.trim()) {
+      newErrors.name = '대표명은 필수입니다.';
+    }
+    
+    // 대표 전화번호 검증 (10~11자리 숫자, 하이픈 포함 가능)
+    if (!cellphone.trim()) {
+      newErrors.cellphone = '대표 전화번호는 필수입니다.';
+    } else {
+      const phonePattern = /^01[016789]-?\d{3,4}-?\d{4}$|^0\d{1,2}-?\d{3,4}-?\d{4}$/;
+      const numbersOnly = cellphone.replace(/[^0-9]/g, '');
+      if (!phonePattern.test(cellphone.trim()) || numbersOnly.length < 10 || numbersOnly.length > 11) {
+        newErrors.cellphone = '전화번호는 10~11자리 숫자로 입력하세요. (예: 010-1234-5678)';
+      }
+    }
+    
+    // 대표 이메일 검증 (더 엄격한 이메일 형식)
+    if (!email.trim()) {
+      newErrors.email = '대표 이메일은 필수입니다.';
+    } else {
+      const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailPattern.test(email.trim())) {
+        newErrors.email = '올바른 이메일 형식으로 입력하세요. (예: example@domain.com)';
+      }
+    }
+    
+    // 홈페이지 URL 검증 (선택사항이지만 입력 시 형식 검증)
+    if (homepage && homepage.trim()) {
+      let urlToValidate = homepage.trim();
+      
+      // http:// 또는 https://가 없으면 추가
+      if (!urlToValidate.startsWith('http://') && !urlToValidate.startsWith('https://')) {
+        urlToValidate = 'https://' + urlToValidate;
+      }
+      
+      try {
+        const url = new URL(urlToValidate);
+        // 유효한 URL이면 정규화된 형태로 저장
+        if (onFormChange?.setHomepage) {
+          onFormChange.setHomepage(urlToValidate);
+        }
+      } catch {
+        newErrors.homepage = '올바른 홈페이지 주소를 입력하세요. (예: www.example.com 또는 https://www.example.com)';
+      }
+    }
+    
+    if (!address.trim()) {
+      newErrors.address = '고객사 주소는 필수입니다.';
+    }
+    
+    if (!detailAddress.trim()) {
+      newErrors.detailAddress = '상세 주소는 필수입니다.';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSave = async () => {
+    // 벨리데이션 체크
+    if (!validateForm()) {
+      showToast('필수 항목을 모두 입력해주세요.', 'error');
+      return;
+    }
+
     try {
       if (selectedCustomer) {
         // 수정 모드 - categoryId 상태값을 사용 (화면에서 선택한 카테고리의 ID)
@@ -201,6 +297,7 @@ const CustomerMngPage: React.FC = () => {
           detailAddress,
           memo,
           businessNumber,
+          homepage, // 홈페이지 추가
           ciImage,
           businessImage,
           category: categoryId, // 현재 선택된 카테고리 ID 사용
@@ -238,15 +335,19 @@ const CustomerMngPage: React.FC = () => {
         showToast('고객사가 등록되었습니다.','success');
       }
       
+      // API 성공 시에만 모달 닫기 및 리스트 새로고침
       setIsPopupOpen(false);
-      setIsCompanyRegisterOpen(false); // 고객사 등록 모달도 닫기
+      setIsCompanyRegisterOpen(false);
+      
       // 리스트 새로고침
       setTimeout(() => {
         listRef.current?.refetch();
       }, 100);
+      
     } catch (error) {
       console.error('고객사 저장 실패:', error);
       showToast('저장 중 오류가 발생했습니다.','error');
+      // 에러 발생 시 모달은 닫지 않음
     }
   };
 

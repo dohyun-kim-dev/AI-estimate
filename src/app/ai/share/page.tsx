@@ -320,7 +320,7 @@ const SharePage: React.FC = () => {
     const uuidMatch = path.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
     if (!uuidMatch) return;
     const pureUuid = uuidMatch[0];
-    const expectedPath = `/aiclient/${companyCode || 'heredot'}/ai/share/${pureUuid}`;
+    const expectedPath = `/aiclient/${companyCode || ''}/ai/share/${pureUuid}`;
     if (path !== expectedPath) {
       // 쿼리 그대로 유지
       const qs = searchParams.toString();

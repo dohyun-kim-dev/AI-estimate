@@ -1,6 +1,7 @@
 import { pageLoaderController } from "@/contexts/PageLoaderContext";
 import { devLog, devWarn } from "../utils/devLogger";
 import { triggerAdminLogout } from "@/contexts/AdminAuthContext";
+import { getCompanyCodeFromUrl } from "@/utils/companyUtils";
 
 interface CallApiPostParams {
   title: string;
@@ -40,6 +41,9 @@ export async function callApiPost<T = unknown>({
   let returnValue = '';
 
   try {
+    // 🔥 매번 최신 companyCode를 가져오도록 수정
+    const companyCode = getCompanyCodeFromUrl();
+    
     const fetchOptions: RequestInit = {
       method,
       // credentials: 'include',
@@ -48,7 +52,7 @@ export async function callApiPost<T = unknown>({
 
     // 상위에서 전달받은 헤더 사용
     fetchOptions.headers = { 
-      'x-company-code': 'heredot',
+      'x-company-code': `${companyCode}`,
       ...headers 
     };
     

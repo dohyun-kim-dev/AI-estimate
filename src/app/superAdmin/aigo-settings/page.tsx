@@ -12,6 +12,8 @@ import { lightTheme } from "@styles/theme";
 import { getCompany, updateAISettings } from '@/lib/api/admin/adminApi';
 import { useToast } from '@/components/common/ToastProvider';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
+import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
+import { devLog } from '@/utils/devLogger';
 
 const Slider = styled.input.attrs({ type: 'range' })<{ value: number }>`
   width: 100%;
@@ -465,6 +467,31 @@ export default function AigoSettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const bidUnitSettingRef = React.useRef<{ getCheckpointList: () => Array<{checkpoint: number; discountRate: number}> } | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // URL에서 회사 코드 추출하여 초기화
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    
+    // URL에서 /cms/가 포함되면 회사 코드 자동 추출
+    if (currentPath.includes('/cms/')) {
+      const extractedCompanyCode = getCompanyCodeFromUrl();
+      if (extractedCompanyCode && extractedCompanyCode !== 'aigo') {
+        setSelectedCompanyCode(extractedCompanyCode);
+        setSelectedCompanyName(extractedCompanyCode.toUpperCase());
+        devLog('🏢 [AIGO 설정] URL에서 회사 코드 자동 추출:', {
+          path: currentPath,
+          companyCode: extractedCompanyCode
+        });
+      }
+    }
+  }, []);
+
+  // 회사 코드가 변경되면 데이터 자동 로드
+  useEffect(() => {
+    if (selectedCompanyCode) {
+      loadAISettings(selectedCompanyCode);
+    }
+  }, [selectedCompanyCode]);
   
   const [formData, setFormData] = useState({
     theme: 'light',
@@ -536,6 +563,8 @@ export default function AigoSettingsPage() {
           theme: (company.mode || 'LIGHT').toLowerCase(),
           discountRate: company.discountRate || 'MONTH',
           rateRule: company.rateRule || 'FIXED',
+          projectName1: (company.minValue || 0).toString(),
+          projectName2: (company.maxValue || 0).toString(),
         }));
         
         // checkpointList 데이터 설정
@@ -648,6 +677,8 @@ export default function AigoSettingsPage() {
         aiConfidence: formData.inferencePerformance,
         mode: formData.theme.toUpperCase() as 'DARK' | 'LIGHT',
         checkpointList: bidUnitSettingRef.current?.getCheckpointList() || [], // 저장 시 동적으로 가져오기
+        minValue: parseInt(formData.projectName1) || 0, // 최소 구간 추가
+        maxValue: parseInt(formData.projectName2) || 0, // 최대 구간 추가
       };
 
       // 컴퍼니 코드와 함께 API 호출
@@ -682,9 +713,9 @@ export default function AigoSettingsPage() {
       inferencePerformance: 50,
       licenseKey: '',
       projectRateEnabled: true,
-      projectName1: '',
+      projectName1: '', // 최소 구간
       projectRate1: '',
-      projectName2: '',
+      projectName2: '', // 최대 구간
       projectRate2: '',
       projectName3: '',
       projectRate3: '',
@@ -814,16 +845,19 @@ export default function AigoSettingsPage() {
       <SettingsContainer>
         <HeaderContainer>
           <Heading>AIGO 설정 관리</Heading>
-          <CompanySearchWrapper>
-            <CompanySearch
-              selectedCompanyCode={selectedCompanyCode}
-              selectedCompanyName={selectedCompanyName}
-              onCompanySelect={handleCompanySelect}
-              themeMode="light"
-              placeholder="고객사를 선택하세요"
-              width="300px"
-            />
-          </CompanySearchWrapper>
+          {/* CMS 환경이 아닐 때만 CompanySearch 표시 */}
+          {!window.location.pathname.includes('/cms/') && (
+            <CompanySearchWrapper>
+              <CompanySearch
+                selectedCompanyCode={selectedCompanyCode}
+                selectedCompanyName={selectedCompanyName}
+                onCompanySelect={handleCompanySelect}
+                themeMode="light"
+                placeholder="고객사를 선택하세요"
+                width="300px"
+              />
+            </CompanySearchWrapper>
+          )}
         </HeaderContainer>
         
         <CardsWrapper>

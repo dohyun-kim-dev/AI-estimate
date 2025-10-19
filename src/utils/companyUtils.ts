@@ -9,7 +9,7 @@
 export function getCompanyCodeFromUrl(): string {
   // 브라우저 환경이 아닌 경우 기본값 반환
   if (typeof window === 'undefined') {
-    return 'heredot';
+    return '';
   }
 
   const pathname = window.location.pathname;
@@ -27,7 +27,7 @@ export function getCompanyCodeFromUrl(): string {
   }
   
   // 기본값으로 'heredot' 반환
-  return 'heredot';
+  return '';
 }
 
 /**

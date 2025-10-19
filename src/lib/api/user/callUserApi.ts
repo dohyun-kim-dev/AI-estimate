@@ -33,7 +33,7 @@ export async function callUserApi<T>({
 
     
     // Company Code 설정
-    let companyCode = 'heredot';  // 기본값
+    let companyCode = '';  // 기본값
     
     // URL에서 company code 추출 시도
     const pathParts = window.location.pathname.split('/');

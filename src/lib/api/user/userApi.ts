@@ -4,7 +4,7 @@ import { ApiResponse } from './userApi.types';
 import { devLog } from '@/utils/devLogger';
 
 function resolveCompanyCode() {
-  let companyCode = 'heredot';
+  let companyCode = '';
   const parts = window.location.pathname.split('/');
   const idx = parts.indexOf('aiclient') + 1;
   if (idx > 0 && parts.length > idx) companyCode = parts[idx];
@@ -424,11 +424,13 @@ export function validateFileSize(file: File, maxSizeMB: number = 20): boolean {
 }
 
 export function validateFileType(file: File): boolean {
+  // 🔥 Gemini API가 실제로 지원하는 파일 형식만 허용
+  // 공식 문서: https://ai.google.dev/gemini-api/docs/files
   const SUPPORTED_FILE_TYPES = [
     'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-    'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'text/plain', 'application/x-hwp'
+    'application/pdf',
+    'text/plain'
+    // ❌ Gemini API 미지원: Word(.doc, .docx), Excel(.xls, .xlsx), HWP(.hwp)
   ];
   return SUPPORTED_FILE_TYPES.includes(file.type);
 }

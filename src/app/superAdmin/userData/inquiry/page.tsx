@@ -14,7 +14,8 @@ import { useToast } from '@/components/common/ToastProvider';
 import { downloadEstimate, downloadEstimateExcel, updateEstimateRequestStatus } from '@/lib/api/admin/adminApi';
 import ChatHistoryModal from '@/components/ChatHistoryModal';
 import EstimateInquiryModal from '@/components/EstimateInquiryModal';
-import { devLog } from '@/utils/devLogger'
+import { devLog } from '@/utils/devLogger';
+import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
 
 // 프로필 스타일 컴포넌트 (대화 이력 관리와 동일)
 const ProfileWrapper = styled.div`
@@ -134,8 +135,8 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ currentStatus, onStatus
   const dropdownRef = useRef<HTMLUListElement>(null);
 
   const statusOptions = [
-    { value: '접수', color: '#FF9800', apiValue: 'in_progress' },
-    { value: '진행', color: '#2196F3', apiValue: 'pending' },
+    { value: '접수', color: '#FF9800', apiValue: 'pending' },
+    { value: '진행', color: '#2196F3', apiValue: 'in_progress' },
     { value: '실패', color: '#F44336', apiValue: 'rejected' },
     { value: '완료', color: '#4CAF50', apiValue: 'approved' },
   ];
@@ -328,6 +329,32 @@ const InquiryPage: React.FC = () => {
       toDate: string;
     } | null>(null);
 
+  // URL에서 회사 코드 추출하여 초기화
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    
+    // URL에서 /cms/가 포함되면 회사 코드 자동 추출
+    if (currentPath.includes('/cms/')) {
+      const extractedCompanyCode = getCompanyCodeFromUrl();
+      if (extractedCompanyCode && extractedCompanyCode !== 'aigo') {
+        setSelectedCompanyCode(extractedCompanyCode);
+        setSelectedCompanyName(extractedCompanyCode.toUpperCase());
+        setIsInitialLoad(false); // 회사 코드 추출 시 초기 로드 플래그 해제
+        devLog('🏢 [상담 요청 관리] URL에서 회사 코드 자동 추출:', {
+          path: currentPath,
+          companyCode: extractedCompanyCode
+        });
+        
+        // 회사 코드 추출 후 데이터 로드
+        setTimeout(() => {
+          if (listRef.current) {
+            listRef.current.refetch();
+          }
+        }, 100);
+      }
+    }
+  }, []);
+
   // 컴포넌트 마운트 시 isRoot 값 확인
   React.useEffect(() => {
     devLog('🔍 [InquiryPage] 컴포넌트 마운트 시 상태 확인:', {
@@ -393,8 +420,8 @@ const InquiryPage: React.FC = () => {
   // 상태 텍스트 변환 함수 (서버 영어 상태 -> 한글 상태)
   const getStatusText = (status?: string) => {
     switch (status) {
-      case 'in_progress': return '접수';
-      case 'pending': return '진행';
+      case 'pending': return '접수';
+      case 'in_progress': return '진행';
       case 'rejected': return '실패';
       case 'approved': return '완료';
       default: return status || '접수';
@@ -488,6 +515,9 @@ const InquiryPage: React.FC = () => {
     setSelectedCompanyCode(company.id);
     setSelectedCompanyName(company.name);
     
+    // 초기 로드 플래그 해제 (실제 조회이므로)
+    setIsInitialLoad(false);
+    
     // 고객사 변경 시 리스트 새로고침
     setTimeout(() => {
       listRef.current?.refetch();
@@ -539,14 +569,30 @@ const InquiryPage: React.FC = () => {
           return { data: [], totalItems: 0, allItems: 0 };
         }
 
-        // 고객사 코드 결정: 통합관리자는 선택된 고객사 코드, 사이트관리자는 기본값 또는 선택된 고객사 코드
-        const companyCode = isRoot 
-          ? selectedCompanyCode || undefined  // 통합관리자: 선택된 고객사 (없으면 전체)
-          : selectedCompanyCode || 'heredot'; // 사이트관리자: 선택된 고객사 또는 기본값
+        // URL에서 회사 코드 실시간 추출
+        const currentPath = window.location.pathname;
+        let companyCodeToUse = selectedCompanyCode;
+        
+        // URL에 /cms/가 포함되면 자동으로 회사 코드 추출
+        if (currentPath.includes('/cms/')) {
+          const extractedCompanyCode = getCompanyCodeFromUrl();
+          if (extractedCompanyCode && extractedCompanyCode !== 'aigo') {
+            companyCodeToUse = extractedCompanyCode;
+            devLog('🔄 [상담 요청 API] URL에서 회사 코드 추출:', {
+              path: currentPath,
+              companyCode: extractedCompanyCode
+            });
+          }
+        }
 
-        // 통합관리자이고 회사가 선택되지 않은 경우 토스트 메시지 표시
-        if (isRoot && !selectedCompanyCode) {
-          showToast('회사를 먼저 선택해주세요.', 'error');
+        // 고객사 코드 결정: 통합관리자는 선택된 고객사 코드, 사이트관리자는 추출된 회사 코드 또는 기본값
+        const companyCode = isRoot 
+          ? selectedCompanyCode  // 통합관리자: 선택된 고객사 (필수)
+          : companyCodeToUse || ''; // 사이트관리자: 추출된 회사 코드 또는 기본값
+
+        // 통합관리자이고 회사가 선택되지 않은 경우 API 호출하지 않음
+        if (isRoot && !companyCode) {
+          devLog('🚫 [상담요청 조회] 통합관리자 - 회사 선택 필요');
           return { data: [], totalItems: 0, allItems: 0 };
         }
 
@@ -606,8 +652,48 @@ const InquiryPage: React.FC = () => {
         const apiResponse = (actualResponse as any)?.data;
         devLog('apiResponse', apiResponse);
 
-        if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
+        // API 응답이 배열로 직접 오는 경우 처리
+        if (Array.isArray(apiResponse)) {
           // 새로운 API 응답 형식에 맞게 데이터 매핑
+          const mappedData: Inquiry[] = apiResponse.map((item: EstimateRequestItem, index: number) => {
+            const isGuest = item.userInfo?.isGuest === true;
+            let profileImageUrl = '/ai-estimate/no-profile.png'; // 기본값
+            
+            if (isGuest) {
+              profileImageUrl = '/cms/guest.png';
+            } else if (item.userInfo?.profileImage) {
+              profileImageUrl = item.userInfo.profileImage;
+            }
+            
+            return {
+              no: index + 1,
+              _id: item._id,
+              inquiryDate: item.createAt,
+              name: item.userInfo?.name || '알 수 없음',
+              userId: item.user, // 사용자 ID
+              profileImageUrl, // 수정된 프로필 이미지 로직
+              email: item.userInfo?.email || '-',
+              cellphone: item.userInfo?.cellphone || '-',
+              title: item.title,
+              memo: item.memo || '-',
+              status: getStatusText(item.status), // 상태 텍스트 변환
+              chatSession: item.chatSession,
+              estimateId: item.estimateId,
+              estimateFile: undefined, // 새 응답에는 estimateFile이 없음
+              isGuest,
+              userInfo: item.userInfo,
+            };
+          });
+
+          devLog('📋 [상담요청 조회] 매핑된 데이터:', mappedData);
+
+          return {
+            data: mappedData,
+            totalItems: mappedData.length,
+            allItems: mappedData.length,
+          };
+        } else if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
+          // 기존 형식의 응답 처리
           const mappedData: Inquiry[] = (apiResponse.data || []).map((item: EstimateRequestItem, index: number) => {
             const isGuest = item.userInfo?.isGuest === true;
             let profileImageUrl = '/ai-estimate/no-profile.png'; // 기본값
@@ -662,7 +748,7 @@ const InquiryPage: React.FC = () => {
         };
       }
     },
-    [isRoot, selectedCompanyCode, currentKeyword, ready, currentFromDate, currentToDate, isInitialLoad] // 초기 로드 플래그 의존성 추가
+    [isRoot, currentKeyword, ready, currentFromDate, currentToDate, isInitialLoad, selectedCompanyCode] // selectedCompanyCode 다시 추가
   );
 
   const columns: ColumnDefinition<Inquiry>[] = useMemo(
@@ -711,7 +797,7 @@ const InquiryPage: React.FC = () => {
         noPopup: true,
         formatter: (value, row) => (
           <StatusDropdown
-            currentStatus={value || '진행'}
+            currentStatus={value || '접수'}
             onStatusChange={(newStatus) => handleStatusChange(row._id, newStatus)}
           />
         )

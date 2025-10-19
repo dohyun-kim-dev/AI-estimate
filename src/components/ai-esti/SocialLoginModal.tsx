@@ -295,7 +295,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
             const companyCodeIndex = pathParts.indexOf('aiclient') + 1;
             const currentCompanyCode = (companyCodeIndex > 0 && pathParts.length > companyCodeIndex)
               ? pathParts[companyCodeIndex]
-              : 'heredot';
+              : '';
 
             const userServices = userData.usingService || [];
             // usingService 구조 확인: 배열 안의 객체에서 company.companyCode 확인

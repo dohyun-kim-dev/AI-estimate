@@ -10,9 +10,11 @@ import styled from 'styled-components';
 import CmsPopup from '@/components/CmsPopup';
 import ActionButton from '@/components/ActionButton';
 import { getEstimateDownloadList, downloadEstimate, downloadEstimateExcel } from '@/lib/api/admin/adminApi';
-import { devLog } from '@/utils/devLogger'
+import { devLog } from '@/utils/devLogger';
+import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
 import 'dayjs/locale/ko';
 import { useToast } from '@/components/common/ToastProvider';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 
 
 dayjs.locale('ko');
@@ -84,16 +86,73 @@ const ExcelDownloadButton = styled.button`
 
 const ProposalDownloadPage: React.FC = () => {
   const { show: showToast } = useToast();
+  const { isRoot, ready } = useAdminAuth(); // 관리자 인증 상태 추가
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Partial<ProposalDownload> | null>(null);
   const listRef = useRef<{ refetch: () => void }>(null);
- const [dateRange, setDateRange] = useState<{
+  const [dateRange, setDateRange] = useState<{
     fromDate: string;
     toDate: string;
   } | null>(null);
   const [currentKeyword, setCurrentKeyword] = useState<string>('');
   const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('');
   const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
+  
+  // 초기 로드 상태 플래그 (초기에는 API 호출하지 않기 위함)
+  const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
+  const [currentFromDate, setCurrentFromDate] = useState<string>('');
+  const [currentToDate, setCurrentToDate] = useState<string>('');
+
+  // URL에서 회사 코드 추출하여 초기화
+  React.useEffect(() => {
+    const currentPath = window.location.pathname;
+    
+    // URL에서 /cms/가 포함되면 회사 코드 자동 추출
+    if (currentPath.includes('/cms/')) {
+      const extractedCompanyCode = getCompanyCodeFromUrl();
+      if (extractedCompanyCode && extractedCompanyCode !== 'aigo') {
+        setSelectedCompanyCode(extractedCompanyCode);
+        setSelectedCompanyName(extractedCompanyCode.toUpperCase());
+        setIsInitialLoad(false); // 회사 코드 추출 시 초기 로드 플래그 해제
+        devLog('🏢 [견적 발행 이력] URL에서 회사 코드 자동 추출:', {
+          path: currentPath,
+          companyCode: extractedCompanyCode
+        });
+        
+        // 회사 코드 추출 후 데이터 로드
+        setTimeout(() => {
+          if (listRef.current) {
+            listRef.current.refetch();
+          }
+        }, 100);
+      }
+    }
+  }, []);
+
+  // 초기 날짜 설정 핸들러
+  const handleInitialDateSet = useCallback((fromDate: string, toDate: string) => {
+    devLog('📅 [견적 발행 이력 - 초기 날짜 설정]:', { fromDate, toDate });
+    setCurrentFromDate(fromDate);
+    setCurrentToDate(toDate);
+  }, []);
+
+  // 날짜 변경 핸들러
+  const handleDateChange = useCallback((fromDate: string, toDate: string) => {
+    devLog('📅 [견적 발행 이력 - 날짜 변경]:', { fromDate, toDate });
+    setCurrentFromDate(fromDate);
+    setCurrentToDate(toDate);
+    setDateRange({ fromDate, toDate });
+    // 날짜 변경 시에는 실제 조회이므로 초기 로드 플래그 해제
+    setIsInitialLoad(false);
+  }, []);
+
+  // 검색 변경 핸들러
+  const handleSearchChange = useCallback((keyword: string) => {
+    devLog('🔍 [견적 발행 이력 - 검색 변경]:', { keyword });
+    setCurrentKeyword(keyword);
+    // 검색 시에는 실제 조회이므로 초기 로드 플래그 해제
+    setIsInitialLoad(false);
+  }, []);
 
   const handleRowClick = (item: ProposalDownload) => {
     setSelectedItem(item);
@@ -143,22 +202,72 @@ const ProposalDownloadPage: React.FC = () => {
   };
 
 
-    const handleCompanySelect = useCallback((company: { id: string; name: string }) => {
-      setSelectedCompanyCode(company.id);
-      setSelectedCompanyName(company.name);
-      
-      // 고객사 선택 시 즉시 데이터 다시 조회
+  const handleCompanySelect = useCallback((company: { id: string; name: string }) => {
+    devLog('🏢 [견적 발행 이력 - 고객사 선택]:', company);
+    setSelectedCompanyCode(company.id);
+    setSelectedCompanyName(company.name);
+    
+    // 초기 로드 플래그 해제 (실제 조회이므로)
+    setIsInitialLoad(false);
+    
+    // 고객사 선택 시 즉시 데이터 다시 조회
+    setTimeout(() => {
       if (listRef.current) {
         listRef.current.refetch();
       }
-    }, []);
+    }, 100);
+  }, []);
 
   const fetchData = useCallback(
     async (params: FetchParams): Promise<FetchResult<ProposalDownload>> => {
       try {
-        // selectedCompanyCode가 빈 문자열이면 API 호출하지 않고 빈 결과 반환
-        if (selectedCompanyCode === '') {
-          devLog('🚫 [견적 다운로드] CompanyCode가 선택되지 않아 API 호출을 건너뜁니다.');
+        // 검색이나 날짜 변경 등으로 인한 호출이 아닌 초기 로드 시에는 API 호출하지 않음
+        const hasSearchParams = params.keyword !== undefined || params.fromDate || params.toDate;
+        if (isInitialLoad && !hasSearchParams) {
+          return { data: [], totalItems: 0, allItems: 0 };
+        }
+        
+        // 검색이나 날짜 변경 등의 실제 조회 시에는 초기 로드 플래그 해제
+        if (hasSearchParams) {
+          setIsInitialLoad(false);
+        }
+
+        // AuthContext가 아직 준비되지 않았으면 대기
+        if (!ready) {
+          devLog('🔄 [견적 발행 이력] AuthContext 준비 중...');
+          return { data: [], totalItems: 0, allItems: 0 };
+        }
+
+        // URL에서 회사 코드 실시간 추출
+        const currentPath = window.location.pathname;
+        let companyCodeToUse = selectedCompanyCode;
+        
+        // URL에 /cms/가 포함되면 자동으로 회사 코드 추출
+        if (currentPath.includes('/cms/')) {
+          const extractedCompanyCode = getCompanyCodeFromUrl();
+          if (extractedCompanyCode && extractedCompanyCode !== 'aigo') {
+            companyCodeToUse = extractedCompanyCode;
+            devLog('🔄 [견적 발행 이력 API] URL에서 회사 코드 추출:', {
+              path: currentPath,
+              companyCode: extractedCompanyCode
+            });
+          }
+        }
+
+        // 고객사 코드 결정: 통합관리자는 선택된 고객사 코드, 사이트관리자는 추출된 회사 코드 또는 기본값
+        const companyCode = isRoot 
+          ? selectedCompanyCode  // 통합관리자: 선택된 고객사 (필수)
+          : companyCodeToUse || ''; // 사이트관리자: 추출된 회사 코드 또는 기본값
+
+        // 통합관리자이고 회사가 선택되지 않은 경우 API 호출하지 않음
+        if (isRoot && !companyCode) {
+          devLog('🚫 [견적 발행 이력] 통합관리자 - 회사 선택 필요');
+          return { data: [], totalItems: 0, allItems: 0 };
+        }
+
+        // superAdmin에서 회사가 선택되지 않은 경우에도 API 호출하지 않음 (cms URL 제외)
+        if (!currentPath.includes('/cms/') && !companyCode) {
+          devLog('🚫 [견적 발행 이력] SuperAdmin - 회사 선택 필요 (cms URL 아님)');
           return { data: [], totalItems: 0, allItems: 0 };
         }
 
@@ -171,20 +280,28 @@ const ProposalDownloadPage: React.FC = () => {
           searchKeyword = currentKeyword;
         }
 
-        const fromDate = params.fromDate || dateRange?.fromDate || dayjs().subtract(3, 'month').format('YYYY-MM-DD');
-        const toDate = params.toDate || dateRange?.toDate || dayjs().format('YYYY-MM-DD');
+        const fromDate = params.fromDate || currentFromDate || dayjs().subtract(3, 'month').format('YYYY-MM-DD');
+        const toDate = params.toDate || currentToDate || dayjs().format('YYYY-MM-DD');
         
-        devLog('🔍 [견적 다운로드 fetchData 호출]', { searchKeyword, fromDate, toDate, selectedCompanyCode });
+        devLog('🔍 [견적 발행 이력 fetchData 호출]', { 
+          searchKeyword, 
+          fromDate, 
+          toDate, 
+          companyCode,
+          isRoot,
+          ready,
+          selectedCompanyCode
+        });
         
         // API 호출
         const response = await getEstimateDownloadList({
           keyword: searchKeyword,
           fromDate: fromDate,
           toDate: toDate,
-          companyCode: selectedCompanyCode,
+          companyCode: companyCode,
         });
         
-        devLog('✅ [견적 다운로드 fetchData 응답 받음]', response);
+        devLog('✅ [견적 발행 이력 fetchData 응답 받음]', response);
         
         // 응답 처리 (응답 구조에 맞게 수정)
         if (response && typeof response === 'object') {
@@ -277,7 +394,7 @@ const ProposalDownloadPage: React.FC = () => {
         return { data: [], totalItems: 0, allItems: 0 };
       }
     },
-    [currentKeyword, selectedCompanyCode, dateRange]
+    [isRoot, currentKeyword, ready, currentFromDate, currentToDate, isInitialLoad, selectedCompanyCode]
   );
 
   const columns: ColumnDefinition<ProposalDownload>[] = useMemo(
@@ -358,20 +475,10 @@ const ProposalDownloadPage: React.FC = () => {
         enableCompanySearch={true}
         themeMode="light"
         onCompanySelect={handleCompanySelect}
-        
+        onInitialDateSet={handleInitialDateSet} // 초기 날짜 설정 핸들러 추가
+        onDateChange={handleDateChange} // 수정된 날짜 변경 핸들러
+        onSearchChange={handleSearchChange} // 검색 변경 핸들러 추가
         dateRangeOptions={['3개월', '6개월', '1년', '지정']}
-        onDateChange={(fromDate, toDate) => {
-          devLog('📅 견적 다운로드 현황 - 날짜 변경:', { fromDate, toDate });
-          setDateRange({ fromDate, toDate });
-        }}
-        onInitialDateSet={(fromDate, toDate) => {
-          devLog('📅 견적 다운로드 현황 - 초기 날짜 설정:', { fromDate, toDate });
-          setDateRange({ fromDate, toDate });
-        }}
-        onSearchChange={(keyword) => {
-          devLog('🔍 견적 다운로드 현황 - 검색어 변경:', keyword);
-          setCurrentKeyword(keyword);
-        }}
       />
       <CmsPopup title="다운로드 상세" isOpen={isPopupOpen} onClose={closePopup}>
         <div>

@@ -192,6 +192,9 @@ interface ChatHistoryModalProps {
   chatSessionId: string;
   userName?: string;
   chatTitle?: string; // 채팅방 제목 추가
+  aiProfile?: string;
+  aiName?: string;
+  companyCode?: string;
 }
  
 const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
@@ -199,14 +202,18 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
   onClose,
   chatSessionId,
   userName,
-  chatTitle
+  chatTitle,
+  aiProfile,
+  aiName,
+  companyCode
 }) => {
   const { setSessionId, addMessage, messages, clearMessages } = useShareChatStore();
   const { isDarkMode } = useThemeStore();
   const { companyInfo } = useCompanyStore();
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
- 
+
+
   // 견적서 메시지 감지 함수
   const isEstimateMessage = (content: string) => {
     if (typeof content !== 'string') return false;
@@ -357,8 +364,8 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
         setSessionId(chatSessionId);
         
         // 채팅 메시지 API 호출
-        const messagesResponse = await getChatMessages(chatSessionId) as any;
-        
+        const messagesResponse = await getChatMessages(chatSessionId, companyCode) as any;
+
         devLog('전체 API 응답:', messagesResponse);
         
         let messages: ChatMessage[] = [];

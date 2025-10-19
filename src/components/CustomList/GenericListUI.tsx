@@ -391,7 +391,7 @@ const GenericListUIInner = <T extends BaseRecord>(
 
   // --- 클라이언트 측 데이터 처리 --- (정렬, 페이지네이션)
   const sortedData = useMemo(() => {
-    if (!data || data.length === 0) return [];
+    if (!data || !Array.isArray(data) || data.length === 0) return [];
     
     const sortableData = [...data]; // 부모에서 이미 필터링된 데이터 사용
     if (sortKey) {
@@ -468,7 +468,7 @@ const GenericListUIInner = <T extends BaseRecord>(
       // 정렬된 전체 데이터 사용 (페이지네이션 전)
       const dataToDownload = sortedData;
 
-      if (!dataToDownload || dataToDownload.length === 0) {
+      if (!dataToDownload || !Array.isArray(dataToDownload) || dataToDownload.length === 0) {
         devWarn('다운로드할 데이터가 없습니다.');
         alert('다운로드할 데이터가 없습니다.'); // 임시
         return;

@@ -63,10 +63,11 @@ export function PageLoaderProvider({ children }: { children: React.ReactNode }) 
   pageLoaderController.open = open
   pageLoaderController.close = close
 
-  // URL에 'superadmin'이 포함된 경우 로더 표시하지 않음
+  // URL에 'superadmin','cms' 이 포함된 경우 로더 표시하지 않음
+
   const shouldShowLoader = () => {
     if (typeof window !== 'undefined') {
-      return !window.location.pathname.includes('superadmin')
+      return !window.location.pathname.includes('superadmin') && !window.location.pathname.includes('cms');
     }
     return true
   }

@@ -8,6 +8,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import React, { useMemo, useState, useEffect } from 'react';
 import useAuthStore from '@/store/authStore';
+import { useCompanyStore } from '@/store/companyStore';
 import { useLang } from '@/contexts/LangContext';
 import { aiChatDictionary } from '@/lib/i18n/aiChat';
 import { ChatDictionary } from '@/app/ai/components/StepData'; // ChatDictionary 타입 임포트
@@ -712,6 +713,20 @@ const formatAmountForPdf = (amount: number | string) => {
   return amount; // 문자열이면 (예: "별도 문의") 그대로 반환
 };
 
+// 사업자번호 포맷팅 함수 (000-00-00000)
+const formatBusinessNumber = (businessNumber: string) => {
+  if (!businessNumber) return '';
+  
+  // 모든 '-' 제거하고 숫자만 추출
+  const numbers = businessNumber.replace(/[^0-9]/g, '');
+  
+  // 10자리가 아니면 원본 반환
+  if (numbers.length !== 10) return businessNumber;
+  
+  // 000-00-00000 형식으로 포맷팅
+  return `${numbers.substring(0, 3)}-${numbers.substring(3, 5)}-${numbers.substring(5, 10)}`;
+};
+
 interface PrintableInvoiceProps {
   invoiceData: InvoiceDataType;
   invoiceDetailsForPdf: {
@@ -748,6 +763,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
   };
   const currentDate = formatDate(new Date());
   const user = useAuthStore((state) => state.user);
+  const { companyInfo } = useCompanyStore();
 
   const userName = user?.name || '비회원';
   const userPhone = user?.cellphone;
@@ -756,25 +772,30 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recipientName =
     invoiceData.project || (t as any).recipientName || '역경매 플랫폼 개발';
+  
+  // companyStore에서 회사 정보 가져오기
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const companyName = (t as any).companyName || '주식회사 여기닷';
+  const companyName = companyInfo?.companyName || (t as any).companyName || '주식회사 여기닷';
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const representativeName =
-    (t as any).representativeName || '강태원 82+031-8039-7981';
+  const representativeName = companyInfo?.name 
+    ? `${companyInfo.name} ${companyInfo.cellphone ? '82+' + companyInfo.cellphone : ''}`
+    : (t as any).representativeName || '강태원 82+031-8039-7981';
+  
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const companyAddress = `${
-    (t as any).companyAddressStreet ||
-    '경기도 성남시 수정구 대학판교로 815, 777호'
-  } (${(t as any).companyAddressDetail || '시흥동, 판교창조경제밸리'})`;
+  const companyAddress = companyInfo?.address && companyInfo?.detailAddress
+    ? `${companyInfo.address} (${companyInfo.detailAddress})`
+    : `${(t as any).companyAddressStreet || '경기도 성남시 수정구 대학판교로 815, 777호'} (${(t as any).companyAddressDetail || '시흥동, 판교창조경제밸리'})`;
+  
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const companyRegistrationNumber =
-    (t as any).companyRegistrationNumber || '289-86-03278';
+  const companyRegistrationNumber = companyInfo?.etc?.[0] 
+    ? formatBusinessNumber(companyInfo.etc[0])
+    : (t as any).companyRegistrationNumber || '289-86-03278';
+  
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const quoteItemName =
     invoiceData.project || (t as any).defaultQuoteName || 'IoT 앱';
   const totalAmountWithVatForPdf = formatAmountForPdf(
-    Math.round((invoiceDetailsForPdf.currentTotal || 0) * 1.1),
-    countryCode
+    Math.round((invoiceDetailsForPdf.currentTotal || 0) * 1.1)
   );
 
   const specialNotes = {
@@ -891,7 +912,9 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supplierAddressLabel = (t as any).supplierAddressLabel || '주소';
 
-  const industryType = '응용소프트웨어 개발 및 공급업, 서비스업';
+  const industryType = companyInfo?.businessCategory && companyInfo?.businessType
+    ? `${companyInfo.businessCategory}, ${companyInfo.businessType}`
+    : '응용소프트웨어 개발 및 공급업, 서비스업';
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const basicSurveyTitle = (t as any).basicSurveyTitle || '기초 조사';
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

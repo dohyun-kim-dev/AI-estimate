@@ -315,9 +315,9 @@ export default function AILayout() {
       // 설정 메인에서는 AI 홈으로 돌아가기
       navigate(`/aiclient/${companyCode}/ai`);
     } else if (isMobile) {
-    navigate('/aiclient/heredot', { replace: true });
-    return;
-  } else {
+      navigate(`/aiclient/${companyCode}/ai`, { replace: true });
+      return;
+    } else {
       // 일반적인 뒤로가기
       navigate(-1);
     }

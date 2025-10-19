@@ -8,6 +8,8 @@ interface ChatHistoryModalProps {
   onClose: () => void;
   chatRoomId: string;
   userName?: string;
+  aiProfile?: string;
+  aiName?: string;
 }
 
 interface ChatMessage {
@@ -157,7 +159,9 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
   isOpen,
   onClose,
   chatRoomId,
-  userName
+  userName,
+  aiProfile,
+  aiName
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -232,12 +236,18 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
                   ? message.content 
                   : message.content?.content || message.content?.value || '';
                 
+                // aiProfile과 aiName을 props로 받아서 사용
+                const profileImageUrl = aiProfile 
+                  ? `${import.meta.env.VITE_FILE_URL}/${aiProfile}`
+                  : '/ai-estimate/pretty.png';
+                const aiAgentName = aiName || 'AI 에이전트';
+                
                 return (
                   <StyledAiMessage
                     key={message._id || index}
                     content={content}
-                    profileImage="/ai-estimate/pretty.png"
-                    name="AI 에이전트"
+                    profileImage={profileImageUrl}
+                    name={aiAgentName}
                   />
                 );
               }
