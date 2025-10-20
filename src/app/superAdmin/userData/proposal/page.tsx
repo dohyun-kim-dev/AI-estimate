@@ -169,7 +169,7 @@ const ProposalDownloadPage: React.FC = () => {
       devLog(`Downloading file for estimate: ${estimateId}`);
       
       // 새 탭에서 PDF 미리보기 페이지 열기 (EstimateCard의 openPreviewTab과 동일한 방식)
-      const previewUrl = `/superadmin/pdf-preview?uuid=${estimateId}`;
+      let previewUrl = `/superadmin/pdf-preview?uuid=${estimateId}&companyCode=${selectedCompanyCode}`;
       const newWindow = window.open(previewUrl, '_blank');
       
       setTimeout(() => {

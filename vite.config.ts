@@ -22,8 +22,35 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
       changeOrigin: true,
       secure: false,
       rewrite: (path: string) => path.replace(/^\/api/, ''),
-      headers: {
-        'x-company-code': 'heredot'
+      configure: (proxy, _options) => {
+        proxy.on('proxyReq', (proxyReq, req, _res) => {
+          // Referer 헤더에서 company code 추출
+          const referer = req.headers.referer || '';
+          let companyCode = 'heredot'; // 기본값
+          
+          // /{companyCode}/cms 패턴
+          const cmsMatch = referer.match(/\/([^\/]+)\/cms/);
+          if (cmsMatch && cmsMatch[1] && cmsMatch[1] !== 'aiclient') {
+            companyCode = cmsMatch[1];
+            console.log(`🔍 [Proxy] CMS 경로에서 추출: ${companyCode}`);
+          }
+          
+          // /aiclient/{companyCode} 패턴
+          const aiclientMatch = referer.match(/\/aiclient\/([^\/]+)/);
+          if (aiclientMatch && aiclientMatch[1]) {
+            companyCode = aiclientMatch[1];
+            console.log(`🔍 [Proxy] AIClient 경로에서 추출: ${companyCode}`);
+          }
+          
+          // /superadmin 경로는 기본값(heredot) 사용
+          if (referer.includes('/superadmin')) {
+            console.log(`🔍 [Proxy] SuperAdmin 경로 - 기본값 사용: ${companyCode}`);
+          }
+          
+          // x-company-code 헤더 설정
+          proxyReq.setHeader('x-company-code', companyCode);
+          console.log(`📤 [Proxy] x-company-code 헤더 설정: ${companyCode} (from: ${referer})`);
+        });
       }
     }
   }

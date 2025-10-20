@@ -87,28 +87,49 @@ interface EstimateConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  title?: string | React.ReactNode;
+  subTitle?: string | React.ReactNode;
+  primaryButtonText?: string;
+  secondaryButtonText?: string;
 }
 
 export const EstimateConfirmModal: React.FC<EstimateConfirmModalProps> = ({
   isOpen,
   onClose,
   onConfirm,
+  title,
+  subTitle,
+  primaryButtonText,
+  secondaryButtonText,
 }) => {
+  // 기본값 설정
+  const displayTitle = title || (
+    <>
+      가장 정밀한​ <br />
+      <Highlight>무료 견적</Highlight> 혜택받기​
+    </>
+  );
+  
+  const displaySubTitle = subTitle || (
+    <>
+      여기닷에 AI견적 대화 기반​ <br/>정밀한 견적 요청 가능해요​
+    </>
+  );
+  
+  const displayPrimaryButtonText = primaryButtonText || '혜택 받고 이어서 대화하기';
+  const displaySecondaryButtonText = secondaryButtonText || '혜택 없이 이어서 대화하기';
+
   return (
     <ModalOverlay $isOpen={isOpen} >
       <ModalContent onClick={(e) => e.stopPropagation()}>
-        <Title>가장 정밀한​ <br />
-        <Highlight>무료 견적</Highlight> 혜택받기​</Title>
-        <SubTitle>
-          여기닷에 AI견적 대화 기반​ <br/>정밀한 견적 요청 가능해요​
-        </SubTitle>
+        <Title>{displayTitle}</Title>
+        <SubTitle>{displaySubTitle}</SubTitle>
         <ButtonGroup>
-
           <PrimaryButton onClick={onConfirm}>
-            혜택 받고 이어서 대화하기
+            {displayPrimaryButtonText}
           </PrimaryButton>
           <SecondaryButton onClick={onClose}>
-            혜택 없이 이어서 대화하기
+            {displaySecondaryButtonText}
           </SecondaryButton>
         </ButtonGroup>
       </ModalContent>

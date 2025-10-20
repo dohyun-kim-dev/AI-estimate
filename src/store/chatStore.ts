@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { devtools } from 'zustand/middleware'
+import { getCompanyCodeFromUrl } from '@/utils/companyUtils'
 
 export interface ImageData {
   url: string;
@@ -140,7 +141,9 @@ export const useChatStore = create<ChatState>()(
             isProcessing: false, // 처리 상태도 초기화
             isCrawlingUrl: false // URL 크롤링 상태도 초기화
           }); 
-            sessionStorage.removeItem('ai-chat-storage'); // ⭐️ 스토리지도 직접 삭제
+          // ⭐️ 회사 코드별 스토리지 삭제
+          const companyCode = getCompanyCodeFromUrl();
+          sessionStorage.removeItem(`ai-chat-storage-${companyCode}`);
         },
         removeLastAiLoadingMessage: () => set((s) => {
           const messages = [...s.messages];
@@ -179,7 +182,11 @@ export const useChatStore = create<ChatState>()(
       }),
       
       {
-        name: 'ai-chat-storage',
+        name: (() => {
+          // 회사 코드별로 다른 스토리지 키 사용
+          const companyCode = getCompanyCodeFromUrl();
+          return `ai-chat-storage-${companyCode}`;
+        })(),
         storage: createJSONStorage(() => sessionStorage),
       }
     )

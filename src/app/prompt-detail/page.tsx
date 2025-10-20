@@ -44,9 +44,11 @@ const PromptDetailPage: React.FC = () => {
           companyCode: companyCode
         });
 
+        console.log('프롬프트 히스토리 API 응답:', response);
+
         let historyData = [];
         
-        // 응답 처리
+        // 응답 처리 - API 응답 형식에 맞게 수정
         if (response && typeof response === 'object' && 'statusCode' in response && response.statusCode === 200) {
           historyData = (response as any).data || [];
         } else if (Array.isArray(response) && response[0]) {
@@ -59,11 +61,15 @@ const PromptDetailPage: React.FC = () => {
           }
         }
 
+        console.log('파싱된 히스토리 데이터:', historyData);
+
         if (historyData.length > 0) {
           // historyId가 있으면 해당 히스토리를 찾고, 없으면 첫 번째 항목 사용
           const targetHistory = historyId 
             ? historyData.find((item: PromptHistory) => item._id === historyId)
             : historyData[0];
+            
+          console.log('선택된 타겟 히스토리:', targetHistory);
             
           if (targetHistory) {
             setPromptData(targetHistory);

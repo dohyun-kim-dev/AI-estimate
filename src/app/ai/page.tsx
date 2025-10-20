@@ -1439,7 +1439,7 @@ useEffect(() => {
     initializeUserInfoAndUsage().catch(error => {
       console.error('초기화 중 오류 발생:', error);
     });
-  }, [companyInfo]); // companyInfo 변화를 감지하도록 의존성 배열에 추가
+  }, [companyInfo, isAuthenticated]); // user 상태 추가: 로그인/로그아웃 시 재실행
 
   useEffect(() => {
     // 메시지 목록을 역순으로 순회하여 가장 최근의 견적서를 찾습니다.

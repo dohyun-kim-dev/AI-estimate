@@ -458,8 +458,14 @@ const InquiryPage: React.FC = () => {
     try {
       devLog(`Downloading PDF for estimate: ${estimateId}`);
       
-      // 새 탭에서 PDF 미리보기 페이지 열기 (EstimateCard의 openPreviewTab과 동일한 방식)
-      const previewUrl = `/superadmin/pdf-preview?uuid=${estimateId}`;
+      // URL 경로 결정: /cms/가 포함되면 회사별 CMS, 아니면 슈퍼어드민
+      const currentPath = window.location.pathname;
+      let previewUrl = `/superadmin/pdf-preview?uuid=${estimateId}&companyCode=${selectedCompanyCode}`;
+      
+      if (currentPath.includes('/cms/')) {
+        const companyCode = getCompanyCodeFromUrl();
+        previewUrl = `/${companyCode}/cms/pdf-preview?uuid=${estimateId}`;
+      } 
       const newWindow = window.open(previewUrl, '_blank');
       
       setTimeout(() => {

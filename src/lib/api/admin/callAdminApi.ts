@@ -135,18 +135,39 @@ devLog('📄 [요청 body]:', body);
   // API 응답을 배열로 변환
   const responseArray = Array.isArray(raw) ? raw : [raw];
 
-  // 401 에러 감지 (쿠키 인증에서도 유지)
-  if (
-    responseArray[0]?.statusCode === 401 && (
-      responseArray[0]?.message === 'token is invalid' ||
-      responseArray[0]?.message === 'Unauthorized' ||
-      responseArray[0]?.message === 'unauthorized' ||
-      responseArray[0]?.error?.customMessage === '시스템 관리자 인증이 필요합니다.'
-    )
-  ) {
-    devLog('🚫 [callAdminApi] 401 Unauthorized - 자동 로그아웃 처리', localStorage.getItem('adminId'));
+  // 401/500 에러 감지 및 토큰 관련 에러 처리
+  const response = responseArray[0];
+  const isUnauthorized = response?.statusCode === 401;
+  
+  const unauthorizedMessages = [
+    'token is invalid',
+    'Unauthorized',
+    'unauthorized',
+    '시스템 관리자 인증이 필요합니다.',
+    'Invalid token type for admin strategy'
+  ];
+
+  // 401 에러이거나, 500 에러이면서 인증 관련 메시지가 있는 경우
+  const hasUnauthorizedMessage = unauthorizedMessages.some(msg => 
+    response?.message?.includes(msg) || 
+    response?.error?.customMessage?.includes(msg)
+  );
+  
+  const isTokenError = response?.statusCode === 500 && hasUnauthorizedMessage;
+  
+  const shouldLogout = isUnauthorized || isTokenError;
+
+  if (shouldLogout) {
+    devLog('🚫 [callAdminApi] 인증 에러 - 자동 로그아웃 처리', {
+      statusCode: response?.statusCode,
+      message: response?.message,
+      customMessage: response?.error?.customMessage,
+      adminId: localStorage.getItem('adminId')
+    });
     triggerAdminLogout();
     localStorage.removeItem('adminId');
+    localStorage.removeItem('admin_access_token');
+    localStorage.removeItem('admin-storage');
     return [];
   }
 

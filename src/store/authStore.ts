@@ -134,13 +134,16 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // 회사 ID에 맞는 일일 쿼리 제한 가져오기
+      // 회사 ID에 맞는 일일 쿼리 제한 가져오기 (사용자의 남은 횟수)
       getUserDailyQueryLimit: (companyId: string) => {
         const state = get();
         console.log('🎯 getUserDailyQueryLimit - companyId:', companyId);
         console.log('🎯 state.user?.usingService:', state.user?.usingService);
         
-        if (!state.user?.usingService || state.user.usingService.length === 0) return 0;
+        if (!state.user?.usingService || state.user.usingService.length === 0) {
+          console.log('⚠️ usingService 없음');
+          return 0;
+        }
         
         // 1. 먼저 companyId로 정확히 매칭 시도 (company가 객체인 경우와 문자열인 경우 모두 처리)
         const service = state.user.usingService.find(s => {
@@ -165,7 +168,7 @@ export const useAuthStore = create<AuthState>()(
         const finalService = service || state.user.usingService[0];
         
         console.log('🎯 찾은 service:', finalService);
-        console.log('🎯 dailyQueryUsage:', finalService?.dailyQueryUsage);
+        console.log('🎯 dailyQueryUsage (남은 횟수):', finalService?.dailyQueryUsage);
         
         return finalService?.dailyQueryUsage || 0;
       },

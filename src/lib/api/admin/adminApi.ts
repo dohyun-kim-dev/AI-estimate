@@ -409,6 +409,12 @@ export async function createCompany(params: CompanyCreateParams) {
 
 // 개별 고객사 조회 API
 export async function getCompany(companyCode: string) {
+  // URL에 cms가 포함되어 있으면 (회사별 CMS인 경우) getCompanyInfo 사용
+  if (typeof window !== 'undefined' && window.location.pathname.includes('/cms')) {
+    return getCompanyInfo();
+  }
+  
+  // 그 외의 경우 (슈퍼 어드민) 기존 방식 사용
   return callAdminApi({
     title: '고객사 상세 조회',
     url: `${BASE_URL}/cms/company/${companyCode}`,
@@ -461,9 +467,15 @@ export async function updateCompanyInfo(companyCode: string, params: {
     Object.entries(params).filter(([_, value]) => value !== undefined)
   );
 
+  // URL에 cms가 포함되어 있으면 다른 경로 사용
+  const isCmsPath = window.location.pathname.includes('/cms/');
+  const apiUrl = isCmsPath 
+    ? `${BASE_URL}/cms/info?companyCode=${companyCode}`
+    : `${BASE_URL}/cms/company?companyCode=${companyCode}`;
+
   return callAdminApi({
     title: '회사 정보 수정',
-    url: `${BASE_URL}/cms/company?companyCode=${companyCode}`,
+    url: apiUrl,
     method: 'PATCH',
     body: body,
     isCallPageLoader: true,
@@ -1163,9 +1175,15 @@ export async function deleteFAQ(id: string) {
 
 // AI 설정 업데이트 API
 export async function updateAISettings(companyCode: string, params: AISettingsUpdateParams) {
+  // URL에 cms가 포함되어 있으면 다른 경로 사용
+  const isCmsPath = window.location.pathname.includes('/cms/');
+  const apiUrl = isCmsPath 
+    ? `${BASE_URL}/cms/info/ai-settings?companyCode=${companyCode}`
+    : `${BASE_URL}/cms/company/ai-settings?companyCode=${companyCode}`;
+
   return callAdminApi({
     title: 'AI 설정 업데이트',
-    url: `${BASE_URL}/cms/company/ai-settings?companyCode=${companyCode}`,
+    url: apiUrl,
     method: 'PATCH',
     body: params,
     isCallPageLoader: true,

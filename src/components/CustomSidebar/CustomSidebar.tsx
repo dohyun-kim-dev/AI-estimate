@@ -335,7 +335,6 @@ const IconWrapper = styled.span<{ $isCollapsed?: boolean }>`
   height: 24px;
   margin-right: ${({ $isCollapsed }) => ($isCollapsed ? '0' : '15px')};
   flex-shrink: 0;
-
   & > svg {
     width: 100%;
     height: 100%;
@@ -365,8 +364,9 @@ const FooterText = styled.span`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color : #C4C5C9;
+  // color : #C4C5C9;
   font-weight: 500;
+
 `;
 
 const SubMenuList = styled.ul<{ $isCollapsed?: boolean; $menuId?: string }>`

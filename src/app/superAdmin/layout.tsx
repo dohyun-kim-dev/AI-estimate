@@ -42,15 +42,16 @@ function ProtectedCmsLayout() {
   const isLoginPage = location.pathname.includes('/superadmin/login');
   const isPdfPreviewPage = location.pathname.includes('/superadmin/pdf-preview');
   const isExcelPreviewPage = location.pathname.includes('/superadmin/excel-preview');
+  const isPromptDetailPage = location.pathname.includes('/superadmin/prompt-detail');
 
   useEffect(() => {
-    if (ready && !isLoggedIn && !isLoginPage && !isPdfPreviewPage && !isExcelPreviewPage) {
+    if (ready && !isLoggedIn && !isLoginPage && !isPdfPreviewPage && !isExcelPreviewPage && !isPromptDetailPage) {
       navigate(`/superadmin/login`, { replace: true });
     } else if (ready && isLoggedIn && location.pathname === `/superadmin`) {
       // 대시보드로 이동
       navigate(`/superadmin`, { replace: true });
     }
-  }, [ready, isLoggedIn, isLoginPage, isPdfPreviewPage, isExcelPreviewPage, location.pathname, navigate, companyCode]);
+  }, [ready, isLoggedIn, isLoginPage, isPdfPreviewPage, isExcelPreviewPage, isPromptDetailPage, location.pathname, navigate, companyCode]);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -159,8 +160,8 @@ const handleMenuToggle = (menuId: string) => {
     }
   }, [location.pathname, ready, isLoggedIn, navigate]);
 
-  if (!ready || (!isLoggedIn && !isLoginPage && !isPdfPreviewPage && !isExcelPreviewPage)) return null;
-  if (isLoginPage || isPdfPreviewPage || isExcelPreviewPage) return <Outlet />;
+  if (!ready || (!isLoggedIn && !isLoginPage && !isPdfPreviewPage && !isExcelPreviewPage && !isPromptDetailPage)) return null;
+  if (isLoginPage || isPdfPreviewPage || isExcelPreviewPage || isPromptDetailPage) return <Outlet />;
 
   return (
     <ScrollAwareWrapper>

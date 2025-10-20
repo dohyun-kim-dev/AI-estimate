@@ -1,10 +1,25 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useAuthStore } from '@/store/authStore';
-import { useCompanyStore } from '@/store/companyStore';
 import { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import { calculateEstimatedPeriod } from '@/utils/estimateCalculator';
 import { devLog } from '@/utils/devLogger'
+
+// 회사 정보 타입 정의
+interface CompanyInfo {
+  _id: string;
+  name: string;
+  companyName: string;
+  cellphone: string;
+  email: string;
+  address: string;
+  detailAddress: string;
+  businessNumber: string;
+  businessCategory: string;
+  businessType: string;
+  etc?: string[];
+  signature?: string;
+}
 
 // 사업자번호 포맷팅 함수 (000-00-00000)
 const formatBusinessNumber = (businessNumber: string) => {
@@ -57,46 +72,70 @@ const PrintableInvoiceWrapper = styled.div`
 
 interface PrintableInvoiceProps {
   estimate: ProjectEstimate;
+  companyInfo?: CompanyInfo;
 }
 
-export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) => {
+export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ 
+  estimate, 
+  companyInfo
+}) => {
   const formatDate = (date: Date) => {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   };
 
   const currentDate = formatDate(new Date());
   const user = useAuthStore((state) => state.user);
-  const { companyInfo } = useCompanyStore(); // 회사정보에서 etc 배열 가져오기
 
-  // companyStore에서 동적 회사 정보 가져오기
-  const companyName = companyInfo?.name || '주식회사 여기닷';
+  // 디버깅: 받은 회사 정보 확인
+  devLog('📋 [PrintableInvoice] 받은 companyInfo:', companyInfo);
+
+  // API 응답에서 받은 회사 정보 사용 (없으면 기본값)
+  const companyName = companyInfo?.companyName || '주식회사 여기닷';
+  devLog('🏢 companyName:', companyName);
+  
   const representativeName = companyInfo?.name 
     ? `${companyInfo.name} ${companyInfo.cellphone ? '82+' + formatCellphone(companyInfo.cellphone) : ''}`
     : '강태원 82+031-8039-7981';
+  devLog('👤 representativeName:', representativeName);
+  
   const companyAddress = companyInfo?.address && companyInfo?.detailAddress
-    ? `${companyInfo.address} ,${companyInfo.detailAddress}`
+    ? `${companyInfo.address}, ${companyInfo.detailAddress}`
     : '경기도 성남시 수정구 대학판교로 815, 7호 (시흥동, 판교창조경제밸리)';
+  devLog('📍 companyAddress:', companyAddress);
+  
   const companyRegistrationNumber = companyInfo?.businessNumber 
     ? formatBusinessNumber(companyInfo.businessNumber)
     : '289-86-03278';
+  devLog('🔢 companyRegistrationNumber:', companyRegistrationNumber);
+  
   const industryType = companyInfo?.businessCategory && companyInfo?.businessType
     ? `${companyInfo.businessCategory}, ${companyInfo.businessType}`
     : '응용소프트웨어 개발 및 공급업, 서비스업';
-//세션스토리지 guestInfo 안에 name과 email 뽑기
+  devLog('🏭 industryType:', industryType);
+  
+  devLog('📄 비고사항 etc:', companyInfo?.etc);
+
+  // 사용자 정보는 기존 방식 유지 (authStore + sessionStorage)
+  let userName = user?.name || '비회원';
+  let userEmail = user?.email || '비회원';
+  let userCellphone = user?.cellphone || '';
+  
+  // 세션스토리지에서 게스트 정보 확인
   const guestInfo = sessionStorage.getItem('guestInfo');
-  let guestName = '';
-  let guestEmail = '';
-  let guestCellphone = '';  
   if (guestInfo) {
     try {
       const parsedInfo = JSON.parse(guestInfo);
-      guestName = parsedInfo.name || '비회원';
-      guestEmail = parsedInfo.email || '비회원';
-      guestCellphone = parsedInfo.cellphone || '';
+      userName = parsedInfo.name || userName;
+      userEmail = parsedInfo.email || userEmail;
+      userCellphone = parsedInfo.cellphone || userCellphone;
     } catch (error) {
       console.error('Failed to parse guestInfo from sessionStorage:', error);
     }
   }
+  
+  devLog('� userName:', userName);
+  devLog('📧 userEmail:', userEmail);
+  devLog('� userCellphone:', userCellphone);
 
   // 정확한 개발 기간 계산
   const periodCalculation = calculateEstimatedPeriod(estimate);
@@ -208,13 +247,13 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ estimate }) 
           </tr>
           <tr>
             <td style={headerCellStyle}>고객명</td>
-            <td style={valueCellStyle}>{user?.name || '비회원'}</td>
+            <td style={valueCellStyle}>{userName}</td>
             <td style={headerCellStyle}>대표자명</td>
             <td style={valueCellStyle}>{representativeName}</td>
           </tr>
           <tr>
             <td style={headerCellStyle}>메일주소</td>
-            <td style={valueCellStyle}>{user?.email || '비회원'}</td>
+            <td style={valueCellStyle}>{userEmail}</td>
             <td style={headerCellStyle}>사업자번호</td>
             <td style={valueCellStyle}>{companyRegistrationNumber}</td>
           </tr>

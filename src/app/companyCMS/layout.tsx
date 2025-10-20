@@ -41,6 +41,9 @@ function ProtectedCompanyCMSLayout() {
   const { companyCode } = useParams<{ companyCode: string }>();
   const device = useDevice();
   const isLoginPage = location.pathname.includes(`/cms/login`);
+  const isPdfPreviewPage = location.pathname.includes('/cms/pdf-preview');
+  const isExcelPreviewPage = location.pathname.includes('/cms/excel-preview');
+  const isPromptDetailPage = location.pathname.includes('/cms/prompt-detail');
 
   // 🔥 고객사 CMS는 항상 라이트 모드 강제
   useEffect(() => {
@@ -48,13 +51,13 @@ function ProtectedCompanyCMSLayout() {
   }, []);
 
   useEffect(() => {
-    if (ready && !isLoggedIn && !isLoginPage) {
+    if (ready && !isLoggedIn && !isLoginPage && !isPdfPreviewPage && !isExcelPreviewPage && !isPromptDetailPage) {
       navigate(`/${companyCode}/cms/login`, { replace: true });
     } else if (ready && isLoggedIn && location.pathname === `/${companyCode}/cms`) {
       // 대시보드 대신 관리자 관리로 이동
       navigate(`/${companyCode}/cms/admin-management`, { replace: true });
     }
-  }, [ready, isLoggedIn, isLoginPage, location.pathname, navigate, companyCode]);
+  }, [ready, isLoggedIn, isLoginPage, isPdfPreviewPage, isExcelPreviewPage, isPromptDetailPage, location.pathname, navigate, companyCode]);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -162,12 +165,12 @@ function ProtectedCompanyCMSLayout() {
     return <div>Loading...</div>;
   }
 
-  if (!isLoggedIn && !isLoginPage) {
+  if (!isLoggedIn && !isLoginPage && !isPdfPreviewPage && !isExcelPreviewPage && !isPromptDetailPage) {
     return null;
   }
 
-  // 로그인 페이지는 레이아웃 없이 렌더링
-  if (isLoginPage) {
+  // 로그인, PDF, Excel, 프롬프트 디테일 페이지는 레이아웃 없이 렌더링
+  if (isLoginPage || isPdfPreviewPage || isExcelPreviewPage || isPromptDetailPage) {
     return <Outlet />;
   }
 

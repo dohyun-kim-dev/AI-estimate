@@ -477,12 +477,13 @@ export default function CompanyInfoSettingsPage() {
   }, []);
 
   // 회사 코드가 변경되면 데이터 자동 로드
-  useEffect(() => {
-    if (selectedCompanyCode) {
-      loadCompanyData(selectedCompanyCode);
-    }
-  }, [selectedCompanyCode]);
-
+    useEffect(() => {
+      // selectedCompanyCode가 존재하고 빈 문자열이 아닐 때만 로드
+      if (selectedCompanyCode && selectedCompanyCode.trim() !== '') {
+        loadCompanyData(selectedCompanyCode);
+      }
+    }, [selectedCompanyCode]);
+    
   // 파일 URL 생성 헬퍼 함수
   const getFileUrl = (filename: string) => {
     if (!filename) return '';
@@ -867,14 +868,6 @@ export default function CompanyInfoSettingsPage() {
       setIsLoading(false);
     }
   };
-
-  // 페이지 로드 시 데이터 로드 - 컴퍼니 코드가 있을 때만 호출
-  useEffect(() => {
-    // selectedCompanyCode가 존재하고 빈 문자열이 아닐 때만 로드
-    if (selectedCompanyCode && selectedCompanyCode.trim() !== '') {
-      loadCompanyData();
-    }
-  }, []);
 
   // 드롭다운 외부 클릭 감지
   useEffect(() => {

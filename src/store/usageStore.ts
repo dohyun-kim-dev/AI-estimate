@@ -216,15 +216,11 @@ export const useUsageStore = create<UsageState>()(
           const dailyLimit = authStore.getUserDailyQueryLimit(companyId);
           console.log('🔄 getUserDailyQueryLimit 결과:', dailyLimit);
           
-          if (dailyLimit > 0) {
-            // 회원의 일일 사용량 제한으로 설정
-            set({ remainingCount: dailyLimit });
-            localStorage.setItem('remainingCount', String(dailyLimit));
-            
-            console.log('🔄 회원 사용량 업데이트 완료:', dailyLimit);
-          } else {
-            console.log('🔄 회원 사용량 정보를 찾을 수 없습니다.');
-          }
+          // dailyLimit이 0이어도 업데이트 (0 = 다 씀)
+          set({ remainingCount: dailyLimit });
+          localStorage.setItem('remainingCount', String(dailyLimit));
+          
+          console.log('🔄 회원 사용량 업데이트 완료:', dailyLimit);
         } catch (error) {
           console.error('회원 사용량 조회 중 오류:', error);
         } finally {

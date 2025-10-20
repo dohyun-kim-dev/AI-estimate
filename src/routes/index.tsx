@@ -103,6 +103,7 @@ export default function AppRoutes() {
           <Route path="cms/company-settings" element={<CompanyInfoSettingsPage />} />
           <Route path="cms/aigo-settings" element={<AigoSettingsPage />} />
           <Route path="cms/terms" element={<CMSTerms />} />
+          <Route path="cms/prompt-detail" element={<PromptDetailPage />} />
         </Route>
 
         
@@ -146,6 +147,9 @@ export default function AppRoutes() {
           <Route path="terms" element={<CMSTerms />} />
           <Route path="company-settings" element={<CompanyInfoSettingsPage />} />
           <Route path="aigo-settings" element={<AigoSettingsPage />} />
+          <Route path="pdf-preview" element={<PDFPreview />} />
+          <Route path="excel-preview" element={<ExcelPreview />} />
+          <Route path="prompt-detail" element={<PromptDetailPage />} />
         </Route>
       </Route>
 
@@ -184,6 +188,7 @@ export default function AppRoutes() {
           <Route path="superadmin/terms" element={<CMSTerms />} />
           <Route path="superadmin/pdf-preview" element={<PDFPreview />} />
           <Route path="superadmin/excel-preview" element={<ExcelPreview />} />
+          <Route path="superadmin/prompt-detail" element={<PromptDetailPage />} />
         </Route>
     </Routes>
   )

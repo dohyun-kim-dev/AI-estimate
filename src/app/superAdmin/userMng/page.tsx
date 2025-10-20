@@ -443,7 +443,21 @@ const UserMngPage: React.FC = () => {
       
       if (isCompanyCMS) {
         // cms URL인 경우 리스트 데이터만 사용
-        resetForm(item);
+        // memo 추출: 최상위 memo 또는 usingService 배열의 첫 번째 항목의 memo
+        let extractedMemo = item.memo || '';
+        if (!extractedMemo && item.usingService && Array.isArray(item.usingService) && item.usingService.length > 0) {
+          const firstService = item.usingService[0];
+          if (firstService && typeof firstService === 'object' && 'memo' in firstService) {
+            extractedMemo = (firstService as any).memo || '';
+          }
+        }
+        
+        const itemWithMemo = {
+          ...item,
+          memo: extractedMemo
+        };
+        
+        resetForm(itemWithMemo);
         setIsPopupOpen(true);
         return;
       }
@@ -471,10 +485,20 @@ const UserMngPage: React.FC = () => {
       }
       
       if (detailData) {
+        // memo 추출: 최상위 memo 또는 usingService 배열의 첫 번째 항목의 memo
+        let extractedMemo = detailData.memo || '';
+        if (!extractedMemo && detailData.usingService && Array.isArray(detailData.usingService) && detailData.usingService.length > 0) {
+          const firstService = detailData.usingService[0];
+          if (firstService && typeof firstService === 'object' && 'memo' in firstService) {
+            extractedMemo = (firstService as any).memo || '';
+          }
+        }
+        
         // 상세 정보로 폼 초기화
         const userWithDetails = {
           ...item,
           ...detailData,
+          memo: extractedMemo,
           // usingService 배열을 처리하여 가입이력 데이터로 변환
           usingService: detailData.usingService || []
         };

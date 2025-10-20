@@ -39,6 +39,7 @@ const FloatingLabel = styled.label`
   color: #666666;
   background: #ffffff;
   z-index: 1;
+  
 `;
 
 const InputWrapper = styled.div`
@@ -61,6 +62,7 @@ const StyledInput = styled.input<{
   padding: 0 14px;
   padding-right: ${props => props.$hasSuffix ? '40px' : '14px'};
   font-size: 16px; /* iOS Safari 자동 확대 방지를 위해 16px로 변경 */
+  font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   
   /* iOS Safari 자동 확대 방지 추가 속성 */
@@ -109,8 +111,8 @@ const StyledTextarea = styled.textarea<{
   color: #111827;
   padding: 14px;
   font-size: 16px; /* iOS Safari 자동 확대 방지를 위해 16px로 변경 */
+  font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   resize: vertical;
-  font-family: inherit;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   
   /* iOS Safari 자동 확대 방지 추가 속성 */
@@ -147,6 +149,7 @@ const StyledSelect = styled.select<{
   color: #111827;
   padding: 0 14px;
   font-size: 16px; /* iOS Safari 자동 확대 방지를 위해 16px로 변경 */
+  font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   
   /* iOS Safari 자동 확대 방지 추가 속성 */

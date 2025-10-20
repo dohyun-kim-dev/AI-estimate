@@ -124,7 +124,7 @@ export default function CompanyCMSLoginPage() {
           <LogoSection>
             {/* 회사별 로고 또는 기본 로고 */}
             <img 
-              src={`/ai-estimate/logo_${companyCode}.png`} 
+              src={`/Logo_AIGO.svg`} 
               alt="Company Logo" 
               width={80} 
               height={80}

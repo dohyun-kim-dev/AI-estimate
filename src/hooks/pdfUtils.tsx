@@ -152,8 +152,15 @@ export async function generatePDF(
 }
 
 //위에거 안쓰고 이것으로 로직변경 서버에서 견적서 text 받아와서 pdf 보여줌
-export async function previewPdfFromServerData(html: string) {
+export async function previewPdfFromServerData(
+  html: string, 
+  companyInfo?: any, 
+  userInfo?: any
+) {
   devLog("html",html)
+  devLog("🏢 [previewPdfFromServerData] companyInfo:", companyInfo);
+  devLog("👤 [previewPdfFromServerData] userInfo:", userInfo);
+  
   const estimateJson = extractInvoiceJSON(html);
   if (!estimateJson) throw new Error('invoiceData가 없습니다.');
 
@@ -185,8 +192,13 @@ export async function previewPdfFromServerData(html: string) {
     }
   }
   
-  // PrintableInvoice가 estimate 형태를 받는다고 가정
-  reactRoot.render(<PrintableInvoice estimate={estimateJson} />);
+  // PrintableInvoice에 회사 정보도 함께 전달
+  reactRoot.render(
+    <PrintableInvoice 
+      estimate={estimateJson} 
+      companyInfo={companyInfo}
+    />
+  );
 
   await new Promise((r) => setTimeout(r, 500)); // 더 충분한 렌더링 시간
 
@@ -239,9 +251,17 @@ export async function previewPdfFromServerData(html: string) {
 }
 
 // 서버 응답 데이터로 PDF 생성 후 바로 다운로드
-export async function downloadPdfFromServerData(html: string, filename: string = '견적서') {
+export async function downloadPdfFromServerData(
+  html: string, 
+  filename: string = '견적서',
+  companyInfo?: any,
+  userInfo?: any
+) {
   try {
     devLog("다운로드용 PDF 생성 시작", html);
+    devLog("🏢 [downloadPdfFromServerData] companyInfo:", companyInfo);
+    devLog("👤 [downloadPdfFromServerData] userInfo:", userInfo);
+    
     const estimateJson = extractInvoiceJSON(html);
     if (!estimateJson) throw new Error('invoiceData가 없습니다.');
 
@@ -273,7 +293,13 @@ export async function downloadPdfFromServerData(html: string, filename: string =
       }
     }
     
-    reactRoot.render(<PrintableInvoice estimate={estimateJson} />);
+    // PrintableInvoice에 회사 정보도 함께 전달
+    reactRoot.render(
+      <PrintableInvoice 
+        estimate={estimateJson} 
+        companyInfo={companyInfo}
+      />
+    );
     await new Promise((r) => setTimeout(r, 500)); // 렌더링 대기
 
     const html2canvas = (await import('html2canvas')).default;

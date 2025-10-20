@@ -11,7 +11,10 @@ import { SocialLoginModal } from './SocialLoginModal';
 import FileUploadSection from './FileUploadSection';
 import { FileUploadData } from '@/firebase.functions';
 import IssuerInfoModal, { IssuerInfo } from "@/components/ai-esti/IssuerInfoModal";
-import { devLog } from '@/utils/devLogger'
+import { EstimateConfirmModal } from './EstimateConfirmModal';
+import { devLog } from '@/utils/devLogger';
+import { getChatSessionMessages, requestEstimateConsult } from '@/lib/api/user/userApi';
+import { useToast } from '@/components/common/ToastProvider';
 
 
 export interface ProjectEstimate {
@@ -251,6 +254,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
   const [value, setValue] = useState<string>('');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [isEstimateConfirmModalOpen, setIsEstimateConfirmModalOpen] = useState(false);
   const [loginModalPurpose, setLoginModalPurpose] = useState<'limitReached' | 'limitExceeded' | null>(null);
 
   const [abortController, setAbortController] = useState<AbortController | null>(null);
@@ -261,7 +265,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
 
   const theme = useTheme();
   const isLightTheme = theme.body === '#FFFFFF';
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const { isProcessing, updateLastMessage, clearAllLoadingMessages, removeIncompleteEstimateMessages, setIsCrawlingUrl } = useChatStore(); // 추가: store에서 isProcessing과 setIsCrawlingUrl 가져오기
   const {
     remainingCount,
@@ -271,6 +275,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
     checkAndResetIfNewDay 
   } = useUsageStore();
   const isLoggedIn = isAuthenticated();
+  const { success, error: showError } = useToast();
 
   useEffect(() => {
     remainingCountRef.current = remainingCount;
@@ -308,19 +313,14 @@ const BottomInput: React.FC<BottomInputProps> = ({
     devLog("현재 메시지 개수:", messages.length);
 
     try {
-      if (isLoggedIn) {
-        await onSubmit(
-          lastInputRef.current.trim(),
-          {
-            abortSignal: newAbort.signal
-          }
-        );
-        return;
-      }
-
+      // 🔥 로그인 여부와 상관없이 remainingCount 체크
       if (remainingCount > 0) {
-        // 🔥 사용량을 먼저 차감하고 오류 시 복구하도록 변경
-        decreaseCount();
+        // 남은 횟수가 있으면 서밋 진행
+        if (!isLoggedIn) {
+          // 비로그인 사용자만 차감 (로그인 사용자는 서버에서 차감)
+          decreaseCount();
+        }
+        
         try {
           await onSubmit(
             lastInputRef.current.trim(),
@@ -333,12 +333,19 @@ const BottomInput: React.FC<BottomInputProps> = ({
           throw submitError;
         }
       } else {
+        // 남은 횟수가 0이면 입력값 복원하고 모달 띄우기
         setValue(lastInputRef.current);
-        if (hasUsedExtraCount) {
-          setLoginModalPurpose('limitExceeded');
-          setIsLoginModalOpen(true);
+        
+        if (isLoggedIn) {
+          // 로그인 사용자: EstimateConfirmModal 띄우기
+          setIsEstimateConfirmModalOpen(true);
         } else {
-          setLoginModalPurpose('limitReached');
+          // 비로그인 사용자: 소셜모달 띄우기
+          if (hasUsedExtraCount) {
+            setLoginModalPurpose('limitExceeded');
+          } else {
+            setLoginModalPurpose('limitReached');
+          }
           setIsLoginModalOpen(true);
         }
       }
@@ -499,6 +506,77 @@ const BottomInput: React.FC<BottomInputProps> = ({
     }
   };
 
+  // EstimateConfirmModal 핸들러
+  const handleEstimateConfirm = async () => {
+    setIsEstimateConfirmModalOpen(false);
+    
+    try {
+      // 1. localStorage에서 chatSessionId 가져오기
+      const chatSessionId = localStorage.getItem('chatSessionId');
+      if (!chatSessionId) {
+        showError('채팅 세션 정보를 찾을 수 없습니다.');
+        return;
+      }
+
+      devLog('[handleEstimateConfirm] chatSessionId:', chatSessionId);
+
+      // 2. getChatSessionMessages 호출
+      const response = await getChatSessionMessages(chatSessionId);
+      
+      if (response.statusCode !== 200 || !response.data || response.data.length === 0) {
+        showError('채팅 메시지를 불러올 수 없습니다.');
+        return;
+      }
+
+      devLog('[handleEstimateConfirm] 메시지 응답:', response.data);
+
+      // 3. 가장 마지막 메시지에서 estimateId 추출
+      const messages = response.data;
+      const lastMessage = messages[messages.length - 1];
+      
+      const estimateId = (lastMessage?.content as any)?.estimateId;
+      if (!estimateId) {
+        showError('견적서 정보를 찾을 수 없습니다.');
+        return;
+      }
+
+      devLog('[handleEstimateConfirm] estimateId:', estimateId);
+
+      // 4. 유저 정보 가져오기
+      if (!user) {
+        showError('사용자 정보를 찾을 수 없습니다.');
+        return;
+      }
+
+      // 5. requestEstimateConsult 호출
+      const consultResponse = await requestEstimateConsult(
+        estimateId,
+        estimateDataForConsult?.project_name || '견적 문의',
+        chatSessionId,
+        {
+          id: user._id,
+          name: user.name || '',
+          cellphone: user.cellphone || '',
+          email: user.email || ''
+        }
+      );
+
+      if (consultResponse.statusCode === 200) {
+        success('견적 문의가 성공적으로 접수되었습니다.');
+      } else {
+        showError('견적 문의 접수에 실패했습니다.');
+      }
+
+    } catch (error) {
+      console.error('[handleEstimateConfirm] 오류:', error);
+      showError('견적 문의 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleEstimateModalClose = () => {
+    setIsEstimateConfirmModalOpen(false);
+  };
+
   // 사용량 체크 함수 (회원/비회원 공통)
   const checkUsage = () => {
     if (remainingCount > 0) {
@@ -601,6 +679,22 @@ const BottomInput: React.FC<BottomInputProps> = ({
         open={isInfoModalOpen}
         onClose={() => setIsInfoModalOpen(false)}
         onSubmit={handleIssuerInfoSubmit}
+      />
+      
+      <EstimateConfirmModal
+        isOpen={isEstimateConfirmModalOpen}
+        onClose={handleEstimateModalClose}
+        onConfirm={handleEstimateConfirm}
+        title="오늘의 질문 횟수가 소진되었어요"
+        subTitle={
+          <>
+            추가로 궁금한 내용이 있다면<br />
+            '여기닷'에게 견적요청을 남겨주세요<br />
+            전문 컨설턴트가 빠르게 도와드립니다.
+          </>
+        }
+        primaryButtonText="견적요청하기"
+        secondaryButtonText="다음에 받기"
       />
     </>
   );

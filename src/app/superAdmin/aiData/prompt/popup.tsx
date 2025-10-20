@@ -109,9 +109,33 @@ const PromptPopup: React.FC<PromptPopupProps> = ({ isOpen, onClose, selectedProm
   const handleViewClick = (historyId: string) => {
     if (!selectedPrompt) return;
     
-    // 새 탭에서 프롬프트 상세 페이지 열기
-    const url = `/prompt-detail?promptId=${selectedPrompt._id}&companyCode=${companyCode}&historyId=${historyId}`;
-    window.open(url, '_blank');
+    // 현재 경로 확인하여 적절한 URL 생성
+    const currentPath = window.location.pathname;
+    let url = '';
+    
+    if (currentPath.includes('/superadmin/')) {
+      url = `/superadmin/prompt-detail?promptId=${selectedPrompt._id}&companyCode=${companyCode}&historyId=${historyId}`;
+    } else if (currentPath.includes('/cms/')) {
+      // 고객사 CMS 경로 추출 (예: /heredot/cms/)
+      const match = currentPath.match(/^\/([^\/]+)\/cms\//);
+      if (match) {
+        const companyCodeFromPath = match[1];
+        url = `/${companyCodeFromPath}/cms/prompt-detail?promptId=${selectedPrompt._id}&companyCode=${companyCode}&historyId=${historyId}`;
+      } else {
+        // aiclient 경로 (예: /aiclient/heredot/cms/)
+        const aiclientMatch = currentPath.match(/^\/aiclient\/([^\/]+)\/cms\//);
+        if (aiclientMatch) {
+          const companyCodeFromPath = aiclientMatch[1];
+          url = `/aiclient/${companyCodeFromPath}/cms/prompt-detail?promptId=${selectedPrompt._id}&companyCode=${companyCode}&historyId=${historyId}`;
+        }
+      }
+    }
+    
+    if (url) {
+      window.open(url, '_blank');
+    } else {
+      console.error('적절한 URL을 생성할 수 없습니다.');
+    }
   };
 
   const handleSave = async () => {

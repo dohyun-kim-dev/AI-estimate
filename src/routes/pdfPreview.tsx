@@ -77,6 +77,27 @@ interface EstimateMeta {
   data: string;
   title: string;
   user: string;
+  company?: {
+    _id: string;
+    name: string;
+    companyName: string;
+    cellphone: string;
+    email: string;
+    address: string;
+    detailAddress: string;
+    businessNumber: string;
+    businessCategory: string;
+    businessType: string;
+    etc?: string[];
+    [key: string]: any;
+  };
+  userInfo?: {
+    isGuest: boolean;
+    name?: string;
+    email?: string;
+    cellphone?: string;
+    [key: string]: any;
+  };
 }
 
 const PDFPreview: React.FC = () => {
@@ -210,13 +231,21 @@ const PDFPreview: React.FC = () => {
       }
 
       // 서버가 내려준 원본(표시용)
-      setEstimateMeta(res.data); // 메타데이터 저장
+      const estimateData = res.data as EstimateMeta;
+      setEstimateMeta(estimateData); // 메타데이터 저장
       devLog("res값",res)
       devLog("res.data 타입:", typeof res.data)
       devLog("res.data.data 타입:", typeof res.data.data)
-      // 2) 미리보기 PDF 생성 (응답의 data(HTML) 기반)
-      const htmlContent = res.data.data || '';
-      const { blobUrl,pdfBlob } = await previewPdfFromServerData(htmlContent);
+      devLog("🏢 회사 정보:", estimateData.company)
+      devLog("👤 사용자 정보:", estimateData.userInfo)
+      
+      // 2) 미리보기 PDF 생성 (응답의 data(HTML) 기반, 회사 정보 전달)
+      const htmlContent = estimateData.data || '';
+      const { blobUrl,pdfBlob } = await previewPdfFromServerData(
+        htmlContent,
+        estimateData.company,  // 회사 정보 전달
+        estimateData.userInfo  // 사용자 정보 전달
+      );
       devLog('PDF blobUrl:', blobUrl);
       devLog('PDF pdfBlob:', pdfBlob);
       setPdfBlobUrl(blobUrl);
@@ -241,10 +270,12 @@ const PDFPreview: React.FC = () => {
     }
     
     try {
-      // 서버 응답 데이터로 PDF 생성 후 바로 다운로드
+      // 서버 응답 데이터로 PDF 생성 후 바로 다운로드 (회사 정보 전달)
       await downloadPdfFromServerData(
         estimateMeta.data, 
-        estimateMeta.title || '견적서'
+        estimateMeta.title || '견적서',
+        estimateMeta.company,  // 회사 정보 전달
+        estimateMeta.userInfo  // 사용자 정보 전달
       );
     } catch (error) {
       console.error('PDF 다운로드 실패:', error);

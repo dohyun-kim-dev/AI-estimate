@@ -488,7 +488,8 @@ export default function AigoSettingsPage() {
 
   // 회사 코드가 변경되면 데이터 자동 로드
   useEffect(() => {
-    if (selectedCompanyCode) {
+    // selectedCompanyCode가 존재하고 빈 문자열이 아닐 때만 로드
+    if (selectedCompanyCode && selectedCompanyCode.trim() !== '') {
       loadAISettings(selectedCompanyCode);
     }
   }, [selectedCompanyCode]);
@@ -583,14 +584,6 @@ export default function AigoSettingsPage() {
       setIsLoading(false);
     }
   };
-
-  // 컴포넌트 마운트 시 기본 설정 로드
-  useEffect(() => {
-    // selectedCompanyCode가 존재하고 빈 문자열이 아닐 때만 로드
-    if (selectedCompanyCode && selectedCompanyCode.trim() !== '') {
-      loadAISettings(selectedCompanyCode);
-    }
-  }, [selectedCompanyCode]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

@@ -16,7 +16,8 @@ const StyledTextArea = styled.textarea<{ $height?: string }>`
   background: #ffffff;
   color: #111827;
   padding: 14px;
-  font-size: 14px;
+  font-size: 16px;
+  font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   resize: vertical; /* 사용자가 세로 크기를 조절할 수 있도록 함 */
   

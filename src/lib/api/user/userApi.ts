@@ -123,13 +123,27 @@ export async function googleLoginUpdate(params: GoogleLoginUpdateParams) {
 }
 
 export async function companyRegister() {
-  return callUserApi({
+  const response = await callUserApi({
     title: '고객사 등록',
     url: getApiUrl('/company/register'),
     method: 'POST',
     body: {},
     isCallPageLoader: false,
   });
+  
+  // 고객사 등록 성공 시 유저 정보 재호출
+  if (response.statusCode === 200) {
+    try {
+      devLog('[companyRegister] 고객사 등록 성공 - 유저 정보 재호출');
+      const { useAuthStore } = await import('@/store/authStore');
+      await useAuthStore.getState().fetchAndUpdateUserInfo();
+      devLog('[companyRegister] 유저 정보 재호출 완료');
+    } catch (error) {
+      console.error('[companyRegister] 유저 정보 재호출 실패:', error);
+    }
+  }
+  
+  return response;
 }
 
 // 채팅방 세션 응답 데이터 타입
@@ -436,7 +450,10 @@ export function validateFileType(file: File): boolean {
 }
 
 export function getFileUrl(fileName: string) {
-  return getApiUrl(`/file/${fileName}`);
+  // 운영 환경에서는 /api 프리픽스 없이 직접 /file 경로로 호출
+  return import.meta.env.MODE === 'production' 
+    ? `/file/${fileName}` 
+    : getApiUrl(`/file/${fileName}`);
 }
 
 export async function sendMessageWithFiles(sessionId: string, message: string, files: File[]) {

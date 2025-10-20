@@ -3,6 +3,7 @@ import styled, { useTheme } from 'styled-components';
 import { useNavigate, useParams } from 'react-router-dom'; // useParams 추가
 import BottomInput from '@/components/ai-esti/BottomInput';
 import { useThemeStore } from '@/store/themeStore';
+import { getCompanyInfo } from '@/lib/api/user/userApi';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -381,6 +382,24 @@ export default function Home() {
   const navigate = useNavigate();
   const { isDarkMode } = useThemeStore();
   const { companyCode } = useParams(); // URL에서 companyCode를 가져옵니다.
+  const [companyName, setCompanyName] = useState('여기닷'); // 기본값 설정
+
+  // 회사 정보 가져오기
+  useEffect(() => {
+    const fetchCompanyInfo = async () => {
+      try {
+        const response = await getCompanyInfo();
+        if (response.statusCode === 200 && response.data) {
+          setCompanyName(response.data.companyName);
+        }
+      } catch (error) {
+        console.error('회사 정보 조회 실패:', error);
+        // 실패 시 기본값 '여기닷' 유지
+      }
+    };
+
+    fetchCompanyInfo();
+  }, []);
 
   useEffect(() => {
     if (window.innerWidth >= 1024) {
@@ -399,7 +418,7 @@ export default function Home() {
     <Container>
       <MainContent>
         <Header>
-          <Logo>여기닷의 공식 견적 서비스</Logo>
+          <Logo>{companyName}의 공식 견적 서비스</Logo>
           <SubHeader>
             견적 AI서비스로 3분만에 견적받기
           </SubHeader>
