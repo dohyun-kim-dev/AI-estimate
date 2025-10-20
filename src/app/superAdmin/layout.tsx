@@ -49,7 +49,7 @@ function ProtectedCmsLayout() {
       navigate(`/superadmin/login`, { replace: true });
     } else if (ready && isLoggedIn && location.pathname === `/superadmin`) {
       // 대시보드로 이동
-      navigate(`/superadmin`, { replace: true });
+      // navigate(`/superadmin/admin-management`, { replace: true });
     }
   }, [ready, isLoggedIn, isLoginPage, isPdfPreviewPage, isExcelPreviewPage, isPromptDetailPage, location.pathname, navigate, companyCode]);
 

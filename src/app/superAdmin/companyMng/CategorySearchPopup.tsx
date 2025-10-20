@@ -80,8 +80,10 @@ import CommonTextField from '@/components/common/TextField';
 import ActionButton from '@/components/ActionButton';
 import { THEME_COLORS, ThemeMode } from '@/styles/theme_colors';
 import CategoryRegisterPopup from './CategoryRegisterPopup';
-import {getCategoryList} from '@/lib/api/admin/adminApi';
+import {getCategoryList, deleteCategory} from '@/lib/api/admin/adminApi';
 import { devLog } from '@/utils/devLogger'
+import { useToast } from '@/components/common/ToastProvider';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
 interface CategorySearchPopupProps {
   isOpen: boolean;
@@ -99,15 +101,20 @@ const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClo
   const [allItems, setAllItems] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const themeMode: ThemeMode = 'light'; // 실제 테마 상태에 맞게 변경
+  const { show: showToast } = useToast();
 
   // 등록/수정 팝업 상태
   const [registerOpen, setRegisterOpen] = useState(false);
   const [editCategory, setEditCategory] = useState<any | null>(null);
 
+  // 삭제 확인 모달 상태
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [sortKey, setSortKey] = useState<'no'|'createdAt'|'name'|'code'>('no');
+  const [sortKey, setSortKey] = useState<'no'|'createAt'|'name'|'code'>('no');
   const [sortOrder, setSortOrder] = useState<'asc'|'desc'>('desc');
 
   // 카테고리 목록 조회 API 연결
@@ -130,7 +137,7 @@ const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClo
         name: cat.name,
         code: cat.code,
         id: cat._id,
-        createdAt: cat.createdAt || '',
+        createAt: cat.createAt || '',
         no: idx + 1,
       })));
   devLog('카테고리 조회 결과:', arr);
@@ -158,15 +165,68 @@ const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClo
     loadCategories(searchTerm);
   };
 
+  // 카테고리 삭제 핸들러
+  const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
+    // 삭제 확인 모달 열기
+    setCategoryToDelete({ id: categoryId, name: categoryName });
+    setDeleteModalOpen(true);
+  };
+
+  // 삭제 확인 후 실제 삭제 실행
+  const confirmDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+
+    try {
+      const response = await deleteCategory(categoryToDelete.id);
+      
+      // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+      const actualResponse = Array.isArray(response) ? response[0] : response;
+      
+      // actualResponse.data에서 실제 API 응답을 가져옴
+      const apiResponse = (actualResponse as any)?.data;
+
+      if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
+        showToast('카테고리가 성공적으로 삭제되었습니다.', 'success');
+        // 목록 새로고침
+        loadCategories(searchTerm);
+      } else {
+        // E11000 duplicate key error 처리
+        let errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '삭제에 실패했습니다.';
+        if (errorMessage.includes('E11000') && errorMessage.includes('duplicate key')) {
+          errorMessage = '해당 카테고리는 이미 사용 중이어서 삭제할 수 없습니다.';
+        }
+        showToast(errorMessage, 'error');
+      }
+    } catch (error) {
+      console.error('카테고리 삭제 에러:', error);
+      const err = error as Error | { customMessage?: string };
+      let errorMessage = 'customMessage' in err
+        ? err.customMessage
+        : err instanceof Error
+          ? err.message
+          : '삭제에 실패했습니다.';
+      
+      // E11000 duplicate key error 처리
+      if (errorMessage.includes('E11000') && errorMessage.includes('duplicate key')) {
+        errorMessage = '해당 카테고리는 이미 사용 중이어서 삭제할 수 없습니다.';
+      }
+      
+      showToast(errorMessage, 'error');
+    } finally {
+      setDeleteModalOpen(false);
+      setCategoryToDelete(null);
+    }
+  };
+
     // 정렬 함수
     const sortedCategories = [...categories].sort((a, b) => {
       if (sortKey === 'no') {
         return sortOrder === 'desc' ? b.no - a.no : a.no - b.no;
       }
-      if (sortKey === 'createdAt') {
+      if (sortKey === 'createAt') {
         return sortOrder === 'desc'
-          ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          ? new Date(b.createAt).getTime() - new Date(a.createAt).getTime()
+          : new Date(a.createAt).getTime() - new Date(b.createAt).getTime();
       }
       if (sortKey === 'name') {
         return sortOrder === 'desc'
@@ -272,13 +332,13 @@ const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClo
                   </span>
                 </th>
                 <th onClick={() => {
-                  setSortKey('createdAt');
+                  setSortKey('createAt');
                   setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
                 }} style={{ cursor: 'pointer' }}>
                   <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 100, position: 'relative' }}>
                     <span style={{ flex: 1, textAlign: 'center' }}>등록일</span>
                     <span style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 17, display: 'inline-block' }}>
-                      <span style={{ visibility: sortKey === 'createdAt' ? 'visible' : 'hidden', display: 'inline-block', transform: sortOrder === 'desc' ? 'rotate(180deg)' : 'none' }}>
+                      <span style={{ visibility: sortKey === 'createAt' ? 'visible' : 'hidden', display: 'inline-block', transform: sortOrder === 'desc' ? 'rotate(180deg)' : 'none' }}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="17" height="16" viewBox="0 0 17 16" fill="none">
                           <path d="M4.83203 10L8.83203 6L12.832 10" stroke="#888888" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
@@ -345,7 +405,7 @@ const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClo
                       }}
                     >
                       <td>{category.no}</td>
-                      <td>{category.createdAt}</td>
+                      <td>{category.createAt}</td>
                       <td>{category.name}</td>
                       <td>{category.code}</td>
                       {showEditActions && (
@@ -359,7 +419,10 @@ const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClo
                       )}
                       {showEditActions && (
                         <td>
-                          <DeleteButton onClick={(e) => e.stopPropagation()}>삭제</DeleteButton>
+                          <DeleteButton onClick={(e) => {
+                            e.stopPropagation(); // 이벤트 버블링 방지
+                            handleDeleteCategory(category.id, category.name);
+                          }}>삭제</DeleteButton>
                         </td>
                       )}
                     </TableRow>
@@ -378,17 +441,34 @@ const CategorySearchPopup: React.FC<CategorySearchPopupProps> = ({ isOpen, onClo
 
         <SaveButton>저장</SaveButton>
         <CloseButton onClick={onClose}>닫기</CloseButton>
-        {/* 등록/수정 팝업 */}
-        <CategoryRegisterPopup
-          isOpen={registerOpen}
-          onClose={() => { 
-            setRegisterOpen(false); 
-            setEditCategory(null); // editData 초기화
-            loadCategories(); 
-          }}
-          editData={editCategory}
-        />
       </BottomButtonRow>
+
+      {/* 등록/수정 팝업 */}
+      <CategoryRegisterPopup
+        isOpen={registerOpen}
+        onClose={() => { 
+          setRegisterOpen(false); 
+          setEditCategory(null); // editData 초기화
+          loadCategories(); 
+        }}
+        editData={editCategory}
+      />
+
+      {/* 삭제 확인 모달 */}
+      <DeleteConfirmModal
+        open={deleteModalOpen}
+        title="카테고리 삭제"
+        content={`"${categoryToDelete?.name}" 카테고리를 삭제하시겠습니까?`}
+        confirmText="삭제"
+        cancelText="취소"
+        onConfirm={confirmDeleteCategory}
+        onCancel={() => {
+          setDeleteModalOpen(false);
+          setCategoryToDelete(null);
+        }}
+        width={400}
+        showCloseButton={true}
+      />
     </SearchContainer>
   </CmsPopup>
 
@@ -521,9 +601,10 @@ const TableBody = styled.tbody`
   }
 `;
 
-const TableRow = styled.tr<{ $isEven?: boolean }>`
+const TableRow = styled.tr<{ $isEven?: boolean; $isSelected?: boolean }>`
   cursor: pointer;
-  background-color: ${({ $isEven }) => $isEven ? '#f9f9f9' : 'transparent'};
+  background-color: ${({ $isEven, $isSelected }) => 
+    $isSelected ? '#e3f2fd' : $isEven ? '#f9f9f9' : 'transparent'};
   td {
     padding: 10px;
     color: #333333;

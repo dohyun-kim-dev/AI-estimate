@@ -538,6 +538,20 @@ const parseMessageContent = (content: string, images?: ImageData[], files?: File
   return result;
 };
 
+// 프로필 이미지 URL 생성 함수
+const getProfileImageUrl = (profilePath: string | undefined) => {
+  if (!profilePath) return "/ai-estimate/pretty.png";
+  
+  // 이미 /ai-estimate/로 시작하는 정적 파일인 경우
+  if (profilePath.startsWith('/ai-estimate/')) {
+    return profilePath;
+  }
+  
+  // 환경에 따라 파일 경로 생성
+  const isDev = import.meta.env.VITE_ENV_NAME === 'dev';
+  return isDev ? `/api/file/${profilePath}` : `/file/${profilePath}`;
+};
+
 // URL 체크 함수
 const checkWideLayout = () => {
   if (typeof window !== 'undefined') {
@@ -2091,13 +2105,7 @@ useEffect(() => {
                   key={idx}
                   content={
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                      <ProfileSpinner src={
-                        companyInfo?.aiProfile 
-                          ? (companyInfo.aiProfile.startsWith('/ai-estimate/') 
-                              ? companyInfo.aiProfile 
-                              : `/api/file/${companyInfo.aiProfile}`)
-                          : "/ai-estimate/pretty.png"
-                      } />
+                      <ProfileSpinner src={getProfileImageUrl(companyInfo?.aiProfile)} />
                       <GradientText>
                         {loadingMessage}
                       </GradientText>
@@ -2117,13 +2125,7 @@ useEffect(() => {
                   chatSessionId={chatSessionId} 
                   onSubmit={handleSubmit}
                 />} 
-                profileImage={
-                  companyInfo?.aiProfile 
-                    ? (companyInfo.aiProfile.startsWith('/ai-estimate/') 
-                        ? companyInfo.aiProfile 
-                        : `/api/file/${companyInfo.aiProfile}`)
-                    : "/ai-estimate/pretty.png"
-                }
+                profileImage={getProfileImageUrl(companyInfo?.aiProfile)}
                 name={companyInfo?.aiName || "AI 에이전트"}
                 isFullWidth={isEstimateMessage(m.content)}
               />

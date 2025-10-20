@@ -2,6 +2,7 @@ import { pageLoaderController } from "@/contexts/PageLoaderContext";
 import { devLog, devWarn } from "../utils/devLogger";
 import { triggerAdminLogout } from "@/contexts/AdminAuthContext";
 import { getCompanyCodeFromUrl } from "@/utils/companyUtils";
+import { useAuthStore } from "@/store/authStore"; // ✅ 추가
 
 interface CallApiPostParams {
   title: string;
@@ -79,19 +80,37 @@ export async function callApiPost<T = unknown>({
     devLog(`📱 [${title}] 응답 상태:`, response.status, response.statusText);
     if (response.status === 401) {
       devLog(`❌ [${title}] 인증 오류:`, response.status, response.statusText);
-      triggerAdminLogout();
-      alert('인증이 만료되었습니다. 다시 로그인 해주세요.');
       
-      // URL에 'cms'가 포함되어 있으면 회사별 CMS 로그인으로, 아니면 슈퍼어드민 로그인으로
+      // URL 경로에 따라 적절한 페이지로 리다이렉트
       const currentPath = window.location.pathname;
-      const cmsMatch = currentPath.match(/\/([^/]+)\/cms/);
       
+      // aiclient 경로 확인
+      const aiclientMatch = currentPath.match(/\/aiclient\/([^/]+)/);
+      if (aiclientMatch) {
+        const companyCode = aiclientMatch[1];
+        
+        // ✅ authStore의 logout 함수 사용
+        await useAuthStore.getState().logout();
+        
+        alert('인증이 만료되었습니다. 다시 로그인 해주세요.');
+        window.location.href = `/aiclient/${companyCode}/ai`;
+        return;
+      }
+      
+      // cms 경로 확인
+      const cmsMatch = currentPath.match(/\/([^/]+)\/cms/);
       if (cmsMatch) {
         const companyCode = cmsMatch[1];
+        triggerAdminLogout();
+        alert('인증이 만료되었습니다. 다시 로그인 해주세요.');
         window.location.href = `/${companyCode}/cms/login`;
-      } else {
-        window.location.href = '/superadmin/login';
+        return;
       }
+      
+      // 기본: 슈퍼어드민 로그인
+      triggerAdminLogout();
+      alert('인증이 만료되었습니다. 다시 로그인 해주세요.');
+      window.location.href = '/superadmin/login';
     } else if (!response.ok) {
       devLog(`❌ [${title}] HTTP 에러:`, response.status, response.statusText);
     }

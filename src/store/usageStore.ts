@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { getGuestToken, updateGuestUsage, addGuestAdditionalCharge } from '@/lib/api/user/userApi';
+import { getGuestToken, addGuestAdditionalCharge } from '@/lib/api/user/userApi';
 import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
 import { useAuthStore } from './authStore';
 import { useCompanyStore } from './companyStore';
+import { devLog } from '@/utils/devLogger';
 
 interface UsageState {
   remainingCount: number;
@@ -64,7 +65,7 @@ export const useUsageStore = create<UsageState>()(
             // 게스트 사용자인 경우 추가 과금 API 호출
             const response = await addGuestAdditionalCharge(guestUuid);
             if (response.statusCode === 200) {
-              console.log('게스트 추가 과금 API 호출 성공 - 게스트 토큰 재조회');
+              devLog('게스트 추가 과금 API 호출 성공 - 게스트 토큰 재조회');
               
               // API 성공 시 현재 회사 코드로 게스트 토큰 재호출하여 최신 사용량 반영
               const companyCode = getCompanyCodeFromUrl();
@@ -81,7 +82,7 @@ export const useUsageStore = create<UsageState>()(
                   localStorage.setItem('remainingCount', String(dailyQueryCount));
                   localStorage.setItem('hasUsedExtraCount', String(isAdditionalCharge || false));
                   
-                  console.log('게스트 추가 과금 후 사용량 업데이트 완료:', {
+                  devLog('게스트 추가 과금 후 사용량 업데이트 완료:', {
                     remainingCount: dailyQueryCount,
                     hasUsedExtraCount: isAdditionalCharge
                   });
@@ -172,7 +173,7 @@ export const useUsageStore = create<UsageState>()(
           // guest-uuid 가져오기
           const guestUuid = localStorage.getItem('guest-uuid');
           if (!guestUuid) {
-            console.log('게스트 UUID가 없어 서버 사용량 조회를 건너뜁니다.');
+            devLog('게스트 UUID가 없어 서버 사용량 조회를 건너뜁니다.');
             return;
           }
 
@@ -189,7 +190,7 @@ export const useUsageStore = create<UsageState>()(
             localStorage.setItem('remainingCount', String(dailyQueryCount));
             localStorage.setItem('hasUsedExtraCount', String(isAdditionalCharge || false));
             
-            console.log('서버에서 게스트 사용량 업데이트:', {
+            devLog('서버에서 게스트 사용량 업데이트:', {
               remainingCount: dailyQueryCount,
               hasUsedExtraCount: isAdditionalCharge
             });
@@ -209,18 +210,18 @@ export const useUsageStore = create<UsageState>()(
           
           // AuthStore에서 사용자 정보 및 사용량 가져오기
           const authStore = useAuthStore.getState();
-          console.log('🔄 fetchUserUsage - companyId:', companyId);
-          console.log('🔄 authStore.user:', authStore.user);
-          console.log('🔄 authStore.user.usingService:', authStore.user?.usingService);
+          devLog('🔄 fetchUserUsage - companyId:', companyId);
+          devLog('🔄 authStore.user:', authStore.user);
+          devLog('🔄 authStore.user.usingService:', authStore.user?.usingService);
           
           const dailyLimit = authStore.getUserDailyQueryLimit(companyId);
-          console.log('🔄 getUserDailyQueryLimit 결과:', dailyLimit);
+          devLog('🔄 getUserDailyQueryLimit 결과:', dailyLimit);
           
           // dailyLimit이 0이어도 업데이트 (0 = 다 씀)
           set({ remainingCount: dailyLimit });
           localStorage.setItem('remainingCount', String(dailyLimit));
           
-          console.log('🔄 회원 사용량 업데이트 완료:', dailyLimit);
+          devLog('🔄 회원 사용량 업데이트 완료:', dailyLimit);
         } catch (error) {
           console.error('회원 사용량 조회 중 오류:', error);
         } finally {

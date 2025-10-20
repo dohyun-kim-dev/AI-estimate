@@ -610,6 +610,17 @@ export async function updateCategory(id: string, params: { name?: string; code?:
   });
 }
 
+// 카테고리 삭제
+export async function deleteCategory(id: string) {
+  return callAdminApi({
+    title: '카테고리 삭제',
+    url: `${BASE_URL}/cms/company/category/${id}`,
+    method: 'DELETE',
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
 // 단가 업로드 API
 export async function uploadUnitPrices(
   params: UnitPriceUploadParams) {

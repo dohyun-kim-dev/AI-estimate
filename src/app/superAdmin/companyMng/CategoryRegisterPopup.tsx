@@ -39,21 +39,93 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
     try {
       if (editData) {
         // 수정 - ID 확인 로그 추가
-        devLog('카테고리 수정 - ID:', editData._id, '데이터:', { name: categoryName, code: categoryCode });
-        await updateCategory(editData._id, { name: categoryName, code: categoryCode });
-        toast.success('카테고리가 수정되었습니다.');
+        const categoryId = editData.id || editData._id;
+        if (!categoryId) {
+          toast.error('카테고리 ID를 찾을 수 없습니다.');
+          return;
+        }
+        devLog('카테고리 수정 - ID:', categoryId, '데이터:', { name: categoryName, code: categoryCode });
+        
+        const response = await updateCategory(categoryId, { name: categoryName, code: categoryCode });
+        
+        // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+        const actualResponse = Array.isArray(response) ? response[0] : response;
+        
+        // actualResponse.data에서 실제 API 응답을 가져옴
+        const apiResponse = (actualResponse as any)?.data;
+
+        if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
+          toast.success('카테고리가 수정되었습니다.');
+          setCategoryName('');
+          setCategoryCode('');
+          onClose();
+        } else {
+          // E11000 duplicate key error 처리
+          let errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '수정에 실패했습니다.';
+          if (errorMessage.includes('E11000') && errorMessage.includes('duplicate key')) {
+            if (errorMessage.includes('code_1')) {
+              errorMessage = '중복된 카테고리 코드입니다.';
+            } else if (errorMessage.includes('name_1')) {
+              errorMessage = '중복된 카테고리명입니다.';
+            } else {
+              errorMessage = '중복된 카테고리입니다.';
+            }
+          }
+          toast.error(errorMessage);
+        }
       } else {
         // 등록
         devLog('카테고리 등록 - 데이터:', { name: categoryName, code: categoryCode });
-        await createCategory({ name: categoryName, code: categoryCode });
-        toast.success('카테고리가 등록되었습니다.');
+        
+        const response = await createCategory({ name: categoryName, code: categoryCode });
+        
+        // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+        const actualResponse = Array.isArray(response) ? response[0] : response;
+        
+        // actualResponse.data에서 실제 API 응답을 가져옴
+        const apiResponse = (actualResponse as any)?.data;
+
+        if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
+          toast.success('카테고리가 등록되었습니다.');
+          setCategoryName('');
+          setCategoryCode('');
+          onClose();
+        } else {
+          // E11000 duplicate key error 처리
+          let errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '등록에 실패했습니다.';
+          if (errorMessage.includes('E11000') && errorMessage.includes('duplicate key')) {
+            if (errorMessage.includes('code_1')) {
+              errorMessage = '중복된 카테고리 코드입니다.';
+            } else if (errorMessage.includes('name_1')) {
+              errorMessage = '중복된 카테고리명입니다.';
+            } else {
+              errorMessage = '중복된 카테고리입니다.';
+            }
+          }
+          toast.error(errorMessage);
+        }
       }
-      setCategoryName('');
-      setCategoryCode('');
-      onClose();
     } catch (error) {
       console.error('카테고리 저장 오류:', error);
-      toast.error('카테고리 저장 중 오류가 발생했습니다.');
+      const err = error as Error | { customMessage?: string };
+      let errorMessage = 'customMessage' in err
+        ? err.customMessage
+        : err instanceof Error
+          ? err.message
+          : '카테고리 저장 중 오류가 발생했습니다.';
+      
+      // E11000 duplicate key error 처리
+      if (errorMessage.includes('E11000') && errorMessage.includes('duplicate key')) {
+        if (errorMessage.includes('code_1')) {
+          errorMessage = '중복된 카테고리 코드입니다.';
+        } else if (errorMessage.includes('name_1')) {
+          errorMessage = '중복된 카테고리명입니다.';
+        } else {
+          errorMessage = '중복된 카테고리입니다.';
+        }
+      }
+      
+      toast.error(errorMessage);
     }
   };
 

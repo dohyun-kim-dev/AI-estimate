@@ -8,6 +8,7 @@ import { useModalStore } from '@/store/modalStore';
 import { useToast } from '@/components/common/ToastProvider';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
+import { useChatStore } from '@/store/chatStore'; // ✅ 추가
 import { getDownloadEstimateUrlWithUserInfo } from '@/lib/api/user/userApi';
 import { buildFullEstimateData } from '@/hooks/estimate';
 import { v4 as uuidv4 } from 'uuid';
@@ -207,37 +208,30 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
     }
     if (!userId) throw new Error('사용자 ID가 없습니다.');
 
-      // estimateObj._id가 없을 때: 세션스토리지에서 project_name이 content에 포함된 메시지 중 estimateId가 존재하는 첫 메시지를 찾아 반환
+      // ✅ estimateObj._id가 없을 때: Zustand 상태에서 project_name으로 estimateId 찾기
       let effectiveId = estimateObj._id;
       if (!effectiveId && estimateObj?.project_name) {
         try {
-          // 일반 채팅 스토리지 확인
-          let raw = sessionStorage.getItem('ai-chat-storage');
-          if (!raw) {
-            // 공유 채팅 스토리지 확인
-            raw = sessionStorage.getItem('share-chat-storage');
-          }
-          if (raw) {
-            const storageState = JSON.parse(raw);
-            const messages = storageState.state?.messages || [];
-            devLog("세션스토리지 메시지:", messages);
-            // project_name이 content에 포함된 메시지 중 estimateId가 있는 첫 메시지 찾기
-            let foundId = null;
-            for (const m of messages) {
-              if (typeof m.content === 'string' && m.content.includes(estimateObj.project_name)) {
-                if (m.estimateId) {
-                  foundId = m.estimateId;
-                  devLog("세션스토리지에서 추출한 estimateId:", foundId);
-                  break;
-                }
+          // Zustand 상태에서 메시지 가져오기
+          const messages = useChatStore.getState().messages;
+          devLog("Zustand 상태 메시지:", messages);
+          
+          // project_name이 content에 포함된 메시지 중 estimateId가 있는 첫 메시지 찾기
+          let foundId = null;
+          for (const m of messages) {
+            if (typeof m.content === 'string' && m.content.includes(estimateObj.project_name)) {
+              if (m.estimateId) {
+                foundId = m.estimateId;
+                devLog("Zustand 상태에서 추출한 estimateId:", foundId);
+                break;
               }
             }
-            if (foundId) {
-              effectiveId = foundId;
-            }
+          }
+          if (foundId) {
+            effectiveId = foundId;
           }
         } catch (e) {
-          console.warn('세션스토리지에서 estimateId 추출 실패', e);
+          console.warn('Zustand 상태에서 estimateId 추출 실패', e);
         }
       }
 

@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 import { ImageData } from '@/store/chatStore';
+import { devLog } from '../../utils/devLogger';
+
  
 interface ImageGridProps {
   images: ImageData[];
@@ -189,13 +191,13 @@ const OptimizedModalImage = ({ src, alt, ...props }: { src: string; alt: string;
   // 디버깅용 로그
   React.useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 OptimizedModalImage 초기화:', { src, currentSrc, isLoaded, hasError });
+      devLog('🔍 OptimizedModalImage 초기화:', { src, currentSrc, isLoaded, hasError });
     }
   }, [src, currentSrc, isLoaded, hasError]);
   
   const handleLoad = () => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 OptimizedModalImage 로드 성공:', currentSrc);
+      devLog('🔍 OptimizedModalImage 로드 성공:', currentSrc);
     }
     setTimeout(() => {
       setIsLoaded(true);
@@ -551,7 +553,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
   const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
   
   // 디버깅용 로그 추가
-  console.log('🔍 ImageGrid 렌더링:', {
+  devLog('🔍 ImageGrid 렌더링:', {
     images: images?.length,
     maxRows,
     userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
@@ -561,7 +563,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
   });
   
   if (!images || images.length === 0) {
-    console.log('🔍 ImageGrid: 이미지가 없음');
+    devLog('🔍 ImageGrid: 이미지가 없음');
     return null;
   }
  
@@ -571,7 +573,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
   const remainingCount = images.length - maxImages;
   const totalRows = Math.min(Math.ceil(images.length / 3), maxRows);
   
-  console.log('🔍 ImageGrid 계산된 값:', {
+  devLog('🔍 ImageGrid 계산된 값:', {
     maxImages,
     displayImagesLength: displayImages.length,
     remainingCount,
@@ -579,7 +581,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
   });
  
   const handleImageLoad = (index: number) => {
-    console.log(`🔍 이미지 로드 성공 ${index}:`, displayImages[index]?.url);
+    devLog(`🔍 이미지 로드 성공 ${index}:`, displayImages[index]?.url);
     setLoadedImages(prev => new Set([...prev, index]));
     setErrorImages(prev => {
       const newSet = new Set(prev);
@@ -727,7 +729,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images, maxRows = 3 }) => {
       <GridContainer imageCount={displayImages.length} totalRows={totalRows}>
         {displayImages.map((image, index) => {
           if (process.env.NODE_ENV === 'development') {
-            console.log(`🔍 렌더링 이미지 ${index}:`, image.url);
+            devLog(`🔍 렌더링 이미지 ${index}:`, image.url);
           }
           return (
             <ImageContainer

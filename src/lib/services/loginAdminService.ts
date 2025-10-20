@@ -59,7 +59,7 @@ export async function loginAdminService({
     // 1. 헤더에서 토큰 찾기
     const authHeader = response.headers.get('authorization') || response.headers.get('Authorization');
     const adminTokenHeader = response.headers.get('admin_token') || response.headers.get('admin-token');
-    
+  
     if (authHeader) {
       token = authHeader.replace('Bearer ', '');
     } else if (adminTokenHeader) {

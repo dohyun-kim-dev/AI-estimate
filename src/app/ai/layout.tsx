@@ -343,15 +343,12 @@ export default function AILayout() {
         
         const guestInfo = JSON.parse(guestInfoStr);
         
-        // 세션 스토리지에서 메시지 데이터 가져오기
-        const storedData = sessionStorage.getItem('ai-chat-storage');
-        if (!storedData) {
+        // ✅ Zustand 상태에서 메시지 데이터 가져오기
+        const messages = useChatStore.getState().messages;
+        if (!messages || messages.length === 0) {
           devLog('채팅 데이터 없음, 업로드 건너뛰기');
           return;
         }
-        
-        const parsedData = JSON.parse(storedData);
-        const messages = parsedData.state?.messages || [];
         
         // 맨 아래부터 content에서 uuid를 추출해서 estimateId로 사용
         let estimateId = null;
@@ -452,35 +449,21 @@ export default function AILayout() {
 
   // '공유' 버튼을 눌렀을 때 실행될 함수 (AILayout에서 호출됨)
   const handleOpenShare = async () => {
- 
-
-  const storedData = sessionStorage.getItem('ai-chat-storage');
-  if (storedData) {
-    try {
-      const parsedData = JSON.parse(storedData);
-      const messages = parsedData.state?.messages || [];
-      if (messages.length >= 2) {
-
-         if (!isAuthenticated()) {
-          // 비회원인 경우 견적서 업로드 시도
-          await uploadEstimateForGuestShare();
-          openLoginModal('shareChat');
-          return;
-        }
-        openShareChatModal();
-
-        
-      } else {
-        error('공유할 대화내역이 없습니다');
+    // ✅ Zustand 상태에서 메시지 가져오기
+    const messages = useChatStore.getState().messages;
+    
+    if (messages && messages.length >= 2) {
+      if (!isAuthenticated()) {
+        // 비회원인 경우 견적서 업로드 시도
+        await uploadEstimateForGuestShare();
+        openLoginModal('shareChat');
+        return;
       }
-    } catch (e) {
-      devLog('세션스토리지 데이터 파싱 오류:', e);
-      error('데이터 확인 중 오류가 발생했습니다');
+      openShareChatModal();
+    } else {
+      error('공유할 대화내역이 없습니다');
     }
-  } else {
-    error('공유할 채팅 데이터가 없습니다.');
-  }
-};
+  };
 
   const handleCloseShare = () => {
     closeShareChatModal();
@@ -619,38 +602,26 @@ const getCurrentShareUrl = () => {
 
 
 const handleNewChat = () => {
-  const storedData = sessionStorage.getItem('ai-chat-storage');
-  if (storedData) {
-    try {
-      const parsedData = JSON.parse(storedData);
-      const messages = parsedData.state?.messages || [];
-      if (messages.length >= 2) {
-        resetChat();
-        startNewChat();
-        setTimeout(() => {
-          devLog('messages after clear:', useChatStore.getState().messages); // 빈 배열이어야 정상
-        }, 0);
-        localStorage.removeItem('chatSessionId');
-        sessionStorage.removeItem('chatSessionId');
-        sessionStorage.removeItem('ai-chat-storage'); // ⭐️ 이 부분도 추가 추천
+  // ✅ Zustand 상태에서 메시지 가져오기
+  const messages = useChatStore.getState().messages;
+  
+  if (messages && messages.length >= 2) {
+    resetChat();
+    startNewChat();
+    setTimeout(() => {
+      devLog('messages after clear:', useChatStore.getState().messages); // 빈 배열이어야 정상
+    }, 0);
 
-        // URL의 sessionId 파라미터 제거
-        const url = new URL(window.location.href);
-        if (url.searchParams.has('sessionId')) {
-          url.searchParams.delete('sessionId');
-          window.history.replaceState({}, '', url.pathname + url.search);
-        }
-
-        success('새로운 견적 상담 시작됨');
-      } else {
-        success('이미 새로운 채팅방입니다');
-      }
-    } catch (e) {
-      devLog('세션스토리지 데이터 파싱 오류:', e);
-      error('데이터 확인 중 오류가 발생했습니다');
+    // URL의 sessionId 파라미터 제거
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('sessionId')) {
+      url.searchParams.delete('sessionId');
+      window.history.replaceState({}, '', url.pathname + url.search);
     }
+
+    success('새로운 견적 상담 시작됨');
   } else {
-    error('저장된 채팅이 없습니다.');
+    success('이미 새로운 채팅방입니다');
   }
 };
 

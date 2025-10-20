@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import CmsPopup from '@/components/CmsPopup';
 import CommonTextField from '@/components/common/TextField';
 import { Validators } from '@/lib/utils/validators';
-import { toast } from 'react-toastify';
+import { useToast } from '@/components/common/ToastProvider'
 import { adminUpdate } from '@/lib/api/admin';
 import { AdminUpdateParams } from '@/lib/api/admin/adminApi.types';
 import styled from 'styled-components';
@@ -33,7 +33,9 @@ interface PasswordPopupProps {
 
 const PasswordPopup: React.FC<PasswordPopupProps> = ({ selectedUser, isOpen, onClose, onSuccess }) => {
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');  
+  const { show } = useToast();
+
 
   const [pwdError, setPwdError] = useState<string | null>(null);
   const [confirmPwdError, setConfirmPwdError] = useState<string | null>(null);
@@ -49,7 +51,7 @@ const PasswordPopup: React.FC<PasswordPopupProps> = ({ selectedUser, isOpen, onC
 
   const handleSubmit = async () => {
     if (!selectedUser || !selectedUser._id) {
-      toast.error('선택된 사용자가 없습니다.');
+      show('선택된 사용자가 없습니다.', 'error');
       return;
     }
 
@@ -86,7 +88,7 @@ const PasswordPopup: React.FC<PasswordPopupProps> = ({ selectedUser, isOpen, onC
 
       const res = await adminUpdate(updateData);
 
-      toast.success('비밀번호가 성공적으로 변경되었습니다.');
+      show('비밀번호가 성공적으로 변경되었습니다.', 'success');
       onClose();
       
       // 성공 시 콜백 호출
@@ -96,7 +98,7 @@ const PasswordPopup: React.FC<PasswordPopupProps> = ({ selectedUser, isOpen, onC
         }, 100);
       }
     } catch (err: any) {
-      toast.error(err?.message || '비밀번호 변경 중 오류가 발생했습니다.');
+      show(err?.message || '비밀번호 변경 중 오류가 발생했습니다.', 'error');  
     }
   };
     

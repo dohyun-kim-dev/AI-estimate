@@ -14,7 +14,7 @@ import styled from 'styled-components';
 import { THEME_COLORS } from '@/styles/theme_colors';
 import ActionButton from '@/components/ActionButton';
 import { Validators } from '@/lib/utils/validators';
-import { toast, ToastContainer } from 'react-toastify';
+import { useToast } from '@/components/common/ToastProvider'
 import { adminCreate, adminUpdate, adminDelete } from '@/lib/api/admin';
 import { AdminUpdateParams } from '@/lib/api/admin/adminApi.types';
 import { devLog } from '@/lib/utils/devLogger';
@@ -23,7 +23,6 @@ import CmsResponsiveContainer from '@components/CustomList/ResponsiveList/CmsRes
 import AdminFormPopup from './AdminFormPopup';
 import Switch from '@/components/Switch';
 import 'dayjs/locale/ko';
-import { useToast } from '@/components/common/ToastProvider';
 
 dayjs.locale('ko');
 
@@ -84,6 +83,14 @@ const RegisterButton = styled(ActionButton)<{ $themeMode: 'light' | 'dark' }>`
       $themeMode === 'light' ? '#e8e8e8' : '#424451'};
   }
 `;
+
+// 중복 아이디 에러 메시지 처리 헬퍼 함수
+const getDuplicateKeyErrorMessage = (errorMessage: string): string => {
+  if (errorMessage.includes('E11000') && errorMessage.includes('duplicate key')) {
+    return '중복된 아이디입니다.';
+  }
+  return errorMessage;
+};
 
 const AdminMngPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<Partial<AdminUser> | null>(null);
@@ -189,7 +196,7 @@ const AdminMngPage: React.FC = () => {
 
     // 연락처 검증
     if (!Validators.phone(cellphone)) {
-      setCellphoneError('연락처는 숫자 11자리여야 합니다.');
+      setCellphoneError('숫자11자리와 연락처 형식을 준수해야 합니다.');
       valid = false;
     } else setCellphoneError(null);
 
@@ -264,7 +271,9 @@ const AdminMngPage: React.FC = () => {
             genericListRef.current?.refetch();
           }, 100);
         } else {
-          const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '수정에 실패했습니다.';
+          const errorMessage = getDuplicateKeyErrorMessage(
+            apiResponse?.error?.customMessage || apiResponse?.message || '수정에 실패했습니다.'
+          );
           showToast(errorMessage, 'error');
         }
       } else {
@@ -305,18 +314,21 @@ const AdminMngPage: React.FC = () => {
             genericListRef.current?.refetch();
           }, 100);
         } else {
-          const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '등록에 실패했습니다.';
+          const errorMessage = getDuplicateKeyErrorMessage(
+            apiResponse?.error?.customMessage || apiResponse?.message || '등록에 실패했습니다.'
+          );
           showToast(errorMessage, 'error');
         }
       }
     } catch (error) {
       console.error('Save error:', error);
       const err = error as Error | { customMessage?: string };
-      const errorMessage = 'customMessage' in err
+      let errorMessage = 'customMessage' in err
         ? err.customMessage
         : err instanceof Error
           ? err.message
           : '처리에 실패했습니다.';
+      errorMessage = getDuplicateKeyErrorMessage(errorMessage || '처리에 실패했습니다.');
       showToast(errorMessage, 'error');
     }
   };
@@ -569,7 +581,7 @@ const AdminMngPage: React.FC = () => {
         compactFieldCount={3} // 모바일 compact 모드에서 보여줄 필드 수
         defaultViewMode="detail" // 모바일 기본 보기 모드
         enableDateFilter={false}
-        enableCompanySearch={true}
+        enableCompanySearch={false}
         onCompanySelect={handleCompanySelect}
         renderMiddleContent={() => (
           <div style={{ flex: 1, textAlign: 'end', fontWeight: 'bold' }}>
@@ -616,6 +628,7 @@ const AdminMngPage: React.FC = () => {
         selectedCompanyCode={selectedCompanyCode}
         selectedCompanyName={selectedCompanyName}
         onCompanySelect={handleCompanySelect}
+        isRoot={false}
       />
 
       <PasswordPopup

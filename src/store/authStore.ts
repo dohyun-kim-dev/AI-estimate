@@ -4,6 +4,7 @@ import { GoogleLoginResponse, UserInfoResponse } from '@/lib/api/user/userApi.ty
 import { useChatStore } from '@/store/chatStore';
 import { clearAllTokens } from '@/lib/utils/tokenUtils';
 import { getUserInfo } from '@/lib/api/user/userApi';
+import { devLog } from '../../utils/devLogger';
 
 export interface UserData extends GoogleLoginResponse {
   isLoggedIn: boolean;
@@ -118,15 +119,15 @@ export const useAuthStore = create<AuthState>()(
       fetchAndUpdateUserInfo: async () => {
         try {
           const response = await getUserInfo();
-          console.log('📊 fetchAndUpdateUserInfo 응답:', response);
+          devLog('📊 fetchAndUpdateUserInfo 응답:', response);
           if (response.statusCode === 200 && response.data) {
             const userData = {
               ...response.data,
               isLoggedIn: true,
               isNew: false, // 기존 사용자이므로 false
             };
-            console.log('📊 authStore에 설정될 userData:', userData);
-            console.log('📊 usingService:', userData.usingService);
+            devLog('📊 authStore에 설정될 userData:', userData);
+            devLog('📊 usingService:', userData.usingService);
             set({ user: userData });
           }
         } catch (error) {
@@ -137,28 +138,28 @@ export const useAuthStore = create<AuthState>()(
       // 회사 ID에 맞는 일일 쿼리 제한 가져오기 (사용자의 남은 횟수)
       getUserDailyQueryLimit: (companyId: string) => {
         const state = get();
-        console.log('🎯 getUserDailyQueryLimit - companyId:', companyId);
-        console.log('🎯 state.user?.usingService:', state.user?.usingService);
+        devLog('🎯 getUserDailyQueryLimit - companyId:', companyId);
+        devLog('🎯 state.user?.usingService:', state.user?.usingService);
         
         if (!state.user?.usingService || state.user.usingService.length === 0) {
-          console.log('⚠️ usingService 없음');
+          devLog('⚠️ usingService 없음');
           return 0;
         }
         
         // 1. 먼저 companyId로 정확히 매칭 시도 (company가 객체인 경우와 문자열인 경우 모두 처리)
         const service = state.user.usingService.find(s => {
-          console.log('🎯 검사중인 service:', s);
-          console.log('🎯 s.company type:', typeof s.company);
-          console.log('🎯 s.company value:', s.company);
+          devLog('🎯 검사중인 service:', s);
+          devLog('🎯 s.company type:', typeof s.company);
+          devLog('🎯 s.company value:', s.company);
           
           if (typeof s.company === 'object' && s.company !== null && s.company !== undefined) {
             const company = s.company as any; // 타입 단언
             const match = company._id === companyId || company.companyCode === companyId;
-            console.log('🎯 객체 비교:', { companyId, company_id: company._id, companyCode: company.companyCode, match });
+            devLog('🎯 객체 비교:', { companyId, company_id: company._id, companyCode: company.companyCode, match });
             return match;
           } else if (typeof s.company === 'string') {
             const match = s.company === companyId;
-            console.log('🎯 문자열 비교:', { companyId, s_company: s.company, match });
+            devLog('🎯 문자열 비교:', { companyId, s_company: s.company, match });
             return match;
           }
           return false;
@@ -167,8 +168,8 @@ export const useAuthStore = create<AuthState>()(
         // 2. 매칭되는 서비스가 없다면 첫 번째 서비스 사용 (단일 회사 사용자인 경우)
         const finalService = service || state.user.usingService[0];
         
-        console.log('🎯 찾은 service:', finalService);
-        console.log('🎯 dailyQueryUsage (남은 횟수):', finalService?.dailyQueryUsage);
+        devLog('🎯 찾은 service:', finalService);
+        devLog('🎯 dailyQueryUsage (남은 횟수):', finalService?.dailyQueryUsage);
         
         return finalService?.dailyQueryUsage || 0;
       },

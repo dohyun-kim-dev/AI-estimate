@@ -144,6 +144,7 @@ export default PromptDetailPage;
 // 스타일 컴포넌트
 const Container = styled.div`
   min-height: 100vh;
+  width : 100vw;
   background-color: #f8f9fa;
   padding: 40px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

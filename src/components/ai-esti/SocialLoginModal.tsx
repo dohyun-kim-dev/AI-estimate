@@ -303,7 +303,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
               service.company?.companyCode === currentCompanyCode
             );
             
-            console.log('회사 등록 체크:', {
+            devLog('회사 등록 체크:', {
               currentCompanyCode,
               userServices: userServices.map(s => s.company?.companyCode),
               needsCompanyRegistration

@@ -90,30 +90,18 @@ function toNumberLike(n: string | number): number {
   return 0;
 }
 
-function findMessageIdForEstimate(estimateId?: string | null) {
-  if (!estimateId) return null;
+// ✅ 스토리지 대신 useChatStore 훅으로 메시지 조회
+function findMessageIdForEstimate(estimateId?: string | null, messages?: ChatMessage[]) {
+  if (!estimateId || !messages) return null;
+  
   try {
-    // 로컬스토리지에서 먼저 찾고, 없으면 세션스토리지 확인
-    let raw = localStorage.getItem("ai-chat-storage");
-    if (!raw) {
-      raw = sessionStorage.getItem("ai-chat-storage");
-    }
-    if (!raw) return null;
+    devLog("Looking for estimateId in messages:", estimateId);
     
-    // JSON.parse의 결과를 ChatState 타입으로 지정합니다.
-    const storageState: { state } = JSON.parse(raw);
-    const messages = storageState.state.messages;
-    
-    devLog("Parsed messages array:", messages);
-    devLog("Looking for estimateId:", estimateId);
-    
-    if (!Array.isArray(messages)) return null;
-    
-    // 배열을 순회하며 estimateId가 일치하는 메시지 객체를 찾습니다.
+    // Zustand 상태에서 직접 메시지 찾기
     const hit = messages.find((it: ChatMessage) => {
       devLog("Checking message:", it?.messageId, "estimateId:", it?.estimateId);
       
-      // 1. 먼저 기존 방식으로 estimateId 필드 확인
+      // 1. estimateId 필드 확인
       if (it?.estimateId && String(it.estimateId) === String(estimateId)) {
         return true;
       }
@@ -146,11 +134,9 @@ function findMessageIdForEstimate(estimateId?: string | null) {
     });
     
     devLog("Found message with estimateId:", hit?.messageId);
-    
-    // 찾은 메시지 객체에서 messageId를 반환합니다.
     return hit?.messageId ?? null;
   } catch (e) {
-    console.warn("findMessageIdForEstimate: 파싱 오류 발생", e);
+    console.warn("findMessageIdForEstimate: 오류 발생", e);
     return null;
   }
 }
@@ -200,7 +186,8 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
   const [estimate, setEstimate] = useState<ProjectEstimate>(data);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubItem, setSelectedSubItem] = useState<string | null>(null);
-  const [chatSessionId, setChatSessionId] = useState<string | null>(null);
+  // ✅ useChatStore에서 messages와 chatSessionId 가져오기
+  const { messages, chatSessionId, setChatSessionId } = useChatStore();
   // 전체 접기/펼치기 상태 관리
   const [allExpanded, setAllExpanded] = useState<boolean>(false);
   const [accordionStates, setAccordionStates] = useState<{[key: string]: boolean}>({});
@@ -248,22 +235,14 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
   };
 
 useEffect(() => {
-  // ⭐️ URL에서 sessionId 가져오기
+  // ✅ URL에서 sessionId 가져와서 Zustand 상태에 저장
   const urlParams = new URLSearchParams(window.location.search);
   const sessionIdFromUrl = urlParams.get('sessionId');
 
-  // ⭐️ 로컬 스토리지 또는 URL에서 sessionId 설정
   if (sessionIdFromUrl) {
     setChatSessionId(sessionIdFromUrl);
-    // 필요하다면 로컬 스토리지에 저장
-    localStorage.setItem('chatSessionId', sessionIdFromUrl);
-  } else {
-    // URL에 sessionId가 없는 경우 로컬 스토리지에서 가져옴
-    const storedChatSessionId = localStorage.getItem('chatSessionId');
-    if (storedChatSessionId) {
-      setChatSessionId(storedChatSessionId);
-    }
   }
+  // ✅ 스토리지 접근 제거 - Zustand 상태만 사용
 }, []);
 
 // 견적 데이터 변경 시 자동으로 화면설계/UI디자인 가격 업데이트 및 서버 저장
@@ -304,20 +283,10 @@ useEffect(() => {
             userId,
             estUuid: est.uuid
           });
-          //chatSessionId 없으면 로컬에서 빼오고 로컬에도 없으면 세션스토리 chatSessionId 에서 뺴오게 해줘
+          // ✅ chatSessionId는 Zustand 상태에서만 관리 (스토리지 접근 제거)
           if (!chatSessionId) {
-            const localChatSessionId = localStorage.getItem('chatSessionId');
-            if (localChatSessionId) {
-              devLog("localStorage에서 chatSessionId 가져옴:", localChatSessionId);
-              setChatSessionId(localChatSessionId);
-            } else {
-              const sessionChatSessionId = sessionStorage.getItem('chatSessionId');
-              if (sessionChatSessionId) {
-                devLog("sessionStorage에서 chatSessionId 가져옴:", sessionChatSessionId);
-                setChatSessionId(sessionChatSessionId);
-              }
-            }
             devLog("[save] chatSessionId 없음 — 업데이트 생략");
+            return;
           }
 
           // 💡 id 없으면 업데이트 못 하므로 여기서 바로 가드
@@ -326,8 +295,9 @@ useEffect(() => {
             return;
           }
 
-          // 항상 최신 messageId를 스토리지에서 조회 (동시에 여러 탭에서 변경될 수 있어서)
-          const messageId = findMessageIdForEstimate(effectiveEstimateId);
+          // ✅ Zustand 상태에서 messageId 조회
+          const currentMessages = useChatStore.getState().messages;
+          const messageId = findMessageIdForEstimate(effectiveEstimateId, currentMessages);
 
           devLog("messageId 조회 결과:", {
             effectiveEstimateId,

@@ -370,7 +370,7 @@ const UserMngPage: React.FC = () => {
     }
     
     return selectedUser.usingService.map((service: any) => ({
-      companyName: service.companyInfo?.name || '알 수 없음',
+      companyName: service.company?.companyName || '알 수 없음',
       joinDate: service.createAt || service.createAt,
       memo: service.memo || '메모 없음'
     }));
@@ -443,14 +443,46 @@ const UserMngPage: React.FC = () => {
       
       if (isCompanyCMS) {
         // cms URL인 경우 리스트 데이터만 사용
-        // memo 추출: 최상위 memo 또는 usingService 배열의 첫 번째 항목의 memo
-        let extractedMemo = item.memo || '';
-        if (!extractedMemo && item.usingService && Array.isArray(item.usingService) && item.usingService.length > 0) {
-          const firstService = item.usingService[0];
-          if (firstService && typeof firstService === 'object' && 'memo' in firstService) {
-            extractedMemo = (firstService as any).memo || '';
+        // 현재 회사 코드 추출
+        const currentCompanyCode = urlCompanyCode || '';
+        
+        // usingService 배열에서 현재 회사 코드와 일치하는 항목의 memo 찾기
+        let extractedMemo = '';
+        if (item.usingService && Array.isArray(item.usingService) && item.usingService.length > 0) {
+          // 현재 회사 코드와 일치하는 서비스 찾기
+          const matchingService = item.usingService.find((service: any) => {
+            if (service && typeof service === 'object') {
+              // company.companyCode 또는 companyCode로 비교
+              const serviceCompanyCode = service.company?.companyCode || service.companyCode;
+              return serviceCompanyCode === currentCompanyCode;
+            }
+            return false;
+          });
+          
+          // 일치하는 서비스가 있으면 해당 memo 사용
+          if (matchingService) {
+            const matchingServiceObj = matchingService as any;
+            if (matchingServiceObj && typeof matchingServiceObj === 'object' && 'memo' in matchingServiceObj) {
+              extractedMemo = matchingServiceObj.memo || '';
+            }
+          }
+          // 일치하는 서비스가 없으면 첫 번째 항목의 memo 사용 (폴백)
+          if (!extractedMemo && item.usingService.length > 0) {
+            const firstService = item.usingService[0];
+            if (firstService) {
+              const firstServiceObj = firstService as any;
+              if (firstServiceObj && typeof firstServiceObj === 'object' && 'memo' in firstServiceObj) {
+                extractedMemo = firstServiceObj.memo || '';
+              }
+            }
           }
         }
+        
+        devLog('📝 [CMS 회원 상세] memo 추출:', {
+          currentCompanyCode,
+          extractedMemo,
+          usingServiceCount: item.usingService?.length || 0
+        });
         
         const itemWithMemo = {
           ...item,
@@ -836,7 +868,45 @@ const UserMngPage: React.FC = () => {
         header: '비고', 
         flex: 1,
         accessor: 'memo',
-        formatter: (value) => value || '-' 
+        formatter: (value, row) => {
+          // URL에 cms가 포함되어 있으면 usingService에서 현재 회사의 memo 찾기
+          const isCompanyCMS = typeof window !== 'undefined' && 
+            window.location.pathname.includes('/cms');
+          
+          if (isCompanyCMS) {
+            const currentCompanyCode = urlCompanyCode || '';
+            
+            // usingService 배열에서 현재 회사 코드와 일치하는 항목의 memo 찾기
+            if (row.usingService && Array.isArray(row.usingService) && row.usingService.length > 0) {
+              const matchingService = row.usingService.find((service: any) => {
+                if (service && typeof service === 'object') {
+                  const serviceCompanyCode = service.company?.companyCode || service.companyCode;
+                  return serviceCompanyCode === currentCompanyCode;
+                }
+                return false;
+              });
+              
+              if (matchingService) {
+                const matchingServiceObj = matchingService as any;
+                if (matchingServiceObj && typeof matchingServiceObj === 'object' && 'memo' in matchingServiceObj) {
+                  return matchingServiceObj.memo || '-';
+                }
+              }
+              
+              // 일치하는 항목이 없으면 첫 번째 항목의 memo (폴백)
+              const firstService = row.usingService[0];
+              if (firstService) {
+                const firstServiceObj = firstService as any;
+                if (firstServiceObj && typeof firstServiceObj === 'object' && 'memo' in firstServiceObj) {
+                  return firstServiceObj.memo || '-';
+                }
+              }
+            }
+          }
+          
+          // 최상위 memo 또는 기본값 반환
+          return value || '-';
+        }
       },
     ],
     []

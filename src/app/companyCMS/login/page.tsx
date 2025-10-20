@@ -70,11 +70,20 @@ export default function CompanyCMSLoginPage() {
           toast.error(msg);
         },
         onSuccess: (response) => {
+          //@@Todo otp로 다시 전환 할때 주석 풀어주세요
           // 로그인 성공 시 OTP 모드로 전환
-          setLoginResponse(response); // 응답 저장
-          setIsOtpMode(true);
-          toast.success('OTP 인증을 진행해주세요.');
+          // setLoginResponse(response); // 응답 저장
+          // setIsOtpMode(true);
+          // toast.success('OTP 인증을 진행해주세요.');
           // 실제 로그인 처리는 OTP 인증 후에 수행
+
+           // 로그인 성공 시 바로 로그인 처리 및 이동
+          login(response.id, response.token, response.isRoot, response.adminData);
+          devLog('🏢 [CompanyCMSLoginPage] 로그인 성공, CMS로 이동');
+          
+          if (companyCode) {
+            navigate(`/${companyCode}/cms/admin-management`);
+          }
         },
       });
     } finally {

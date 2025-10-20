@@ -132,30 +132,56 @@ devLog('📄 [요청 body]:', body);
     throw error;
   }
 
-  // API 응답을 배열로 변환
-  const responseArray = Array.isArray(raw) ? raw : [raw];
-
-  // 401/500 에러 감지 및 토큰 관련 에러 처리
-  const response = responseArray[0];
+  // 401/500 에러 감지 및 토큰 관련 에러 처리 (raw.data에서 실제 응답 추출)
+  const response = raw?.data || raw;
   const isUnauthorized = response?.statusCode === 401;
-  
+
   const unauthorizedMessages = [
     'token is invalid',
     'Unauthorized',
     'unauthorized',
     '시스템 관리자 인증이 필요합니다.',
-    'Invalid token type for admin strategy'
+    'Invalid token type for admin strategy',
+    'Invalid token type for company strategy'  // 고객사 CMS용 추가
   ];
 
+  // 디버깅 로그 추가
+  devLog('🔍 [인증 체크]', {
+    statusCode: response?.statusCode,
+    message: response?.message,
+    errorCustomMessage: response?.error?.customMessage,
+    hasError: !!response?.error,
+    errorObject: response?.error
+  });
+
   // 401 에러이거나, 500 에러이면서 인증 관련 메시지가 있는 경우
-  const hasUnauthorizedMessage = unauthorizedMessages.some(msg => 
-    response?.message?.includes(msg) || 
-    response?.error?.customMessage?.includes(msg)
-  );
+  // ⚠️ 중요: statusCode가 401 또는 500일 때만 메시지 체크
+  const is401or500 = response?.statusCode === 401 || response?.statusCode === 500;
+  
+  const messageStr = String(response?.message || '');
+  const customMessageStr = String(response?.error?.customMessage || '');
+  
+  let hasUnauthorizedMessage = false;
+  if (is401or500) {
+    hasUnauthorizedMessage = unauthorizedMessages.some(msg => 
+      messageStr.includes(msg) || customMessageStr.includes(msg)
+    );
+  }
   
   const isTokenError = response?.statusCode === 500 && hasUnauthorizedMessage;
   
   const shouldLogout = isUnauthorized || isTokenError;
+
+  devLog('🔍 [로그아웃 판단]', {
+    isUnauthorized,
+    isTokenError,
+    hasUnauthorizedMessage,
+    shouldLogout,
+    is401or500,
+    statusCode: response?.statusCode,
+    messageStr,
+    customMessageStr
+  });
 
   if (shouldLogout) {
     devLog('🚫 [callAdminApi] 인증 에러 - 자동 로그아웃 처리', {
@@ -168,8 +194,12 @@ devLog('📄 [요청 body]:', body);
     localStorage.removeItem('adminId');
     localStorage.removeItem('admin_access_token');
     localStorage.removeItem('admin-storage');
+    alert('인증이 만료되어 로그아웃되었습니다. 다시 로그인해 주세요.'); 
     return [];
   }
+
+  // API 응답을 배열로 변환
+  const responseArray = Array.isArray(raw) ? raw : [raw];
 
   // 응답이 배열이 아닌 경우 배열로 변환하여 처리
   return callNullCheck(responseArray);

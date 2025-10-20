@@ -1045,18 +1045,18 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
       }
 
       // 🔥 사용자 메시지 저장 후 사용량 업데이트 (응답에서 queryUsage 확인)
-      console.log('🔍 사용자 메시지 응답 전체 구조:', userMessageResponse);
-      console.log('🔍 응답 데이터 존재 여부:', !!userMessageResponse);
-      console.log('🔍 data 존재 여부:', !!(userMessageResponse as any)?.data);
-      console.log('🔍 queryUsage 존재 여부:', !!(userMessageResponse as any)?.data?.queryUsage);
-      console.log('🔍 dailyQueryUsage 값:', (userMessageResponse as any)?.data?.queryUsage?.dailyQueryUsage);
+      devLog('🔍 사용자 메시지 응답 전체 구조:', userMessageResponse);
+      devLog('🔍 응답 데이터 존재 여부:', !!userMessageResponse);
+      devLog('🔍 data 존재 여부:', !!(userMessageResponse as any)?.data);
+      devLog('🔍 queryUsage 존재 여부:', !!(userMessageResponse as any)?.data?.queryUsage);
+      devLog('🔍 dailyQueryUsage 값:', (userMessageResponse as any)?.data?.queryUsage?.dailyQueryUsage);
       
       if (userMessageResponse && (userMessageResponse as any).data?.queryUsage?.dailyQueryUsage !== undefined) {
         const { remainingCount: currentCount, setRemainingCount } = useUsageStore.getState();
         const messageData = (userMessageResponse as any).data;
         const newRemainingCount = messageData.queryUsage.dailyQueryUsage;
 
-        console.log('📊 사용량 업데이트 시작:', {
+        devLog('📊 사용량 업데이트 시작:', {
           이전카운트: currentCount,
           새로운카운트: newRemainingCount,
           전체응답: messageData.queryUsage
@@ -1068,7 +1068,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         setTimeout(() => {
           const updatedCount = useUsageStore.getState().remainingCount;
           const localStorageCount = localStorage.getItem('remainingCount');
-          console.log('📊 사용량 업데이트 완료 확인:', {
+          devLog('📊 사용량 업데이트 완료 확인:', {
             스토어값: updatedCount,
             로컬스토리지값: localStorageCount,
             업데이트성공: updatedCount === newRemainingCount

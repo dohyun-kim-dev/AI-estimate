@@ -187,7 +187,7 @@ const AdminMngPage: React.FC = () => {
   
     // 연락처 검증
     if (!Validators.phone(cellphone)) {
-      setCellphoneError('연락처는 숫자 11자리여야 합니다.');
+      setCellphoneError('숫자11자리와 연락처 형식을 준수해야 합니다.');
       valid = false;
     } else setCellphoneError(null);
   
@@ -479,6 +479,7 @@ const adminDeleteClick = useCallback(
   compactFieldCount={3} // 모바일 compact 모드에서 보여줄 필드 수
   defaultViewMode="detail" // 모바일 기본 보기 모드
   enableDateFilter={false}
+  enableCompanySearch={false} // 통합관리자 관리에서는 고객사 검색 비활성화
   renderMiddleContent={() => (
     <div style={{ flex: 1, textAlign: 'end', fontWeight: 'bold' }}>
     <PrimaryButton $themeMode="light" onClick={handleHeaderButtonClick}>

@@ -125,6 +125,8 @@ const CustomerMngPage: React.FC = () => {
     contractStartDate?: string;
     contractEndDate?: string;
     homepage?: string;
+    ciImage?: string;
+    businessImage?: string;
   }>({});
  
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -271,6 +273,16 @@ const CustomerMngPage: React.FC = () => {
     
     if (!detailAddress.trim()) {
       newErrors.detailAddress = '상세 주소는 필수입니다.';
+    }
+    
+    // CI 이미지 필수 검증
+    if (!ciImage || ciImage.trim() === '') {
+      newErrors.ciImage = '고객사 CI 이미지는 필수입니다.';
+    }
+    
+    // 사업자등록증 필수 검증
+    if (!businessImage || businessImage.trim() === '') {
+      newErrors.businessImage = '사업자등록증은 필수입니다.';
     }
     
     setErrors(newErrors);

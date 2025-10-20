@@ -168,8 +168,27 @@ const ProposalDownloadPage: React.FC = () => {
     try {
       devLog(`Downloading file for estimate: ${estimateId}`);
       
+      // 통합관리자: selectedCompanyCode 사용
+      // 사이트관리자: URL에서 추출한 companyCode 사용
+      const currentPath = window.location.pathname;
+      let companyCodeToUse = selectedCompanyCode;
+      
+      if (currentPath.includes('/cms/')) {
+        const extractedCompanyCode = getCompanyCodeFromUrl();
+        if (extractedCompanyCode && extractedCompanyCode !== 'aigo') {
+          companyCodeToUse = extractedCompanyCode;
+        }
+      }
+      
+      if (!companyCodeToUse) {
+        showToast('회사 코드를 찾을 수 없습니다. 고객사를 선택해주세요.', 'error');
+        return;
+      }
+      
+      devLog('📄 [파일 다운로드] 사용할 회사 코드:', companyCodeToUse);
+      
       // 새 탭에서 PDF 미리보기 페이지 열기 (EstimateCard의 openPreviewTab과 동일한 방식)
-      let previewUrl = `/superadmin/pdf-preview?uuid=${estimateId}&companyCode=${selectedCompanyCode}`;
+      let previewUrl = `/superadmin/pdf-preview?uuid=${estimateId}&companyCode=${companyCodeToUse}`;
       const newWindow = window.open(previewUrl, '_blank');
       
       setTimeout(() => {

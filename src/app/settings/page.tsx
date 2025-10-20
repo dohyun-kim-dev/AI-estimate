@@ -103,6 +103,55 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { user, logout } = useAuthStore();
+  const [imageRetryCount, setImageRetryCount] = useState(0); // 이미지 재시도 횟수
+
+  // 프로필 이미지 URL 생성 함수
+  const getProfileImageUrl = (profileImage: string | undefined) => {
+    if (!profileImage) return '/ai-estimate/no_profile.png';
+    
+    // 이미 http로 시작하는 외부 URL인 경우 (Google 프로필 등)
+    if (profileImage.startsWith('http')) {
+      return profileImage.replace('s96-c', 's400-c');
+    }
+    
+    // 정적 파일인 경우
+    if (profileImage.startsWith('/ai-estimate/') || profileImage.startsWith('/cms/')) {
+      return profileImage;
+    }
+    
+    // 서버 파일인 경우 환경별 경로 처리
+    const isDev = import.meta.env.VITE_ENV_NAME === 'dev';
+    return isDev ? `/api/file/${profileImage}` : `/file/${profileImage}`;
+  };
+
+  // 이미지 로드 에러 핸들러
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const target = e.target as HTMLImageElement;
+    
+    // 이미 기본 이미지인 경우 재시도 중단
+    if (target.src.includes('no_profile.png')) {
+      return;
+    }
+    
+    // 3번 이상 실패하면 기본 이미지로 변경
+    if (imageRetryCount >= 3) {
+      devLog('프로필 이미지 로드 실패 (3회 초과), 기본 이미지 사용');
+      target.src = '/ai-estimate/no_profile.png';
+      setImageRetryCount(0);
+      return;
+    }
+    
+    // 재시도 횟수 증가
+    setImageRetryCount(prev => prev + 1);
+    devLog(`프로필 이미지 로드 재시도 (${imageRetryCount + 1}/3):`, target.src);
+    
+    // 잠시 후 재시도
+    setTimeout(() => {
+      const originalSrc = target.src;
+      target.src = '';
+      target.src = originalSrc;
+    }, 1000);
+  };
 
   const handleLogout = async () => {
     logout()
@@ -119,29 +168,13 @@ export default function SettingsPage() {
       <ProfileSection>
         <ProfileImage>
           <img 
-            src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/ai-estimate/no_profile.png'} 
+            src={getProfileImageUrl(user?.profileImage)} 
             alt="프로필" 
             referrerPolicy="no-referrer"
             crossOrigin="anonymous"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = '/ai-estimate/no_profile.png';
-            }}
+            onError={handleImageError}
           />
         </ProfileImage>
-         <ProfileImage>
-                  <img 
-                    src={user?.profileImage ? user.profileImage.replace('s96-c', 's400-c') : '/ai-estimate/no_profile.png'} 
-                    alt="프로필" 
-                    referrerPolicy="no-referrer"
-                    crossOrigin="anonymous"
-                    style={{width: '36px', height: '36px'}}
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = '/ai-estimate/no_profile.png';
-                    }}
-                  />
-                </ProfileImage>
         <ProfileInfo>
           <Flex>
           <ProfileName>{user?.name || '사용자'}</ProfileName>

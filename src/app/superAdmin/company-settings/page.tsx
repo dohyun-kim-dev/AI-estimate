@@ -490,7 +490,10 @@ export default function CompanyInfoSettingsPage() {
     if (filename.startsWith('http://') || filename.startsWith('https://') || filename.startsWith('/')) {
       return filename;
     }
-    return `/api/file/${filename}`;
+    
+    // ✅ 운영 배포 환경에서는 /file/ 경로 사용
+    const isDev = import.meta.env.VITE_ENV_NAME === 'dev';
+    return isDev ? `/api/file/${filename}` : `/file/${filename}`;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

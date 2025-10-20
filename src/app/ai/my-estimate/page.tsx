@@ -229,7 +229,7 @@ export default function MyEstimatePage() {
         <EmptyState>
           <Title>저장된 견적이 없습니다</Title>
           <Desc>AI 상담으로 첫 견적을 만들어 보세요.</Desc>
-          <CTAButton onClick={() => navigate('/ai-estimate')}>AI 견적 시작하기</CTAButton>
+          <CTAButton onClick={() => navigate(`/aiclient/${companyCode}/ai`)}>AI 견적 시작하기</CTAButton>
         </EmptyState>
       </Container>
     )

@@ -321,6 +321,8 @@ interface CompanyFormPopupProps {
       contractStartDate?: string;
       contractEndDate?: string;
       homepage?: string;
+      ciImage?: string;
+      businessImage?: string;
     };
   };
   onFormChange: {
@@ -1307,7 +1309,13 @@ const RemoveImageButton = styled.button`
               </ImageUploadSubText>
               <UploadButton type="button">파일 열기</UploadButton>
             </ImageUploadBox>
-          )}</div>
+          )}
+          {errors?.ciImage && (
+            <div style={{ color: '#dc3545', fontSize: '14px', marginTop: '8px' }}>
+              {errors.ciImage}
+            </div>
+          )}
+          </div>
           <HiddenInput
             id="ci-upload"
             type="file"
@@ -1373,6 +1381,11 @@ const RemoveImageButton = styled.button`
               </ImageUploadSubText>
               <UploadButton type="button">파일 열기</UploadButton>
             </ImageUploadBox>
+          )}
+          {errors?.businessImage && (
+            <div style={{ color: '#dc3545', fontSize: '14px', marginTop: '8px' }}>
+              {errors.businessImage}
+            </div>
           )}
           <HiddenInput
             id="business-upload"
