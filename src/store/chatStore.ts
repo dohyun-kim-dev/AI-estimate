@@ -40,6 +40,7 @@ interface ChatState {
   updateMessageById: (messageId: string, payload: Partial<Omit<ChatMessage, 'role'>>) => void;
   setChatSessionId: (id: string | null) => void;
   getEffectiveSessionId: () => string | null; // 추가: 유효한 세션 ID 가져오기
+  getChatSessionId: () => Promise<string | null>; // 추가: 세션 ID 가져오기 (없으면 API 호출)
   setIsProcessing: (processing: boolean) => void; // 추가: 처리 상태 설정
   setIsCrawlingUrl: (crawling: boolean) => void; // 추가: URL 크롤링 상태 설정
   loadLatestChatSession: (force?: boolean) => Promise<void>; // 추가: 최근 채팅 세션 로드 (force: 강제 로드)
@@ -146,6 +147,60 @@ export const useChatStore = create<ChatState>()(
           
           // 3. 없으면 null 반환
           return null;
+        },
+        getChatSessionId: async () => {
+          // 1. URL 파라미터 확인
+          try {
+            const searchParams = new URLSearchParams(window.location.search);
+            const urlSessionId = searchParams.get('sessionId');
+            if (urlSessionId) {
+              // URL에 있으면 스토어에도 저장
+              set({ chatSessionId: urlSessionId });
+              return urlSessionId;
+            }
+          } catch {}
+          
+          // 2. Zustand 스토어 상태 확인
+          const currentSessionId = get().chatSessionId;
+          if (currentSessionId) {
+            return currentSessionId;
+          }
+          
+          // 3. 둘 다 없으면 API 호출하여 최신 세션 가져오기
+          try {
+            const response: any = await getChatSessions();
+            
+            if (response.statusCode !== 200 || !response.data) {
+              console.log('⚠️ 채팅 세션 로드 실패:', response.message);
+              return null;
+            }
+            
+            const sessions = response.data;
+            
+            if (!sessions || sessions.length === 0) {
+              console.log('⚠️ 사용 가능한 채팅 세션이 없습니다.');
+              return null;
+            }
+
+            // updateAt 기준으로 정렬하여 가장 최근 세션 찾기
+            const sortedSessions = [...sessions].sort((a: any, b: any) => {
+              const dateA = new Date(a.updateAt || a.createAt).getTime();
+              const dateB = new Date(b.updateAt || b.createAt).getTime();
+              return dateB - dateA;
+            });
+            
+            const latestSession = sortedSessions[0];
+            if (latestSession && latestSession._id) {
+              set({ chatSessionId: latestSession._id });
+              console.log('✅ 최신 챗세션 로드:', latestSession._id);
+              return latestSession._id;
+            }
+            
+            return null;
+          } catch (error) {
+            console.error('❌ 채팅 세션 로드 실패:', error);
+            return null;
+          }
         },
         setIsProcessing: (processing) => set({ isProcessing: processing }), // 추가: 처리 상태 설정
         setIsCrawlingUrl: (crawling) => set({ isCrawlingUrl: crawling }), // 추가: URL 크롤링 상태 설정

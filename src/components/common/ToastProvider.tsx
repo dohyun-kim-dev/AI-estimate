@@ -41,7 +41,7 @@ const Container = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  z-index: 9999;
+  z-index: 999999;
   pointer-events: none;
 `
 

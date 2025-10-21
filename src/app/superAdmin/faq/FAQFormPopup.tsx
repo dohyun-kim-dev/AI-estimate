@@ -9,6 +9,7 @@ import TextArea from '@/components/common/TextArea';
 import { SwitchInput } from '@/components/SwitchInput';
 import { AppColors } from '@/styles/colors';
 import { createFAQ, updateFAQ, deleteFAQ } from '@/lib/api/admin/adminApi';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
 // FAQ 타입 정의
 type FAQ = {
@@ -43,6 +44,7 @@ const FAQFormPopup: React.FC<FAQFormPopupProps> = ({
   
   const [titleError, setTitleError] = useState<string | null>(null);
   const [contentError, setContentError] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
   const { show: showToast } = useToast();
 
@@ -118,25 +120,30 @@ const FAQFormPopup: React.FC<FAQFormPopupProps> = ({
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeleteClick = () => {
+    if (!selectedFAQ?._id) return;
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     if (!selectedFAQ?._id) return;
 
-    if (window.confirm('정말로 이 FAQ를 삭제하시겠습니까?')) {
-      try {
-        devLog('FAQ 삭제:', selectedFAQ._id);
-        await deleteFAQ(selectedFAQ._id);
-        showToast('FAQ가 성공적으로 삭제되었습니다.', 'success');
-        onSuccess();
-      } catch (error) {
-        console.error('FAQ 삭제 오류:', error);
-        const err = error as Error | { customMessage?: string };
-        const errorMessage = 'customMessage' in err 
-          ? err.customMessage 
-          : err instanceof Error 
-            ? err.message 
-            : 'FAQ 삭제에 실패했습니다.';
-        showToast(errorMessage, 'error');
-      }
+    try {
+      devLog('FAQ 삭제:', selectedFAQ._id);
+      await deleteFAQ(selectedFAQ._id);
+      showToast('FAQ가 성공적으로 삭제되었습니다.', 'success');
+      setIsDeleteModalOpen(false);
+      onSuccess();
+    } catch (error) {
+      console.error('FAQ 삭제 오류:', error);
+      const err = error as Error | { customMessage?: string };
+      const errorMessage = 'customMessage' in err 
+        ? err.customMessage 
+        : err instanceof Error 
+          ? err.message 
+          : 'FAQ 삭제에 실패했습니다.';
+      showToast(errorMessage, 'error');
+      setIsDeleteModalOpen(false);
     }
   };
 
@@ -153,7 +160,7 @@ const FAQFormPopup: React.FC<FAQFormPopupProps> = ({
         <PopupFooter>
           {/* 왼쪽 영역: 삭제 버튼 */}
           {selectedFAQ ? (
-            <DeleteButton onClick={handleDelete}>
+            <DeleteButton onClick={handleDeleteClick}>
               삭제
             </DeleteButton>
           ) : (
@@ -210,6 +217,19 @@ const FAQFormPopup: React.FC<FAQFormPopupProps> = ({
           errorMessage={contentError ?? undefined}
         />
       </FormContainer>
+
+      {/* 삭제 확인 모달 */}
+      <DeleteConfirmModal
+        open={isDeleteModalOpen}
+        title="FAQ 삭제"
+        content="정말로 이 FAQ를 삭제하시겠습니까?"
+        confirmText="삭제"
+        cancelText="취소"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setIsDeleteModalOpen(false)}
+        showCloseButton={true}
+        reverseButtons={false}
+      />
     </CmsPopup>
   );
 };

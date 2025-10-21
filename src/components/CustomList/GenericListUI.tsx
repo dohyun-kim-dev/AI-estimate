@@ -116,6 +116,9 @@ interface GenericListUIProps<T extends BaseRecord> {
   excelTemplateButton?: ButtonProp;
   excelUploadButton?: ButtonProp;
 
+  // 커스텀 엑셀 다운로드 함수 (선택사항)
+  customExcelDownload?: (data: T[], columns: ColumnDefinition<T>[]) => void;
+
   enableCompanySearch?: boolean;
   onCompanySelect?: (company: { id: string; name: string }) => void;
   selectedCompanyCode?: string | null;
@@ -216,6 +219,7 @@ const GenericListUIInner = <T extends BaseRecord>(
     excelTemplateButton,
     excelUploadButton,
     statusFilter,
+    customExcelDownload, // 커스텀 엑셀 다운로드 함수
     enableCompanySearch,
     onCompanySelect,
     selectedCompanyCode: externalSelectedCompanyCode,
@@ -474,6 +478,13 @@ const GenericListUIInner = <T extends BaseRecord>(
         return;
       }
 
+      // 커스텀 엑셀 다운로드 함수가 있으면 사용
+      if (customExcelDownload) {
+        customExcelDownload(dataToDownload, columns);
+        return;
+      }
+
+      // 기본 엑셀 다운로드 로직
       // 컬럼 정보를 사용하여 데이터 포맷팅 (showColumn이 false인 컬럼은 제외)
       const formattedData = dataToDownload.map(item => {
         const row: { [key: string]: any } = {};

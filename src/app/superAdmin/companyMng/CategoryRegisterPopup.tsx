@@ -7,6 +7,7 @@ import ActionButton from '@/components/ActionButton';
 import { toast } from 'react-toastify';
 import { createCategory, updateCategory } from '@/lib/api/admin/adminApi';
 import { devLog } from '@/utils/devLogger'
+import { useToast } from '@/components/common/ToastProvider';
 
 interface CategoryRegisterPopupProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ interface CategoryRegisterPopupProps {
 const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, onClose, editData }) => {
   const [categoryName, setCategoryName] = useState(editData?.name ?? '');
   const [categoryCode, setCategoryCode] = useState(editData?.code ?? '');
+  const { show: showToast } = useToast(); 
 
   // editData가 변경될 때마다 값 초기화
   React.useEffect(() => {
@@ -29,11 +31,11 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
 
   const handleSave = async () => {
     if (!categoryName) {
-      toast.error('카테고리명을 입력하세요.');
+      showToast('카테고리명을 입력하세요.','error');
       return;
     }
     if (!editData && !categoryCode) {
-      toast.error('카테고리코드를 입력하세요.');
+      showToast('카테고리코드를 입력하세요.','error');
       return;
     }
     try {
@@ -41,7 +43,7 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
         // 수정 - ID 확인 로그 추가
         const categoryId = editData.id || editData._id;
         if (!categoryId) {
-          toast.error('카테고리 ID를 찾을 수 없습니다.');
+          showToast('카테고리 ID를 찾을 수 없습니다.','error');
           return;
         }
         devLog('카테고리 수정 - ID:', categoryId, '데이터:', { name: categoryName, code: categoryCode });
@@ -55,7 +57,7 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
         const apiResponse = (actualResponse as any)?.data;
 
         if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
-          toast.success('카테고리가 수정되었습니다.');
+          showToast('카테고리가 수정되었습니다.','success');
           setCategoryName('');
           setCategoryCode('');
           onClose();
@@ -75,7 +77,7 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
               errorMessage = '중복된 카테고리입니다.';
             }
           }
-          toast.error(errorMessage);
+          showToast(errorMessage,'error');
         }
       } else {
         // 등록
@@ -90,7 +92,7 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
         const apiResponse = (actualResponse as any)?.data;
 
         if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
-          toast.success('카테고리가 등록되었습니다.');
+          showToast('카테고리가 등록되었습니다.','success');
           setCategoryName('');
           setCategoryCode('');
           onClose();
@@ -110,7 +112,7 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
               errorMessage = '중복된 카테고리입니다.';
             }
           }
-          toast.error(errorMessage);
+          showToast(errorMessage,'error');
         }
       }
     } catch (error) {
@@ -134,8 +136,8 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
           errorMessage = '중복된 카테고리입니다.';
         }
       }
-      
-      toast.error(errorMessage);
+
+      showToast(errorMessage,'error');
     }
   };
 

@@ -6,6 +6,7 @@ import Icon, { IconName } from '@/components/ai-esti/Icon'
 import { SocialLoginModal } from '@/components/ai-esti/SocialLoginModal';
 import { useAuthStore } from '@/store/authStore';
 import { CountModal } from '@/components/ai-esti/CountModal';
+import { useChatStore } from '@/store/chatStore';
 
 interface FooterProps { compact?: boolean }
 
@@ -90,6 +91,7 @@ const Footer: React.FC<FooterProps> = ({ compact }) => {
   const { isDarkMode } = useThemeStore()
   const { companyCode } = useParams() // URL에서 companyCode를 가져옵니다.
   const { isAuthenticated } = useAuthStore()
+  const getChatSessionId = useChatStore((s) => s.getChatSessionId)
   const [isSocialLoginModalOpen, setIsSocialLoginModalOpen] = useState(false)
   const [parentWidth, setParentWidth] = useState<number | null>(null)
   const [isEmbed, setIsEmbed] = useState(false)
@@ -159,26 +161,27 @@ const Footer: React.FC<FooterProps> = ({ compact }) => {
           const iconSrc = getIconSrc(item.key, isDarkMode, item.external ? false : isActive);
   
           if (item.external) {
-            // 현재 chatSessionId를 URL 파라미터로 전달
-            const searchParams = new URLSearchParams(window.location.search);
-            const sessionId = searchParams.get('sessionId') || localStorage.getItem('chatSessionId');
-            const fullUrl = sessionId
-              ? `/aiclient/${companyCode}/ai?sessionId=${sessionId}`
-              : `/aiclient/${companyCode}/ai`;
-
-            // 토큰/유저정보 준비
-            let token = localStorage.getItem('user_access_token') || '';
-            let userInfo = {};
-            try {
-              userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-            } catch {}
-
+            // Zustand 스토어에서 chatSessionId 가져오기
             return (
               <ButtonLike
                 key={idx}
                 $isActive={false}
                 onClick={async (e) => {
                   e.preventDefault();
+                  
+                  // 스토어에서 세션 ID 가져오기 (없으면 API 호출)
+                  const sessionId = await getChatSessionId();
+                  const fullUrl = sessionId
+                    ? `/aiclient/${companyCode}/ai?sessionId=${sessionId}`
+                    : `/aiclient/${companyCode}/ai`;
+
+                  // 토큰/유저정보 준비
+                  let token = localStorage.getItem('user_access_token') || '';
+                  let userInfo = {};
+                  try {
+                    userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                  } catch {}
+
                   const win = window.open(fullUrl, '_blank', 'noopener,noreferrer');
                   // 새탭이 열리고 JS가 로드된 뒤 postMessage로 데이터 전달
                   if (win) {

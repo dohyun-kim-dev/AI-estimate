@@ -1159,6 +1159,8 @@ const RemoveImageButton = styled.button`
           onChange={(e) => setCeoName && setCeoName(e.target.value)}
           placeholder="고객사명(영문)을 입력하세요"
           errorMessage={errors?.ceoName}
+          readOnly={isEditMode}
+          style={isEditMode ? { cursor: 'not-allowed', opacity: 0.8 } : {}}
         />
         <CommonTextField
           id="code"
@@ -1167,6 +1169,8 @@ const RemoveImageButton = styled.button`
           onChange={(e) => setCode && setCode(e.target.value)}
           placeholder="고객사코드를 입력하세요"
           errorMessage={errors?.code}
+          readOnly={isEditMode}
+          style={isEditMode ? { cursor: 'not-allowed', opacity: 0.8 } : {}}
         />
         <CategoryFieldWrapper>
           <CommonTextField

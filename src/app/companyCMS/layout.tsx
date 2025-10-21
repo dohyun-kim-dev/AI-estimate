@@ -6,8 +6,7 @@ import { useLocation, useNavigate, Outlet, useParams } from 'react-router-dom';
 import { AdminAuthProvider, useAdminAuth } from '@contexts/AdminAuthContext';
 import { useDevice } from '@contexts/DeviceContext';
 import { THEME_COLORS } from '@styles/theme_colors';
-import { toast, ToastContainer } from 'react-toastify';
-
+import { useToast } from '../../components/common/ToastProvider';
 // Import components
 import ResponsiveSidebar from '@components/CustomSidebar/ResponsiveSidebar';
 import CustomSidebarHeader from '@components/CustomSidebar/CustomSidebarHeader';
@@ -38,6 +37,8 @@ function ProtectedCompanyCMSLayout() {
   const { isLoggedIn, ready, logout, isRoot } = useAdminAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { show: showToast } = useToast(); // 토스트 훅 추가
+
   const { companyCode } = useParams<{ companyCode: string }>();
   const device = useDevice();
   const isLoginPage = location.pathname.includes(`/cms/login`);
@@ -67,7 +68,7 @@ function ProtectedCompanyCMSLayout() {
   const handleLogout = () => {
     logout();
     navigate(`/${companyCode}/cms/login`, { replace: true });
-    toast.success('로그아웃 되었습니다');
+    showToast('로그아웃 되었습니다','success');
   };
 
   const effectiveSidebarExpanded = useMemo(
@@ -177,7 +178,6 @@ function ProtectedCompanyCMSLayout() {
   return (
     <ScrollAwareWrapper>
       <OuterLayoutContainer $themeMode="light" $device={device}>
-        <ToastContainer position="top-center" autoClose={3000} />
         <ResponsiveSidebar
           isCollapsed={isCollapsed}
           toggleSidebar={toggleSidebar}
@@ -206,7 +206,6 @@ function ProtectedCompanyCMSLayout() {
           </Container>
         </MainContent>
       </OuterLayoutContainer>
-      <ToastContainer />
     </ScrollAwareWrapper>
   );
 }

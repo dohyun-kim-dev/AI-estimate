@@ -6,6 +6,7 @@ import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import CommonButton from '@/components/CommonButton';
 import { toast, ToastContainer } from 'react-toastify';
 import { useParams } from 'react-router-dom';
+import { useToast } from '@/components/common/ToastProvider';
 
 export default function LoginPage() {
   const [userId, setUserId] = useState('');
@@ -37,6 +38,8 @@ export default function LoginPage() {
 
   const navigate = useNavigate();
   const { login, isLoggedIn } = useAdminAuth();
+  const { show: showToast } = useToast(); 
+
 
   // 이미 로그인된 상태라면 /cms로 리다이렉트
   useEffect(() => {
@@ -81,11 +84,11 @@ export default function LoginPage() {
         id: userId,
         password,
         showMessage: (msg) => {
-          toast.error(msg);
+          showToast(msg,'error');
         },
         onSuccess: (response) => {
           login(response.id, response.token, response.isRoot, response.adminData);
-          toast.success('로그인 성공!');
+          showToast('로그인 성공!','success');
           navigate(`/superadmin`);
         },
       });

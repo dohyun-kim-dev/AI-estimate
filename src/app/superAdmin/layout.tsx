@@ -4,7 +4,7 @@ import { useLocation, useNavigate, Outlet, useParams } from 'react-router-dom';
 import { AdminAuthProvider, useAdminAuth } from '@contexts/AdminAuthContext';
 import { useDevice } from '@contexts/DeviceContext';
 import { THEME_COLORS } from '@styles/theme_colors';
-import { toast, ToastContainer } from 'react-toastify';
+import { useToast } from '@/components/common/ToastProvider';
 
 // Import components
 import ResponsiveSidebar from '@components/CustomSidebar/ResponsiveSidebar';
@@ -43,6 +43,7 @@ function ProtectedCmsLayout() {
   const isPdfPreviewPage = location.pathname.includes('/superadmin/pdf-preview');
   const isExcelPreviewPage = location.pathname.includes('/superadmin/excel-preview');
   const isPromptDetailPage = location.pathname.includes('/superadmin/prompt-detail');
+  const { show: showToast } = useToast(); // 토스트 훅 추가
 
   useEffect(() => {
     if (ready && !isLoggedIn && !isLoginPage && !isPdfPreviewPage && !isExcelPreviewPage && !isPromptDetailPage) {
@@ -62,7 +63,7 @@ function ProtectedCmsLayout() {
     logout();
     navigate(`/superadmin/login`, { replace: true });
     console.log('handleLogout LayoutPage 로그아웃 되었습니다');
-    toast.success('로그아웃 되었습니다');
+    showToast('로그아웃 되었습니다','success');
   };
 
   const effectiveSidebarExpanded = useMemo(
@@ -166,7 +167,6 @@ const handleMenuToggle = (menuId: string) => {
   return (
     <ScrollAwareWrapper>
       <OuterLayoutContainer $themeMode="light" $device={device}>
-        <ToastContainer position="top-center" autoClose={3000} />
         <ResponsiveSidebar
           isCollapsed={isCollapsed}
           toggleSidebar={toggleSidebar}

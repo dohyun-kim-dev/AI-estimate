@@ -103,11 +103,12 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { user, logout } = useAuthStore();
-  const [imageRetryCount, setImageRetryCount] = useState(0); // 이미지 재시도 횟수
+  const [imageLoaded, setImageLoaded] = useState(false); // 이미지 로드 상태
+  const [useDefaultImage, setUseDefaultImage] = useState(false); // 기본 이미지 사용 여부
 
   // 프로필 이미지 URL 생성 함수
   const getProfileImageUrl = (profileImage: string | undefined) => {
-    if (!profileImage) return '/ai-estimate/no_profile.png';
+    if (!profileImage || useDefaultImage) return '/ai-estimate/no_profile.png';
     
     // 이미 http로 시작하는 외부 URL인 경우 (Google 프로필 등)
     if (profileImage.startsWith('http')) {
@@ -128,29 +129,20 @@ export default function SettingsPage() {
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const target = e.target as HTMLImageElement;
     
-    // 이미 기본 이미지인 경우 재시도 중단
+    // 이미 기본 이미지인 경우 중단
     if (target.src.includes('no_profile.png')) {
       return;
     }
     
-    // 3번 이상 실패하면 기본 이미지로 변경
-    if (imageRetryCount >= 3) {
-      devLog('프로필 이미지 로드 실패 (3회 초과), 기본 이미지 사용');
-      target.src = '/ai-estimate/no_profile.png';
-      setImageRetryCount(0);
-      return;
-    }
-    
-    // 재시도 횟수 증가
-    setImageRetryCount(prev => prev + 1);
-    devLog(`프로필 이미지 로드 재시도 (${imageRetryCount + 1}/3):`, target.src);
-    
-    // 잠시 후 재시도
-    setTimeout(() => {
-      const originalSrc = target.src;
-      target.src = '';
-      target.src = originalSrc;
-    }, 1000);
+    // 한 번 실패하면 바로 기본 이미지로 변경
+    devLog('프로필 이미지 로드 실패, 기본 이미지 사용');
+    setUseDefaultImage(true);
+    setImageLoaded(true);
+  };
+
+  // 이미지 로드 성공 핸들러
+  const handleImageLoad = () => {
+    setImageLoaded(true);
   };
 
   const handleLogout = async () => {
@@ -168,12 +160,21 @@ export default function SettingsPage() {
       <ProfileSection>
         <ProfileImage>
           <img 
-            src={getProfileImageUrl(user?.profileImage)} 
+            src={imageLoaded ? getProfileImageUrl(user?.profileImage) : '/ai-estimate/no_profile.png'} 
             alt="프로필" 
             referrerPolicy="no-referrer"
             crossOrigin="anonymous"
             onError={handleImageError}
+            onLoad={handleImageLoad}
+            style={{ display: imageLoaded ? 'block' : 'none' }}
           />
+          {!imageLoaded && (
+            <img 
+              src="/ai-estimate/no_profile.png" 
+              alt="프로필" 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          )}
         </ProfileImage>
         <ProfileInfo>
           <Flex>

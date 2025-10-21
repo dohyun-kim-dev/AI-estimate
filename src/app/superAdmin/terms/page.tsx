@@ -8,6 +8,8 @@ import CommonButton from "@/components/CommonButton";
 import { termGetList, TermGetListParams, termUpdate } from "@/lib/api/admin";
 import { toast, ToastContainer } from 'react-toastify';
 import { devLog } from "@/lib/utils/devLogger";
+import { useToast } from '@/components/common/ToastProvider';
+
 
 const CustomTiptapEditor = React.lazy(() => import("@/components/Editor/CustomTiptapEditor"));
 
@@ -71,6 +73,7 @@ export default function TermsPage() {
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [contents, setContents] = useState<ContentMap>({});
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const { show: showToast } = useToast(); // 토스트 훅 추가
 
   // 1. API 호출 및 데이터 매핑
   useEffect(() => {
@@ -136,7 +139,7 @@ export default function TermsPage() {
     const current = contents[activeTab];
   
     if (!current?.language) {
-      toast.error("저장할 약관 정보가 없습니다.");
+      showToast("저장할 약관 정보가 없습니다.", 'error');
       return;
     }
   
@@ -151,8 +154,8 @@ export default function TermsPage() {
   
       const result = response?.[0] || response;
       if (result?.['message'] === "success" || response?.['message'] === "success") {
-        toast.success("저장되었습니다.");
-        
+        showToast("저장되었습니다.", 'success');
+
         const newId = response?.data?._id;
         if (newId) {
             setContents((prev) => ({
@@ -173,12 +176,12 @@ export default function TermsPage() {
             }));
         }
       } else {
-        toast.error("저장에 실패했습니다.");
+        showToast("저장에 실패했습니다.", 'error');
         console.warn("🚨 실패 응답 내용:", result);
       }
     } catch (error) {
       console.error("❌ 저장 오류:", error);
-      toast.error("저장 중 오류가 발생했습니다.");
+      showToast("저장 중 오류가 발생했습니다.", 'error');
     }
   };
 

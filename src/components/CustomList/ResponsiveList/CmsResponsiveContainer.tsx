@@ -49,6 +49,8 @@ interface CmsResponsiveContainerProps<T extends BaseRecord> {
   onInitialDateSet?: (fromDate: string, toDate: string) => void;
   onDateChange?: (fromDate: string, toDate: string) => void;
   onSearchChange?: (keyword: string) => void; // 검색 변경 콜백 추가
+  // 커스텀 엑셀 다운로드 함수
+  customExcelDownload?: (data: T[], columns: ColumnDefinition<T>[]) => void;
   
 }
 
@@ -83,6 +85,7 @@ const CmsResponsiveContainer = <T extends BaseRecord>(
     onInitialDateSet, // 날짜 콜백 추가
     onDateChange, // 날짜 콜백 추가
     onSearchChange, // 검색 변경 콜백 추가
+    customExcelDownload, // 커스텀 엑셀 다운로드 함수
     dateRangeOptions,
     ref,
   } = props;
@@ -116,6 +119,7 @@ const CmsResponsiveContainer = <T extends BaseRecord>(
     onInitialDateSet, // 날짜 콜백 추가
     onDateChange, // 날짜 콜백 추가
     onSearchChange, // 검색 변경 콜백 추가
+    customExcelDownload, // 커스텀 엑셀 다운로드 함수
     dateRangeOptions,
   };
 

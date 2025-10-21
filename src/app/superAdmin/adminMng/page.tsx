@@ -96,6 +96,8 @@ const AdminMngPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<Partial<AdminUser> | null>(null);
   const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('');
   const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
+  const [popupCompanyCode, setPopupCompanyCode] = useState<string>(''); // 팝업 내부 고객사 코드
+  const [popupCompanyName, setPopupCompanyName] = useState<string>(''); // 팝업 내부 고객사 이름
   const { show: showToast } = useToast(); // 토스트 훅 추가
 
   const [userId, setUserId] = useState('');
@@ -148,11 +150,16 @@ const AdminMngPage: React.FC = () => {
 
   const handleHeaderButtonClick = () => {
     resetForm(); // 신규 등록
+    setPopupCompanyCode(''); // 팝업 고객사 초기화
+    setPopupCompanyName('');
     setIsPopupOpen(true);
   };
 
   const handleRowClick = (item: AdminUser) => {
     resetForm(item); // 수정
+    // 수정 모드일 때 해당 관리자의 고객사 정보 설정
+    setPopupCompanyCode(item.companyCode || '');
+    setPopupCompanyName(item.companyCode || ''); // companyName 우선, 없으면 companyCode
     setIsPopupOpen(true);
   };
 
@@ -209,7 +216,7 @@ const AdminMngPage: React.FC = () => {
         const updatePayload: AdminUpdateParams = {
           _id: selectedUser._id || '',
           targetAdminId: userId,
-          companyCode: selectedCompanyCode || '', // 고객사 코드 추가
+          companyCode: popupCompanyCode || '', // 팝업 내부 고객사 코드 사용
         };
 
         // 각 필드가 기존 값과 다른 경우에만 포함
@@ -287,7 +294,7 @@ const AdminMngPage: React.FC = () => {
           email,
           receiveEmail: receiveEmail,
           receiveAlimtalk: receiveAlimtalk,
-          companyCode: selectedCompanyCode, // 고객사 코드 추가
+          companyCode: popupCompanyCode, // 팝업 내부 고객사 코드 사용
         };
 
         devLog('✨ [생성 요청 데이터]', {
@@ -498,6 +505,13 @@ const AdminMngPage: React.FC = () => {
     }, 100);
   }, []);
 
+  // 팝업 내부 고객사 선택 핸들러 (재호출 없음)
+  const handlePopupCompanySelect = useCallback((company: { id: string; name: string }) => {
+    setPopupCompanyCode(company.id);
+    setPopupCompanyName(company.name);
+    // 재호출 안 함
+  }, []);
+
   const columns: ColumnDefinition<AdminUser>[] = useMemo(
     () => [
       {
@@ -581,7 +595,7 @@ const AdminMngPage: React.FC = () => {
         compactFieldCount={3} // 모바일 compact 모드에서 보여줄 필드 수
         defaultViewMode="detail" // 모바일 기본 보기 모드
         enableDateFilter={false}
-        enableCompanySearch={false}
+        enableCompanySearch={true}
         onCompanySelect={handleCompanySelect}
         renderMiddleContent={() => (
           <div style={{ flex: 1, textAlign: 'end', fontWeight: 'bold' }}>
@@ -625,9 +639,9 @@ const AdminMngPage: React.FC = () => {
         nameError={nameError}
         emailError={emailError}
         cellphoneError={cellphoneError}
-        selectedCompanyCode={selectedCompanyCode}
-        selectedCompanyName={selectedCompanyName}
-        onCompanySelect={handleCompanySelect}
+        selectedCompanyCode={popupCompanyCode}
+        selectedCompanyName={popupCompanyName}
+        onCompanySelect={handlePopupCompanySelect}
         isRoot={false}
       />
 

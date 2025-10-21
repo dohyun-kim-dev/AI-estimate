@@ -754,7 +754,7 @@ const PriceListPage: React.FC = () => {
           {
             header: 'No',
             accessor: 'no',
-            sortable: false,
+            sortable: true,
             formatter: (value) => value
           },
           // 작성일시 컬럼 추가

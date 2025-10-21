@@ -1109,15 +1109,32 @@ export async function updateEstimateRequestStatus(estimateRequestId: string, par
 // ***************** FAQ 관리
 
 // FAQ 목록 조회 API
-export async function getFAQList(companyCode?: string, keyword?: string) {
+export async function getFAQList(
+  companyCode?: string, 
+  keyword?: string,
+  fromDate?: string,
+  toDate?: string
+) {
   let url = companyCode 
     ? `${BASE_URL}/cms/faqs?companyCode=${companyCode}`
     : `${BASE_URL}/cms/faqs`;
     
   // keyword가 있으면 쿼리 파라미터에 추가
   if (keyword) {
-    const separator = companyCode ? '&' : '?';
+    const separator = url.includes('?') ? '&' : '?';
     url += `${separator}keyword=${encodeURIComponent(keyword)}`;
+  }
+  
+  // fromDate가 있으면 쿼리 파라미터에 추가
+  if (fromDate) {
+    const separator = url.includes('?') ? '&' : '?';
+    url += `${separator}fromDate=${encodeURIComponent(fromDate)}`;
+  }
+  
+  // toDate가 있으면 쿼리 파라미터에 추가
+  if (toDate) {
+    const separator = url.includes('?') ? '&' : '?';
+    url += `${separator}toDate=${encodeURIComponent(toDate)}`;
   }
     
   return callAdminApi({

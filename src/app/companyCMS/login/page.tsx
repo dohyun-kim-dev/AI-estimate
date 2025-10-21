@@ -10,6 +10,7 @@ import OTPInputForm from '@/components/OTPInputForm';
 import { toast, ToastContainer } from 'react-toastify';
 import styled from 'styled-components';
 import { devLog } from '../../../utils/devLogger';
+import { useToast } from '@/components/common/ToastProvider';
 
 export default function CompanyCMSLoginPage() {
   const [userId, setUserId] = useState('');
@@ -20,6 +21,7 @@ export default function CompanyCMSLoginPage() {
   const [isOtpMode, setIsOtpMode] = useState(false); // OTP 모드 상태
   const [loginResponse, setLoginResponse] = useState<any>(null); // 로그인 응답 저장
   const { companyCode } = useParams<{ companyCode: string }>();
+  const { show: showToast } = useToast(); // 토스트 훅 추가
 
   const navigate = useNavigate();
   const { login, isLoggedIn } = useAdminAuth();
@@ -74,7 +76,7 @@ export default function CompanyCMSLoginPage() {
           // 로그인 성공 시 OTP 모드로 전환
           // setLoginResponse(response); // 응답 저장
           // setIsOtpMode(true);
-          // toast.success('OTP 인증을 진행해주세요.');
+          // showToast('OTP 인증을 진행해주세요.','success');
           // 실제 로그인 처리는 OTP 인증 후에 수행
 
            // 로그인 성공 시 바로 로그인 처리 및 이동

@@ -14,6 +14,7 @@ function isInAppBrowser() {
 import { EstimateConfirmModal } from './EstimateConfirmModal';
 import IssuerInfoModal, { IssuerInfo } from './IssuerInfoModal';
 import { useAuthStore } from '@/store/authStore';
+import { useChatStore } from '@/store/chatStore'; // 추가
 import { useToast } from '@/components/common/ToastProvider';
 import { googleLoginInitial, googleLoginUpdate, companyRegister, addGuestAdditionalCharge } from '@/lib/api/user/userApi';
 import { setToken } from '@/lib/utils/tokenUtils';
@@ -207,6 +208,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
   // IssuerInfoModal의 purpose를 별도로 저장
   const [infoModalPurpose, setInfoModalPurpose] = useState<SocialLoginModalProps['purpose']>('default');
   const { login, setUser, persistUser, openAdditionalInfoModal, openEstimateModal } = useAuthStore();
+  const { getChatSessionId } = useChatStore(); // 추가
   const { success, error: showError } = useToast();
   const { companyInfo } = useCompanyStore();
 
@@ -650,8 +652,8 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                 }
                 
                 if (lastEstimateId) {
-                  // chatSessionId 가져오기 (localStorage -> sessionStorage 순서)
-                  let chatSessionId = localStorage.getItem('chatSessionId') || sessionStorage.getItem('chatSessionId');
+                  // 스토어에서 chatSessionId 가져오기 (없으면 API 호출)
+                  let chatSessionId = await getChatSessionId();
                   
                   // requestEstimateConsult 호출
                   const user = {

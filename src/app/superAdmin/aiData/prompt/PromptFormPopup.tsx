@@ -6,7 +6,7 @@ import CommonTextField from '@/components/common/TextField';
 import TextArea from '@/components/common/TextArea';
 import { AppColors } from '@/styles/colors';
 import { createAIPrompt, updateAIPrompt, deleteAIPrompt } from '@/lib/api/admin/adminApi';
-import { toast } from 'react-toastify';
+import { useToast } from '@/components/common/ToastProvider';
 
 const PopupFooter = styled.div`
   display: flex;
@@ -89,6 +89,7 @@ const PromptFormPopup: React.FC<PromptFormPopupProps> = ({
   selectedPrompt,
   companyCode,
 }) => {
+  const { show: showToast } = useToast(); 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [content, setContent] = useState('');
@@ -149,7 +150,7 @@ const PromptFormPopup: React.FC<PromptFormPopupProps> = ({
           description: description.trim(),
           content: content.trim(),
         });
-        toast.success('프롬프트가 수정되었습니다.');
+        showToast('프롬프트가 수정되었습니다.','success');
       } else {
         // 생성
         await createAIPrompt({
@@ -158,12 +159,12 @@ const PromptFormPopup: React.FC<PromptFormPopupProps> = ({
           description: description.trim(),
           content: content.trim(),
         });
-        toast.success('프롬프트가 생성되었습니다.');
+        showToast('프롬프트가 생성되었습니다.','success');
       }
       onSave();
     } catch (error: any) {
       const errorMessage = error?.message || '저장에 실패했습니다.';
-      toast.error(errorMessage);
+      showToast(errorMessage,'error');
     }
   };
 
@@ -176,11 +177,11 @@ const PromptFormPopup: React.FC<PromptFormPopupProps> = ({
           id: selectedPrompt._id,
           companyCode,
         });
-        toast.success('프롬프트가 삭제되었습니다.');
+        showToast('프롬프트가 삭제되었습니다.','success');
         onSave();
       } catch (error: any) {
         const errorMessage = error?.message || '삭제에 실패했습니다.';
-        toast.error(errorMessage);
+        showToast(errorMessage,'error');
       }
     }
   };

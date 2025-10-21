@@ -5,6 +5,7 @@ import { useToast } from '@/components/common/ToastProvider';
 import { getCompanyList, createCompany, updateCompany } from '@/lib/api/admin/adminApi';
 import { getFileUrl } from '@/lib/api/user/userApi';
 import dayjs from 'dayjs';
+import * as XLSX from 'xlsx';
 import { FetchParams, FetchResult } from '@/components/CustomList/GenericListUI';
 import { ColumnDefinition } from '@/components/CustomList/GenericDataTable';
 import CompanyFormPopup from './CompanyFormPopup';
@@ -37,6 +38,7 @@ interface ApiResponse<T> {
 
 type Company = {
   _id: string;
+  no?: number; // No 필드 추가
   name: string; // 고객사 대표명
   companyName: string; // 고객사명(KR)
   dbName: string; // 고객사명(EN)
@@ -137,7 +139,7 @@ const CustomerMngPage: React.FC = () => {
 
   const resetForm = useCallback(
     (initial?: Partial<Company>) => {
-      setSelectedCustomer(initial ?? null);
+      // selectedCustomer는 별도로 설정하므로 여기서는 제외
       setName(initial?.name ?? ''); // 고객사 대표명
       setCompanyName(initial?.companyName ?? ''); // 고객사명(KR)
       setCode(initial?.companyCode ?? ''); // 고객사코드
@@ -170,10 +172,12 @@ const CustomerMngPage: React.FC = () => {
 
   const handleAddClick = () => {
     resetForm();
+    setSelectedCustomer(null); // 명시적으로 null 설정
     setIsPopupOpen(true);
   };
 
   const handleRowClick = (customer: Company) => {
+    setSelectedCustomer(customer); // 먼저 customer 설정
     resetForm(customer);
     setIsPopupOpen(true);
   };
@@ -187,6 +191,7 @@ const CustomerMngPage: React.FC = () => {
   };
 
   const handleCompanyRegisterClick = () => {
+    setSelectedCustomer(null); // 먼저 null로 설정
     resetForm(); // 고객사 등록 시 모든 상태 초기화
     setIsCompanyRegisterOpen(true);
   };
@@ -411,6 +416,75 @@ const CustomerMngPage: React.FC = () => {
     []
   );
 
+  // 고객사 전용 엑셀 다운로드 함수
+  const handleCustomExcelDownload = useCallback((data: Company[], columns: ColumnDefinition<Company>[]) => {
+    try {
+      if (!data || data.length === 0) {
+        alert('다운로드할 데이터가 없습니다.');
+        return;
+      }
+
+      // 엑셀 데이터 포맷팅 (라이선스, 카테고리명 제외, 계약기간 형식 변경)
+      const formattedData = data.map(item => {
+        const row: { [key: string]: any } = {};
+        
+        // 원하는 컬럼만 추가
+        row['No'] = item.no || '';
+        row['가입일시'] = item.createAt ? dayjs(item.createAt).format('YY.MM.DD(ddd) HH:mm') : '-';
+        row['고객사명(KR)'] = item.companyName || '-';
+        row['고객사명(EN)'] = item.dbName || '-';
+        // 라이선스 제외
+        // 계약구분
+        row['계약구분'] = item.contractType || '-';
+        // 계약기간 - 25.10.19 ~ 26.10.19 형식
+        const start = item.contractStartDate ? dayjs(item.contractStartDate).format('YY.MM.DD') : '';
+        const end = item.contractEndDate ? dayjs(item.contractEndDate).format('YY.MM.DD') : '';
+        row['계약기간'] = start && end ? `${start} ~ ${end}` : '-';
+        // 카테고리명 제외
+        row['사업자번호'] = item.businessNumber || '-';
+        row['대표명'] = item.name || '-';
+        row['고객사 주소'] = `${item.address || ''} ${item.detailAddress || ''}`.trim() || '-';
+        row['전화번호'] = item.cellphone || '-';
+        row['이메일'] = item.email || '-';
+        row['메모'] = item.memo || '-';
+        
+        return row;
+      });
+
+      // 워크시트 생성
+      const worksheet = XLSX.utils.json_to_sheet(formattedData);
+      
+      // 컬럼 너비 설정
+      const columnWidths = [
+        { wch: 5 },   // No
+        { wch: 18 },  // 가입일시
+        { wch: 15 },  // 고객사명(KR)
+        { wch: 15 },  // 고객사명(EN)
+        { wch: 10 },  // 계약구분
+        { wch: 20 },  // 계약기간
+        { wch: 15 },  // 사업자번호
+        { wch: 10 },  // 대표명
+        { wch: 30 },  // 고객사 주소
+        { wch: 15 },  // 전화번호
+        { wch: 25 },  // 이메일
+        { wch: 20 },  // 메모
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // 워크북 생성 및 워크시트 추가
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, '고객사 목록');
+
+      // 파일 다운로드
+      const fileName = `고객사_목록_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+      
+    } catch (error) {
+      console.error('엑셀 다운로드 오류:', error);
+      alert('엑셀 다운로드 중 오류가 발생했습니다.');
+    }
+  }, []);
+
   const formData = {
     name,
     companyName,
@@ -593,6 +667,7 @@ const CustomerMngPage: React.FC = () => {
         compactFieldCount={4}
         defaultViewMode="detail"
         enableDateFilter={false}
+        customExcelDownload={handleCustomExcelDownload}
         renderMiddleContent={() => (
           <div style={{ flex: 1, textAlign: 'end', justifyContent: 'flex-end', fontWeight: 'bold', display: 'flex', gap: '8px' }}>
             <PrimaryButton $themeMode="light" onClick={handleCategoryRegisterClick}>
@@ -635,6 +710,7 @@ const CustomerMngPage: React.FC = () => {
       <CompanyFormPopup
         isOpen={isCompanyRegisterOpen}
         onClose={() => {
+          setSelectedCustomer(null); // 명시적으로 null 설정
           resetForm(); // 폼 초기화
           setIsCompanyRegisterOpen(false);
         }}

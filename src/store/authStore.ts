@@ -146,7 +146,7 @@ export const useAuthStore = create<AuthState>()(
           return 0;
         }
         
-        // 1. 먼저 companyId로 정확히 매칭 시도 (company가 객체인 경우와 문자열인 경우 모두 처리)
+        // companyId로 정확히 매칭 시도 (company가 객체인 경우와 문자열인 경우 모두 처리)
         const service = state.user.usingService.find(s => {
           devLog('🎯 검사중인 service:', s);
           devLog('🎯 s.company type:', typeof s.company);
@@ -165,13 +165,15 @@ export const useAuthStore = create<AuthState>()(
           return false;
         });
         
-        // 2. 매칭되는 서비스가 없다면 첫 번째 서비스 사용 (단일 회사 사용자인 경우)
-        const finalService = service || state.user.usingService[0];
-        
-        devLog('🎯 찾은 service:', finalService);
-        devLog('🎯 dailyQueryUsage (남은 횟수):', finalService?.dailyQueryUsage);
-        
-        return finalService?.dailyQueryUsage || 0;
+        // ✅ 매칭되는 서비스가 있으면 그 회사의 횟수 사용, 없으면 0 반환 (fallback 제거)
+        if (service) {
+          devLog('✅ 매칭된 service 찾음:', service);
+          devLog('✅ dailyQueryUsage (남은 횟수):', service.dailyQueryUsage);
+          return service.dailyQueryUsage || 0;
+        } else {
+          devLog('❌ 매칭되는 service 없음 - 0 반환');
+          return 0;
+        }
       },
     }),
     {

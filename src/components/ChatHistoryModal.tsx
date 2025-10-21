@@ -220,7 +220,6 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
 }) => {
   const { setSessionId, addMessage, messages, clearMessages } = useShareChatStore();
   const { isDarkMode } = useThemeStore();
-  const { companyInfo } = useCompanyStore();
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -277,7 +276,22 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
     
     return cleanedText;
   };
- 
+
+
+ const getProfileImageUrl = (profilePath: string | undefined) => {
+  if (!profilePath) return "/ai-estimate/pretty.png";
+  
+  // 이미 /ai-estimate/로 시작하는 정적 파일인 경우
+  if (profilePath.startsWith('/ai-estimate/')) {
+    return profilePath;
+  }
+  
+  // 환경에 따라 파일 경로 생성
+  const isDev = import.meta.env.VITE_ENV_NAME === 'dev';
+  return isDev ? `/api/file/${profilePath}` : `/file/${profilePath}`;
+};
+
+
   const parseMessageContent = (content: string, files?: FileUploadData[]) => {
     // console.log('🔍 parseMessageContent 호출:', { content, files });
     
@@ -585,14 +599,8 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
               <StyledAiMessage
                 key={index}
                 content={<AiMessageContent content={message.content}/>}
-                profileImage={
-                  companyInfo?.aiProfile 
-                    ? (companyInfo.aiProfile.startsWith('/ai-estimate/') 
-                        ? companyInfo.aiProfile 
-                        : `/api/file/${companyInfo.aiProfile}`)
-                    : "/ai-estimate/pretty.png"
-                }
-                name={companyInfo?.aiName || "AI 에이전트"}
+                profileImage={getProfileImageUrl(aiProfile)}
+                name={aiName || "AI 에이전트"}
                 chatSessionId={chatSessionId}
                 isFullWidth={isEstimateMessage(message.content)}
               />

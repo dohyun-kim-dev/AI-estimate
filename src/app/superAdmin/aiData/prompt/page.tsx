@@ -185,12 +185,6 @@ const PromptPage: React.FC = () => {
 
   const closePopup = () => {
     setIsPopupOpen(false);
-    // 팝업이 닫힐 때 리스트 새로고침
-    setTimeout(() => {
-      if (listRef.current) {
-        listRef.current.refetch();
-      }
-    }, 100);
   };
 
   const closeFormPopup = () => {

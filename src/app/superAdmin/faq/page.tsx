@@ -80,7 +80,18 @@ const FAQPage: React.FC = () => {
         devLog('선택된 고객사 코드:', apiCompanyCode);
         devLog('검색 키워드:', params.keyword);
         
-        const response = await getFAQList(apiCompanyCode || '', params.keyword || '');
+        // 날짜 범위 설정: 2000-01-01 00:00:00 ~ 오늘 현재 시각
+        const fromDate = '2000-01-01T00:00:00';
+        const toDate = dayjs().format('YYYY-MM-DDTHH:mm:ss');
+        
+        devLog('날짜 범위:', { fromDate, toDate });
+        
+        const response = await getFAQList(
+          apiCompanyCode || '', 
+          params.keyword || '',
+          fromDate,
+          toDate
+        );
         devLog('FAQ API 응답:', response);
 
         let faqData: FAQ[] = [];
@@ -200,7 +211,7 @@ const FAQPage: React.FC = () => {
         compactFieldCount={4}
         defaultViewMode="detail"
         enableDateFilter={false}
-        enableCompanySearch={isRoot} // 통합관리자만 CompanySearch 표시
+        enableCompanySearch={false} // 통합관리자만 CompanySearch 표시
         onCompanySelect={handleCompanySelect}
         renderMiddleContent={() => (
           <div style={{ flex: 1, textAlign: 'end', fontWeight: 'bold' }}>

@@ -43,6 +43,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   onInitialDateSet?: (fromDate: string, toDate: string) => void;
   onDateChange?: (fromDate: string, toDate: string) => void;
   onSearchChange?: (keyword: string) => void; // 검색 변경 콜백 추가
+  customExcelDownload?: (data: T[], columns: ColumnDefinition<T>[]) => void; // 커스텀 엑셀 다운로드 함수
   dateRangeOptions?: ('금월' | '지난달' | '3개월' | '6개월' | '1년' | '2년' | '지정')[];
 }
 
@@ -72,6 +73,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
   onInitialDateSet, // 날짜 콜백 추가
   onDateChange, // 날짜 콜백 추가
   onSearchChange, // 검색 변경 콜백 추가
+  customExcelDownload, // 커스텀 엑셀 다운로드 함수
   dateRangeOptions,
 }: CmsDesktopViewProps<T>, ref: React.Ref<{ refetch: () => void }>) {
   const [listData, setListData] = useState<T[]>([]);
@@ -188,6 +190,7 @@ interface CmsDesktopViewProps<T extends BaseRecord> {
       onStatusChange={handleStatusChange}
       onCompanyChange={handleCompanyChange}
       onInitialDateSet={onInitialDateSet} // 초기 날짜 설정 콜백 추가
+      customExcelDownload={customExcelDownload} // 커스텀 엑셀 다운로드 함수 전달
       dateRangeOptions={dateRangeOptions} // 날짜 옵션 배열 전달
     />
   );

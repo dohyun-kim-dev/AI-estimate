@@ -18,6 +18,7 @@ import CmsResponsiveContainer from '@/components/CustomList/ResponsiveList/CmsRe
 import SimpleGenericList from '@/components/CustomList/SimpleGenericList';
 import ChatHistoryModal from '@/components/ChatHistoryModal';
 import { getChatRoomList, getCompanyInfo, getCompany } from '@/lib/api/admin/adminApi';
+import { useToast } from '@/components/common/ToastProvider';
 
 // 아이콘 컴포넌트들
 const PersonIcon = () => (
@@ -256,7 +257,8 @@ type ChatDetail = {
   chatType: string;
 };
 
-const AiChatHistoryPage: React.FC = () => {
+const AiChatHistoryPage: React.FC = () => {  
+  const { show: showToast } = useToast(); 
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedChat, setSelectedChat] = useState<Partial<ChatHistory> | null>(null);
   const [dateRange, setDateRange] = useState<{
@@ -344,7 +346,7 @@ dayjs.locale('ko');
     devLog('=== Company selected ===:', company);
     
     if (!company.id) {
-      toast.error('회사 코드가 없습니다. 고객사를 다시 선택해주세요.');
+      showToast('회사 코드가 없습니다. 고객사를 다시 선택해주세요.','error');
       return;
     }
     
@@ -369,7 +371,7 @@ dayjs.locale('ko');
     event.stopPropagation(); // 행 클릭 이벤트 방지
     
     if (!selectedCompanyCode) {
-      toast.error('고객사를 선택해주세요.');
+      showToast('고객사를 선택해주세요.','error');
       return;
     }
     
@@ -377,10 +379,10 @@ dayjs.locale('ko');
     const shareUrl = `${currentUrl}/aiclient/${selectedCompanyCode}/ai/share/${chatSessionId}`;
     
     navigator.clipboard.writeText(shareUrl).then(() => {
-      toast.success('링크가 클립보드에 복사되었습니다.');
+      showToast('링크가 클립보드에 복사되었습니다.','success');
     }).catch((err) => {
       console.error('클립보드 복사 실패:', err);
-      toast.error('클립보드 복사에 실패했습니다.');
+      showToast('클립보드 복사에 실패했습니다.','error');
     });
   }, [selectedCompanyCode]);
 //이런 느낌으로 api 연동

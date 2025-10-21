@@ -187,6 +187,7 @@ export default function AILayout() {
   const { success, error } = useToast();
   const resetChat = useChatStore((s) => s.clear);
   const chatSessionId = useChatStore((s) => s.chatSessionId);
+  const getChatSessionId = useChatStore((s) => s.getChatSessionId);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
   const {
@@ -416,7 +417,7 @@ export default function AILayout() {
         }
         
         // 채팅 세션 ID 가져오기
-        const chatSessionId = localStorage.getItem('chatSessionId') || sessionStorage.getItem('chatSessionId') || '';
+        const chatSessionId = await getChatSessionId();
         
         if (chatSessionId && estimateId) {
           // uploadEstimatePdf를 동적으로 임포트
@@ -581,22 +582,14 @@ https://heredotcorp.com
   };
 
 const getCurrentShareUrl = () => {
-  // 로컬스토리지 먼저 확인
-  const localChatSessionId = localStorage.getItem('chatSessionId');
+  // Zustand 스토어에서 chatSessionId 가져오기
+  const sessionId = useChatStore.getState().chatSessionId;
   
-  // localChatSessionId가 있으면 해당 URL 반환
-  if (localChatSessionId) {
-    return `${window.location.origin}/aiclient/${companyCode}/ai/share/${localChatSessionId}`;
+  if (sessionId) {
+    return `${window.location.origin}/aiclient/${companyCode}/ai/share/${sessionId}`;
   }
   
-  // localChatSessionId가 없으면 sessionStorage 확인
-  const sessionChatSessionId = sessionStorage.getItem('chatSessionId');
-  
-  if (sessionChatSessionId) {
-    return `${window.location.origin}/aiclient/${companyCode}/ai/share/${sessionChatSessionId}`;
-  }
-  
-  // 둘 다 없으면 현재 URL 반환
+  // 없으면 현재 URL 반환
   return window.location.href;
 };
 

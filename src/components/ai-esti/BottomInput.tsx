@@ -266,7 +266,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
   const theme = useTheme();
   const isLightTheme = theme.body === '#FFFFFF';
   const { isAuthenticated, user } = useAuthStore();
-  const { isProcessing, updateLastMessage, clearAllLoadingMessages, removeIncompleteEstimateMessages, setIsCrawlingUrl } = useChatStore(); // 추가: store에서 isProcessing과 setIsCrawlingUrl 가져오기
+  const { isProcessing, updateLastMessage, clearAllLoadingMessages, removeIncompleteEstimateMessages, setIsCrawlingUrl, getChatSessionId } = useChatStore(); // 추가: getChatSessionId
   const {
     remainingCount,
     hasUsedExtraCount,
@@ -511,8 +511,8 @@ const BottomInput: React.FC<BottomInputProps> = ({
     setIsEstimateConfirmModalOpen(false);
     
     try {
-      // 1. localStorage에서 chatSessionId 가져오기
-      const chatSessionId = localStorage.getItem('chatSessionId');
+      // 1. 스토어에서 chatSessionId 가져오기 (없으면 API 호출)
+      const chatSessionId = await getChatSessionId();
       if (!chatSessionId) {
         showError('채팅 세션 정보를 찾을 수 없습니다.');
         return;
