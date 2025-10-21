@@ -13,6 +13,7 @@ import { HeaderProvider } from '@/contexts/HeaderContext';
 import { tr } from 'date-fns/locale';
 import useAI from '@/hooks/useAI';
 import { devLog } from '../../utils/devLogger';
+import { get } from 'http';
 
 const LayoutWrapper = styled.div`
   min-height: 100dvh;
@@ -186,8 +187,7 @@ export default function AILayout() {
   const { isDarkMode, toggleTheme } = useThemeStore();
   const { success, error } = useToast();
   const resetChat = useChatStore((s) => s.clear);
-  const chatSessionId = useChatStore((s) => s.chatSessionId);
-  const getChatSessionId = useChatStore((s) => s.getChatSessionId);
+  const storeChatSessionId = useChatStore((s) => s.chatSessionId);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
   const {
@@ -329,9 +329,17 @@ export default function AILayout() {
   const uploadEstimateForGuestShare = async () => {
     devLog('[uploadEstimateForGuestShare] 비회원 견적서 업로드 시작');
     
+    // 🔍 스토어 전체 상태 확인
+    const storeState = useChatStore.getState();
+    console.log('🔍 [uploadEstimateForGuestShare] 스토어 전체 상태:', storeState);
+    console.log('🔍 [uploadEstimateForGuestShare] chatSessionId:', storeState.chatSessionId);
+    console.log('🔍 [uploadEstimateForGuestShare] messages 개수:', storeState.messages?.length);
+    
     // 비회원이고 URL에 share가 없을 때만 실행
     const isGuest = !isAuthenticated();
     const hasShareInUrl = window.location.href.includes('share');
+    
+    console.log('🔍 [uploadEstimateForGuestShare] isGuest:', isGuest, 'hasShareInUrl:', hasShareInUrl);
     
     if (isGuest && !hasShareInUrl) {
       try {
@@ -416,8 +424,9 @@ export default function AILayout() {
           localStorage.setItem('guest-uuid', guestUuid);
         }
         
-        // 채팅 세션 ID 가져오기
-        const chatSessionId = await getChatSessionId();
+        // 채팅 세션 ID 가져오기 (스토어에서 실행 시점의 최신 값 조회)
+        const chatSessionId = useChatStore.getState().chatSessionId;
+        devLog('chatSessionId 및 estimateId:', { chatSessionId, estimateId });
         
         if (chatSessionId && estimateId) {
           // uploadEstimatePdf를 동적으로 임포트
@@ -450,11 +459,16 @@ export default function AILayout() {
 
   // '공유' 버튼을 눌렀을 때 실행될 함수 (AILayout에서 호출됨)
   const handleOpenShare = async () => {
+    console.log('🔍 [handleOpenShare] 공유 버튼 클릭');
+    console.log('🔍 [handleOpenShare] 스토어 chatSessionId:', useChatStore.getState().chatSessionId);
+    
     // ✅ Zustand 상태에서 메시지 가져오기
     const messages = useChatStore.getState().messages;
+    console.log('🔍 [handleOpenShare] messages 개수:', messages?.length);
     
     if (messages && messages.length >= 2) {
       if (!isAuthenticated()) {
+        console.log('🔍 [handleOpenShare] 비회원 - uploadEstimateForGuestShare 호출');
         // 비회원인 경우 견적서 업로드 시도
         await uploadEstimateForGuestShare();
         openLoginModal('shareChat');
@@ -584,7 +598,7 @@ https://heredotcorp.com
 const getCurrentShareUrl = () => {
   // Zustand 스토어에서 chatSessionId 가져오기
   const sessionId = useChatStore.getState().chatSessionId;
-  
+  devLog('getCurrentShareUrl - chatSessionId:', sessionId);
   if (sessionId) {
     return `${window.location.origin}/aiclient/${companyCode}/ai/share/${sessionId}`;
   }

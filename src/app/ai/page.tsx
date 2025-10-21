@@ -1789,6 +1789,7 @@ useEffect(() => {
                 new Date(b.createAt).getTime() - new Date(a.createAt).getTime()
               )[0];
               setChatSessionId(latestSession._id); // store에만 저장
+              devLog("최신 세션으로 설정:", latestSession._id);
               const messagesResponse = await getChatSessionMessages(latestSession._id) as any;
               if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
                 const chatMessages = messagesResponse.data.map((msg: any) => {

@@ -174,6 +174,7 @@ interface AdminFormPopupProps {
   nameError: string | null;
   emailError: string | null;
   cellphoneError: string | null;
+  companyError: string | null;
   // 고객사 관련 props 추가
   selectedCompanyCode: string;
   selectedCompanyName: string;
@@ -213,6 +214,7 @@ const AdminFormPopup: React.FC<AdminFormPopupProps> = ({
   nameError,
   emailError,
   cellphoneError,
+  companyError,
   // 고객사 관련 props
   selectedCompanyCode,
   selectedCompanyName,
@@ -310,6 +312,7 @@ const AdminFormPopup: React.FC<AdminFormPopupProps> = ({
                 cursor: selectedUser ? 'not-allowed' : 'pointer',
                 opacity: selectedUser ? 0.6 : 1
               }}
+              errorMessage={companyError ?? undefined}
             />
             {!selectedUser && (
               <SearchIcon onClick={() => setIsCompanyModalOpen(true)}>

@@ -743,6 +743,17 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
       setBusinessFileId('');
       setSelectedCategory(null);
       
+      // 부모 컴포넌트의 카테고리 상태도 초기화
+      if (onFormChange?.setCategory) {
+        onFormChange.setCategory('');
+      }
+      if (onFormChange?.setCategoryId) {
+        onFormChange.setCategoryId('');
+      }
+      if (onFormChange?.setCategoryCode) {
+        onFormChange.setCategoryCode('');
+      }
+      
       // 내부 상태들도 기본값으로 초기화
       setInternalContractType('monthly');
       setInternalMode('active');

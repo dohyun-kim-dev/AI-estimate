@@ -116,6 +116,7 @@ const AdminMngPage: React.FC = () => {
   const [nameError, setNameError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [cellphoneError, setCellphoneError] = useState<string | null>(null);
+  const [companyError, setCompanyError] = useState<string | null>(null);
 
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isPwdChangeOpen, setIsPwdChangeOpen] = useState(false);
@@ -129,6 +130,7 @@ const AdminMngPage: React.FC = () => {
     setEmailError(null);
     setCellphoneError(null);
     setConfirmPwdError(null);
+    setCompanyError(null);
   }, []);
 
   const resetForm = useCallback(
@@ -169,6 +171,12 @@ const AdminMngPage: React.FC = () => {
 
   const handleSave = async () => {
     let valid = true;
+
+    // 고객사 검증 (신규 등록 시에만)
+    if (!selectedUser && !popupCompanyCode) {
+      setCompanyError('고객사를 선택해주세요.');
+      valid = false;
+    } else setCompanyError(null);
 
     // 아이디 검증
     if (!Validators.required(userId) || !Validators.id(userId)) {
@@ -639,6 +647,7 @@ const AdminMngPage: React.FC = () => {
         nameError={nameError}
         emailError={emailError}
         cellphoneError={cellphoneError}
+        companyError={companyError}
         selectedCompanyCode={popupCompanyCode}
         selectedCompanyName={popupCompanyName}
         onCompanySelect={handlePopupCompanySelect}

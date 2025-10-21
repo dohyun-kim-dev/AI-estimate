@@ -19,8 +19,12 @@ type FAQ = {
   language: 'KOR' | 'ENG';
   createAt: string;
   updateAt: string;
-  isPublic?: boolean;
-  author?: string;
+  updateBy?: string;
+  isShow: boolean; // 노출여부
+  createBy?: {
+    _id: string;
+    name: string;
+  }; // 작성자 정보
 };
 
 interface FAQFormPopupProps {
@@ -40,7 +44,8 @@ const FAQFormPopup: React.FC<FAQFormPopupProps> = ({
 }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [isPublic, setIsPublic] = useState(true);
+  const [isShow, setIsShow] = useState(true);
+  const [authorName, setAuthorName] = useState('');
   
   const [titleError, setTitleError] = useState<string | null>(null);
   const [contentError, setContentError] = useState<string | null>(null);
@@ -53,11 +58,13 @@ const FAQFormPopup: React.FC<FAQFormPopupProps> = ({
     if (selectedFAQ) {
       setTitle(selectedFAQ.title || '');
       setContent(selectedFAQ.content || '');
-      setIsPublic(selectedFAQ.isPublic !== undefined ? selectedFAQ.isPublic : true);
+      setIsShow(selectedFAQ.isShow !== undefined ? selectedFAQ.isShow : true);
+      setAuthorName(selectedFAQ.createBy?.name || '관리자');
     } else {
       setTitle('');
       setContent('');
-      setIsPublic(true);
+      setIsShow(true);
+      setAuthorName('');
     }
     setTitleError(null);
     setContentError(null);
@@ -87,21 +94,21 @@ const FAQFormPopup: React.FC<FAQFormPopupProps> = ({
     try {
       if (selectedFAQ?._id) {
         // 수정
-        devLog('FAQ 수정:', { id: selectedFAQ._id, title, content, isPublic });
+        devLog('FAQ 수정:', { id: selectedFAQ._id, title, content, isShow });
         await updateFAQ(selectedFAQ._id, {
           title: title.trim(),
           content: content.trim(),
-          isPublic,
+          isShow,
           language: 'KOR',
         });
         showToast('FAQ가 성공적으로 수정되었습니다.', 'success');
       } else {
         // 생성
-        devLog('FAQ 생성:', { title, content, isPublic, companyCode });
+        devLog('FAQ 생성:', { title, content, isShow, companyCode });
         await createFAQ({
           title: title.trim(),
           content: content.trim(),
-          isPublic,
+          isShow,
           language: 'KOR',
           companyCode,
         });
@@ -178,21 +185,28 @@ const FAQFormPopup: React.FC<FAQFormPopupProps> = ({
       <FormContainer>
         {/* 공개여부 섹션 */}
         <SwitchSection>
-          <SectionTitle>공개여부</SectionTitle>
+          <SectionTitle>노출여부</SectionTitle>
           <SwitchWrapper>
             <SwitchInput
               label=""
-              value={isPublic}
+              value={isShow}
               onChange={(newValue) => {
-                devLog('📢 공개여부 변경:', isPublic, '->', newValue);
-                setIsPublic(newValue);
+                devLog('📢 노출여부 변경:', isShow, '->', newValue);
+                setIsShow(newValue);
               }}
               $labelPosition="horizontal"
               labelColor="black"
             />
-            {/* <SwitchLabel>{isPublic ? '공개' : '비공개'}</SwitchLabel> */}
           </SwitchWrapper>
         </SwitchSection>
+
+        {/* 작성자 표시 (수정 모드일 때만) */}
+        {selectedFAQ && authorName && (
+          <InfoSection>
+            <SectionTitle>작성자</SectionTitle>
+            <InfoText>{authorName}</InfoText>
+          </InfoSection>
+        )}
 
         {/* FAQ 작성 섹션 */}
         <SectionTitle>FAQ 작성</SectionTitle>
@@ -315,4 +329,15 @@ const SectionTitle = styled.h3`
   font-weight: 500;
   color: ${AppColors.onSurface};
   min-width: 100px;
+`;
+
+const InfoSection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 20px;
+`;
+
+const InfoText = styled.span`
+  font-size: 14px;
+  color: #666;
 `;

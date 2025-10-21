@@ -25,8 +25,12 @@ type FAQ = {
   language: 'KOR' | 'ENG';
   createAt: string;
   updateAt: string;
-  isPublic?: boolean; // 임시로 추가
-  author?: string; // 임시로 추가
+  updateBy?: string;
+  isShow: boolean; // 노출여부
+  createBy?: {
+    _id: string;
+    name: string;
+  }; // 작성자 정보
 };
 
 const FAQPage: React.FC = () => {
@@ -108,8 +112,6 @@ const FAQPage: React.FC = () => {
           faqData = Array.isArray(apiResponse.data) ? apiResponse.data.map((item: any, index: number) => ({
             ...item,
             no: index + 1,
-            isPublic: Math.random() > 0.5, // 임시로 랜덤하게 설정
-            author: '관리자', // 임시로 설정
           })) : [];
           
           totalItems = apiResponse.metadata?.totalCnt || faqData.length;
@@ -182,17 +184,22 @@ const FAQPage: React.FC = () => {
       },
       {
         header: '노출여부',
-        accessor: 'isPublic',
+        accessor: 'isShow',
         width: 100,
         sortable: true,
         formatter: (value) => (value ? 'Y' : 'N'),
       },
       {
         header: '작성자',
-        accessor: 'author',
+        accessor: 'createBy',
         width: 100,
         sortable: true,
-        formatter: (value) => value || '관리자',
+        formatter: (value) => {
+          if (value && typeof value === 'object' && 'name' in value) {
+            return value.name || '관리자';
+          }
+          return '관리자';
+        },
       },
     ],
     []

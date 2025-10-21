@@ -697,6 +697,8 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     setUploadedFiles([]);
 
     let currentSessionId = getEffectiveSessionId();
+    console.log('🔍 [useChatActions handleSubmit] 시작 시점 currentSessionId:', currentSessionId);
+    console.log('🔍 [useChatActions handleSubmit] 시작 시점 스토어 chatSessionId:', useChatStore.getState().chatSessionId);
     let userId = null;
 
     if (isAuthenticated()) {
@@ -719,7 +721,9 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         }
         if (createResponse && createResponse.statusCode === 200 && createResponse.data && createResponse.data.length > 0 && createResponse.data[0]._id) {
           currentSessionId = createResponse.data[0]._id;
+          console.log('🔍 [useChatActions] 새 세션 생성됨:', currentSessionId);
           setChatSessionId(currentSessionId); // store에만 저장
+          console.log('🔍 [useChatActions] setChatSessionId 호출 후 스토어 상태:', useChatStore.getState().chatSessionId);
           // URL 파라미터로 sessionId 추가 (추출 편의성 향상)
           // const newUrl = `${window.location.pathname}?sessionId=${currentSessionId}`;
           // window.history.pushState(null, '', newUrl);

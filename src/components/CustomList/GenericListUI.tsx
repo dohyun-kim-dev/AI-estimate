@@ -504,7 +504,24 @@ const GenericListUIInner = <T extends BaseRecord>(
             // Excel 전용 포맷터가 없는 경우, 원본 값 사용 (기본 포맷팅만 적용)
             else {
               // 기본 데이터 타입 포맷팅만 적용
-              if (value instanceof Date) value = dayjs(value).format('YYYY-MM-DD HH:mm:ss');
+              if (value instanceof Date || (typeof value === 'string' && dayjs(value).isValid() && value.includes('-'))) {
+                const headerName = typeof col.header === 'string' ? col.header.replace(/\n/g, ' ') : String(col.accessor);
+                const date = dayjs(value);
+                const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][date.day()];
+                
+                // 헤더 이름에 "일시" 또는 "접속"이 포함되어 있으면 시간 포함 (예: 가입일시, 수정일시, 최근 접속)
+                if (headerName.includes('일시') || headerName.includes('접속')) {
+                  value = `${date.format('YY.MM.DD')}(${dayOfWeek}) ${date.format('HH:mm')}`;
+                }
+                // 헤더 이름에 "일"만 포함되어 있으면 날짜만 (예: 가입일, 수정일, 계약시작일)
+                else if (headerName.includes('일') || headerName.includes('날짜')) {
+                  value = `${date.format('YY.MM.DD')}(${dayOfWeek})`;
+                }
+                // 기본 포맷
+                else {
+                  value = date.format('YYYY-MM-DD HH:mm:ss');
+                }
+              }
               else if (typeof value === 'boolean') value = value ? 'Y' : 'N';
               else if (value === null || value === undefined) value = '';
               // formatter가 있어도 Excel에서는 원본 값 사용

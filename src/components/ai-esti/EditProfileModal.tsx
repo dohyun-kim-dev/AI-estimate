@@ -243,6 +243,13 @@ const ErrorMessage = styled.p`
   margin-bottom: 16px;
 `;
 
+const TimerText = styled.span`
+  color: #202055;
+  font-size: 14px;
+  font-weight: 500;
+  margin-left: 8px;
+`;
+
 const BackButton = styled.button`
   background: none;
   border: none;
@@ -288,6 +295,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [phoneError, setPhoneError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isSendingVerification, setIsSendingVerification] = useState(false);
+  const [remainingTime, setRemainingTime] = useState(180); // 3분 = 180초
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const isInfoFormValid = name.trim() !== '' && email.trim() !== '';
 
@@ -303,6 +312,12 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       setNameError('');
       setPhoneError('');
       setVerificationError('');
+      setRemainingTime(180);
+      // 타이머 정리
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     } else if (!isOpen) {
       setViewMode('info');
       setNewPhoneNumber('');
@@ -311,8 +326,53 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       setNameError('');
       setPhoneError('');
       setVerificationError('');
+      setRemainingTime(180);
+      // 타이머 정리
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     }
   }, [isOpen, user]);
+
+  // 타이머 효과
+  useEffect(() => {
+    if (verificationSent && remainingTime > 0) {
+      timerRef.current = setInterval(() => {
+        setRemainingTime((prev) => {
+          if (prev <= 1) {
+            // 시간 종료 시 상태 초기화
+            setVerificationSent(false);
+            setVerificationCode('');
+            setVerificationError('인증 시간이 만료되었습니다. 다시 시도해주세요.');
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
+              timerRef.current = null;
+            }
+            return 180;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [verificationSent]);
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []);
 
   const handleCloseModal = () => {
     onClose();
@@ -356,6 +416,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const handleBackToInfoClick = () => {
     setViewMode('info');
     setPhoneError('');
+    setVerificationSent(false);
+    setVerificationCode('');
+    setVerificationError('');
+    setRemainingTime(180);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
   };
 
   const handleSendVerification = async () => {
@@ -367,6 +435,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       const response = await sendAuthCode(newPhoneNumber);
       if (response && response.statusCode === 200) {
         setVerificationSent(true);
+        setRemainingTime(180); // 3분 타이머 시작
         success('인증번호가 발송되었습니다.');
       } else {
         setVerificationError('인증번호 발송에 실패했습니다.');
@@ -541,6 +610,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               <FormGroup>
                 <Label style={{ marginTop: '14px' }}>
                   새로운 휴대전화 번호
+                  {verificationSent && (
+                    <TimerText>
+                      ({Math.floor(remainingTime / 60)}:{String(remainingTime % 60).padStart(2, '0')})
+                    </TimerText>
+                  )}
                 </Label>
                 <InputGroup>
                   <PhoneInput
@@ -555,16 +629,13 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     onClick={handleSendVerification}
                     disabled={
                       !newPhoneNumber.trim() ||
-                      verificationSent ||
                       isSendingVerification
                     }
                   >
-                    {verificationSent
-                      ? isSendingVerification
-                        ? '전송 중...'
-                        : '재전송'
-                      : isSendingVerification
+                    {isSendingVerification
                       ? '전송 중...'
+                      : verificationSent
+                      ? '재전송'
                       : '인증번호 받기'}
                   </VerifyButton>
                 </InputGroup>

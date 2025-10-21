@@ -1150,7 +1150,7 @@ export async function getFAQList(
 export async function createFAQ(params: {
   title: string;
   content: string;
-  isPublic?: boolean;
+  isShow?: boolean;
   language?: 'KOR' | 'ENG';
   companyCode?: string;
 }) {
@@ -1162,7 +1162,7 @@ export async function createFAQ(params: {
       title: params.title,
       content: params.content,
       language: params.language || 'KOR',
-      isPublic: params.isPublic !== undefined ? params.isPublic : true,
+      isShow: params.isShow !== undefined ? params.isShow : true,
       companyCode: params.companyCode,
     },
     isCallPageLoader: true,
@@ -1174,7 +1174,7 @@ export async function createFAQ(params: {
 export async function updateFAQ(id: string, params: {
   title?: string;
   content?: string;
-  isPublic?: boolean;
+  isShow?: boolean;
   language?: 'KOR' | 'ENG';
   companyCode?: string;
 }) {

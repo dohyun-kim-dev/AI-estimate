@@ -116,7 +116,19 @@ export async function loginAdminService({
         // ✅ 토큰 저장
         if (token) {
           localStorage.setItem('admin_access_token', token);
-          devLog('🔐 [loginAdminService] 관리자 토큰 저장 완료:', token.substring(0, 10) + '...');
+          devLog('🔐 [loginAdminService] 관리자 토큰 저장 완료:', {
+            tokenPrefix: token.substring(0, 20) + '...',
+            tokenLength: token.length,
+            fullToken: token
+          });
+          
+          // ✅ 저장 직후 확인
+          const savedToken = localStorage.getItem('admin_access_token');
+          devLog('✅ [loginAdminService] localStorage 저장 확인:', {
+            saved: savedToken === token,
+            savedTokenPrefix: savedToken?.substring(0, 20) + '...',
+            originalTokenPrefix: token.substring(0, 20) + '...'
+          });
         } else {
           devWarn('⚠️ [loginAdminService] 토큰이 없습니다');
         }

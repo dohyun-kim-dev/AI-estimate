@@ -53,25 +53,26 @@ devLog('📄 [요청 body]:', body);
       envName: import.meta.env.VITE_ENV_NAME,
       protocol: window.location.protocol,
       adminToken: adminToken ? `exists (${adminToken.length} chars)` : 'not found',
+      adminTokenPrefix: adminToken?.substring(0, 20) + '...',
+      fullToken: adminToken,
       adminStorage: adminStorage ? 'exists' : 'not found',
       currentPath,
-      isCompanyCMS: !!isCompanyCMS
+      isCompanyCMS: !!isCompanyCMS,
+      localStorageKeys: Object.keys(localStorage)
     });
     
     if (adminToken) {
       if (isCompanyCMS) {
-        // 회사별 CMS: company_admin_token 헤더 사용
-        headers['company_admin_token'] = adminToken;
-        devLog('🔑 [company_admin_token 헤더 추가됨]', { 
-          company_admin_token: adminToken.substring(0, 20) + '...'
+        // 회사별 CMS: Bearer 토큰 사용
+        headers['Authorization'] = `Bearer ${adminToken}`;
+        devLog('🔑 [company CMS Authorization 헤더 추가됨]', { 
+          Authorization: `Bearer ${adminToken.substring(0, 20)}...`
         });
       } else {
-        // 슈퍼어드민: admin_token 헤더 사용
+        // 슈퍼어드민: Bearer 토큰 사용
         headers['Authorization'] = `Bearer ${adminToken}`;
-        headers['admin_token'] = adminToken;
-        devLog('🔑 [admin_token 헤더 추가됨]', { 
-          Authorization: `Bearer ${adminToken.substring(0, 20)}...`,
-          admin_token: adminToken.substring(0, 20) + '...'
+        devLog('🔑 [super admin Authorization 헤더 추가됨]', { 
+          Authorization: `Bearer ${adminToken.substring(0, 20)}...`
         });
       }
     } else {

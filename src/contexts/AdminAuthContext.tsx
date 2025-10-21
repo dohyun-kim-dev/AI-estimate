@@ -50,7 +50,8 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
     devLog('🚀 [AdminAuthContext] login 함수 호출됨:', {
       id,
       tokenProvided: !!token,
-      tokenPrefix: token?.substring(0, 10) + '...',
+      tokenPrefix: token?.substring(0, 20) + '...',
+      fullToken: token,
       isRootProvided: isRoot !== undefined,
       isRootValue: isRoot,
       adminDataProvided: !!adminData
@@ -60,11 +61,25 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
     
     // 토큰이 제공된 경우 저장
     if (token) {
+      // 기존 토큰 확인
+      const existingToken = localStorage.getItem('admin_access_token');
+      devLog('🔍 [AdminAuthContext] 토큰 저장 전 기존 토큰:', {
+        hasExisting: !!existingToken,
+        existingPrefix: existingToken?.substring(0, 20) + '...',
+        newTokenPrefix: token.substring(0, 20) + '...',
+        isSame: existingToken === token
+      });
+      
       localStorage.setItem('admin_access_token', token);
+      
+      // 저장 직후 확인
+      const savedToken = localStorage.getItem('admin_access_token');
       devLog('🔑 [AdminAuthContext] 토큰 저장됨:', {
         id,
-        tokenPrefix: token.substring(0, 10) + '...',
-        tokenLength: token.length
+        tokenPrefix: token.substring(0, 20) + '...',
+        tokenLength: token.length,
+        savedCorrectly: savedToken === token,
+        fullToken: token
       });
     }
 

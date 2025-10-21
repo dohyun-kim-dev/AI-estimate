@@ -46,11 +46,13 @@ function ProtectedCmsLayout() {
   const { show: showToast } = useToast(); // 토스트 훅 추가
 
   useEffect(() => {
+    
     if (ready && !isLoggedIn && !isLoginPage && !isPdfPreviewPage && !isExcelPreviewPage && !isPromptDetailPage) {
+      console.log('Redirecting to /superadmin/login from CmsLayout',ready, isLoggedIn, isLoginPage, isPdfPreviewPage, isExcelPreviewPage, isPromptDetailPage);
       navigate(`/superadmin/login`, { replace: true });
     } else if (ready && isLoggedIn && location.pathname === `/superadmin`) {
       // 대시보드로 이동
-      // navigate(`/superadmin/admin-management`, { replace: true });
+      navigate(`/superadmin/admin-management`, { replace: true });
     }
   }, [ready, isLoggedIn, isLoginPage, isPdfPreviewPage, isExcelPreviewPage, isPromptDetailPage, location.pathname, navigate, companyCode]);
 
