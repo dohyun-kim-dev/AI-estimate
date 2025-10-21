@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+import { getChatSessions } from '@/lib/api/user/userApi'
 
 export interface ImageData {
   url: string;
@@ -38,8 +39,10 @@ interface ChatState {
   updateLastMessage: (payload: Partial<Omit<ChatMessage, 'role'>>) => void; 
   updateMessageById: (messageId: string, payload: Partial<Omit<ChatMessage, 'role'>>) => void;
   setChatSessionId: (id: string | null) => void;
+  getEffectiveSessionId: () => string | null; // 추가: 유효한 세션 ID 가져오기
   setIsProcessing: (processing: boolean) => void; // 추가: 처리 상태 설정
   setIsCrawlingUrl: (crawling: boolean) => void; // 추가: URL 크롤링 상태 설정
+  loadLatestChatSession: (force?: boolean) => Promise<void>; // 추가: 최근 채팅 세션 로드 (force: 강제 로드)
   clear: () => void;
   removeLastAiLoadingMessage: () => void;
   clearAllLoadingMessages: () => void; // 추가: 모든 로딩 메시지 제거
@@ -129,8 +132,63 @@ export const useChatStore = create<ChatState>()(
           });          return { messages };
         }),
         setChatSessionId: (id) => set({ chatSessionId: id }),
+        getEffectiveSessionId: () => {
+          // 1. URL 파라미터
+          try {
+            const searchParams = new URLSearchParams(window.location.search);
+            const urlSessionId = searchParams.get('sessionId');
+            if (urlSessionId) return urlSessionId;
+          } catch {}
+          
+          // 2. Zustand 스토어 (현재 상태)
+          const currentSessionId = get().chatSessionId;
+          if (currentSessionId) return currentSessionId;
+          
+          // 3. 없으면 null 반환
+          return null;
+        },
         setIsProcessing: (processing) => set({ isProcessing: processing }), // 추가: 처리 상태 설정
         setIsCrawlingUrl: (crawling) => set({ isCrawlingUrl: crawling }), // 추가: URL 크롤링 상태 설정
+        loadLatestChatSession: async (force = false) => {
+          // force가 true가 아니고 이미 chatSessionId가 있으면 API 호출하지 않음
+          if (!force && get().chatSessionId) {
+            return;
+          }
+
+          try {
+            const response: any = await getChatSessions();
+            
+            // ✅ API 응답 구조 확인: { statusCode, message, data, ... }
+            if (response.statusCode !== 200 || !response.data) {
+              console.log('⚠️ 채팅 세션 로드 실패:', response.message);
+              return;
+            }
+            
+            const sessions = response.data;
+            
+            // 세션이 없으면 아무것도 하지 않음
+            if (!sessions || sessions.length === 0) {
+              console.log('⚠️ 사용 가능한 채팅 세션이 없습니다.');
+              return;
+            }
+
+            // ✅ updateAt 기준으로 정렬하여 가장 최근 세션 찾기
+            const sortedSessions = [...sessions].sort((a: any, b: any) => {
+              const dateA = new Date(a.updateAt || a.createAt).getTime();
+              const dateB = new Date(b.updateAt || b.createAt).getTime();
+              return dateB - dateA; // 내림차순 (최신 순)
+            });
+            
+            const latestSession = sortedSessions[0];
+            if (latestSession && latestSession._id) {
+              set({ chatSessionId: latestSession._id });
+              console.log('✅ 최신 챗세션 로드:', latestSession._id, latestSession.title);
+            }
+          } catch (error) {
+            console.error('❌ 최근 채팅 세션 로드 실패:', error);
+            // 에러 발생 시에도 앱은 계속 동작하도록 함
+          }
+        },
         clear: () => {
           const { setChatSessionId } = get();
           setChatSessionId(null); // 세션 ID 초기화

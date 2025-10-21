@@ -45,6 +45,11 @@ export async function callApiPost<T = unknown>({
     // 🔥 매번 최신 companyCode를 가져오도록 수정
     const companyCode = getCompanyCodeFromUrl();
     
+    devLog(`🔍 [callApiPost] Company Code 추출:`, companyCode);
+    devLog(`🔍 [callApiPost] Current URL:`, window.location.href);
+    devLog(`🔍 [callApiPost] Pathname:`, window.location.pathname);
+    devLog(`🔍 [callApiPost] Search:`, window.location.search);
+    
     const fetchOptions: RequestInit = {
       method,
       // credentials: 'include',
@@ -56,6 +61,8 @@ export async function callApiPost<T = unknown>({
       'x-company-code': `${companyCode}`,
       ...headers 
     };
+    
+    devLog(`📤 [callApiPost] 최종 헤더:`, fetchOptions.headers);
     
     // JSON body인 경우 Content-Type 추가
     if (!isFormData && method !== 'GET') {

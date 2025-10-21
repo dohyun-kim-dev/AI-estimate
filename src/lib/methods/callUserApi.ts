@@ -1,6 +1,7 @@
 import { callApiPost } from './callApiPost';
 import { getToken, removeToken } from '@/lib/utils/tokenUtils';
 import { devLog } from '@/lib/utils/devLogger';
+import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
 
 export async function callUserApi<T = any>({
   title,
@@ -23,14 +24,24 @@ export async function callUserApi<T = any>({
   // 🔥 FormData 여부 감지
   const isFormData = body instanceof FormData;
 
-  const { data, headers } = await callApiPost({
+  // 🔥 company code 헤더 자동 추가 (reqHeaders에 없을 때만)
+  const companyCode = getCompanyCodeFromUrl();
+  const headers = {
+    ...(companyCode ? { 'x-company-code': companyCode } : {}),
+    ...reqHeaders,
+  };
+
+  devLog('📤 [callUserApi] 헤더:', headers);
+  devLog('📤 [callUserApi] Company Code:', companyCode);
+
+  const { data, headers: responseHeaders } = await callApiPost({
     title,
     url,
     method,
     body,
     accessToken,
     isCallPageLoader,
-    headers: reqHeaders,
+    headers, // 🔥 company code가 포함된 헤더 전달
     isFormData, // 🔥 FormData 플래그 전달
   });
 
@@ -61,5 +72,5 @@ export async function callUserApi<T = any>({
   }
 
   // 항상 { data, headers } 형태로 반환
-  return { ...data, headers } as T;
+  return { ...data, headers: responseHeaders } as T;
 }

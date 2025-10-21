@@ -32,8 +32,8 @@ type FAQ = {
 const FAQPage: React.FC = () => {
   const [selectedFAQ, setSelectedFAQ] = useState<Partial<FAQ> | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('');
-  const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
+  const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('heredot');
+  const [selectedCompanyName, setSelectedCompanyName] = useState<string>('여기닷');
   const { show: showToast } = useToast();
   
   // 권한 및 URL 기반 상태 관리

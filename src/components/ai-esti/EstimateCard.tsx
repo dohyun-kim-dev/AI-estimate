@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import Icon from './Icon';
@@ -16,7 +16,9 @@ import { useNavigate } from 'react-router-dom';
 import { getDownloadEstimateUrlWithUserInfo, googleLoginInitial, googleLoginUpdate, uploadEstimatePdf, fillGuestInfo } from '@/lib/api/user/userApi';
 import { buildFullEstimateData, extractEstimateData } from '@/hooks/estimate';
 import IssuerInfoModal, { IssuerInfo } from '@/components/ai-esti/IssuerInfoModal';
-import { devLog } from '@/utils/devLogger'
+import { devLog } from '@/utils/devLogger';
+import { useCompanyStore } from '@/store/companyStore';
+import { calculateDiscountInfo, isNonDiscountableItem, type DiscountSettings } from '@/utils/discountCalculator';
 
 const CardWrapper = styled.div`
   background-color: ${({ theme }) => theme.surface1};
@@ -145,6 +147,9 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
   const { isDarkMode } = useThemeStore();
   const { isAuthenticated, login, openAdditionalInfoModal } = useAuthStore();
   const navigate = useNavigate();
+  
+  // 회사 할인 설정 가져오기
+  const { companyInfo } = useCompanyStore();
 
   const getCompanyCode = () => {
     const pathParts = window.location.pathname.split('/');
@@ -154,6 +159,82 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       : '';
   };
   const companyCode = getCompanyCode();
+  
+  // 할인 설정 계산
+  const discountSettings: DiscountSettings = useMemo(() => {
+    if (!companyInfo) {
+      return {
+        checkpointList: [{ checkpoint: 1, discountRate: 1.25 }],
+        discountRate: 'WEEK',
+        rateRule: 'FIXED'
+      };
+    }
+
+    return {
+      checkpointList: companyInfo.checkpointList || [{ checkpoint: 1, discountRate: 1.25 }],
+      discountRate: companyInfo.discountRate || 'WEEK',
+      rateRule: companyInfo.rateRule || 'FIXED'
+    };
+  }, [companyInfo]);
+  
+  // 할인 적용된 총 금액 계산
+  const { totalDiscountedPrice, totalDiscountAmount } = useMemo(() => {
+    if (!estimate || !estimate.categories) {
+      return { totalDiscountedPrice: 0, totalDiscountAmount: 0 };
+    }
+    
+    // projectPeriod가 0이면 할인 없음
+    if (projectPeriod === 0) {
+      let total = 0;
+      estimate.categories.forEach(category => {
+        category.sub_categories.forEach(subCategory => {
+          subCategory.items.forEach(item => {
+            if (!item.is_deleted) {
+              const basePrice = typeof item.price === 'string' 
+                ? parseFloat(item.price.replace(/,/g, '')) 
+                : item.price;
+              total += basePrice;
+            }
+          });
+        });
+      });
+      return { 
+        totalDiscountedPrice: Math.floor(total), 
+        totalDiscountAmount: 0 
+      };
+    }
+    
+    let total = 0;
+    let discountTotal = 0;
+    
+    estimate.categories.forEach(category => {
+      category.sub_categories.forEach(subCategory => {
+        subCategory.items.forEach(item => {
+          if (!item.is_deleted) {
+            const basePrice = typeof item.price === 'string' 
+              ? parseFloat(item.price.replace(/,/g, '')) 
+              : item.price;
+            
+            // 할인 제외 항목인지 확인
+            if (isNonDiscountableItem(item)) {
+              total += basePrice;
+            } else {
+              // 할인 적용
+              const discountInfo = calculateDiscountInfo(projectPeriod, basePrice, discountSettings);
+              const discountedPrice = basePrice - discountInfo.amount;
+              total += discountedPrice;
+              discountTotal += discountInfo.amount;
+            }
+          }
+        });
+      });
+    });
+    
+    return { 
+      totalDiscountedPrice: Math.floor(total), 
+      totalDiscountAmount: Math.floor(discountTotal) 
+    };
+  }, [estimate, projectPeriod, discountSettings]);
 
   // 로그인 사용자 프리필용
   const [prefill, setPrefill] = useState<{name: string; email: string; cellphone: string}>({
@@ -637,7 +718,7 @@ https://heredotcorp.com
           </Right>
         </Flex>
         <Price>
-          KRW {new Intl.NumberFormat('ko-KR').format(discountedPrice || 0)}
+          KRW {new Intl.NumberFormat('ko-KR').format(totalDiscountedPrice || 0)}
           <span>(부가세 별도)</span>
         </Price>
         <Period>

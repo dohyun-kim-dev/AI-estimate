@@ -4,7 +4,7 @@ import { GoogleLoginResponse, UserInfoResponse } from '@/lib/api/user/userApi.ty
 import { useChatStore } from '@/store/chatStore';
 import { clearAllTokens } from '@/lib/utils/tokenUtils';
 import { getUserInfo } from '@/lib/api/user/userApi';
-import { devLog } from '../../utils/devLogger';
+import { devLog } from '@/utils/devLogger';
 
 export interface UserData extends GoogleLoginResponse {
   isLoggedIn: boolean;

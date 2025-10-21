@@ -173,7 +173,7 @@ const [isMobile, setIsMobile] = useState(false);
 
   const { success, error } = useToast();
   const { isAuthenticated } = useAuthStore();
-  const { isProcessing } = useChatStore(); // 추가: store에서 isProcessing 가져오기
+  const { isProcessing, getEffectiveSessionId, loadLatestChatSession } = useChatStore(); // ✅ store에서 함수 가져오기
   const { 
     remainingCount, 
     hasUsedExtraCount, 
@@ -183,30 +183,6 @@ const [isMobile, setIsMobile] = useState(false);
   } = useUsageStore();
   const { messages } = useChatStore();
   const location = useLocation();
-
-
-  // console.log('EstimateActionButtons estimate', estimate);
-  // 세션 ID를 로컬스토리지에서 가져오는 함수 (useChatActions.ts와 동일한 로직)
-  const getEffectiveSessionId = (): string | null => {
-    // URL 파라미터에서 sessionId 확인
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlSessionId = urlParams.get('sessionId');
-    if (urlSessionId) return urlSessionId;
-
-    // useChatStore의 chatSessionId 확인
-    const storeSessionId = useChatStore.getState().chatSessionId;
-    if (storeSessionId) return storeSessionId;
-
-    // localStorage에서 확인
-    const localSessionId = localStorage.getItem('chatSessionId');
-    if (localSessionId) return localSessionId;
-
-    // sessionStorage에서 확인 (최후 수단)
-    const sessionSessionId = sessionStorage.getItem('chatSessionId');
-    if (sessionSessionId) return sessionSessionId;
-
-    return null;
-  };
 
   // 공유 페이지 여부
   const isSharePage = useMemo(() => {
@@ -376,7 +352,17 @@ useEffect(() => {
       userEmail = info?.email || '';
       userPhone = info?.cellphone || '';
     }
-    const chatSessionId = getEffectiveSessionId();
+    
+    // ✅ 챗세션 ID 가져오기 - 없으면 강제로 최신 세션 로드
+    let chatSessionId = getEffectiveSessionId();
+    if (!chatSessionId) {
+      try {
+        await loadLatestChatSession(true); // force=true로 강제 로드
+        chatSessionId = getEffectiveSessionId();
+      } catch (e) {
+        console.error('챗세션 로드 실패:', e);
+      }
+    }
 
     if (!userId || !userName || !userEmail || !userPhone || !chatSessionId) {
       devLog("userId,userName,userEmail,userPhone,chatSessionId", { userId, userName, userEmail, userPhone, chatSessionId });

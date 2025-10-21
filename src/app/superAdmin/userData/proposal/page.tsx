@@ -171,19 +171,20 @@ const ProposalDownloadPage: React.FC = () => {
       // 통합관리자: selectedCompanyCode 사용
       // 사이트관리자: URL에서 추출한 companyCode 사용
       const currentPath = window.location.pathname;
-      let companyCodeToUse = selectedCompanyCode;
+      let companyCodeToUse = '';
       
       if (currentPath.includes('/cms/')) {
+        // 사이트관리자: URL에서 회사 코드 추출
         const extractedCompanyCode = getCompanyCodeFromUrl();
         if (extractedCompanyCode && extractedCompanyCode !== 'aigo') {
           companyCodeToUse = extractedCompanyCode;
         }
+      } else {
+        // 통합관리자: 선택된 회사 코드 사용
+        companyCodeToUse = selectedCompanyCode;
+        devLog('📄 [파일 다운로드] 사용할 회사 코드:', companyCodeToUse);
       }
       
-      if (!companyCodeToUse) {
-        showToast('회사 코드를 찾을 수 없습니다. 고객사를 선택해주세요.', 'error');
-        return;
-      }
       
       devLog('📄 [파일 다운로드] 사용할 회사 코드:', companyCodeToUse);
       
@@ -225,7 +226,7 @@ const ProposalDownloadPage: React.FC = () => {
     devLog('🏢 [견적 발행 이력 - 고객사 선택]:', company);
     setSelectedCompanyCode(company.id);
     setSelectedCompanyName(company.name);
-    
+    devLog('🏢 [견적 발행 이력 - 고객사 선택] 선택된 고객사:', company);
     // 초기 로드 플래그 해제 (실제 조회이므로)
     setIsInitialLoad(false);
     
@@ -478,7 +479,7 @@ const ProposalDownloadPage: React.FC = () => {
         ),
       },
     ],
-    []
+    [selectedCompanyCode]
   );
 
   return (

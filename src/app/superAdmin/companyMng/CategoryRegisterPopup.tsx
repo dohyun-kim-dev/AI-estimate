@@ -62,7 +62,11 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
         } else {
           // E11000 duplicate key error 처리
           let errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '수정에 실패했습니다.';
-          if (errorMessage.includes('E11000') && errorMessage.includes('duplicate key')) {
+          
+          // 검증 오류 메시지 한글화
+          if (errorMessage.includes('Too big') && errorMessage.includes('<=4 characters')) {
+            errorMessage = '카테고리 코드는 4자 이하로 입력해주세요.';
+          } else if (errorMessage.includes('E11000') && errorMessage.includes('duplicate key')) {
             if (errorMessage.includes('code_1')) {
               errorMessage = '중복된 카테고리 코드입니다.';
             } else if (errorMessage.includes('name_1')) {
@@ -93,7 +97,11 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
         } else {
           // E11000 duplicate key error 처리
           let errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '등록에 실패했습니다.';
-          if (errorMessage.includes('E11000') && errorMessage.includes('duplicate key')) {
+          
+          // 검증 오류 메시지 한글화
+          if (errorMessage.includes('Too big') && errorMessage.includes('<=4 characters')) {
+            errorMessage = '카테고리 코드는 4자 이하로 입력해주세요.';
+          } else if (errorMessage.includes('E11000') && errorMessage.includes('duplicate key')) {
             if (errorMessage.includes('code_1')) {
               errorMessage = '중복된 카테고리 코드입니다.';
             } else if (errorMessage.includes('name_1')) {
@@ -114,8 +122,10 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
           ? err.message
           : '카테고리 저장 중 오류가 발생했습니다.';
       
-      // E11000 duplicate key error 처리
-      if (errorMessage.includes('E11000') && errorMessage.includes('duplicate key')) {
+      // 검증 오류 메시지 한글화
+      if (errorMessage.includes('Too big') && errorMessage.includes('<=4 characters')) {
+        errorMessage = '카테고리 코드는 4자 이하로 입력해주세요.';
+      } else if (errorMessage.includes('E11000') && errorMessage.includes('duplicate key')) {
         if (errorMessage.includes('code_1')) {
           errorMessage = '중복된 카테고리 코드입니다.';
         } else if (errorMessage.includes('name_1')) {
@@ -152,6 +162,7 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
           label="* 카테고리코드"
           onChange={(e) => setCategoryCode(e.target.value)}
           placeholder="카테고리코드를 입력하세요"
+          readOnly={!!editData}
         />
       </div>
         <BottomButtonRow>

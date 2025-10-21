@@ -436,7 +436,7 @@ const InquiryPage: React.FC = () => {
       setSelectedChatTitle(chatTitle || '견적 문의');
       setIsChatHistoryModalOpen(true);
     } else {
-      alert('대화 이력이 없습니다.');
+      showToast('대화 이력이 없습니다.', 'error');
     }
   };
 
@@ -451,7 +451,7 @@ const InquiryPage: React.FC = () => {
   // PDF 다운로드 핸들러
   const handleDownloadPdf = async (estimateId?: string) => {
     if (!estimateId) {
-      alert('견적 PDF가 없습니다.');
+      showToast('견적 PDF가 없습니다.', 'error');
       return;
     }
     
@@ -474,26 +474,26 @@ const InquiryPage: React.FC = () => {
         }
       }, 100);
       
-      devLog('PDF 미리보기 페이지가 새 탭에서 열립니다.');
+      devLog('PDF 미리보기 페이지가 새 탭에서 열립니다.','success');
     } catch (error) {
       console.error('PDF 다운로드 오류:', error);
-      alert('PDF 다운로드 중 오류가 발생했습니다.');
+      showToast('PDF 다운로드 중 오류가 발생했습니다.', 'error');
     }
   };
 
   // 파일 다운로드 핸들러 (사용하지 않지만 남겨둠)
   const handleDownloadFile = (estimateFile?: string) => {
     if (estimateFile) {
-      alert(`견적 파일 다운로드: ${estimateFile}`);
+      showToast(`견적 파일 다운로드: ${estimateFile}`, 'success');
     } else {
-      alert('견적 파일이 없습니다.');
+      showToast('견적 파일이 없습니다.', 'error');
     }
   };
 
   // 엑셀 다운로드 핸들러 (adminApi.ts의 downloadEstimateExcel 함수 사용)
   const handleDownloadExcel = async (estimateId?: string) => {
     if (!estimateId) {
-      alert('견적 ID가 없습니다.');
+      showToast('견적 ID가 없습니다.', 'error');
       return;
     }
     
@@ -661,7 +661,7 @@ const InquiryPage: React.FC = () => {
         // API 응답이 배열로 직접 오는 경우 처리
         if (Array.isArray(apiResponse)) {
           // 새로운 API 응답 형식에 맞게 데이터 매핑
-          const mappedData: Inquiry[] = apiResponse.map((item: EstimateRequestItem, index: number) => {
+          const mappedData: Inquiry[] = apiResponse.map((item: any, index: number) => {
             const isGuest = item.userInfo?.isGuest === true;
             let profileImageUrl = '/ai-estimate/no-profile.png'; // 기본값
             
@@ -672,7 +672,7 @@ const InquiryPage: React.FC = () => {
             }
             
             return {
-              no: index + 1,
+              no: item.no || index + 1, // API 응답의 no 필드 사용, 없으면 index + 1
               _id: item._id,
               inquiryDate: item.createAt,
               name: item.userInfo?.name || '알 수 없음',
@@ -700,7 +700,7 @@ const InquiryPage: React.FC = () => {
           };
         } else if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
           // 기존 형식의 응답 처리
-          const mappedData: Inquiry[] = (apiResponse.data || []).map((item: EstimateRequestItem, index: number) => {
+          const mappedData: Inquiry[] = (apiResponse.data || []).map((item: any, index: number) => {
             const isGuest = item.userInfo?.isGuest === true;
             let profileImageUrl = '/ai-estimate/no-profile.png'; // 기본값
             
@@ -711,7 +711,7 @@ const InquiryPage: React.FC = () => {
             }
             
             return {
-              no: index + 1,
+              no: item.no || index + 1, // API 응답의 no 필드 사용, 없으면 index + 1
               _id: item._id,
               inquiryDate: item.createAt,
               name: item.userInfo?.name || '알 수 없음',

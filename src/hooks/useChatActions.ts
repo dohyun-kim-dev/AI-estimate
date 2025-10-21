@@ -175,35 +175,17 @@ interface UseChatActionsProps {
 export function useChatActions({ modelName, selectedPromptId }: UseChatActionsProps) {
   const { sendChat } = useAI(modelName);
   const { success, error } = useToast();
-  const { addMessage, updateLastMessage, chatSessionId, setChatSessionId, isProcessing, setIsProcessing, removeLastUserAndAiMessage } = useChatStore((s) => ({
+  const { addMessage, updateLastMessage, chatSessionId, setChatSessionId, getEffectiveSessionId, isProcessing, setIsProcessing, removeLastUserAndAiMessage } = useChatStore((s) => ({
     addMessage: s.addMessage,
     updateLastMessage: s.updateLastMessage,
     chatSessionId: s.chatSessionId,
     setChatSessionId: s.setChatSessionId,
+    getEffectiveSessionId: s.getEffectiveSessionId, // 추가: store에서 가져오기
     isProcessing: s.isProcessing, // 추가: store에서 가져오기
     setIsProcessing: s.setIsProcessing, // 추가: store 설정 함수
     removeLastUserAndAiMessage: s.removeLastUserAndAiMessage, // 추가: 메시지 제거 함수
   }));
   const { isAuthenticated } = useAuthStore();
-
-  // 항상 최신 세션ID를 가져오는 함수
-  const getEffectiveSessionId = () => {
-    // 1. URL 파라미터
-    try {
-      const searchParams = new URLSearchParams(window.location.search);
-      const urlSessionId = searchParams.get('sessionId');
-      if (urlSessionId) return urlSessionId;
-    } catch {}
-    // 2. Zustand 스토어
-    if (chatSessionId) return chatSessionId;
-    // 3. localStorage
-    const localSessionId = localStorage.getItem('chatSessionId');
-    if (localSessionId) return localSessionId;
-    // 4. sessionStorage
-    const sessionSessionId = sessionStorage.getItem('chatSessionId');
-    if (sessionSessionId) return sessionSessionId;
-    return null;
-  };
 
   const [uploadedFiles, setUploadedFiles] = useState<FileUploadData[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -737,9 +719,7 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         }
         if (createResponse && createResponse.statusCode === 200 && createResponse.data && createResponse.data.length > 0 && createResponse.data[0]._id) {
           currentSessionId = createResponse.data[0]._id;
-          setChatSessionId(currentSessionId);
-          sessionStorage.setItem('chatSessionId', currentSessionId);
-          localStorage.setItem('chatSessionId', currentSessionId);
+          setChatSessionId(currentSessionId); // store에만 저장
           // URL 파라미터로 sessionId 추가 (추출 편의성 향상)
           // const newUrl = `${window.location.pathname}?sessionId=${currentSessionId}`;
           // window.history.pushState(null, '', newUrl);

@@ -7,6 +7,7 @@ import AiResponseMessage from '@/components/ai-esti/AiResponseMessage';
 import EstimateCard from '@/components/ai-esti/EstimateCard';
 import EstimateAccordion from '@/components/ai-esti/EstimateAccordion';
 import { calculateEstimatedPeriod } from '@/utils/estimateCalculator';
+import { calculateDiscountInfo, isNonDiscountableItem } from '@/utils/discountCalculator';
 import DetailModal from '@/components/ai-esti/DetailModal';
 import EstimateActionButtons from '@/components/ai-esti/EstimateActionButtons';
 import ImageGrid from '@/components/ai-esti/ImageGrid';
@@ -573,7 +574,8 @@ export const AiMessageContent: React.FC<{
   const [isEstimateGenerating, setIsEstimateGenerating] = useState(false); // 견적서 생성 중 상태
   const [estimateData, setEstimateData] = useState<ProjectEstimate | null>(() => extractEstimateData(content));
   const estimateId = estimateData?.uuid;
-  const effectiveChatSessionId = chatSessionId || localStorage.getItem('chatSessionId') || '';
+  const getEffectiveSessionId = useChatStore((s) => s.getEffectiveSessionId); // store에서 가져오기
+  const effectiveChatSessionId = getEffectiveSessionId() || chatSessionId || '';
   const updateLastMessage = useChatStore((s) => s.updateLastMessage); // ⭐️ 추가: updateLastMessage 가져오기
   const messages = useChatStore((s) => s.messages); // ⭐️ 추가: messages 배열 가져오기
   
@@ -715,6 +717,7 @@ const userId = getUserId() || '';
   const effectiveBasePeriod = calculatedPeriod?.finalWeeks || basePeriod;
   const [projectPeriod, setProjectPeriod] = useState(effectiveBasePeriod);
   const [discountedPrice, setDiscountedPrice] = useState(basePrice);
+  const { companyInfo, isLoading: isCompanyLoading, fetchCompanyInfo } = useCompanyInfo();
 
   // 로딩 텍스트 가져오기 함수
   const getLoadingText = () => {
@@ -928,7 +931,7 @@ const userId = getUserId() || '';
       {/* 불완전한 JSON이 있는 경우 로딩 텍스트 표시 */}
       {hasIncompleteJson && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: '16px' }}>
-          <ProfileSpinner src="/ai-estimate/pretty.png" />
+          <ProfileSpinner src={getProfileImageUrl(companyInfo?.aiProfile)} />
           <GradientText>
             {isEstimateGenerating ? '견적서 만드는 중...' : getLoadingText()}
           </GradientText>
@@ -943,7 +946,7 @@ const userId = getUserId() || '';
               <EstimateCard 
                 estimate={updatedEstimateData || estimateData} 
                 discountedPrice={discountedPrice || 0} 
-                projectPeriod={projectPeriod || 0}
+                projectPeriod={Math.max(0, (projectPeriod || 0) - (effectiveBasePeriod || 0))}
                 calculatedPeriod={calculatedPeriod}
               />
               <DetailsToggle
@@ -955,15 +958,54 @@ const userId = getUserId() || '';
                   <DetailsToggleIcon><IoChevronDown size={24} /></DetailsToggleIcon>
                 }
               </DetailsToggle>
-              <PeriodSlider 
-                value={Math.max(0, (projectPeriod || 0) - (effectiveBasePeriod || 0))}  // 0~8
-                onChange={(sliderValue) => setProjectPeriod((effectiveBasePeriod || 0) + sliderValue)}
-                $isvisible={isDetailsVisible}
-                min={0}     
-                max={8}     
-                discountedPrice={discountedPrice || 0} // ⭐️ 수정: 기본값 0 추가
-                basePrice={basePrice || 0}    // ⭐️ 수정: 기본값 0 추가
-              />            
+              
+              {/* ✅ 할인 정보 계산 */}
+              {(() => {
+                const { companyInfo } = useCompanyStore.getState();
+                const discountSettings = {
+                  checkpointList: companyInfo?.checkpointList || [{ checkpoint: 1, discountRate: 1.25 }],
+                  discountRate: companyInfo?.discountRate || 'WEEK',
+                  rateRule: companyInfo?.rateRule || 'FIXED'
+                };
+
+                const extendedPeriod = Math.max(0, (projectPeriod || 0) - (effectiveBasePeriod || 0));
+                
+                let totalDiscountAmount = 0;
+                
+                if (extendedPeriod > 0 && estimateData) {
+                  estimateData.categories.forEach(category => {
+                    category.sub_categories.forEach(subCategory => {
+                      subCategory.items.forEach(item => {
+                        if (!item.is_deleted) {
+                          const itemBasePrice = typeof item.price === 'string' 
+                            ? parseFloat(item.price.replace(/,/g, '')) 
+                            : item.price;
+                          
+                          // 할인 제외 항목이 아니면 할인 적용
+                          if (!isNonDiscountableItem(item)) {
+                            const discountInfo = calculateDiscountInfo(extendedPeriod, itemBasePrice, discountSettings);
+                            totalDiscountAmount += discountInfo.amount;
+                          }
+                        }
+                      });
+                    });
+                  });
+                }
+
+                return (
+                  <PeriodSlider 
+                    value={extendedPeriod}
+                    onChange={(sliderValue) => setProjectPeriod((effectiveBasePeriod || 0) + sliderValue)}
+                    $isvisible={isDetailsVisible}
+                    min={0}     
+                    max={8}     
+                    discountedPrice={discountedPrice || 0}
+                    basePrice={basePrice || 0}
+                    totalDiscountAmount={totalDiscountAmount}
+                  />
+                );
+              })()}
+              
  {/* 할인율 계산: discountableBase, discountPercentage */}
               {(() => {
                 // 할인 제외 항목
@@ -1077,6 +1119,9 @@ export default function AiChatPage() {
   const [selectedPromptId, setSelectedPromptId] = useState('default');
   const updateLastMessage = useChatStore((s) => s.updateLastMessage);
   const isCrawlingUrl = useChatStore((s) => s.isCrawlingUrl); // 추가: URL 크롤링 상태 가져오기
+  const getEffectiveSessionId = useChatStore((s) => s.getEffectiveSessionId); // store에서 가져오기
+  const chatSessionId = useChatStore((s) => s.chatSessionId); // store에서 가져오기
+  const setChatSessionId = useChatStore((s) => s.setChatSessionId); // store에서 가져오기
   const { isAuthenticated, user } = useAuthStore(); // user 상태도 가져오기
   
   // 회사 정보 훅 사용
@@ -1286,7 +1331,7 @@ export default function AiChatPage() {
   }, []);
   
   const [estimateDataForConsult, setEstimateDataForConsult] = useState<ProjectEstimate | null>(null);
-  const [chatSessionId, setChatSessionId] = useState('');
+  // ⭐️ 제거: chatSessionId는 이제 store에서 관리
 
 // 페이지 진입 시 단가표 불러와서 promptStore에 저장
 useEffect(() => {
@@ -1473,13 +1518,7 @@ useEffect(() => {
     }
   }, [messages]); // messages 배열이 변경될 때마다 실행됩니다.
 
-  useEffect(() => {
-      // ⭐️ 추가: 로컬 스토리지에서 채팅 세션 ID 가져오기
-      const storedChatSessionId = localStorage.getItem('chatSessionId');
-      if (storedChatSessionId) {
-        setChatSessionId(storedChatSessionId);
-      }
-  }, []);
+  // ⭐️ 제거: localStorage에서 chatSessionId를 가져오는 로직 제거 (store에서 자동 관리)
 
   const handleInfoSubmit = useCallback(async (
     userInfo: { name: string; email: string; cellphone: string }, 
@@ -1534,12 +1573,11 @@ useEffect(() => {
     const urlSessionId = searchParams.get('sessionId');
 
     const handleSessionManagement = async () => {
-      const localChatSessionId = localStorage.getItem('chatSessionId')||sessionStorage.getItem('chatSessionId');
-      let effectiveSessionId = urlSessionId || localChatSessionId;
+      const storeSessionId = getEffectiveSessionId(); // store에서 가져오기
+      let effectiveSessionId = urlSessionId || storeSessionId;
 
       if (urlSessionId) {
-        localStorage.setItem('chatSessionId', urlSessionId);
-        setChatSessionId(urlSessionId);
+        setChatSessionId(urlSessionId); // store에만 저장
         try {
           const messagesResponse = await getChatSessionMessages(urlSessionId) as any;
           if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
@@ -1641,12 +1679,13 @@ useEffect(() => {
       }
 
       if (isAuthenticated()) {
-        if (localChatSessionId) {
+        const storeSessionId = getEffectiveSessionId(); // store에서 가져오기
+        if (storeSessionId) {
           try {
-            await transferChatSessionToUser(localChatSessionId);
-            devLog("방 소유권 이전 성공, 세션 ID:", localChatSessionId);
-            setChatSessionId(localChatSessionId);
-            const messagesResponse = await getChatSessionMessages(localChatSessionId) as any;
+            await transferChatSessionToUser(storeSessionId);
+            devLog("방 소유권 이전 성공, 세션 ID:", storeSessionId);
+            setChatSessionId(storeSessionId);
+            const messagesResponse = await getChatSessionMessages(storeSessionId) as any;
             if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
               const chatMessages = messagesResponse.data.map((msg: any) => {
                 // 🔥 서버에서 files 정보를 가져와서 이미지와 파일 생성
@@ -1740,7 +1779,7 @@ useEffect(() => {
               }
             }
           } catch (error) {
-            console.error('세션 소유권 이전 실패:',localChatSessionId, error);
+            console.error('세션 소유권 이전 실패:', storeSessionId, error);
           }
         } else {
           try {
@@ -1749,8 +1788,7 @@ useEffect(() => {
               const latestSession = sessionsResponse.data.sort((a: any, b: any) => 
                 new Date(b.createAt).getTime() - new Date(a.createAt).getTime()
               )[0];
-              localStorage.setItem('chatSessionId', latestSession._id);
-              setChatSessionId(latestSession._id);
+              setChatSessionId(latestSession._id); // store에만 저장
               const messagesResponse = await getChatSessionMessages(latestSession._id) as any;
               if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
                 const chatMessages = messagesResponse.data.map((msg: any) => {
@@ -1844,10 +1882,11 @@ useEffect(() => {
           }
         }
       } else {
-        if (localChatSessionId) {
+        const storeSessionId = getEffectiveSessionId(); // store에서 가져오기
+        if (storeSessionId) {
           try {
-            setChatSessionId(localChatSessionId);
-            const messagesResponse = await getChatSessionMessages(localChatSessionId) as any;
+            setChatSessionId(storeSessionId);
+            const messagesResponse = await getChatSessionMessages(storeSessionId) as any;
             if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
               const chatMessages = messagesResponse.data.map((msg: any) => {
                 // 🔥 서버에서 files 정보를 가져와서 이미지와 파일 생성

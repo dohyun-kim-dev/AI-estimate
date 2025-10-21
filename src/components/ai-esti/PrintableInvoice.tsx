@@ -222,27 +222,32 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
               background: 'white',
               position: 'relative'
             }} rowSpan={5}>
-              <div style={{
-                position: 'absolute',
-                right: '20px',
-                bottom: '60px',
-                width: '60px',
-                height: '60px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                // marginLeft: '10px'
-              }}>
-                <img 
-                  src="/ai-estimate/stamp.png" 
-                  alt="직인" 
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain'
-                  }} 
-                />
-              </div>
+              {companyInfo?.signature && (
+                <div style={{
+                  position: 'absolute',
+                  right: '20px',
+                  bottom: '60px',
+                  width: '60px',
+                  height: '60px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <img 
+                    src={
+                      process.env.NODE_ENV === 'development' 
+                        ? `/api/file/${companyInfo.signature}` 
+                        : `/file/${companyInfo.signature}`
+                    }
+                    alt="직인" 
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain'
+                    }} 
+                  />
+                </div>
+              )}
             </td>
           </tr>
           <tr>

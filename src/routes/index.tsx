@@ -71,43 +71,6 @@ export default function AppRoutes() {
         <Route path="excel-preview" element={<ExcelPreview />} />
         <Route path="completed" element={<CompletedPage />} />
 
-        <Route element={<CMSLayout />}>
-          <Route path="cms" element={<CMS />} />
-          <Route path="cms/login" element={<CMSLogin />} />
-          <Route path="cms/super-admin" element={<CMSSuperAdminMng />} />
-          <Route path="cms/company-management" element={<CMSCompanyMng />} />
-          <Route path="cms/admin-management" element={<CMSAdminMng />} />
-          <Route path="cms/user-management" element={<CMSUserMng />} />
-          
-          <Route path="cms/ai-data">
-            <Route index element={<Navigate to="survey" replace />} />
-            <Route path="survey" element={<SurveyPage />} />
-            <Route path="prompt" element={<PromptPage />} />
-            <Route path="wrong-answer" element={<TreeGridPage />} />
-            <Route path="conversation-history" element={<AiChatHistoryPage />} />
-          </Route>
-
-          <Route path="cms/ai-setting">
-            <Route index element={<Navigate to="company-info" replace />} />
-            <Route path="company-info" element={<CompanyInfoSettingsPage />} />
-            <Route path="management" element={<AigoSettingsPage />} />
-          </Route>
-
-          <Route path="cms/user-data">
-            <Route index element={<Navigate to="price" replace />} />
-            <Route path="price" element={<PriceListPage />} />
-            <Route path="proposal" element={<ProposalDownloadPage />} />
-            <Route path="inquiry" element={<InquiryPage />} />
-          </Route>
-
-          <Route path="cms/company-settings" element={<CompanyInfoSettingsPage />} />
-          <Route path="cms/aigo-settings" element={<AigoSettingsPage />} />
-          <Route path="cms/terms" element={<CMSTerms />} />
-          <Route path="cms/prompt-detail" element={<PromptDetailPage />} />
-        </Route>
-
-        
-
         <Route path="*" element={<Navigate to="." replace />} />
       </Route>
 

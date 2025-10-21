@@ -176,9 +176,19 @@ interface PeriodSliderProps {
   max?: number;
   discountedPrice?: number;
   basePrice?: number;
+  totalDiscountAmount?: number; // ✅ 추가: EstimateCard에서 계산한 총 할인 금액
 }
 
-const PeriodSlider: React.FC<PeriodSliderProps> = ({ value = 0, onChange, $isvisible, min=0, max=8, discountedPrice, basePrice }) => {
+const PeriodSlider: React.FC<PeriodSliderProps> = ({ 
+  value = 0, 
+  onChange, 
+  $isvisible, 
+  min=0, 
+  max=8, 
+  discountedPrice, 
+  basePrice,
+  totalDiscountAmount = 0 // ✅ 추가
+}) => {
   // url에 'share'가 포함되어 있으면 렌더링하지 않음
   if (typeof window !== 'undefined' && window.location.pathname.includes('share')) {
     return null;
@@ -250,10 +260,21 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({ value = 0, onChange, $isvis
   const currentSliderIndex = getSliderIndex(value);
   const actualValue = discountSettings.rateRule === 'DYNAMIC' ? value : value;
 
-  // 할인율 계산
+  // ✅ EstimateCard에서 전달받은 할인 금액 사용, 비율은 자체 계산
   const discountInfo = useMemo(() => {
-    return calculateDiscountInfo(value, basePrice || 0, discountSettings);
-  }, [value, discountSettings, basePrice]);
+    const calculatedInfo = calculateDiscountInfo(value, basePrice || 0, discountSettings);
+    
+    // totalDiscountAmount가 있으면 그 값을 사용하고, percentage는 자체 계산
+    if (totalDiscountAmount > 0) {
+      return {
+        amount: totalDiscountAmount,
+        percentage: calculatedInfo.percentage
+      };
+    }
+    
+    // fallback: 기존 계산 로직
+    return calculatedInfo;
+  }, [value, discountSettings, basePrice, totalDiscountAmount]);
 
   // 단위 텍스트 생성
   const getUnitText = () => {
