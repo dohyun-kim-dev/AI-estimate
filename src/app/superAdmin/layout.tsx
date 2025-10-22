@@ -46,14 +46,39 @@ function ProtectedCmsLayout() {
   const { show: showToast } = useToast(); // 토스트 훅 추가
 
   useEffect(() => {
-    
-    if (ready && !isLoggedIn && !isLoginPage && !isPdfPreviewPage && !isExcelPreviewPage && !isPromptDetailPage) {
-      console.log('Redirecting to /superadmin/login from CmsLayout',ready, isLoggedIn, isLoginPage, isPdfPreviewPage, isExcelPreviewPage, isPromptDetailPage);
-      navigate(`/superadmin/login`, { replace: true });
-    } else if (ready && isLoggedIn && location.pathname === `/superadmin`) {
-      // 대시보드로 이동
-      navigate(`/superadmin/admin-management`, { replace: true });
+    console.log('🔍 [CmsLayout useEffect 실행]', {
+      ready,
+      isLoggedIn,
+      isLoginPage,
+      currentPath: location.pathname,
+      timestamp: new Date().toISOString()
+    });
+
+    // ready가 false면 아직 로딩 중이므로 아무것도 하지 않음
+    if (!ready) {
+      console.log('⏳ [CmsLayout] ready가 false - 로딩 중');
+      return;
     }
+
+    // 로그인 안 되어 있고, 예외 페이지가 아니면 로그인 페이지로 리다이렉트
+    if (!isLoggedIn && !isLoginPage && !isPdfPreviewPage && !isExcelPreviewPage && !isPromptDetailPage) {
+      console.log('🔄 [CmsLayout] 로그인 필요 - /superadmin/login으로 리다이렉트', {
+        ready,
+        isLoggedIn,
+        currentPath: location.pathname
+      });
+      navigate(`/superadmin/login`, { replace: true });
+      return;
+    }
+
+    // 로그인되어 있고 루트 경로면 대시보드로 이동
+    if (isLoggedIn && location.pathname === `/superadmin`) {
+      console.log('✅ [CmsLayout] 로그인됨 - 루트 경로 접근 (대시보드 비활성화됨)');
+      // 대시보드로 이동하려면 주석 해제
+      // navigate(`/superadmin/admin-management`, { replace: true });
+    }
+    
+    console.log('✅ [CmsLayout] useEffect 정상 종료 - 리다이렉트 없음');
   }, [ready, isLoggedIn, isLoginPage, isPdfPreviewPage, isExcelPreviewPage, isPromptDetailPage, location.pathname, navigate, companyCode]);
 
   const [isCollapsed, setIsCollapsed] = useState(false);

@@ -521,72 +521,78 @@ const AdminMngPage: React.FC = () => {
   }, []);
 
   const columns: ColumnDefinition<AdminUser>[] = useMemo(
-    () => [
-      {
-        header: 'No',
-        accessor: 'no',
-        width: 60,
-        // formatter: (value, item, index) => index + 1,
-      },
-      {
-        header: '가입일',
-        accessor: 'createAt',
-        width: 120,
-        sortable: true,
-        formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd)') : '-'),
-      },
-      {
-        header: '최근 접속',
-        accessor: 'lastLoginAt',
-        width: 120,
-        formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd)') : '-'),
-      },
-      { header: '고객사명', accessor: 'companyCode', flex: 1 },
-      { header: '이름', accessor: 'name', flex: 1 },
-      { header: '이메일', accessor: 'email', flex: 1,
-        allowWrap: true, },
-      { header: '전화번호', accessor: 'cellphone', flex: 1 },
-      { header: '아이디', accessor: 'adminId', flex: 1 },
-      // {
-      //   header: '알림톡 수신',
-      //   accessor: 'receiveAlimtalk',
-      //   noPopup: true,
-      //   sortable: false,
-      //   flex: 1,
-      //   formatter: (_value, row) => (
-      //     <Switch
-      //       checked={Boolean(row.receiveAlimtalk)}
-      //       onToggle={() => {
-      //         const newValue = !Boolean(row.receiveAlimtalk);
-      //         handleDropdownChange(row._id, 'receiveAlimtalk', newValue);
-      //       }}
-      //     />
-      //   ),
-      // },
-      {
-        header: '메일 수신',
-        accessor: 'receiveEmail',
-        noPopup: true,
-        sortable: false,
-        width: 120,
-        flex: 1,
-        formatter: (_value, row) => (
-          <Switch
-            checked={Boolean(row.receiveEmail)}
-            onToggle={() => {
-              const newValue = !Boolean(row.receiveEmail);
-              handleDropdownChange(row._id, 'receiveEmail', newValue);
-            }}
-          />
-        ),
-      },
-      {
-        header: '비고',
-        accessor: 'memo',
-        flex: 1,
-        formatter: (value) => value || '-',
-      },
-    ],
+    () => {
+      const isCmsUrl = window.location.pathname.includes('/cms/');
+      
+      const baseColumns: ColumnDefinition<AdminUser>[] = [
+        {
+          header: 'No',
+          accessor: 'no' as const,
+          width: 60,
+          // formatter: (value, item, index) => index + 1,
+        },
+        {
+          header: '가입일',
+          accessor: 'createAt' as const,
+          width: 120,
+          sortable: true,
+          formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd)') : '-'),
+        },
+        {
+          header: '최근 접속',
+          accessor: 'lastLoginAt' as const,
+          width: 120,
+          formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd)') : '-'),
+        },
+        ...(!isCmsUrl ? [{ header: '고객사명', accessor: 'companyCode' as const, flex: 1 }] : []),
+        { header: '이름', accessor: 'name' as const, flex: 1 },
+        { header: '이메일', accessor: 'email' as const, flex: 1,
+          allowWrap: true, },
+        { header: '전화번호', accessor: 'cellphone' as const, flex: 1 },
+        { header: '아이디', accessor: 'adminId' as const, flex: 1 },
+        // {
+        //   header: '알림톡 수신',
+        //   accessor: 'receiveAlimtalk',
+        //   noPopup: true,
+        //   sortable: false,
+        //   flex: 1,
+        //   formatter: (_value, row) => (
+        //     <Switch
+        //       checked={Boolean(row.receiveAlimtalk)}
+        //       onToggle={() => {
+        //         const newValue = !Boolean(row.receiveAlimtalk);
+        //         handleDropdownChange(row._id, 'receiveAlimtalk', newValue);
+        //       }}
+        //     />
+        //   ),
+        // },
+        {
+          header: '메일 수신',
+          accessor: 'receiveEmail' as const,
+          noPopup: true,
+          sortable: false,
+          width: 120,
+          flex: 1,
+          formatter: (_value, row) => (
+            <Switch
+              checked={Boolean(row.receiveEmail)}
+              onToggle={() => {
+                const newValue = !Boolean(row.receiveEmail);
+                handleDropdownChange(row._id, 'receiveEmail', newValue);
+              }}
+            />
+          ),
+        },
+        {
+          header: '비고',
+          accessor: 'memo' as const,
+          flex: 1,
+          formatter: (value) => value || '-',
+        },
+      ];
+      
+      return baseColumns;
+    },
     [handleDropdownChange]
   );
 

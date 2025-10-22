@@ -418,67 +418,73 @@ const ProposalDownloadPage: React.FC = () => {
   );
 
   const columns: ColumnDefinition<ProposalDownload>[] = useMemo(
-    () => [
-      { header: 'No', accessor: 'no', width: 60, sortable: true },
-      { header: '날짜', accessor: 'createAt', width: 120, sortable: true, formatter: (value) => dayjs(value).format('YY.MM.DD(ddd)') },
-      { header: '고객사', accessor: 'companyName', flex: 1, sortable: true },
-      {
-        header: '프로필',
-        accessor: 'profileImageUrl',
-        width: 60,
-        formatter: (value, row) => {
-          let imageUrl = '/ai-estimate/no_profile.png'; // 기본값
-          
-          if (row.userInfo?.isGuest === true) {
-            imageUrl = '/cms/guest.png';
-          } else if (row.userInfo?.profileImage) {
-            imageUrl = row.userInfo.profileImage;
-          } else if (row.profileImageUrl) {
-            imageUrl = row.profileImageUrl;
-          }
-          
-          return (
-            <ProfileWrapper>
-              <ProfileImage 
-                src={imageUrl}
-                alt="프로필"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/ai-estimate/no_profile.png';
-                }}
-              />
-            </ProfileWrapper>
-          );
+    () => {
+      const isCmsUrl = window.location.pathname.includes('/cms/');
+      
+      const baseColumns: ColumnDefinition<ProposalDownload>[] = [
+        { header: 'No', accessor: 'no', width: 60, sortable: true },
+        { header: '날짜', accessor: 'createAt', width: 120, sortable: true, formatter: (value) => dayjs(value).format('YY.MM.DD(ddd)') },
+        ...(!isCmsUrl ? [{ header: '고객사', accessor: 'companyName' as const, flex: 1, sortable: true }] : []),
+        {
+          header: '프로필',
+          accessor: 'profileImageUrl' as const,
+          width: 60,
+          formatter: (value, row) => {
+            let imageUrl = '/ai-estimate/no_profile.png'; // 기본값
+            
+            if (row.userInfo?.isGuest === true) {
+              imageUrl = '/cms/guest.png';
+            } else if (row.userInfo?.profileImage) {
+              imageUrl = row.userInfo.profileImage;
+            } else if (row.profileImageUrl) {
+              imageUrl = row.profileImageUrl;
+            }
+            
+            return (
+              <ProfileWrapper>
+                <ProfileImage 
+                  src={imageUrl}
+                  alt="프로필"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/ai-estimate/no_profile.png';
+                  }}
+                />
+              </ProfileWrapper>
+            );
+          },
         },
-      },
-      { header: '이름', accessor: 'user', flex: 0.7, sortable: true },
-      { header: '연락처', accessor: 'cellphone', flex: 1, sortable: true, width:120, },
-      { header: '이메일', accessor: 'email', flex: 1.2, sortable: true, allowWrap: true },
-      { header: '아이디', accessor: 'userId', flex: 1.2, sortable: true, allowWrap: true },
-      { header: '견적 제목', accessor: 'title', flex: 2, allowWrap: true },
-      {
-        header: '파일다운로드',
-        accessor: '_id',
-        width: 120,
-        noPopup: true,
-        formatter: (value, row) => (
-          <DownloadButton onClick={() => handleDownloadFile(row._id)}>
-            파일 다운로드
-          </DownloadButton>
-        ),
-      },
-      {
-        header: '견적xlx다운',
-        accessor: '_id',
-        width: 120,
-        noPopup: true,
-        formatter: (value, row) => (
-          <ExcelDownloadButton onClick={() => handleExcelDownload(row._id)}>
-            엑셀 다운로드
-          </ExcelDownloadButton>
-        ),
-      },
-    ],
+        { header: '이름', accessor: 'user' as const, flex: 0.7, sortable: true },
+        { header: '연락처', accessor: 'cellphone' as const, flex: 1, sortable: true, width:120, },
+        { header: '이메일', accessor: 'email' as const, flex: 1.2, sortable: true, allowWrap: true },
+        { header: '아이디', accessor: 'userId' as const, flex: 1.2, sortable: true, allowWrap: true },
+        { header: '견적 제목', accessor: 'title' as const, flex: 2, allowWrap: true },
+        {
+          header: '파일다운로드',
+          accessor: '_id' as const,
+          width: 120,
+          noPopup: true,
+          formatter: (value, row) => (
+            <DownloadButton onClick={() => handleDownloadFile(row._id)}>
+              파일 다운로드
+            </DownloadButton>
+          ),
+        },
+        {
+          header: '견적xlx다운',
+          accessor: '_id' as const,
+          width: 120,
+          noPopup: true,
+          formatter: (value, row) => (
+            <ExcelDownloadButton onClick={() => handleExcelDownload(row._id)}>
+              엑셀 다운로드
+            </ExcelDownloadButton>
+          ),
+        },
+      ];
+      
+      return baseColumns;
+    },
     [selectedCompanyCode]
   );
 
