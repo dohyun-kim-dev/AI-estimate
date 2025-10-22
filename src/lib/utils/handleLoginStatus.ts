@@ -3,6 +3,7 @@ import { ApiLoginStatus } from '@lib/utils/apiLoginStatus';
 type HandleLoginStatusProps = {
   status: ApiLoginStatus;
   message: string;
+  customMessage?: string;
   onSuccess: () => void;
   onFail?: () => void;
   showMessage?: (msg: string) => void;
@@ -11,6 +12,7 @@ type HandleLoginStatusProps = {
 export function handleLoginStatus({
   status,
   message,
+  customMessage,
   onSuccess,
   onFail,
   showMessage = (msg) => alert(msg),
@@ -35,9 +37,13 @@ export function handleLoginStatus({
       onFail?.();
       showMessage('데이터가 없습니다');
       break;
+    case ApiLoginStatus.Forbidden:
+      onFail?.();
+      showMessage(customMessage || '관리자 권한이 없습니다.');
+      break;
     case ApiLoginStatus.Unknown:
       onFail?.();
-      showMessage(`알 수 없는 오류: ${message}`);
+      showMessage(customMessage || `알 수 없는 오류: ${message}`);
       break;
   }
 }

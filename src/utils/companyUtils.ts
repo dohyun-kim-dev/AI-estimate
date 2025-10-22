@@ -1,3 +1,6 @@
+import { devLog } from "./devLogger";
+
+
 /**
  * 현재 URL에서 회사 코드를 추출하는 함수
  * 지원하는 패턴:
@@ -17,7 +20,7 @@ export function getCompanyCodeFromUrl(): string {
   const urlParams = new URLSearchParams(window.location.search);
   const companyCodeParam = urlParams.get('companyCode');
   if (companyCodeParam) {
-    console.log('🔍 [companyUtils] URL 파라미터에서 추출:', companyCodeParam);
+    devLog('🔍 [companyUtils] URL 파라미터에서 추출:', companyCodeParam);
     return companyCodeParam;
   }
 
@@ -26,19 +29,19 @@ export function getCompanyCodeFromUrl(): string {
   // 2. /aiclient/{companyCode}/... 패턴 매칭
   const aiClientMatch = pathname.match(/^\/aiclient\/([^\/]+)/);
   if (aiClientMatch) {
-    console.log('🔍 [companyUtils] aiclient 경로에서 추출:', aiClientMatch[1]);
+    devLog('🔍 [companyUtils] aiclient 경로에서 추출:', aiClientMatch[1]);
     return aiClientMatch[1];
   }
   
   // 3. /{companyCode}/cms 패턴 매칭
   const cmsMatch = pathname.match(/^\/([^\/]+)\/cms/);
   if (cmsMatch) {
-    console.log('🔍 [companyUtils] cms 경로에서 추출:', cmsMatch[1]);
+    devLog('🔍 [companyUtils] cms 경로에서 추출:', cmsMatch[1]);
     return cmsMatch[1];
   }
   
   // 기본값으로 빈 문자열 반환
-  console.log('🔍 [companyUtils] 회사 코드를 찾을 수 없음 - 빈 문자열 반환');
+  devLog('🔍 [companyUtils] 회사 코드를 찾을 수 없음 - 빈 문자열 반환');
   return '';
 }
 

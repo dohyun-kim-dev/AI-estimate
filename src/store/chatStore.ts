@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { getChatSessions } from '@/lib/api/user/userApi'
+import { devLog } from '@/utils/devLogger';
 
 export interface ImageData {
   url: string;
@@ -8,7 +9,6 @@ export interface ImageData {
   mimeType?: string;
   size?: number;
 }
-
 // 📄 문서 파일 데이터 타입 (PDF, TXT 등)
 export interface FileData {
   url: string;
@@ -171,14 +171,14 @@ export const useChatStore = create<ChatState>()(
             const response: any = await getChatSessions();
             
             if (response.statusCode !== 200 || !response.data) {
-              console.log('⚠️ 채팅 세션 로드 실패:', response.message);
+              devLog('⚠️ 채팅 세션 로드 실패:', response.message);
               return null;
             }
             
             const sessions = response.data;
             
             if (!sessions || sessions.length === 0) {
-              console.log('⚠️ 사용 가능한 채팅 세션이 없습니다.');
+              devLog('⚠️ 사용 가능한 채팅 세션이 없습니다.');
               return null;
             }
 
@@ -192,7 +192,7 @@ export const useChatStore = create<ChatState>()(
             const latestSession = sortedSessions[0];
             if (latestSession && latestSession._id) {
               set({ chatSessionId: latestSession._id });
-              console.log('✅ 최신 챗세션 로드:', latestSession._id);
+              devLog('✅ 최신 챗세션 로드:', latestSession._id);
               return latestSession._id;
             }
             
@@ -215,7 +215,7 @@ export const useChatStore = create<ChatState>()(
             
             // ✅ API 응답 구조 확인: { statusCode, message, data, ... }
             if (response.statusCode !== 200 || !response.data) {
-              console.log('⚠️ 채팅 세션 로드 실패:', response.message);
+              devLog('⚠️ 채팅 세션 로드 실패:', response.message);
               return;
             }
             
@@ -223,7 +223,7 @@ export const useChatStore = create<ChatState>()(
             
             // 세션이 없으면 아무것도 하지 않음
             if (!sessions || sessions.length === 0) {
-              console.log('⚠️ 사용 가능한 채팅 세션이 없습니다.');
+              devLog('⚠️ 사용 가능한 채팅 세션이 없습니다.');
               return;
             }
 
@@ -237,7 +237,7 @@ export const useChatStore = create<ChatState>()(
             const latestSession = sortedSessions[0];
             if (latestSession && latestSession._id) {
               set({ chatSessionId: latestSession._id });
-              console.log('✅ 최신 챗세션 로드:', latestSession._id, latestSession.title);
+              devLog('✅ 최신 챗세션 로드:', latestSession._id, latestSession.title);
             }
           } catch (error) {
             console.error('❌ 최근 채팅 세션 로드 실패:', error);
@@ -245,8 +245,7 @@ export const useChatStore = create<ChatState>()(
           }
         },
         clear: () => {
-          const { setChatSessionId } = get();
-          setChatSessionId(null); // 세션 ID 초기화
+          // ⚠️ 세션 ID는 유지 (새 채팅 시작 시에만 null로 설정)
           set({ 
             messages: [], // 메시지 초기화
             isProcessing: false, // 처리 상태도 초기화

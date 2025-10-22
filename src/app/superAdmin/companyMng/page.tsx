@@ -63,6 +63,7 @@ type Company = {
   memo: string;
   licence: string;
   homepage?: string;
+  activateChatBot?: boolean; // 챗봇 활성 여부
   createAt: string;
 };
 
@@ -105,6 +106,7 @@ const CustomerMngPage: React.FC = () => {
   const [ceoEmail, setCeoEmail] = useState('');
   const [ciImage, setCiImage] = useState<string | undefined>();
   const [businessImage, setBusinessImage] = useState<string | undefined>();
+  const [activateChatBot, setActivateChatBot] = useState(false);
   
   // 에러 상태
   const [errors, setErrors] = useState<{
@@ -163,6 +165,7 @@ const CustomerMngPage: React.FC = () => {
       setHomepage(initial?.homepage ?? '');
       setCiImage(initial?.ciImage); // CI 이미지 파일 경로
       setBusinessImage(initial?.businessImage); // 사업자등록증 파일 경로
+      setActivateChatBot(initial?.activateChatBot ?? false); // 챗봇 활성 여부
       setPassword('');
       setConfirmPassword('');
       setErrors({});
@@ -317,6 +320,7 @@ const CustomerMngPage: React.FC = () => {
           homepage, // 홈페이지 추가
           ciImage,
           businessImage,
+          activateChatBot, // 챗봇 활성 여부 추가
           category: categoryId, // 현재 선택된 카테고리 ID 사용
           contractStartDate: contractStartDate || dayjs().format('YYYY-MM-DD HH:mm:ss'),
           contractEndDate: contractEndDate || dayjs().add(contractType === 'MONTH' ? 1 : 12, 'month').format('YYYY-MM-DD HH:mm:ss'),
@@ -340,6 +344,7 @@ const CustomerMngPage: React.FC = () => {
           homepage: homepage,
           ciImage: ciImage,
           businessImage: businessImage,
+          activateChatBot: activateChatBot, // 챗봇 활성 여부 추가
           memo: memo,
           businessNumber: businessNumber,
           category: categoryId || '',
@@ -509,6 +514,7 @@ const CustomerMngPage: React.FC = () => {
     homepage,
     ciImage,
     businessImage,
+    activateChatBot,
     errors,
   };
 
@@ -538,6 +544,7 @@ const CustomerMngPage: React.FC = () => {
     setHomepage,
     setCiImage,
     setBusinessImage,
+    setActivateChatBot,
   };
 
   const columns = useMemo(

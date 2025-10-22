@@ -434,8 +434,16 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
         // 응답 처리 (userMng 페이지와 동일한 패턴 적용)
         if (messagesResponse && typeof messagesResponse === 'object') {
           // 응답이 직접 API 응답 객체인 경우
-          if ('statusCode' in messagesResponse && messagesResponse.statusCode === 200) {
-            messages = Array.isArray(messagesResponse.data) ? messagesResponse.data : [];
+          if ('statusCode' in messagesResponse) {
+            if (messagesResponse.statusCode === 200) {
+              messages = Array.isArray(messagesResponse.data) ? messagesResponse.data : [];
+            } else if (messagesResponse.statusCode === 404) {
+              throw new Error('채팅 세션을 찾을 수 없습니다. 세션이 삭제되었을 수 있습니다.');
+            } else if (messagesResponse.statusCode === 403) {
+              throw new Error('채팅 메시지에 접근할 권한이 없습니다.');
+            } else {
+              throw new Error(messagesResponse.message || '채팅 메시지를 불러올 수 없습니다.');
+            }
           }
           // 응답이 배열로 감싸져 있는 경우 (callAdminApi 특성)
           else if (Array.isArray(messagesResponse) && messagesResponse[0]) {
@@ -443,22 +451,38 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
             if (firstItem && typeof firstItem === 'object' && 'data' in firstItem) {
               const responseData = firstItem.data;
               if (responseData && typeof responseData === 'object' && 'statusCode' in responseData) {
-                const typedResponseData = responseData as { data?: ChatMessage[]; statusCode: number };
+                const typedResponseData = responseData as { data?: ChatMessage[]; statusCode: number; message?: string };
                 if (typedResponseData.statusCode === 200) {
                   messages = Array.isArray(typedResponseData.data) ? typedResponseData.data : [];
+                } else if (typedResponseData.statusCode === 404) {
+                  throw new Error('채팅 세션을 찾을 수 없습니다. 세션이 삭제되었을 수 있습니다.');
+                } else if (typedResponseData.statusCode === 403) {
+                  throw new Error('채팅 메시지에 접근할 권한이 없습니다.');
+                } else {
+                  throw new Error(typedResponseData.message || '채팅 메시지를 불러올 수 없습니다.');
                 }
               }
             }
+          } else {
+            throw new Error('API 응답 형식이 올바르지 않습니다.');
           }
+        } else {
+          throw new Error('API 응답을 받지 못했습니다.');
         }
         
         devLog('파싱된 메시지 데이터:', messages);
         devLog('메시지 개수:', messages.length);
         
-        if (messages.length > 0) {
-          // 메시지들을 채팅 스토어에 추가
-          messages.forEach((message: ChatMessage) => {
-            devLog('처리 중인 메시지:', message);
+        // 메시지가 없는 경우 처리
+        if (!Array.isArray(messages) || messages.length === 0) {
+          devLog('메시지가 없습니다.');
+          setLoading(false);
+          return;
+        }
+        
+        // 메시지들을 채팅 스토어에 추가
+        messages.forEach((message: ChatMessage) => {
+          devLog('처리 중인 메시지:', message);
             if (message.role === 'USER') {
               // USER 메시지: content.content에 텍스트, content.file에 파일명, content.files 배열에 파일명들
               const userContent = message.content?.content || '';
@@ -530,16 +554,18 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
                 content: message.content?.value || ''
               });
             }
-          });
-        } else {
-          devLog('메시지가 없거나 API 응답 형식이 올바르지 않습니다.');
-        }
+        });
         
         setLoading(false);
         
       } catch (err) {
         console.error('메시지 로딩 실패:', err);
-        setErrorMessage('채팅 메시지를 불러올 수 없습니다. 세션이 삭제되었거나 접근 권한이 없을 수 있습니다.');
+        // 에러 메시지 더 자세하게 표시
+        if (err instanceof Error) {
+          setErrorMessage(err.message);
+        } else {
+          setErrorMessage('채팅 메시지를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        }
         setLoading(false);
       }
     };

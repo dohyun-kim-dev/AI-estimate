@@ -8,6 +8,7 @@ import { useToast } from '@components/common/ToastProvider';
 import Modal from '@components/common/Modal';
 import { useAuthStore } from '@store/authStore';
 import { useModalStore } from '@store/modalStore';
+import { useCompanyStore } from '@store/companyStore';
 import { SocialLoginModal } from '../../components/ai-esti/SocialLoginModal';
 import { HeaderProvider } from '@/contexts/HeaderContext';
 import { tr } from 'date-fns/locale';
@@ -190,6 +191,7 @@ export default function AILayout() {
   const storeChatSessionId = useChatStore((s) => s.chatSessionId);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
+  const { companyInfo } = useCompanyStore();
   const {
     isLoginModalOpen,
     loginModalPurpose,
@@ -313,8 +315,8 @@ export default function AILayout() {
         navigate(location.pathname, { replace: true });
       }
     } else if (location.pathname.includes('/ai/setting') || location.pathname.includes('/ai/my-estimate')) {
-      // 설정 메인에서는 AI 홈으로 돌아가기
-      navigate(`/aiclient/${companyCode}/ai`);
+      // 설정/내 견적서에서는 뒤로가기로 AI 홈으로 (상태 유지)
+      navigate(-1);
     } else if (isMobile) {
       navigate(`/aiclient/${companyCode}/ai`, { replace: true });
       return;
@@ -331,15 +333,15 @@ export default function AILayout() {
     
     // 🔍 스토어 전체 상태 확인
     const storeState = useChatStore.getState();
-    console.log('🔍 [uploadEstimateForGuestShare] 스토어 전체 상태:', storeState);
-    console.log('🔍 [uploadEstimateForGuestShare] chatSessionId:', storeState.chatSessionId);
-    console.log('🔍 [uploadEstimateForGuestShare] messages 개수:', storeState.messages?.length);
+    devLog('🔍 [uploadEstimateForGuestShare] 스토어 전체 상태:', storeState);
+    devLog('🔍 [uploadEstimateForGuestShare] chatSessionId:', storeState.chatSessionId);
+    devLog('🔍 [uploadEstimateForGuestShare] messages 개수:', storeState.messages?.length);
     
     // 비회원이고 URL에 share가 없을 때만 실행
     const isGuest = !isAuthenticated();
     const hasShareInUrl = window.location.href.includes('share');
     
-    console.log('🔍 [uploadEstimateForGuestShare] isGuest:', isGuest, 'hasShareInUrl:', hasShareInUrl);
+    devLog('🔍 [uploadEstimateForGuestShare] isGuest:', isGuest, 'hasShareInUrl:', hasShareInUrl);
     
     if (isGuest && !hasShareInUrl) {
       try {
@@ -459,16 +461,16 @@ export default function AILayout() {
 
   // '공유' 버튼을 눌렀을 때 실행될 함수 (AILayout에서 호출됨)
   const handleOpenShare = async () => {
-    console.log('🔍 [handleOpenShare] 공유 버튼 클릭');
-    console.log('🔍 [handleOpenShare] 스토어 chatSessionId:', useChatStore.getState().chatSessionId);
+    devLog('🔍 [handleOpenShare] 공유 버튼 클릭');
+    devLog('🔍 [handleOpenShare] 스토어 chatSessionId:', useChatStore.getState().chatSessionId);
     
     // ✅ Zustand 상태에서 메시지 가져오기
     const messages = useChatStore.getState().messages;
-    console.log('🔍 [handleOpenShare] messages 개수:', messages?.length);
+    devLog('🔍 [handleOpenShare] messages 개수:', messages?.length);
     
     if (messages && messages.length >= 2) {
       if (!isAuthenticated()) {
-        console.log('🔍 [handleOpenShare] 비회원 - uploadEstimateForGuestShare 호출');
+        devLog('🔍 [handleOpenShare] 비회원 - uploadEstimateForGuestShare 호출');
         // 비회원인 경우 견적서 업로드 시도
         await uploadEstimateForGuestShare();
         openLoginModal('shareChat');
@@ -506,6 +508,12 @@ export default function AILayout() {
   }
 
   const handleCopy = async () => {
+    // 회사 정보가 없으면 복사 실패
+    if (!companyInfo || !companyInfo.companyName || !companyInfo.cellphone || !companyInfo.homepage) {
+      error('회사 정보를 불러올 수 없어 링크 복사에 실패했습니다.');
+      return;
+    }
+
     const fullShareText = getFullShareText();
     
     try {
@@ -573,21 +581,19 @@ export default function AILayout() {
 
   // 실제 복사될 전체 텍스트를 생성하는 함수
   const getFullShareText = () => {
+    const shareUrl = getCurrentShareUrl();
 
-      const shareUrl = getCurrentShareUrl();
-
-    
     return `${shareUrl}
 
 
 ⏫위 링크 클릭 시 에이고가 발급한 견적서로 이동합니다
 
-🏢공급사명 : 주식회사 여기닷
+🏢공급사명 : ${companyInfo?.companyName || ''}
  
-📞전화문의 : 031-8039-7981
+📞전화문의 : ${companyInfo?.cellphone || ''}
 
 🌐공급사 홈페이지
-https://heredotcorp.com 
+${companyInfo?.homepage || ''}
 
 ※ 위 견적서는 공급사 공식 
 홈페이지에서도 조회할 수 있습니다
@@ -613,6 +619,8 @@ const handleNewChat = () => {
   const messages = useChatStore.getState().messages;
   
   if (messages && messages.length >= 2) {
+    // 새 채팅 시작 시 세션 ID 초기화
+    useChatStore.getState().setChatSessionId(null);
     resetChat();
     startNewChat();
     setTimeout(() => {

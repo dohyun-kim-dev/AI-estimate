@@ -11,6 +11,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import styled from 'styled-components';
 import { devLog } from '../../../utils/devLogger';
 import { useToast } from '@/components/common/ToastProvider';
+import { verifyOTP } from '@/lib/api/admin/adminApi';
 
 export default function CompanyCMSLoginPage() {
   const [userId, setUserId] = useState('');
@@ -19,7 +20,8 @@ export default function CompanyCMSLoginPage() {
   const [pwdError, setPwdError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isOtpMode, setIsOtpMode] = useState(false); // OTP 모드 상태
-  const [loginResponse, setLoginResponse] = useState<any>(null); // 로그인 응답 저장
+  const [tempToken, setTempToken] = useState<string>(''); // 임시 토큰 (OTP 인증용)
+  const [tempAdminData, setTempAdminData] = useState<any>(null); // 임시 관리자 데이터
   const { companyCode } = useParams<{ companyCode: string }>();
   const { show: showToast } = useToast(); // 토스트 훅 추가
 
@@ -68,24 +70,20 @@ export default function CompanyCMSLoginPage() {
       await companyCMSLoginService({
         id: userId,
         password,
+        skipLocalStorage: true, // OTP 인증 전까지 localStorage에 저장하지 않음
         showMessage: (msg) => {
           toast.error(msg);
         },
         onSuccess: (response) => {
-          //@@Todo otp로 다시 전환 할때 주석 풀어주세요
           // 로그인 성공 시 OTP 모드로 전환
-          // setLoginResponse(response); // 응답 저장
-          // setIsOtpMode(true);
-          // showToast('OTP 인증을 진행해주세요.','success');
-          // 실제 로그인 처리는 OTP 인증 후에 수행
-
-           // 로그인 성공 시 바로 로그인 처리 및 이동
-          login(response.id, response.token, response.isRoot, response.adminData);
-          devLog('🏢 [CompanyCMSLoginPage] 로그인 성공, CMS로 이동');
-          
-          if (companyCode) {
-            navigate(`/${companyCode}/cms/admin-management`);
-          }
+          setTempToken(response.token); // 임시 토큰 저장
+          setTempAdminData(response.adminData); // 임시 관리자 데이터 저장
+          setIsOtpMode(true);
+          showToast('OTP 인증을 진행해주세요.','success');
+          devLog('🔐 [1차 로그인 성공] OTP 모드 전환:', { 
+            tempToken: response.token?.substring(0, 20) + '...',
+            adminData: response.adminData 
+          });
         },
       });
     } finally {
@@ -104,22 +102,42 @@ export default function CompanyCMSLoginPage() {
   };
 
   // OTP 인증 처리
-  const handleOtpSubmit = (otp: string) => {
-    devLog('OTP 제출:', otp);
-    devLog('🏢 [CompanyCMSLoginPage] OTP 인증 성공, CMS로 이동:', { otp });
-    
-    if (companyCode) {
-      devLog('🏢 [CompanyCMSLoginPage] companyCode:', { companyCode });
+  const handleOtpSubmit = async (otp: string) => {
+    try {
+      devLog('🔐 [OTP 인증 시도]:', { otp, tempToken: tempToken?.substring(0, 20) + '...' });
       
-      // 실제 로그인 처리 (OTP 검증 후)
-      if (loginResponse) {
-        login(loginResponse.id, loginResponse.token, loginResponse.isRoot, loginResponse.adminData);
-        devLog('🏢 [CompanyCMSLoginPage] login 함수 호출 완료');
-      }
+      // OTP 검증 API 호출
+      const otpResponse = await verifyOTP(otp, tempToken);
+      
+      devLog('✅ [OTP 인증 성공]:', otpResponse);
+      
+      // OTP 인증 성공 시 localStorage에 저장
+      localStorage.setItem('admin_access_token', tempToken);
+      localStorage.setItem('admin-storage', JSON.stringify(tempAdminData));
+      
+      devLog('💾 [OTP 인증 후 저장 완료]:', {
+        token: tempToken.substring(0, 20) + '...',
+        adminData: tempAdminData
+      });
+      
+      // 실제 로그인 처리
+      login(tempAdminData.adminId, tempToken, tempAdminData.isRoot, tempAdminData);
+      
+      showToast('로그인 성공!', 'success');
       
       // CMS로 이동
-      devLog('🏢 [CompanyCMSLoginPage] navigate 호출:', `/${companyCode}/cms/admin-management`);
-      navigate(`/${companyCode}/cms/admin-management`);
+      if (companyCode) {
+        devLog('🏢 [CompanyCMSLoginPage] navigate 호출:', `/${companyCode}/cms/admin-management`);
+        navigate(`/${companyCode}/cms/admin-management`);
+      }
+    } catch (error: any) {
+      console.error('❌ [OTP 인증 실패]:', error);
+      showToast(error.message || 'OTP 인증에 실패했습니다.', 'error');
+      
+      // 실패 시 임시 데이터 초기화
+      setTempToken('');
+      setTempAdminData(null);
+      setIsOtpMode(false);
     }
   };
 

@@ -133,9 +133,10 @@ devLog('📄 [요청 body]:', body);
     throw error;
   }
 
-  // 401/500 에러 감지 및 토큰 관련 에러 처리 (raw.data에서 실제 응답 추출)
+  // 401/403/500 에러 감지 및 토큰 관련 에러 처리 (raw.data에서 실제 응답 추출)
   const response = raw?.data || raw;
   const isUnauthorized = response?.statusCode === 401;
+  const isForbidden = response?.statusCode === 403;
 
   const unauthorizedMessages = [
     'token is invalid',
@@ -143,7 +144,9 @@ devLog('📄 [요청 body]:', body);
     'unauthorized',
     '시스템 관리자 인증이 필요합니다.',
     'Invalid token type for admin strategy',
-    'Invalid token type for company strategy'  // 고객사 CMS용 추가
+    'Invalid token type for company strategy',  // 고객사 CMS용 추가
+    'forbidden',
+    '허가 받지 않은 접근입니다.'
   ];
 
   // 디버깅 로그 추가
@@ -155,15 +158,15 @@ devLog('📄 [요청 body]:', body);
     errorObject: response?.error
   });
 
-  // 401 에러이거나, 500 에러이면서 인증 관련 메시지가 있는 경우
-  // ⚠️ 중요: statusCode가 401 또는 500일 때만 메시지 체크
-  const is401or500 = response?.statusCode === 401 || response?.statusCode === 500;
+  // 401, 403 에러이거나, 500 에러이면서 인증 관련 메시지가 있는 경우
+  // ⚠️ 중요: statusCode가 401, 403 또는 500일 때만 메시지 체크
+  const is401or403or500 = response?.statusCode === 401 || response?.statusCode === 403 || response?.statusCode === 500 
   
   const messageStr = String(response?.message || '');
   const customMessageStr = String(response?.error?.customMessage || '');
   
   let hasUnauthorizedMessage = false;
-  if (is401or500) {
+  if (is401or403or500) {
     hasUnauthorizedMessage = unauthorizedMessages.some(msg => 
       messageStr.includes(msg) || customMessageStr.includes(msg)
     );
@@ -171,14 +174,15 @@ devLog('📄 [요청 body]:', body);
   
   const isTokenError = response?.statusCode === 500 && hasUnauthorizedMessage;
   
-  const shouldLogout = isUnauthorized || isTokenError;
+  const shouldLogout = isUnauthorized || isForbidden || isTokenError;
 
   devLog('🔍 [로그아웃 판단]', {
     isUnauthorized,
+    isForbidden,
     isTokenError,
     hasUnauthorizedMessage,
     shouldLogout,
-    is401or500,
+    is401or403or500,
     statusCode: response?.statusCode,
     messageStr,
     customMessageStr

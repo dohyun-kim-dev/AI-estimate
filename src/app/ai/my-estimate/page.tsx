@@ -241,17 +241,6 @@ return (
       <React.Fragment key={date}>
         <GroupTitle>{getDisplayTitle(date)}</GroupTitle>
         {groupedEstimates[date].map((estimate, index) => {
-          // 사용자 ID를 포함한 다운로드 URL 생성
-          const authStorage = localStorage.getItem('auth-storage');
-          const authData = authStorage ? JSON.parse(authStorage) : null;
-          const user = authData?.state?.user;
-          const userId = user ? user._id : localStorage.getItem('guest-uuid');
-
-          const downloadUrl = `${window.location.origin}${getDownloadEstimateUrlWithUserInfo(
-            companyCode,
-            estimate.file || '',
-          )}`;
-
           // createAt 안전 처리 - 오늘 날짜를 기본값으로 사용
           let createdDate;
           try {
@@ -274,7 +263,6 @@ return (
                 created_at: createdDate,
                 file: estimate.file || '',
               }}
-              downloadUrl={downloadUrl}
             />
           );
         })}

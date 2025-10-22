@@ -21,6 +21,15 @@ interface CompanyInfo {
   signature?: string;
 }
 
+// 사용자 정보 타입 정의
+interface UserInfo {
+  cellphone: string;
+  email: string;
+  name: string;
+  profileImage?: string;
+  isGuest?: boolean;
+}
+
 // 사업자번호 포맷팅 함수 (000-00-00000)
 const formatBusinessNumber = (businessNumber: string) => {
   if (!businessNumber) return '';
@@ -73,11 +82,13 @@ const PrintableInvoiceWrapper = styled.div`
 interface PrintableInvoiceProps {
   estimate: ProjectEstimate;
   companyInfo?: CompanyInfo;
+  userInfo?: UserInfo; // API 응답의 userInfo 추가
 }
 
 export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({ 
   estimate, 
-  companyInfo
+  companyInfo,
+  userInfo
 }) => {
   const formatDate = (date: Date) => {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -88,6 +99,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
 
   // 디버깅: 받은 회사 정보 확인
   devLog('📋 [PrintableInvoice] 받은 companyInfo:', companyInfo);
+  devLog('👤 [PrintableInvoice] 받은 userInfo:', userInfo);
 
   // API 응답에서 받은 회사 정보 사용 (없으면 기본값)
   const companyName = companyInfo?.companyName || '주식회사 여기닷';
@@ -115,27 +127,29 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
   
   devLog('📄 비고사항 etc:', companyInfo?.etc);
 
-  // 사용자 정보는 기존 방식 유지 (authStore + sessionStorage)
-  let userName = user?.name || '비회원';
-  let userEmail = user?.email || '비회원';
-  let userCellphone = user?.cellphone || '';
+  // 사용자 정보: API 응답의 userInfo 우선, 없으면 기존 방식 (authStore + sessionStorage)
+  let userName = userInfo?.name || '비회원';
+  let userEmail = userInfo?.email || '비회원';
+  let userCellphone = userInfo?.cellphone || '';
   
-  // 세션스토리지에서 게스트 정보 확인
-  const guestInfo = sessionStorage.getItem('guestInfo');
-  if (guestInfo) {
-    try {
-      const parsedInfo = JSON.parse(guestInfo);
-      userName = parsedInfo.name || userName;
-      userEmail = parsedInfo.email || userEmail;
-      userCellphone = parsedInfo.cellphone || userCellphone;
-    } catch (error) {
-      console.error('Failed to parse guestInfo from sessionStorage:', error);
+  // userInfo가 없는 경우에만 세션스토리지에서 게스트 정보 확인
+  if (!userInfo) {
+    const guestInfo = sessionStorage.getItem('guestInfo');
+    if (guestInfo) {
+      try {
+        const parsedInfo = JSON.parse(guestInfo);
+        userName = parsedInfo.name || userName;
+        userEmail = parsedInfo.email || userEmail;
+        userCellphone = parsedInfo.cellphone || userCellphone;
+      } catch (error) {
+        console.error('Failed to parse guestInfo from sessionStorage:', error);
+      }
     }
   }
   
-  devLog('� userName:', userName);
+  devLog('👤 userName:', userName);
   devLog('📧 userEmail:', userEmail);
-  devLog('� userCellphone:', userCellphone);
+  devLog('📱 userCellphone:', userCellphone);
 
   // 정확한 개발 기간 계산
   const periodCalculation = calculateEstimatedPeriod(estimate);

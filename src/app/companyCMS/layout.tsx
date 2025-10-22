@@ -68,7 +68,7 @@ function ProtectedCompanyCMSLayout() {
   const handleLogout = () => {
     logout();
     navigate(`/${companyCode}/cms/login`, { replace: true });
-    console.log('handleLogout LayoutPage 로그아웃 되었습니다');
+    devLog('handleLogout LayoutPage 로그아웃 되었습니다');
     showToast('로그아웃 되었습니다','success');
   };
 

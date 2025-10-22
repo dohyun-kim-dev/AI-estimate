@@ -138,33 +138,56 @@ const FileList: React.FC<FileListProps> = ({ files }) => {
     return null;
   }
 
+  // 🔍 디버깅: 파일 리스트 전체 출력
+  devLog('📂 [FileList] 전체 파일 리스트:', {
+    filesCount: files.length,
+    files: files.map((file, idx) => ({
+      index: idx,
+      fileName: file.fileName,
+      url: file.url,
+      mimeType: file.mimeType,
+      size: file.size,
+      fullFile: file
+    }))
+  });
+
   return (
     <FileListContainer>
-      {files.map((file, index) => (
-        <FileItem
-          key={`${file.url}-${index}`}
-          onClick={(e) => {
-            e.preventDefault();
-            handleFileDownload(file);
-          }}
-          href="#"
-        >
-          <FileIcon $fileType={file.mimeType}>
-            {getFileIconText(file.mimeType)}
-          </FileIcon>
-          <FileInfo>
-            <FileName title={file.fileName}>{file.fileName}</FileName>
-            {file.size && <FileSize>{formatFileSize(file.size)}</FileSize>}
-          </FileInfo>
-          <DownloadIcon>
-            <svg viewBox="0 0 24 24">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-          </DownloadIcon>
-        </FileItem>
-      ))}
+      {files.map((file, index) => {
+        // 🔍 디버깅: 각 파일 항목 렌더링 시 출력
+        devLog(`📄 [FileList] 파일 항목 렌더링 #${index}:`, {
+          fileName: file.fileName,
+          url: file.url,
+          mimeType: file.mimeType,
+          size: file.size
+        });
+        
+        return (
+          <FileItem
+            key={`${file.url}-${index}`}
+            onClick={(e) => {
+              e.preventDefault();
+              handleFileDownload(file);
+            }}
+            href="#"
+          >
+            <FileIcon $fileType={file.mimeType}>
+              {getFileIconText(file.mimeType)}
+            </FileIcon>
+            <FileInfo>
+              <FileName title={file.fileName}>{file.fileName}</FileName>
+              {file.size && <FileSize>{formatFileSize(file.size)}</FileSize>}
+            </FileInfo>
+            <DownloadIcon>
+              <svg viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </DownloadIcon>
+          </FileItem>
+        );
+      })}
     </FileListContainer>
   );
 };

@@ -35,7 +35,7 @@ import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
 import { useCompanyStore } from '@/store/companyStore';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigationType } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 // --- Gradient Text Animation ---
 const gradientText = keyframes`
@@ -88,6 +88,7 @@ const SpinnerWrapper = styled.div`
   position: relative;
   width: 56px; height: 56px;
   display: flex; align-items: center; justify-content: center;
+  margin-left: -4px;
 `;
 const SpinnerSvg = styled.svg`
   position: absolute; top: 0; left: 0;
@@ -444,7 +445,7 @@ const extractEstimateData = (content: string): ProjectEstimate | null => {
 };
 
 const parseMessageContent = (content: string, images?: ImageData[], files?: FileData[]) => {
-  // devLog('🔍 parseMessageContent 호출:', { content, images, files });
+
 
   // content가 undefined나 null인 경우 처리
   if (!content || typeof content !== 'string') {
@@ -455,7 +456,7 @@ const parseMessageContent = (content: string, images?: ImageData[], files?: File
       hasImages: (images && images.length > 0) || false,
       hasFiles: (files && files.length > 0) || false
     };
-    // devLog('🔍 parseMessageContent 결과 (빈 content):', result);
+    devLog('🔍 parseMessageContent 결과 (빈 content):', result);
     return result;
   }
   
@@ -476,6 +477,7 @@ const parseMessageContent = (content: string, images?: ImageData[], files?: File
   const extractedImages: ImageData[] = [];
   const extractedFiles: FileData[] = [];
   
+  
   if (fileMatches) {
     fileMatches.forEach(match => {
       const fileName = match.match(/\[첨부파일: (.+?)\]/)?.[1];
@@ -483,7 +485,7 @@ const parseMessageContent = (content: string, images?: ImageData[], files?: File
         const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
         const isPdf = /\.pdf$/i.test(fileName);
         const isText = /\.txt$/i.test(fileName);
-        
+        devLog('🔍 첨부파일 추출:', { fileName, isImage, isPdf, isText, hasPropsFiles: !!files?.length });
         // 환경에 따른 파일 URL 생성
         const getFileUrl = (fileName: string) => {
           // 이미 full URL인 경우 (http로 시작)
@@ -503,20 +505,26 @@ const parseMessageContent = (content: string, images?: ImageData[], files?: File
         
         const fileUrl = getFileUrl(fileName);
         
-        if (isImage) {
-          // 이미지는 ImageData로 추가
-          extractedImages.push({
-            url: fileUrl,
-            fileName: fileName,
-            mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'png'}`
-          });
-        } else if (isPdf || isText) {
-          // PDF, TXT는 FileData로 추가
-          extractedFiles.push({
-            url: fileUrl,
-            fileName: fileName,
-            mimeType: isPdf ? 'application/pdf' : 'text/plain'
-          });
+        // prop으로 파일이 제공되지 않은 경우에만 content에서 추출 (중복 방지)
+        if (!files || files.length === 0) {
+          devLog('⚠️ content에서 파일 추출 (props 없음)');
+          if (isImage) {
+            // 이미지는 ImageData로 추가
+            extractedImages.push({
+              url: fileUrl,
+              fileName: fileName,
+              mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'png'}`
+            });
+          } else if (isPdf || isText) {
+            // PDF, TXT는 FileData로 추가
+            extractedFiles.push({
+              url: fileUrl,
+              fileName: fileName,
+              mimeType: isPdf ? 'application/pdf' : 'text/plain'
+            });
+          }
+        } else {
+          devLog('✅ content에서 파일 추출 스킵 (props 파일 존재)');
         }
       }
       // 텍스트에서 첨부파일 태그 제거
@@ -535,7 +543,6 @@ const parseMessageContent = (content: string, images?: ImageData[], files?: File
     hasImages: allImages.length > 0,
     hasFiles: allFiles.length > 0
   };
-  // console.log('🔍 parseMessageContent 결과:', result);
   return result;
 };
 
@@ -1118,17 +1125,21 @@ export default function AiChatPage() {
   const clear = useChatStore((s) => s.clear);
   const [selectedPromptId, setSelectedPromptId] = useState('default');
   const updateLastMessage = useChatStore((s) => s.updateLastMessage);
-  const isCrawlingUrl = useChatStore((s) => s.isCrawlingUrl); // 추가: URL 크롤링 상태 가져오기
-  const getEffectiveSessionId = useChatStore((s) => s.getEffectiveSessionId); // store에서 가져오기
-  const chatSessionId = useChatStore((s) => s.chatSessionId); // store에서 가져오기
-  const setChatSessionId = useChatStore((s) => s.setChatSessionId); // store에서 가져오기
-  const { isAuthenticated, user } = useAuthStore(); // user 상태도 가져오기
+  const isCrawlingUrl = useChatStore((s) => s.isCrawlingUrl);
+  const getEffectiveSessionId = useChatStore((s) => s.getEffectiveSessionId);
+  const chatSessionId = useChatStore((s) => s.chatSessionId);
+  const setChatSessionId = useChatStore((s) => s.setChatSessionId);
+  const { isAuthenticated, user, fetchAndUpdateUserInfo } = useAuthStore();
   
   // 회사 정보 훅 사용
   const { companyInfo, isLoading: isCompanyLoading, fetchCompanyInfo } = useCompanyInfo();
   
   // 게스트 사용량 관리
-  const { fetchGuestUsage } = useUsageStore();
+  const { fetchGuestUsage, fetchUserUsage } = useUsageStore();
+  
+  // 🎯 진입 방식 감지: POP = 뒤로가기, PUSH/REPLACE = 새로운 진입
+  const navigationType = useNavigationType();
+  const isBackNavigation = navigationType === 'POP';
   
   // URL에 superadmin이 포함되면 항상 다크모드, 그렇지 않으면 테마 스토어 값 사용
   const location2 = useLocation();
@@ -1241,41 +1252,28 @@ export default function AiChatPage() {
   // 인풋 복원용 state
   const [restoreInput, setRestoreInput] = useState<string | null>(null);
 
+  // 🎯 회사 정보 및 게스트 사용량 초기화 (뒤로가기 시 캐시 사용)
   useEffect(() => {
     const initializeData = async () => {
-      // 회사 정보 불러오기
-      // if (!companyInfo && !isCompanyLoading) {
-        devLog('회사정보 fetch 호출 - 테마 모드 적용 예정');
+      const companyStore = useCompanyStore.getState();
+      const hasCompanyData = companyStore.companyInfo !== null;
+      
+      devLog('🔍 회사 정보 초기화:', {
+        isBackNavigation,
+        hasCompanyData,
+        navigationType
+      });
+
+      // 뒤로가기 + 이미 데이터 있으면 API 호출 스킵
+      if (isBackNavigation && hasCompanyData) {
+        devLog('✅ 회사 정보 캐시 사용 (뒤로가기)');
+      } else {
+        devLog('📡 회사 정보 fetch 호출');
         await fetchCompanyInfo();
         
-        // fetchCompanyInfo 완료 후 최신 회사정보로 테마 적용
         const latestCompanyInfo = useCompanyStore.getState().companyInfo;
         if (latestCompanyInfo && latestCompanyInfo.mode) {
-          devLog('fetchCompanyInfo 완료 - 테마 모드 적용:', latestCompanyInfo.mode);
-          if (latestCompanyInfo.mode === 'LIGHT') {
-            useThemeStore.setState({ isDarkMode: false });
-          } else if (latestCompanyInfo.mode === 'DARK') {
-            useThemeStore.setState({ isDarkMode: true });
-          }
-        }
-      // }
-    };
-
-    initializeData();
-  }, []);
-
-  // 회사 정보 및 게스트 사용량 불러오기 - 페이지 진입 시 한 번만 실행
-  useEffect(() => {
-    const initializeData = async () => {
-      // 회사 정보 불러오기
-      if (!companyInfo && !isCompanyLoading) {
-        devLog('회사정보 fetch 호출 - 테마 모드 적용 예정');
-        await fetchCompanyInfo();
-        
-        // fetchCompanyInfo 완료 후 최신 회사정보로 테마 적용
-        const latestCompanyInfo = useCompanyStore.getState().companyInfo;
-        if (latestCompanyInfo && latestCompanyInfo.mode) {
-          devLog('fetchCompanyInfo 완료 - 테마 모드 적용:', latestCompanyInfo.mode);
+          devLog('✅ 테마 모드 적용:', latestCompanyInfo.mode);
           if (latestCompanyInfo.mode === 'LIGHT') {
             useThemeStore.setState({ isDarkMode: false });
           } else if (latestCompanyInfo.mode === 'DARK') {
@@ -1285,19 +1283,18 @@ export default function AiChatPage() {
       }
 
       // 게스트 사용량 불러오기 (로그인하지 않은 경우에만)
-      if (!isAuthenticated) {
+      if (!isAuthenticated()) {
         const companyCode = getCompanyCodeFromUrl();
         const guestUuid = localStorage.getItem('guest-uuid');
-        devLog('초기화 - companyCode:', companyCode, 'guestUuid:', guestUuid);
         if (guestUuid && companyCode) {
-          devLog('게스트 사용량을 불러옵니다.');
+          devLog('📡 게스트 사용량 조회');
           await fetchGuestUsage(companyCode);
         }
       }
     };
 
     initializeData();
-  }, [companyInfo, isCompanyLoading, fetchCompanyInfo, isAuthenticated, fetchGuestUsage]);
+  }, [isBackNavigation, navigationType]); // 진입 방식 변경 시에만 재실행
 
   // 정지 버튼 핸들러: ai 메시지 정리 + 인풋 복원
   const handleRestoreInput = (input: string) => {
@@ -1333,15 +1330,31 @@ export default function AiChatPage() {
   const [estimateDataForConsult, setEstimateDataForConsult] = useState<ProjectEstimate | null>(null);
   // ⭐️ 제거: chatSessionId는 이제 store에서 관리
 
-// 페이지 진입 시 단가표 불러와서 promptStore에 저장
+// 🎯 단가표 및 AI 프롬프트 불러오기 (뒤로가기 시 캐시 사용)
 useEffect(() => {
   (async () => {
+    const promptStore = usePromptStore.getState();
+    const hasPromptData = promptStore.aiPrompts && promptStore.priceList.length > 0;
+    
+    devLog('🔍 프롬프트/단가표 초기화:', {
+      isBackNavigation,
+      hasPromptData,
+      navigationType
+    });
+    
+    // 뒤로가기 + 이미 데이터 있으면 API 호출 스킵
+    if (isBackNavigation && hasPromptData) {
+      devLog('✅ 프롬프트/단가표 캐시 사용 (뒤로가기)');
+      return;
+    }
+    
+    devLog('📡 프롬프트/단가표 fetch 호출');
+    
     try {
       const aiPromptsResponse = await getAiPrompts();
       devLog('AI 프롬프트 API 응답:', aiPromptsResponse);
 
       if (aiPromptsResponse && aiPromptsResponse.statusCode === 200 && aiPromptsResponse.data.length > 0) {
-        ('AI 프롬프트 데이터를 불러왔습니다.');
         const promptsData = aiPromptsResponse.data as any[];
         const greetingItem = promptsData.find(item => item.name === 'GREETING');
         if (greetingItem && greetingItem.content) {
@@ -1350,7 +1363,6 @@ useEffect(() => {
         }
         
         const instructionItem = promptsData.find(item => item.name === 'INSTRUCTION');
-        devLog('instructionItem', instructionItem);
         const otherPrompts = promptsData.filter(item => item.name !== 'GREETING' && item.name !== 'INSTRUCTION' && item.content);
         const aiPromptsContent = [
           ...(instructionItem && instructionItem.content ? [instructionItem.content] : []),
@@ -1358,17 +1370,16 @@ useEffect(() => {
         ].join('\n\n');
         
         usePromptStore.getState().setAiPrompts(aiPromptsContent);
-        devLog('AI 프롬프트 데이터를 불러왔습니다.',aiPromptsContent);
+        devLog('✅ AI 프롬프트 저장 완료');
       } else {
         console.warn('AI 프롬프트 데이터를 불러오는데 실패했습니다.');
       }
 
       const res = await getAllUnitPrices();
-      devLog('단가표 API 응답:', res);
 
       if (res && res.statusCode === 200 && res.data && Array.isArray(res.data.data)) {
         const priceList = res.data.data;
-        const columns = res.data.columns || []; // ⭐️ columns 정보 추가
+        const columns = res.data.columns || [];
         usePromptStore.getState().setPriceList(priceList);
 
         const convertPriceListToMarkdown = (priceList: any[], columns: any[]): string => {
@@ -1379,9 +1390,8 @@ useEffect(() => {
           let markdown = '# 단가표 정보\n\n';
           markdown += '다음은 프로젝트 견적 산출에 사용되는 단가표 정보입니다.\n\n';
 
-          // ⭐️ 동적 컬럼 생성 로직
           const activeColumns = (columns || [])
-            .filter(colName => colName !== 'id' && colName !== '메모') // 불필요한 컬럼 제외
+            .filter(colName => colName !== 'id' && colName !== '메모')
             .map(colName => ({
               name: colName,
               type: ['금액', '기간'].some(key => colName.includes(key)) ? 'number' : 'string'
@@ -1428,10 +1438,10 @@ useEffect(() => {
           return markdown;
         };
         
-        // ⭐️ 수정된 함수에 columns 정보 전달
         const markdown = convertPriceListToMarkdown(priceList, columns); 
         usePromptStore.getState().setPriceListMarkdown(markdown);
         usePromptStore.getState().setPriceDataReady(true);
+        devLog('✅ 단가표 저장 완료');
       } else {
         console.warn('단가표 데이터를 불러오는데 실패했습니다.');
         usePromptStore.getState().setPriceDataReady(true);
@@ -1441,64 +1451,70 @@ useEffect(() => {
       usePromptStore.getState().setPriceDataReady(true);
     }
   })();
-}, []);
+}, [isBackNavigation, navigationType]); // 진입 방식 변경 시에만 재실행
 
-  // 🔥 페이지 진입 시 사용자 정보 및 사용량 초기화
+  // 🎯 사용자 정보 및 사용량 초기화 (회원은 항상 갱신, 게스트는 뒤로가기 시 캐시 사용)
   useEffect(() => {
     const initializeUserInfoAndUsage = async () => {
-      const { isAuthenticated, fetchAndUpdateUserInfo } = useAuthStore.getState();
-      const { fetchGuestUsage, fetchUserUsage } = useUsageStore.getState();
       const companyCode = getCompanyCodeFromUrl();
       
-      console.log('초기화 시작 - companyCode:', companyCode);
-      console.log('companyInfo:', companyInfo);
-      console.log('isAuthenticated:', isAuthenticated());
+      devLog('🔍 사용자 정보 초기화:', {
+        isAuthenticated: isAuthenticated(),
+        companyCode,
+        isBackNavigation,
+        navigationType
+      });
 
       if (isAuthenticated()) {
-        // 🟢 로그인한 사용자
-        console.log('로그인 사용자 - 사용자 정보 업데이트 중...');
+        // 🔵 로그인 사용자는 항상 최신 정보 갱신 (새로고침 시에도 횟수 업데이트)
+        devLog('📡 로그인 사용자 - 사용자 정보 업데이트 (항상 실행)');
         
         try {
-          // 사용자 정보 업데이트
           await fetchAndUpdateUserInfo();
-          console.log('사용자 정보 업데이트 완료');
+          devLog('✅ 사용자 정보 업데이트 완료');
           
           // 회사 정보가 있고 사용자 정보가 업데이트되면 회원 사용량 조회
           if (companyInfo?._id) {
-            console.log('회원 사용량 조회 시작 - companyId:', companyInfo._id);
+            devLog('📊 회원 사용량 조회 - companyId:', companyInfo._id);
             await fetchUserUsage(companyInfo._id);
-            console.log('회원 사용량 조회 완료');
+            devLog('✅ 회원 사용량 조회 완료');
           } else {
-            console.log('회사 정보가 없어 회원 사용량 조회를 건너뜁니다.');
+            devLog('⚠️ 회사 정보 없음 - 회원 사용량 조회 건너뜀');
           }
         } catch (error) {
           console.error('사용자 정보 업데이트 실패:', error);
         }
       } else {
-        // 🟡 비로그인 사용자 (게스트)
-        console.log('게스트 사용자 - 게스트 사용량 조회 중...');
+        // 🟡 비로그인 사용자 (게스트) - 뒤로가기 시 캐시 사용
+        const hasUsageData = useUsageStore.getState().remainingCount > 0;
+        
+        if (isBackNavigation && hasUsageData) {
+          devLog('✅ 게스트 사용량 캐시 사용 (뒤로가기)');
+          return;
+        }
+        
+        devLog('👤 게스트 사용자 - 게스트 사용량 조회');
         
         if (companyCode) {
           try {
             await fetchGuestUsage(companyCode);
-            console.log('게스트 사용량 조회 완료');
+            devLog('✅ 게스트 사용량 조회 완료');
           } catch (error) {
             console.error('게스트 사용량 조회 실패:', error);
           }
         } else {
-          console.log('회사 코드가 없어 게스트 사용량 조회를 건너뜁니다.');
+          devLog('⚠️ 회사 코드 없음 - 게스트 사용량 조회 건너뜀');
         }
       }
       
-      console.log('초기화 프로세스 완료');
+      devLog('✅ 초기화 프로세스 완료');
     };
 
-    console.log('초기화 useEffect 시작');
-    // 초기화 함수 실행 (await 사용)
+    devLog('🚀 초기화 useEffect 시작');
     initializeUserInfoAndUsage().catch(error => {
       console.error('초기화 중 오류 발생:', error);
     });
-  }, [companyInfo, isAuthenticated]); // user 상태 추가: 로그인/로그아웃 시 재실행
+  }, [companyInfo, isBackNavigation, navigationType]); // 진입 방식 및 회사 정보 변경 시 재실행
 
   useEffect(() => {
     // 메시지 목록을 역순으로 순회하여 가장 최근의 견적서를 찾습니다.
@@ -1565,14 +1581,27 @@ useEffect(() => {
 견적 발행을 위해 프로젝트의 큰 그림을 한 줄로 알려주시겠어요?`)
   const [hasShownInitialMessage, setHasShownInitialMessage] = useState(false);
 
-  // 세션 관리 로직 추가
-
+  // 🎯 세션 관리 로직 (뒤로가기 시 캐시 사용)
   useEffect(() => {
-    // URL에서 세션ID 파싱
-    const searchParams = new URLSearchParams(location.search);
-    const urlSessionId = searchParams.get('sessionId');
-
     const handleSessionManagement = async () => {
+      // URL에서 세션ID 파싱
+      const searchParams = new URLSearchParams(location.search);
+      const urlSessionId = searchParams.get('sessionId');
+      
+      // 뒤로가기 + 메시지 있으면 세션 로딩 스킵
+      const currentMessages = useChatStore.getState().messages;
+      if (isBackNavigation && currentMessages.length > 1) {
+        devLog('✅ 세션 메시지 캐시 사용 (뒤로가기)');
+        return;
+      }
+      
+      devLog('🔍 세션 관리 시작:', {
+        isBackNavigation,
+        hasMessages: currentMessages.length > 0,
+        urlSessionId,
+        navigationType
+      });
+
       const storeSessionId = getEffectiveSessionId(); // store에서 가져오기
       let effectiveSessionId = urlSessionId || storeSessionId;
 
@@ -1980,7 +2009,7 @@ useEffect(() => {
       }
     };
     handleSessionManagement();
-  }, [user, addMessage, clear, initialAiMessage, location.search]);
+  }, [isBackNavigation, navigationType, location.search]); // 진입 방식 및 URL 변경 시에만 재실행
 
   useEffect(() => {
     if (messages.length === 0 && !hasShownInitialMessage) {
@@ -2144,11 +2173,19 @@ useEffect(() => {
                 <StyledAiMessage
                   key={idx}
                   content={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                      <ProfileSpinner src={getProfileImageUrl(companyInfo?.aiProfile)} />
-                      <GradientText>
-                        {loadingMessage}
-                      </GradientText>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {/* 견적서 생성 중일 때 안내 텍스트 먼저 표시 */}
+                      {isEstimateGen && (
+                        <div style={{ marginBottom: 8 }}>
+                          지금까지 논의된 내용을 바탕으로 주요 기능과 예상 비용을 정리한 견적서를 제공드립니다.
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        <ProfileSpinner src={getProfileImageUrl(companyInfo?.aiProfile)} />
+                        <GradientText>
+                          {loadingMessage}
+                        </GradientText>
+                      </div>
                     </div>
                   }
                   profileImage={null}

@@ -470,7 +470,7 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
            <Highlight> 무제한 이용 ​</Highlight>혜택받기
           </>),
           subtitle: `AIGO 비회원 질문을​ \n모두 사용 하셨네요​`,
-          primaryButtonText: '가입없이 여기닷에게 무료 상담 받기',
+          primaryButtonText: '가입없이 무료 상담 받기',
           secondaryButtonText: '가입하고 혜택 받기',
           secondaryButtonSubText: '',
         };

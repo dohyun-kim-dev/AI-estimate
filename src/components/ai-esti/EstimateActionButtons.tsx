@@ -8,6 +8,7 @@ import { useToast } from '@/components/common/ToastProvider'
 import { useAuthStore } from '@/store/authStore';
 import { useUsageStore } from '@/store/usageStore';
 import { useChatStore } from '@/store/chatStore';
+import { useCompanyStore } from '@/store/companyStore';
 import { requestEstimateConsult } from '@/lib/api/user/userApi';
 import { useLocation } from 'react-router-dom';
 import IssuerInfoModal, { IssuerInfo } from '@/components/ai-esti/IssuerInfoModal';
@@ -174,12 +175,12 @@ const [isMobile, setIsMobile] = useState(false);
   const { success, error } = useToast();
   const { isAuthenticated } = useAuthStore();
   const { isProcessing, getEffectiveSessionId, loadLatestChatSession } = useChatStore(); // ✅ store에서 함수 가져오기
+  const { companyInfo } = useCompanyStore();
   const { 
     remainingCount, 
     hasUsedExtraCount, 
     decreaseCount, 
-    addExtraCount,
-    checkAndResetIfNewDay 
+    addExtraCount
   } = useUsageStore();
   const { messages } = useChatStore();
   const location = useLocation();
@@ -215,11 +216,8 @@ useEffect(() => {
           setPhone(user.cellphone || '');
         }
       }
-    } else {
-      // 비회원인 경우 사용량 체크
-      checkAndResetIfNewDay();
     }
-  }, [isAuthenticated, checkAndResetIfNewDay]);
+  }, [isAuthenticated]);
 
   // 상담 버튼 클릭 - 사용횟수 차감 없음
   const handleConsultClick = async () => {
@@ -407,7 +405,7 @@ useEffect(() => {
               <IconWrapper>
                 <Icon src="/ai-estimate/docs.png" width={24} height={24} />
               </IconWrapper>
-              <Title>여기닷에게 상담하기</Title>
+              <Title>{companyInfo?.companyName || '여기닷'}에게 상담하기</Title>
             </Flex>
             <Description>
               {isMobile ? (

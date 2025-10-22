@@ -92,8 +92,12 @@ export interface CompanyInfoResponse {
   businessCategory: string;
   businessType: string;
   businessNumber: string;
+  homepage: string;
   etc: string[];
   signature: string;
+  maxValue: number;
+  minValue: number;
+  otpSecret: string;
 }
 
 // 게스트 토큰 응답 타입

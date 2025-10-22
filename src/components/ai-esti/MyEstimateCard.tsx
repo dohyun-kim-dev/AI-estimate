@@ -9,6 +9,7 @@ import { useToast } from '@/components/common/ToastProvider';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore'; // ✅ 추가
+import { useCompanyStore } from '@/store/companyStore'; // ✅ 추가
 import { getDownloadEstimateUrlWithUserInfo } from '@/lib/api/user/userApi';
 import { buildFullEstimateData } from '@/hooks/estimate';
 import { v4 as uuidv4 } from 'uuid';
@@ -167,14 +168,14 @@ interface MyEstimateCardProps {
     created_at: string;
     file: string; // uuid 대신 file로 변경
   };
-  downloadUrl: string;
 }
 
 
-const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }) => {
+const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate }) => {
   const { openShareModal } = useModalStore();
   const { success, error } = useToast();
   const { isAuthenticated } = useAuthStore();
+  const { companyInfo } = useCompanyStore(); // ✅ 회사 정보 가져오기
   const [shareUrl, setShareUrl] = useState('');
   const [openShare, setOpenShare] = useState(false);
 
@@ -190,74 +191,37 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
   async function ensureUuidOnce(estimateObj: any, title: string) {
     if (estimateObj?.uuid) return estimateObj.uuid;
 
-    // 유저 정보 추출
-    let userId = '';
-    let name = '';
-    let email = '';
-    let cellphone = '';
-    const authStorage = localStorage.getItem('auth-storage');
-    if (authStorage) {
-      const authData = JSON.parse(authStorage);
-      userId = authData?.state?.user?.id || authData?.state?.user?._id || '';
-      name = authData?.state?.user?.name || '';
-      email = authData?.state?.user?.email || '';
-      cellphone = authData?.state?.user?.cellphone || '';
-    }
-    if (!userId) {
-      userId = localStorage.getItem('guest-uuid') || '';
-    }
-    if (!userId) throw new Error('사용자 ID가 없습니다.');
-
-      // ✅ estimateObj._id가 없을 때: Zustand 상태에서 project_name으로 estimateId 찾기
-      let effectiveId = estimateObj._id;
-      if (!effectiveId && estimateObj?.project_name) {
-        try {
-          // Zustand 상태에서 메시지 가져오기
-          const messages = useChatStore.getState().messages;
-          devLog("Zustand 상태 메시지:", messages);
-          
-          // project_name이 content에 포함된 메시지 중 estimateId가 있는 첫 메시지 찾기
-          let foundId = null;
-          for (const m of messages) {
-            if (typeof m.content === 'string' && m.content.includes(estimateObj.project_name)) {
-              if (m.estimateId) {
-                foundId = m.estimateId;
-                devLog("Zustand 상태에서 추출한 estimateId:", foundId);
-                break;
-              }
+    // ✅ estimateObj._id가 없을 때: Zustand 상태에서 project_name으로 estimateId 찾기
+    let effectiveId = estimateObj._id;
+    if (!effectiveId && estimateObj?.project_name) {
+      try {
+        // Zustand 상태에서 메시지 가져오기
+        const messages = useChatStore.getState().messages;
+        devLog("Zustand 상태 메시지:", messages);
+        
+        // project_name이 content에 포함된 메시지 중 estimateId가 있는 첫 메시지 찾기
+        let foundId = null;
+        for (const m of messages) {
+          if (typeof m.content === 'string' && m.content.includes(estimateObj.project_name)) {
+            if (m.estimateId) {
+              foundId = m.estimateId;
+              devLog("Zustand 상태에서 추출한 estimateId:", foundId);
+              break;
             }
           }
-          if (foundId) {
-            effectiveId = foundId;
-          }
-        } catch (e) {
-          console.warn('Zustand 상태에서 estimateId 추출 실패', e);
         }
+        if (foundId) {
+          effectiveId = foundId;
+        }
+      } catch (e) {
+        console.warn('Zustand 상태에서 estimateId 추출 실패', e);
       }
-
-    // getDownloadEstimateUrlWithUserInfo는 URL만 반환하므로, 실제로 호출을 발생시켜야 함
-    const url = getDownloadEstimateUrlWithUserInfo(
-      companyCode,
-      effectiveId,
-      { id: userId, name, email, cellphone }
-    );
-    try {
-      await fetch(url, { method: 'GET' });
-
-      devLog("다운로드 카운트 성공")
-      devLog("estimateObj",estimateObj); 
-      devLog("url",url);
-    } catch (e) {
-      // 실패해도 무시 (카운트/내역 목적)
-      devLog("다운로드 카운트 실패 ")
     }
 
-
-  devLog(estimateObj);
-
-    if (!estimateObj._id) throw new Error('uuid 보장 실패');
-    devLog("estimateObj._id:", estimateObj._id);
-    return estimateObj._id as string;
+    if (!effectiveId) throw new Error('estimateId가 없습니다.');
+    
+    devLog("estimateObj._id:", effectiveId);
+    return effectiveId as string;
   }
 
 
@@ -307,6 +271,12 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
         return;
       }
 
+      // 회사 정보가 없으면 복사 실패
+      if (!companyInfo || !companyInfo.companyName || !companyInfo.cellphone || !companyInfo.homepage) {
+        error('회사 정보를 불러올 수 없어 링크 복사에 실패했습니다.');
+        return;
+      }
+
       devLog('복사하려는 shareUrl:', shareUrl); // 디버깅용
 
       const textToCopy = `${shareUrl}
@@ -314,12 +284,12 @@ const MyEstimateCard: React.FC<MyEstimateCardProps> = ({ estimate, downloadUrl }
 
 ⏫위 링크 클릭 시 에이고가 발급한 견적서로 이동합니다
 
-🏢공급사명 : 주식회사 여기닷
+🏢공급사명 : ${companyInfo.companyName}
  
-📞전화문의 : 031-8039-7981
+📞전화문의 : ${companyInfo.cellphone}
 
 🌐공급사 홈페이지
-https://heredotcorp.com 
+${companyInfo.homepage}
 
 ※ 위 견적서는 공급사 공식 
 홈페이지에서도 조회할 수 있습니다

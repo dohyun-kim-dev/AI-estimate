@@ -7,6 +7,7 @@ import TextareaAutosize from 'react-textarea-autosize';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore'; // 추가: chatStore import
 import { useUsageStore } from '@/store/usageStore';
+import { useCompanyStore } from '@/store/companyStore';
 import { SocialLoginModal } from './SocialLoginModal';
 import FileUploadSection from './FileUploadSection';
 import { FileUploadData } from '@/firebase.functions';
@@ -267,19 +268,19 @@ const BottomInput: React.FC<BottomInputProps> = ({
   const isLightTheme = theme.body === '#FFFFFF';
   const { isAuthenticated, user } = useAuthStore();
   const { isProcessing, updateLastMessage, clearAllLoadingMessages, removeIncompleteEstimateMessages, setIsCrawlingUrl, getChatSessionId } = useChatStore(); // 추가: getChatSessionId
+  const { companyInfo } = useCompanyStore();
   const {
     remainingCount,
     hasUsedExtraCount,
     decreaseCount,
-    addExtraCount,
-    checkAndResetIfNewDay 
+    addExtraCount
   } = useUsageStore();
   const isLoggedIn = isAuthenticated();
   const { success, error: showError } = useToast();
 
   useEffect(() => {
     remainingCountRef.current = remainingCount;
-    console.log('🎯 BottomInput remainingCount 변화 감지:', {
+    devLog('🎯 BottomInput remainingCount 변화 감지:', {
       새로운값: remainingCount,
       이전값: remainingCountRef.current,
       로그인상태: isLoggedIn,
@@ -287,11 +288,12 @@ const BottomInput: React.FC<BottomInputProps> = ({
     });
   }, [remainingCount]);
 
-  useEffect(() => {
-    if (!isLoggedIn) {
-      checkAndResetIfNewDay();
-    }
-  }, [isLoggedIn, checkAndResetIfNewDay]);
+  // 날짜 리셋 로직 제거 - 서버에서 관리
+  // useEffect(() => {
+  //   if (!isLoggedIn) {
+  //     checkAndResetIfNewDay();
+  //   }
+  // }, [isLoggedIn]);
 
   // 스트리밍 시작 시 AbortController 생성, onSubmit에 전달 필요
   const lastInputRef = useRef('');
@@ -689,7 +691,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
         subTitle={
           <>
             추가로 궁금한 내용이 있다면<br />
-            '여기닷'에게 견적요청을 남겨주세요<br />
+            '{companyInfo?.companyName || '여기닷'}'에게 견적요청을 남겨주세요<br />
             전문 컨설턴트가 빠르게 도와드립니다.
           </>
         }

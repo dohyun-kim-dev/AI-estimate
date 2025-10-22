@@ -4,6 +4,7 @@ export enum ApiLoginStatus {
     PasswordIncorrect = 'password is incorrect',
     DisabledUser = 'disabled user',
     NoData = 'no data',
+    Forbidden = 'forbidden',
     Unknown = 'unknown',
   }
   
@@ -19,6 +20,8 @@ export enum ApiLoginStatus {
         return ApiLoginStatus.DisabledUser;
       case 'no data':
         return ApiLoginStatus.NoData;
+      case 'forbidden':
+        return ApiLoginStatus.Forbidden;
       default:
         return ApiLoginStatus.Unknown;
     }

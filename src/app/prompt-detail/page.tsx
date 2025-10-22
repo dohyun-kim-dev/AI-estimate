@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import { getAIPromptHistory } from '@/lib/api/admin/adminApi';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
+import { devLog } from '../../utils/devLogger';
 
 dayjs.locale('ko');
 
@@ -44,7 +45,7 @@ const PromptDetailPage: React.FC = () => {
           companyCode: companyCode
         });
 
-        console.log('프롬프트 히스토리 API 응답:', response);
+        devLog('프롬프트 히스토리 API 응답:', response);
 
         let historyData = [];
         
@@ -61,7 +62,7 @@ const PromptDetailPage: React.FC = () => {
           }
         }
 
-        console.log('파싱된 히스토리 데이터:', historyData);
+        devLog('파싱된 히스토리 데이터:', historyData);
 
         if (historyData.length > 0) {
           // historyId가 있으면 해당 히스토리를 찾고, 없으면 첫 번째 항목 사용
@@ -69,7 +70,7 @@ const PromptDetailPage: React.FC = () => {
             ? historyData.find((item: PromptHistory) => item._id === historyId)
             : historyData[0];
             
-          console.log('선택된 타겟 히스토리:', targetHistory);
+          devLog('선택된 타겟 히스토리:', targetHistory);
             
           if (targetHistory) {
             setPromptData(targetHistory);

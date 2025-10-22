@@ -22,6 +22,7 @@ import PasswordPopup from './PasswordPopup';
 import CmsResponsiveContainer from '@components/CustomList/ResponsiveList/CmsResponsiveContainer';
 import AdminFormPopup from './AdminFormPopup';
 import Switch from '@/components/Switch';
+import OTPQRModal from './OTPQRModal';
 import 'dayjs/locale/ko';
 
 dayjs.locale('ko');
@@ -36,6 +37,7 @@ const PrimaryButton = styled(ActionButton)<{ $themeMode: ThemeMode }>`
   color: ${({ $themeMode }) =>
     $themeMode === 'light' ? '#f8f8f8' : THEME_COLORS.dark.primary};
   border: none;
+  margin-left: 20px;
 `;
 
 // API 응답 타입 정의
@@ -120,6 +122,7 @@ const AdminMngPage: React.FC = () => {
 
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isPwdChangeOpen, setIsPwdChangeOpen] = useState(false);
+  const [isOTPQRModalOpen, setIsOTPQRModalOpen] = useState(false);
 
   const genericListRef = useRef<{ refetch: () => void }>(null); // 통합관리자와 동일한 변수명 사용
 
@@ -172,8 +175,11 @@ const AdminMngPage: React.FC = () => {
   const handleSave = async () => {
     let valid = true;
 
-    // 고객사 검증 (신규 등록 시에만)
-    if (!selectedUser && !popupCompanyCode) {
+    // URL에 cms가 포함되어 있는지 확인
+    const isCmsUrl = window.location.pathname.includes('/cms/');
+
+    // 고객사 검증 (신규 등록 시에만 & CMS URL이 아닐 때만)
+    if (!isCmsUrl && !selectedUser && !popupCompanyCode) {
       setCompanyError('고객사를 선택해주세요.');
       valid = false;
     } else setCompanyError(null);
@@ -613,6 +619,9 @@ const AdminMngPage: React.FC = () => {
         onCompanySelect={handleCompanySelect}
         renderMiddleContent={() => (
           <div style={{ flex: 1, textAlign: 'end', fontWeight: 'bold' }}>
+            <PrimaryButton $themeMode="light" onClick={() => setIsOTPQRModalOpen(true)}>
+              OTP QR코드
+            </PrimaryButton>
             <PrimaryButton $themeMode="light" onClick={handleHeaderButtonClick}>
               관리자 등록
             </PrimaryButton>
@@ -665,6 +674,11 @@ const AdminMngPage: React.FC = () => {
         isOpen={isPwdChangeOpen}
         onClose={() => setIsPwdChangeOpen(false)}
         onSuccess={() => genericListRef.current?.refetch()}
+      />
+
+      <OTPQRModal
+        isOpen={isOTPQRModalOpen}
+        onClose={() => setIsOTPQRModalOpen(false)}
       />
     </>
   );

@@ -16,13 +16,13 @@ const Container = styled.div`
   padding: 20px 16px;
 `
 
-const ProfileSection = styled.div`
+const ProfileSection = styled.div<{ $isClickable?: boolean }>`
   display: flex;
   align-items: center;
   gap: 16px;
   padding: 16px 0;
   margin-bottom: 24px;
-  cursor: pointer;
+  cursor: ${({ $isClickable }) => $isClickable ? 'pointer' : 'default'};
 `
 
 const ProfileImage = styled.div`
@@ -180,7 +180,10 @@ export default function SettingsPage() {
 
   return (
     <Container>
-      <ProfileSection onClick={handleEditProfile}>
+      <ProfileSection 
+        $isClickable={!!user?.isLoggedIn}
+        onClick={user?.isLoggedIn ? handleEditProfile : undefined}
+      >
        <ProfileImage>
                   <img 
                     src={imageLoaded ? getProfileImageUrl(user?.profileImage) : '/ai-estimate/no_profile.png'} 
@@ -202,10 +205,12 @@ export default function SettingsPage() {
         
         <ProfileInfo>
           <Flex>
-          <ProfileName>{user?.name || '사용자'}</ProfileName>
-          <div style={{width: '24px', height: '24px', display: 'flex', marginBottom: '2px'}}>
-          <ChevronIcon />          
-          </div>
+          <ProfileName>{user?.name || '로그인 후 이용 가능합니다'}</ProfileName>
+          {user?.isLoggedIn && (
+            <div style={{width: '24px', height: '24px', display: 'flex', marginBottom: '2px'}}>
+              <ChevronIcon />          
+            </div>
+          )}
           </Flex>
 
           <ProfileEmail>{user?.email || ''}</ProfileEmail>
@@ -224,10 +229,12 @@ export default function SettingsPage() {
           <MenuText>이용약관</MenuText>
           <ChevronIcon />
         </MenuItem>
-        <MenuItem onClick={handleLogout}>
-          <MenuText>로그아웃</MenuText>
-          <ChevronIcon />
-        </MenuItem>
+        {user?.isLoggedIn && (
+          <MenuItem onClick={handleLogout}>
+            <MenuText>로그아웃</MenuText>
+            <ChevronIcon />
+          </MenuItem>
+        )}
         </MenuItemContainer>
       </Section>
       

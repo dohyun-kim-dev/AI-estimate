@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { getGuestToken, addGuestAdditionalCharge } from '@/lib/api/user/userApi';
 import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
 import { useAuthStore } from './authStore';
@@ -9,18 +8,16 @@ import { devLog } from '@/utils/devLogger';
 interface UsageState {
   remainingCount: number;
   hasUsedExtraCount: boolean;
-  lastResetDate: string;
   maxSubmissions: number;
   isLoading: boolean;
   setRemainingCount: (count: number) => void;
   decreaseCount: () => void;
   setHasUsedExtraCount: (used: boolean) => void;
   addExtraCount: () => Promise<void>;
-  resetDailyCount: () => void;
-  checkAndResetIfNewDay: () => void;
   fetchGuestUsage: (companyCode: string) => Promise<void>;
   fetchUserUsage: (companyId: string) => Promise<void>;
   setLoading: (loading: boolean) => void;
+  initializeFromLocalStorage: () => void;
 }
 
 const generateUUID = () => {
@@ -30,14 +27,29 @@ const generateUUID = () => {
   });
 };
 
-export const useUsageStore = create<UsageState>()(
-  persist(
-    (set, get) => ({
+// localStorage에서 초기값 로드
+const getInitialState = () => {
+  if (typeof window === 'undefined') {
+    return {
       remainingCount: 10,
       hasUsedExtraCount: false,
-      lastResetDate: new Date().toDateString(),
       maxSubmissions: 10,
-      isLoading: false,
+    };
+  }
+
+  const storedCount = localStorage.getItem('remainingCount');
+  const storedHasUsedExtra = localStorage.getItem('hasUsedExtraCount');
+
+  return {
+    remainingCount: storedCount ? Number(storedCount) : 10,
+    hasUsedExtraCount: storedHasUsedExtra === 'true',
+    maxSubmissions: 10,
+  };
+};
+
+export const useUsageStore = create<UsageState>()((set, get) => ({
+  ...getInitialState(),
+  isLoading: false,
       
       setRemainingCount: (count: number) => {
         set({ remainingCount: count });
@@ -119,48 +131,6 @@ export const useUsageStore = create<UsageState>()(
           localStorage.setItem('hasUsedExtraCount', 'true');
         }
       },
-      
-      resetDailyCount: () => {
-        const today = new Date().toDateString();
-        set({ 
-          remainingCount: 10, 
-          hasUsedExtraCount: false, 
-          lastResetDate: today 
-        });
-        localStorage.setItem('remainingCount', '10');
-        localStorage.setItem('hasUsedExtraCount', 'false');
-        localStorage.setItem('lastResetDate', today);
-      },
-      
-      checkAndResetIfNewDay: () => {
-        const today = new Date().toDateString();
-        const { lastResetDate } = get();
-        
-        if (lastResetDate !== today) {
-          // 새로운 날이면 리셋
-          get().resetDailyCount();
-          
-          // deviceId가 없으면 생성
-          if (!localStorage.getItem('deviceId')) {
-            localStorage.setItem('deviceId', generateUUID());
-          }
-        } else {
-          // 같은 날이면 localStorage에서 값 동기화
-          const storedCount = localStorage.getItem('remainingCount');
-          const storedHasUsedExtra = localStorage.getItem('hasUsedExtraCount');
-          
-          if (storedCount) {
-            set({ remainingCount: Number(storedCount) });
-          }
-          // hasUsedExtraCount는 명시적으로 'true'일 때만 true로 설정
-          if (storedHasUsedExtra === 'true') {
-            set({ hasUsedExtraCount: true });
-          } else {
-            // 'false' 또는 null/undefined인 경우 모두 false로 설정
-            set({ hasUsedExtraCount: false });
-          }
-        }
-      },
 
       setLoading: (loading: boolean) => {
         set({ isLoading: loading });
@@ -229,15 +199,18 @@ export const useUsageStore = create<UsageState>()(
         }
       },
 
-    }),
-    {
-      name: 'usage-storage',
-      partialize: (state) => ({
-        remainingCount: state.remainingCount,
-        hasUsedExtraCount: state.hasUsedExtraCount,
-        lastResetDate: state.lastResetDate,
-        maxSubmissions: state.maxSubmissions,
-      }),
-    }
-  )
-);
+      // localStorage에서 초기화 (필요 시 수동 호출)
+      initializeFromLocalStorage: () => {
+        const storedCount = localStorage.getItem('remainingCount');
+        const storedHasUsedExtra = localStorage.getItem('hasUsedExtraCount');
+        
+        if (storedCount) {
+          set({ remainingCount: Number(storedCount) });
+        }
+        if (storedHasUsedExtra === 'true') {
+          set({ hasUsedExtraCount: true });
+        } else {
+          set({ hasUsedExtraCount: false });
+        }
+      },
+}));

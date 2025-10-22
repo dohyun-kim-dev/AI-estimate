@@ -556,27 +556,16 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         devLog('🔍 이미지 파일들 처리됨:', images);
         devLog('🔍 문서 파일들 처리됨:', files);
 
-        // 이미지와/또는 문서 파일이 있는 경우 메시지 생성
-        const fileMessage = {
+        // 🔥 파일과 텍스트를 하나의 메시지로 합치기
+        const combinedMessage = {
           role: 'user' as const,
-          content: '',
-          ...(images.length > 0 && { images }),
-          ...(files.length > 0 && { files }),
-          messageId: messageId + '_files'
+          content: userDisplayContent.trim(), // 텍스트 내용
+          ...(images.length > 0 && { images }), // 이미지가 있으면 추가
+          ...(files.length > 0 && { files }), // 파일이 있으면 추가
+          messageId
         };
-        devLog('🔍 파일 메시지 생성:', fileMessage);
-        addMessage(fileMessage);
-        
-        // 텍스트가 있으면 별도 메시지
-        if (userDisplayContent.trim()) {
-          const textMessage = {
-            role: 'user' as const,
-            content: userDisplayContent,
-            messageId: messageId + '_text'
-          };
-          devLog('🔍 텍스트 메시지 생성:', textMessage);
-          addMessage(textMessage);
-        }
+        devLog('🔍 통합 메시지 생성:', combinedMessage);
+        addMessage(combinedMessage);
       } else {
         // 지원하지 않는 파일 형식만 있는 경우
         addMessage({ role: 'user', content: userDisplayContent, messageId });
@@ -697,8 +686,8 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     setUploadedFiles([]);
 
     let currentSessionId = getEffectiveSessionId();
-    console.log('🔍 [useChatActions handleSubmit] 시작 시점 currentSessionId:', currentSessionId);
-    console.log('🔍 [useChatActions handleSubmit] 시작 시점 스토어 chatSessionId:', useChatStore.getState().chatSessionId);
+    devLog('🔍 [useChatActions handleSubmit] 시작 시점 currentSessionId:', currentSessionId);
+    devLog('🔍 [useChatActions handleSubmit] 시작 시점 스토어 chatSessionId:', useChatStore.getState().chatSessionId);
     let userId = null;
 
     if (isAuthenticated()) {
@@ -721,9 +710,9 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         }
         if (createResponse && createResponse.statusCode === 200 && createResponse.data && createResponse.data.length > 0 && createResponse.data[0]._id) {
           currentSessionId = createResponse.data[0]._id;
-          console.log('🔍 [useChatActions] 새 세션 생성됨:', currentSessionId);
+          devLog('🔍 [useChatActions] 새 세션 생성됨:', currentSessionId);
           setChatSessionId(currentSessionId); // store에만 저장
-          console.log('🔍 [useChatActions] setChatSessionId 호출 후 스토어 상태:', useChatStore.getState().chatSessionId);
+          devLog('🔍 [useChatActions] setChatSessionId 호출 후 스토어 상태:', useChatStore.getState().chatSessionId);
           // URL 파라미터로 sessionId 추가 (추출 편의성 향상)
           // const newUrl = `${window.location.pathname}?sessionId=${currentSessionId}`;
           // window.history.pushState(null, '', newUrl);
@@ -975,15 +964,19 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         // 🔥 스트리밍 중에도 chatTitle 태그와 백틱 실시간 제거
         let displayContent = aiReply;
 
-// chatTitle 태그가 발견된 경우에만 처리
-          if (/<chatTitle>.*?<\/chatTitle>/gs.test(aiReply)) {
-            displayContent = aiReply
-              .replace(/<chatTitle>.*?<\/chatTitle>/gs, '') // chatTitle 태그 제거
-              .replace(/```\s*\n?/g, '') // 백틱 코드 블록 마커 제거  
-              .replace(/`([^`]*)`/g, '$1') // 인라인 백틱 제거
-              .replace(/^\s*\n+/g, '') // 시작 부분 빈 줄 제거
-              .trim();
-          } 
+        // chatTitle 태그 제거
+        if (/<chatTitle>.*?<\/chatTitle>/gs.test(aiReply)) {
+          displayContent = displayContent.replace(/<chatTitle>.*?<\/chatTitle>/gs, '');
+        }
+        
+        // 🔥 백틱 제거 (항상 실행)
+        displayContent = displayContent
+          .replace(/```json\s*\n?/g, '') // ```json 코드 블록 시작 제거
+          .replace(/```\s*\n?/g, '') // ``` 코드 블록 마커 제거
+          .replace(/`([^`]*)`/g, '$1') // 인라인 백틱 제거 (예: `텍스트`)
+          .replace(/^\s*\n+/g, '') // 시작 부분 빈 줄 제거
+          .trim();
+        
         // 일반 텍스트 스트리밍 표시 (정리된 내용으로)
         updateLastMessage({
           content: displayContent,
@@ -1260,23 +1253,24 @@ if (estimateData) {
           const extractedTitle = titleMatch[1].trim();
           devLog('🏷️ AI 응답에서 추출된 타이틀:', extractedTitle);
           
-          // 응답 내용에서 chatTitle 태그와 모든 백틱 제거 (공백과 줄바꿈도 정리)
-          cleanedReply = finalReply
-            .replace(/<chatTitle>.*?<\/chatTitle>/gs, '') // chatTitle 태그 제거
-            .replace(/```\s*\n?/g, '') // 백틱 코드 블록 마커 제거
-            .replace(/`([^`]*)`/g, '$1') // 인라인 백틱 제거 (예: `텍스트` -> 텍스트)
-            .replace(/\\`/g, '') // 이스케이프된 백틱 제거
-            .replace(/^\s*\n+/g, '') // 시작 부분 빈 줄 제거
-            .replace(/\n+\s*$/g, '') // 끝 부분 빈 줄 제거
-            .trim();
-          
-          devLog('🔧 chatTitle 태그 제거된 응답:', cleanedReply.substring(0, 100) + '...');
-          
           if (extractedTitle && extractedTitle !== '새로운 채팅') {
             await updateChatSessionTitle(currentSessionId, extractedTitle);
             devLog('✅ 채팅방 타이틀 업데이트 완료:', extractedTitle);
           }
         }
+        
+        // 🔥 응답 내용에서 chatTitle 태그와 모든 백틱 제거 (항상 실행)
+        cleanedReply = finalReply
+          .replace(/<chatTitle>.*?<\/chatTitle>/gs, '') // chatTitle 태그 제거
+          .replace(/```json\s*\n?/g, '') // ```json 코드 블록 시작 제거
+          .replace(/```\s*\n?/g, '') // ``` 코드 블록 마커 제거
+          .replace(/`([^`]*)`/g, '$1') // 인라인 백틱 제거 (예: `텍스트` -> 텍스트)
+          .replace(/\\`/g, '') // 이스케이프된 백틱 제거
+          .replace(/^\s*\n+/g, '') // 시작 부분 빈 줄 제거
+          .replace(/\n+\s*$/g, '') // 끝 부분 빈 줄 제거
+          .trim();
+        
+        devLog('🔧 chatTitle 태그 및 백틱 제거된 응답:', cleanedReply.substring(0, 100) + '...');
       } catch (titleError) {
         devLog('⚠️ 채팅방 타이틀 업데이트 실패:', titleError);
         // 타이틀 업데이트 실패는 무시하고 계속 진행

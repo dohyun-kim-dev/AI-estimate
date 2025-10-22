@@ -192,11 +192,12 @@ export async function previewPdfFromServerData(
     }
   }
   
-  // PrintableInvoice에 회사 정보도 함께 전달
+  // PrintableInvoice에 회사 정보와 사용자 정보 함께 전달
   reactRoot.render(
     <PrintableInvoice 
       estimate={estimateJson} 
       companyInfo={companyInfo}
+      userInfo={userInfo}
     />
   );
 
@@ -293,11 +294,12 @@ export async function downloadPdfFromServerData(
       }
     }
     
-    // PrintableInvoice에 회사 정보도 함께 전달
+    // PrintableInvoice에 회사 정보와 사용자 정보 함께 전달
     reactRoot.render(
       <PrintableInvoice 
         estimate={estimateJson} 
         companyInfo={companyInfo}
+        userInfo={userInfo}
       />
     );
     await new Promise((r) => setTimeout(r, 500)); // 렌더링 대기

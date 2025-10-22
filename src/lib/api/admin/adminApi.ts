@@ -69,6 +69,66 @@ export async function adminLogin(
   });
 }
 
+// OTP QR 코드 생성
+export async function getOTPQRCode() {
+  return callAdminApi({
+    title: 'OTP QR 코드 생성',
+    url: '/api/company/cms/otp/qr',
+    method: 'POST',
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
+// OTP 인증 (토큰으로 인증)
+export async function verifyOTP(otp: string, tempToken: string) {
+  const url = '/api/company/cms/otp/verify';
+  const body = { otp };
+  
+  // Company Code 추출
+  const companyCode = getCompanyCodeFromUrl();
+  
+  // 환경에 따른 URL 설정
+  let fullUrl = url;
+  if (import.meta.env.VITE_ENV_NAME !== 'dev' && !url.startsWith('http')) {
+    fullUrl = import.meta.env.VITE_API_DOMAIN + url;
+  }
+
+  try {
+    const response = await fetch(fullUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${tempToken}`, // 1차 로그인 시 받은 임시 토큰
+        'x-company-code': companyCode, // 회사 코드 헤더 추가
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+    devLog('OTP 인증 응답:', data);
+
+    if (!response.ok) {
+      throw new Error(data.message || 'OTP 인증에 실패했습니다.');
+    }
+
+    // data 값이 false인 경우 실패 처리
+    if (data.statusCode === 200 && data.data === false) {
+      throw new Error('OTP 코드가 일치하지 않습니다.');
+    }
+
+    // data 값이 true가 아닌 경우 실패 처리
+    if (data.data !== true) {
+      throw new Error('OTP 인증에 실패했습니다.');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('OTP 인증 에러:', error);
+    throw error;
+  }
+}
+
 // 회사별 CMS 관리자 로그인 (헤더 포함)
 export async function companyCMSLogin(params: AdminLoginParams) {
   const url = `${BASE_URL}/cms/login`;

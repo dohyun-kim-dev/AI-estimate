@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { CompanyInfoResponse } from '@/lib/api/user/userApi.types';
 
 // 회사 정보 타입은 API 응답 타입을 재사용
@@ -15,30 +14,20 @@ interface CompanyStore {
   clearCompanyInfo: () => void;
 }
 
-export const useCompanyStore = create<CompanyStore>()(
-  persist(
-    (set) => ({
-      companyInfo: null,
-      isLoading: false,
-      error: null,
-      
-      setCompanyInfo: (companyInfo: CompanyInfo) => 
-        set({ companyInfo, error: null }),
-      
-      setLoading: (isLoading: boolean) => 
-        set({ isLoading }),
-      
-      setError: (error: string | null) => 
-        set({ error }),
-      
-      clearCompanyInfo: () => 
-        set({ companyInfo: null, error: null }),
-    }),
-    {
-      name: 'company-storage',
-      partialize: (state) => ({ 
-        companyInfo: state.companyInfo 
-      }),
-    }
-  )
-);
+export const useCompanyStore = create<CompanyStore>()((set) => ({
+  companyInfo: null,
+  isLoading: false,
+  error: null,
+  
+  setCompanyInfo: (companyInfo: CompanyInfo) => 
+    set({ companyInfo, error: null }),
+  
+  setLoading: (isLoading: boolean) => 
+    set({ isLoading }),
+  
+  setError: (error: string | null) => 
+    set({ error }),
+  
+  clearCompanyInfo: () => 
+    set({ companyInfo: null, error: null }),
+}));

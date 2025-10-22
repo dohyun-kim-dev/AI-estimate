@@ -562,6 +562,12 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
         return;
       }
 
+      // 회사 정보가 없으면 복사 실패
+      if (!companyInfo || !companyInfo.companyName || !companyInfo.cellphone || !companyInfo.homepage) {
+        error('회사 정보를 불러올 수 없어 링크 복사에 실패했습니다.');
+        return;
+      }
+
       devLog('복사하려는 shareUrl:', shareUrl); // 디버깅용
 
       const textToCopy = `${shareUrl}
@@ -569,12 +575,12 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
 
 ⏫위 링크 클릭 시 에이고가 발급한 견적서로 이동합니다
 
-🏢공급사명 : 주식회사 여기닷
+🏢공급사명 : ${companyInfo.companyName}
  
-📞전화문의 : 031-8039-7981
+📞전화문의 : ${companyInfo.cellphone}
 
 🌐공급사 홈페이지
-https://heredotcorp.com 
+${companyInfo.homepage}
 
 ※ 위 견적서는 공급사 공식 
 홈페이지에서도 조회할 수 있습니다

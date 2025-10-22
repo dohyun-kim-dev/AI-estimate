@@ -449,6 +449,9 @@ export default function CompanyInfoSettingsPage() {
   const [signaturePreview, setSignaturePreview] = useState<string>('');
   const [signatureFileName, setSignatureFileName] = useState<string>('');
   
+  // 원본 파일명 보관 (서버에서 받은 파일명)
+  const [originalSignatureFileName, setOriginalSignatureFileName] = useState<string>('');
+  
   // 프로필 이미지 드롭다운 상태
   const [showImageDropdown, setShowImageDropdown] = useState(false);
   
@@ -566,6 +569,7 @@ export default function CompanyInfoSettingsPage() {
     setSignaturePreview('');
     setSignatureFileName('');
     setUploadedSignatureImage(null);
+    setOriginalSignatureFileName('');
     setCompanyInfo(prev => ({ 
       ...prev, 
       signature: '' 
@@ -721,7 +725,7 @@ export default function CompanyInfoSettingsPage() {
 
     // 컴퍼니 코드가 없거나 빈 문자열이면 API 호출하지 않음
     if (!companyId || companyId.trim() === '') {
-      console.log('컴퍼니 코드가 없어 회사 데이터 로드를 건너뜁니다.');
+      devLog('컴퍼니 코드가 없어 회사 데이터 로드를 건너뜁니다.');
       return;
     }
 
@@ -771,6 +775,9 @@ export default function CompanyInfoSettingsPage() {
         
         // 회사 직인 미리보기 설정
         if (company.signature) {
+          // 원본 파일명 저장
+          setOriginalSignatureFileName(company.signature);
+          
           const fileUrl = getFileUrl(company.signature);
           // 파일 확장자를 확인하여 PDF 파일인지 판단
           if (company.signature.toLowerCase().endsWith('.pdf')) {
@@ -781,6 +788,7 @@ export default function CompanyInfoSettingsPage() {
             setSignatureFileName('');
           }
         } else {
+          setOriginalSignatureFileName('');
           setSignaturePreview('');
           setSignatureFileName('');
         }
@@ -825,6 +833,7 @@ export default function CompanyInfoSettingsPage() {
     setProfilePreview('');
     setSignaturePreview('');
     setSignatureFileName('');
+    setOriginalSignatureFileName('');
     
     // 편집 상태 초기화
     setIsEditingTitle(false);
@@ -854,8 +863,8 @@ export default function CompanyInfoSettingsPage() {
         aiName: companyInfo.aiName,
         businessCategory: companyInfo.businessCategory,
         businessType: companyInfo.businessType,
-        // 업로드된 직인 이미지가 있으면 파일명을, 없으면 기존 이미지를 사용
-        signature: uploadedSignatureImage || companyInfo.signature,
+        // ✅ 새로 업로드된 파일이 있으면 그것을 사용, 없으면 원본 파일명 사용
+        signature: uploadedSignatureImage || originalSignatureFileName || companyInfo.signature,
         etc: finalEstimateNotes
       });
       

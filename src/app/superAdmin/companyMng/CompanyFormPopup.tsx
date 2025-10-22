@@ -299,6 +299,7 @@ interface CompanyFormPopupProps {
     homepage?: string;
     ciImage?: File | null | string;
     businessImage?: File | null | string;
+    activateChatBot?: boolean;
     errors?: {
       name?: string;
       companyName?: string;
@@ -351,6 +352,7 @@ interface CompanyFormPopupProps {
     setHomepage: (value: string) => void;
     setCiImage: (value: string | undefined) => void;
     setBusinessImage: (value: string | undefined) => void;
+    setActivateChatBot?: (value: boolean) => void;
   };
   onFileUpload?: {
     onCiImageUpload: (file: File) => void;
@@ -1052,10 +1054,10 @@ const RemoveImageButton = styled.button`
                 <SectionTitle>챗봇 활성</SectionTitle>
 
         <SwitchInput
-          value={internalMode === 'active'}
-          onChange={(isActive) => setMode(isActive ? 'active' : 'inactive')}
+          value={formData.activateChatBot || false}
+          onChange={(isActive) => onFormChange.setActivateChatBot?.(isActive)}
           $labelPosition="horizontal"
-          // label={internalMode === 'active' ? '활성화' : '비활성화'}
+          // label={formData.activateChatBot ? '활성화' : '비활성화'}
         />
 </Flex>
         <SectionTitle>라이선스 유형</SectionTitle>

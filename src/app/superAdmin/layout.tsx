@@ -5,8 +5,6 @@ import { AdminAuthProvider, useAdminAuth } from '@contexts/AdminAuthContext';
 import { useDevice } from '@contexts/DeviceContext';
 import { THEME_COLORS } from '@styles/theme_colors';
 import { useToast } from '@/components/common/ToastProvider';
-
-// Import components
 import ResponsiveSidebar from '@components/CustomSidebar/ResponsiveSidebar';
 import CustomSidebarHeader from '@components/CustomSidebar/CustomSidebarHeader';
 import type { MenuItemConfig } from '@components/CustomSidebar/CustomSidebar';
@@ -24,6 +22,7 @@ import {
 } from '@/components/icons/AdminMenuIcons';
 import ScrollAwareWrapper from '@layout/ScrollAwareWrapper';
 import PageWrapper from '@components/PageWrapper';
+import { devLog } from '../../utils/devLogger';
 
 export default function CmsLayout() {
   return (
@@ -46,7 +45,7 @@ function ProtectedCmsLayout() {
   const { show: showToast } = useToast(); // 토스트 훅 추가
 
   useEffect(() => {
-    console.log('🔍 [CmsLayout useEffect 실행]', {
+    devLog('🔍 [CmsLayout useEffect 실행]', {
       ready,
       isLoggedIn,
       isLoginPage,
@@ -56,13 +55,13 @@ function ProtectedCmsLayout() {
 
     // ready가 false면 아직 로딩 중이므로 아무것도 하지 않음
     if (!ready) {
-      console.log('⏳ [CmsLayout] ready가 false - 로딩 중');
+      devLog('⏳ [CmsLayout] ready가 false - 로딩 중');
       return;
     }
 
     // 로그인 안 되어 있고, 예외 페이지가 아니면 로그인 페이지로 리다이렉트
     if (!isLoggedIn && !isLoginPage && !isPdfPreviewPage && !isExcelPreviewPage && !isPromptDetailPage) {
-      console.log('🔄 [CmsLayout] 로그인 필요 - /superadmin/login으로 리다이렉트', {
+      devLog('🔄 [CmsLayout] 로그인 필요 - /superadmin/login으로 리다이렉트', {
         ready,
         isLoggedIn,
         currentPath: location.pathname
@@ -73,12 +72,12 @@ function ProtectedCmsLayout() {
 
     // 로그인되어 있고 루트 경로면 대시보드로 이동
     if (isLoggedIn && location.pathname === `/superadmin`) {
-      console.log('✅ [CmsLayout] 로그인됨 - 루트 경로 접근 (대시보드 비활성화됨)');
+      devLog('✅ [CmsLayout] 로그인됨 - 루트 경로 접근 (대시보드 비활성화됨)');
       // 대시보드로 이동하려면 주석 해제
       // navigate(`/superadmin/admin-management`, { replace: true });
     }
     
-    console.log('✅ [CmsLayout] useEffect 정상 종료 - 리다이렉트 없음');
+    devLog('✅ [CmsLayout] useEffect 정상 종료 - 리다이렉트 없음');
   }, [ready, isLoggedIn, isLoginPage, isPdfPreviewPage, isExcelPreviewPage, isPromptDetailPage, location.pathname, navigate, companyCode]);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -89,7 +88,7 @@ function ProtectedCmsLayout() {
   const handleLogout = () => {
     logout();
     navigate(`/superadmin/login`, { replace: true });
-    console.log('handleLogout LayoutPage 로그아웃 되었습니다');
+    devLog('handleLogout LayoutPage 로그아웃 되었습니다');
     showToast('로그아웃 되었습니다','success');
   };
 

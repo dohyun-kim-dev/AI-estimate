@@ -3,6 +3,61 @@
   const widgetSrc = new URL(s.src, location.href);
   const targetUrl = s.getAttribute('data-url');
   if(!targetUrl){ console.warn('[AI-Widget] data-url required'); return; }
+  
+  // URL에서 companyCode 추출
+  const extractCompanyCode = (url) => {
+    try {
+      const urlObj = new URL(url, location.href);
+      const pathParts = urlObj.pathname.split('/').filter(p => p);
+      // /aiclient/{companyCode} 형태
+      if (pathParts[0] === 'aiclient' && pathParts[1]) {
+        return pathParts[1];
+      }
+      // /{companyCode}/cms 형태
+      if (pathParts[1] === 'cms' && pathParts[0]) {
+        return pathParts[0];
+      }
+    } catch (e) {
+      console.warn('[AI-Widget] Failed to extract company code:', e);
+    }
+    return null;
+  };
+
+  const companyCode = extractCompanyCode(targetUrl);
+  
+  // 챗봇 활성화 여부 확인 API 호출
+  const checkChatBotActive = async () => {
+    if (!companyCode) {
+      console.warn('[AI-Widget] No company code found, showing widget by default');
+      return true;
+    }
+
+    try {
+      const urlObj = new URL(targetUrl, location.href);
+      const apiUrl = `${urlObj.origin}/api/cms/company/${companyCode}`;
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        console.warn('[AI-Widget] Failed to fetch company info, showing widget by default');
+        return true;
+      }
+
+      const data = await response.json();
+      const isActive = data?.data?.activateChatBot;
+      
+      console.log('[AI-Widget] ChatBot active status:', isActive, 'for company:', companyCode);
+      return isActive !== false; // undefined나 true면 표시, false만 숨김
+    } catch (error) {
+      console.warn('[AI-Widget] Error checking chatbot status:', error);
+      return true; // 에러 시 기본적으로 표시
+    }
+  };
+
   const pos = (s.getAttribute('data-position')||'right').toLowerCase(); // left|right
   const color = s.getAttribute('data-color')||'#3391FF';
   const label = s.getAttribute('data-label')||'AI';
@@ -655,9 +710,22 @@ const isDarkMode = detectDarkMode();
     postViewport();
   };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', mount, { once: true });
-  } else {
-    mount();
-  }
+  // 챗봇 활성화 여부 확인 후 마운트
+  const initWidget = async () => {
+    const isActive = await checkChatBotActive();
+    
+    if (!isActive) {
+      console.log('[AI-Widget] ChatBot is disabled for this company, widget will not be shown');
+      return;
+    }
+    
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', mount, { once: true });
+    } else {
+      mount();
+    }
+  };
+
+  // 위젯 초기화 시작
+  initWidget();
 })();

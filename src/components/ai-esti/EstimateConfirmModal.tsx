@@ -1,6 +1,7 @@
 import styled from 'styled-components';
 import { AppColors } from '@/styles/colors';
 import { AppTextStyles } from '@/styles/textStyles';
+import { useCompanyStore } from '@/store/companyStore';
 
 const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
@@ -102,6 +103,9 @@ export const EstimateConfirmModal: React.FC<EstimateConfirmModalProps> = ({
   primaryButtonText,
   secondaryButtonText,
 }) => {
+  const { companyInfo } = useCompanyStore();
+  const companyName = companyInfo?.companyName || '여기닷';
+  
   // 기본값 설정
   const displayTitle = title || (
     <>
@@ -112,7 +116,7 @@ export const EstimateConfirmModal: React.FC<EstimateConfirmModalProps> = ({
   
   const displaySubTitle = subTitle || (
     <>
-      여기닷에 AI견적 대화 기반​ <br/>정밀한 견적 요청 가능해요​
+      {companyName}에 AI견적 대화 기반​ <br/>정밀한 견적 요청 가능해요​
     </>
   );
   

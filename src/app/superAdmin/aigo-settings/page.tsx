@@ -527,7 +527,7 @@ export default function AigoSettingsPage() {
   const loadAISettings = async (companyCode: string) => {
     // 컴퍼니 코드가 없거나 빈 문자열이면 API 호출하지 않음
     if (!companyCode || companyCode.trim() === '') {
-      console.log('컴퍼니 코드가 없어 AI 설정 로드를 건너뜁니다.');
+      devLog('컴퍼니 코드가 없어 AI 설정 로드를 건너뜁니다.');
       return;
     }
     
@@ -571,7 +571,7 @@ export default function AigoSettingsPage() {
         // checkpointList 데이터 설정
         if (company.checkpointList && Array.isArray(company.checkpointList)) {
           setCheckpointList(company.checkpointList);
-          console.log('Loaded checkpointList:', company.checkpointList);
+          devLog('Loaded checkpointList:', company.checkpointList);
         } else {
           setCheckpointList([]);
         }
@@ -732,14 +732,37 @@ export default function AigoSettingsPage() {
 
   // 할인율 validation 함수들
   const validateDiscountRates = () => {
-    // 1. 필수 필드 체크 (최소/최대 단위)
+    // 1. 프로젝트 요율 관리가 활성화되어 있을 때만 검증
     if (formData.projectRateEnabled) {
+      // 1-1. 단위 기준 설정 체크 (주/달/수량 중 하나는 선택되어야 함)
+      if (!formData.discountRate || formData.discountRate.trim() === '') {
+        showToast('단위 기준 설정(주/달/수량)을 선택해주세요.', 'error');
+        return false;
+      }
+
+      // 1-2. 최소 단위 입력 체크
       if (!formData.projectName1 || formData.projectName1.trim() === '') {
         showToast('최소 단위를 입력해주세요.', 'error');
         return false;
       }
+      
+      // 1-3. 최대 단위 입력 체크
       if (!formData.projectName2 || formData.projectName2.trim() === '') {
         showToast('최대 단위를 입력해주세요.', 'error');
+        return false;
+      }
+
+      // 1-4. 최소 단위가 최대 단위보다 작은지 확인
+      const minUnit = parseInt(formData.projectName1) || 0;
+      const maxUnit = parseInt(formData.projectName2) || 0;
+      if (minUnit >= maxUnit) {
+        showToast('최소 단위는 최대 단위보다 작아야 합니다.', 'error');
+        return false;
+      }
+
+      // 1-5. 단위 설정 체크 (고정/동적 중 하나는 선택되어야 함)
+      if (!formData.rateRule || formData.rateRule.trim() === '') {
+        showToast('단위 설정(고정/동적)을 선택해주세요.', 'error');
         return false;
       }
     }
@@ -753,7 +776,7 @@ export default function AigoSettingsPage() {
     }
 
     // 3. 할인율 빈 칸 체크
-    console.log('🔍 Validation Debug - checkpointList:', checkpointList);
+    devLog('🔍 Validation Debug - checkpointList:', checkpointList);
     const emptyDiscountRates = checkpointList.filter(item => {
       const discountRate = item.discountRate;
       const isEmpty = discountRate === undefined || 
@@ -761,7 +784,7 @@ export default function AigoSettingsPage() {
                      discountRate === 0 || 
                      isNaN(Number(discountRate)) ||
                      Number(discountRate) <= 0;
-      console.log('🔍 Discount Rate Check:', { 
+      devLog('🔍 Discount Rate Check:', { 
         checkpoint: item.checkpoint, 
         discountRate: discountRate,
         type: typeof discountRate,
@@ -771,7 +794,7 @@ export default function AigoSettingsPage() {
     });
     
     if (emptyDiscountRates.length > 0) {
-      console.log('🔍 Empty discount rates found:', emptyDiscountRates);
+      devLog('🔍 Empty discount rates found:', emptyDiscountRates);
       showToast('모든 구간의 할인율을 입력해주세요.', 'error');
       return false;
     }

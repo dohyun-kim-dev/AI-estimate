@@ -10,6 +10,7 @@ export interface CompanyCMSLoginServiceParams {
   password: string;
   showMessage: (msg: string) => void;
   onSuccess: (response: any) => void;
+  skipLocalStorage?: boolean; // OTP 인증을 위해 localStorage 저장을 건너뛸지 여부
 }
 
 interface LoginResponse {
@@ -44,9 +45,10 @@ export async function companyCMSLoginService({
   password,
   showMessage,
   onSuccess,
+  skipLocalStorage = false, // 기본값: localStorage에 저장
 }: CompanyCMSLoginServiceParams) {
   try {
-    devLog('🔐 [Company CMS Login] 로그인 시도:', { id });
+    devLog('🔐 [Company CMS Login] 로그인 시도:', { id, skipLocalStorage });
 
     const response = await companyCMSLogin({
       userId: id,
@@ -78,13 +80,15 @@ export async function companyCMSLoginService({
         token = responseData.data.token || responseData.data.accessToken;
       }
 
-      // 토큰 저장
-      if (token) {
+      // 토큰 저장 (skipLocalStorage가 false일 때만)
+      if (token && !skipLocalStorage) {
         localStorage.setItem('admin_access_token', token);
         devLog('🔐 [Company CMS Login] 관리자 토큰 저장 완료');
+      } else if (token && skipLocalStorage) {
+        devLog('🔐 [Company CMS Login] OTP 모드 - 토큰 저장 건너뜀 (임시 보관)');
       }
 
-      // admin-storage에 관리자 정보 저장
+      // admin-storage에 관리자 정보 저장 (skipLocalStorage가 false일 때만)
       const adminData = responseData.data;
       const adminStorageData = {
         adminId: adminData.adminId || id,
@@ -101,8 +105,12 @@ export async function companyCMSLoginService({
         _id: adminData._id || ''
       };
       
-      localStorage.setItem('admin-storage', JSON.stringify(adminStorageData));
-      devLog('💾 [Company CMS Login] admin-storage 저장:', adminStorageData);
+      if (!skipLocalStorage) {
+        localStorage.setItem('admin-storage', JSON.stringify(adminStorageData));
+        devLog('💾 [Company CMS Login] admin-storage 저장:', adminStorageData);
+      } else {
+        devLog('💾 [Company CMS Login] OTP 모드 - admin-storage 저장 건너뜀');
+      }
 
       onSuccess({
         id: adminData.adminId || id,

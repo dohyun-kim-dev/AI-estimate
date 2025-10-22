@@ -557,7 +557,7 @@ const PriceListPage: React.FC = () => {
           devLog('Warning: selectedCompanyCode is null, cannot refresh table');
         }
         
-        console.log('=== handleSaveItem SUCCESS END ===');
+        devLog('=== handleSaveItem SUCCESS END ===');
         return Promise.resolve();
       } else {
         const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '저장에 실패했습니다.';
