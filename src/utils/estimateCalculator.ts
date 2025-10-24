@@ -77,11 +77,11 @@ export function calculateDevelopmentDays(categories: Category[]): { totalFeDays:
   let totalFeDays = 0;
   let totalBeDays = 0;
 
-  categories.forEach(category => {
+  (categories || []).forEach(category => {
     devLog(`   📁 카테고리: ${category.category_name}`);
-    category.sub_categories.forEach(subCategory => {
+    (category.sub_categories || []).forEach(subCategory => {
       devLog(`     📂 하위 카테고리: ${subCategory.sub_category_name}`);
-        subCategory.items.forEach(item => {
+        (subCategory.items || []).forEach(item => {
         if (!item.is_deleted) {
           // fe, be 문자열을 숫자로 변환 (예: "3일" -> 3, "3" -> 3)
           // 예전 데이터에서는 fe, be 필드가 없을 수 있으므로 안전하게 처리
@@ -157,21 +157,26 @@ export function calculateTotalPages(categories: Category[]): number {
   devLog('📄 총 페이지 수 계산 시작 (화면설계, UI/UX디자인 제외)');
   let totalPages = 0;
 
-  categories.forEach(category => {
+  (categories || []).forEach(category => {
     devLog(`   📁 카테고리: ${category.category_name}`);
-    category.sub_categories.forEach(subCategory => {
+    (category.sub_categories || []).forEach(subCategory => {
       devLog(`     📂 하위 카테고리: ${subCategory.sub_category_name}`);
-      subCategory.items.forEach(item => {
+      (subCategory.items || []).forEach(item => {
         if (!item.is_deleted) {
-          // 화면설계, UI/UX디자인은 페이지 수 계산에서 제외
+          // 화면설계, UI/UX디자인, 퍼블리싱은 페이지 수 계산에서 제외
           const isDesignItem =  item.name === '화면설계' ||
                               item.name.includes('화면설계')||
                               item.name.includes('화면 설계')||
                               item.name.includes('UI/UX디자인')||
                               item.name.includes('UI/UX 디자인')||
                               item.name.includes('스토리보드') ||
-                              item.name.includes('화면디자인');
-          
+                              item.name.includes('화면디자인')||
+                              item.name.includes('웹퍼블리싱')||
+                              item.name.includes('웹 퍼블리싱')||
+                              item.name.includes('퍼블리싱')||
+                              item.name.includes('화면 퍼블리싱')||
+                              item.name.includes('화면퍼블리싱');
+
           if (!isDesignItem) {
             // 예전 데이터에서는 page_count 필드가 없을 수 있으므로 안전하게 처리
             const pageCount = (typeof item.page_count === 'number') ? item.page_count : 0;
@@ -208,9 +213,9 @@ export function updateDesignItemPrices(estimate: ProjectEstimate, totalPages: nu
   const updatedEstimate = JSON.parse(JSON.stringify(estimate)); // 깊은 복사
   
   try {
-    updatedEstimate.categories.forEach(category => {
-      category.sub_categories.forEach(subCategory => {
-        subCategory.items.forEach(item => {
+    (updatedEstimate.categories || []).forEach(category => {
+      (category.sub_categories || []).forEach(subCategory => {
+        (subCategory.items || []).forEach(item => {
           if (!item.is_deleted) {
             const isDesignItem = item.name === '화면설계' ||
                                 item.name.includes('화면설계')||
@@ -218,7 +223,12 @@ export function updateDesignItemPrices(estimate: ProjectEstimate, totalPages: nu
                                 item.name.includes('UI/UX디자인')||
                                 item.name.includes('UI/UX 디자인')||
                                 item.name.includes('스토리보드') ||
-                                item.name.includes('화면디자인');
+                                item.name.includes('화면디자인')||
+                                item.name.includes('웹퍼블리싱')||
+                                item.name.includes('웹 퍼블리싱')||
+                                item.name.includes('퍼블리싱')||
+                                item.name.includes('화면 퍼블리싱')||
+                                item.name.includes('화면퍼블리싱');
 
             if (isDesignItem) {
               try {
@@ -383,9 +393,9 @@ export function calculateTotalAmount(estimate: ProjectEstimate): number {
 
   let totalAmount = 0;
 
-  estimate.categories.forEach(category => {
-    category.sub_categories.forEach(subCategory => {
-      subCategory.items.forEach(item => {
+  (estimate.categories || []).forEach(category => {
+    (category.sub_categories || []).forEach(subCategory => {
+      (subCategory.items || []).forEach(item => {
         if (!item.is_deleted) {
           const price = typeof item.price === 'string' 
             ? parseFloat(item.price.replace(/,/g, '')) 

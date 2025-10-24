@@ -1,3 +1,10 @@
+import { ChangeEvent } from 'react';
+import { devLog } from '@/utils/devLogger';
+
+// 🔥 TODO: Firebase Storage 대신 Gemini File API 사용
+// import { GoogleAIFileManager } from '@google/generative-ai';
+
+// 🔥 임시: Firebase Storage 유지 (제거 예정)
 import {
   deleteObject,
   getDownloadURL,
@@ -9,8 +16,6 @@ import {
   UploadTaskSnapshot,
 } from 'firebase/storage';
 import { FileData } from 'firebase/vertexai';
-import { ChangeEvent } from 'react';
-import { devLog } from '@/utils/devLogger';
 
 export interface FileUploadData extends FileData {
   name: string;

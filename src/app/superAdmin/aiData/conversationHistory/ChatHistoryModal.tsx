@@ -6,9 +6,11 @@ import ShareAiResponseMessage from '@/components/ai-esti/ShareAiResponseMessage'
 interface ChatHistoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  chatRoomId: string;
+  chatSessionId: string;
   userName?: string;
+  chatTitle?: string;
   aiProfile?: string;
+  companyCode?: string; // ✅ 추가: companyCode prop
   aiName?: string;
 }
 
@@ -158,9 +160,11 @@ const parseMessageContent = (content: ChatMessage['content']) => {
 const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
   isOpen,
   onClose,
-  chatRoomId,
+  chatSessionId,
   userName,
+  chatTitle,
   aiProfile,
+  companyCode, // ✅ 추가
   aiName
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -168,19 +172,19 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen && chatRoomId) {
+    if (isOpen && chatSessionId) {
       loadChatMessages();
     }
-  }, [isOpen, chatRoomId]);
+  }, [isOpen, chatSessionId]);
 
   const loadChatMessages = async () => {
-    if (!chatRoomId) return;
+    if (!chatSessionId) return;
     
     setLoading(true);
     setError(null);
     
     try {
-      const response = await getChatMessages(chatRoomId);
+      const response = await getChatMessages(chatSessionId);
       setMessages((response as ChatMessage[]) || []);
     } catch (err) {
       console.error('채팅 메시지 로드 오류:', err);
@@ -200,7 +204,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
             대화 이력 {userName && `- ${userName}`}
             <br />
             <small style={{ fontSize: '14px', opacity: 0.7 }}>
-              채팅방 ID: {chatRoomId}
+              채팅방 ID: {chatSessionId}
             </small>
           </h2>
           <CloseButton onClick={onClose}>×</CloseButton>
@@ -248,6 +252,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
                     content={content}
                     profileImage={profileImageUrl}
                     name={aiAgentName}
+                    companyCode={companyCode} // ✅ 추가
                   />
                 );
               }

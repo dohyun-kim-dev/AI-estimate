@@ -576,7 +576,7 @@ const AdminMngPage: React.FC = () => {
           header: '메일 수신',
           accessor: 'receiveEmail' as const,
           noPopup: true,
-          sortable: false,
+          sortable: true,
           width: 120,
           flex: 1,
           formatter: (_value, row) => (
@@ -617,16 +617,23 @@ const AdminMngPage: React.FC = () => {
         enableDateFilter={false}
         enableCompanySearch={true}
         onCompanySelect={handleCompanySelect}
-        renderMiddleContent={() => (
-          <div style={{ flex: 1, textAlign: 'end', fontWeight: 'bold' }}>
-            <PrimaryButton $themeMode="light" onClick={() => setIsOTPQRModalOpen(true)}>
-              OTP QR코드
-            </PrimaryButton>
-            <PrimaryButton $themeMode="light" onClick={handleHeaderButtonClick}>
-              관리자 등록
-            </PrimaryButton>
-          </div>
-        )}
+        renderMiddleContent={() => {
+          // URL에 cms가 포함되어 있는지 확인
+          const isCmsUrl = window.location.pathname.includes('/cms/');
+          
+          return (
+            <div style={{ flex: 1, textAlign: 'end', fontWeight: 'bold' }}>
+              {isCmsUrl && (
+                <PrimaryButton $themeMode="light" onClick={() => setIsOTPQRModalOpen(true)}>
+                  OTP QR코드
+                </PrimaryButton>
+              )}
+              <PrimaryButton $themeMode="light" onClick={handleHeaderButtonClick}>
+                관리자 등록
+              </PrimaryButton>
+            </div>
+          );
+        }}
       />
 
       <AdminFormPopup

@@ -149,8 +149,20 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ currentStatus, onStatus
   const updatePosition = () => {
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
+      const dropdownHeight = statusOptions.filter(opt => opt.value !== currentStatus).length * 40; // 각 항목 약 40px
+      const viewportHeight = window.innerHeight;
+      
+      // 드롭다운이 아래로 열렸을 때 화면 밖으로 나가는지 확인
+      const spaceBelow = viewportHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      
+      // 아래 공간이 부족하고 위 공간이 더 크면 위로 열기
+      const shouldOpenUpward = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
+      
       setPosition({
-        top: rect.bottom + window.scrollY,
+        top: shouldOpenUpward 
+          ? rect.top + window.scrollY - dropdownHeight - 4 // 위로 열기 (4px 간격)
+          : rect.bottom + window.scrollY + 4, // 아래로 열기 (4px 간격)
         left: rect.left + window.scrollX,
       });
     }
@@ -183,9 +195,22 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({ currentStatus, onStatus
       }
     };
 
+    const handleScroll = () => {
+      if (isOpen) {
+        updatePosition(); // 스크롤 시 위치 재계산
+      }
+    };
+
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      window.addEventListener('scroll', handleScroll, true); // 모든 스크롤 이벤트 캡처
+      window.addEventListener('resize', updatePosition); // 윈도우 리사이즈 시 위치 재계산
+      
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        window.removeEventListener('scroll', handleScroll, true);
+        window.removeEventListener('resize', updatePosition);
+      };
     }
   }, [isOpen]);
 
@@ -812,6 +837,7 @@ const InquiryPage: React.FC = () => {
         header: '견적PDF다운',
         accessor: 'estimateId',
         noPopup: true,
+        sortable: false,
         width: 110,
         formatter: (value, row) => (
             <DownloadPdfButton 
@@ -826,6 +852,7 @@ const InquiryPage: React.FC = () => {
         header: '견적XLX다운',
         accessor: 'estimateId',
         noPopup: true,
+        sortable: false,
         width: 110,
         formatter: (value, row) => (
             <DownloadPdfButton 
@@ -840,6 +867,7 @@ const InquiryPage: React.FC = () => {
       {
         header: '대화이력보기',
         accessor: 'chatSession',
+        sortable: false,
         noPopup: true,
         width: 110,
         formatter: (value, row) => (

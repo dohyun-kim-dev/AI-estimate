@@ -34,11 +34,12 @@
 
     try {
       const urlObj = new URL(targetUrl, location.href);
-      const apiUrl = `${urlObj.origin}/api/cms/company/${companyCode}`;
+      const apiUrl = `${urlObj.origin}/api/company/info`;
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'x-company-code': companyCode
         }
       });
 

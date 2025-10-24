@@ -1227,24 +1227,8 @@ if (estimateData) {
         }
       }
 
-      // AI 응답 메시지를 DB에 저장
-      if (abortSignal?.aborted) {
-        handleAbort();
-        return;
-      }
-
-      const aiMessageResponse: ChatMessageResponseData = await sendChatMessage(currentSessionId, {
-        role: 'AI',
-        content: { type: 'text', value: finalReply, ...(estimateId && { estimateId }) },
-        uid: userId
-      });
-      if (abortSignal?.aborted) {
-        handleAbort();
-        return;
-      }
-      const aiMessageId = aiMessageResponse?.data?._id;
-      
       // 🔥 채팅방 타이틀 자동 업데이트 (AI 응답에서 추출 후 내용에서 제거)
+      // ⚠️ DB 저장 전에 먼저 처리하여 깔끔한 내용만 저장되도록 함
       let cleanedReply = finalReply;
       try {
         // <chatTitle>태그로 감싸진 제목 추출
@@ -1276,8 +1260,25 @@ if (estimateData) {
         // 타이틀 업데이트 실패는 무시하고 계속 진행
       }
       
-      // 🔥 UI와 DB에는 chatTitle 태그가 제거된 깔끔한 내용 저장
+      // 🔥 정리된 내용을 finalReply에 저장하여 DB에 깔끔하게 저장되도록 함
       finalReply = cleanedReply;
+
+      // AI 응답 메시지를 DB에 저장 (이미 정리된 내용으로)
+      if (abortSignal?.aborted) {
+        handleAbort();
+        return;
+      }
+
+      const aiMessageResponse: ChatMessageResponseData = await sendChatMessage(currentSessionId, {
+        role: 'AI',
+        content: { type: 'text', value: finalReply, ...(estimateId && { estimateId }) },
+        uid: userId
+      });
+      if (abortSignal?.aborted) {
+        handleAbort();
+        return;
+      }
+      const aiMessageId = aiMessageResponse?.data?._id;
       
       // 🔄 스토어의 UI 표시용 메시지도 정리된 내용으로 업데이트
       updateLastMessage({

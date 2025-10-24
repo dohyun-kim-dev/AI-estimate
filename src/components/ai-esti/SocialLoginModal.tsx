@@ -16,7 +16,7 @@ import IssuerInfoModal, { IssuerInfo } from './IssuerInfoModal';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore'; // 추가
 import { useToast } from '@/components/common/ToastProvider';
-import { googleLoginInitial, googleLoginUpdate, companyRegister, addGuestAdditionalCharge } from '@/lib/api/user/userApi';
+import { googleLoginInitial, googleLoginUpdate, companyRegister, addGuestAdditionalCharge, transferChatSessionToUser } from '@/lib/api/user/userApi';
 import { setToken } from '@/lib/utils/tokenUtils';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useModalStore } from '@store/modalStore';
@@ -330,6 +330,30 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                 await fetchUserUsage(currentCompanyCode); // 폴백
               }
               devLog('[SocialLoginModal] 로그인 후 사용량 정보 업데이트 완료');
+              
+              // 🔥 비회원 → 회원 전환 시 채팅 세션 소유권 이전
+              const { getEffectiveSessionId, loadLatestChatSession } = useChatStore.getState();
+              const currentSessionId = getEffectiveSessionId();
+              if (currentSessionId) {
+                try {
+                  devLog('[SocialLoginModal] 채팅 세션 소유권 이전 시도:', currentSessionId);
+                  await transferChatSessionToUser(currentSessionId);
+                  devLog('[SocialLoginModal] 채팅 세션 소유권 이전 성공');
+                } catch (transferError) {
+                  console.error('[SocialLoginModal] 채팅 세션 소유권 이전 실패:', transferError);
+                  // 소유권 이전 실패해도 로그인 프로세스는 계속 진행
+                }
+              } else {
+                // 🔥 세션 ID가 없으면 회원의 최신 세션을 불러오기
+                try {
+                  devLog('[SocialLoginModal] 세션 ID 없음, 회원 최신 세션 불러오기 시도');
+                  await loadLatestChatSession();
+                  devLog('[SocialLoginModal] 회원 최신 세션 불러오기 완료');
+                } catch (loadError) {
+                  console.error('[SocialLoginModal] 회원 최신 세션 불러오기 실패:', loadError);
+                  // 세션 불러오기 실패해도 로그인 프로세스는 계속 진행
+                }
+              }
             } catch (error) {
               console.error('로그인 후 유저 정보/사용량 업데이트 실패:', error);
             }

@@ -175,7 +175,7 @@ const FAQPage: React.FC = () => {
         header: '내용',
         accessor: 'content',
         flex: 3,
-        sortable: false,
+        sortable: true,
         allowWrap: true,
         formatter: (value) => {
           const text = value || '';

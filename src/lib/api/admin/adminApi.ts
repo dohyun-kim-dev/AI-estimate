@@ -73,7 +73,7 @@ export async function adminLogin(
 export async function getOTPQRCode() {
   return callAdminApi({
     title: 'OTP QR 코드 생성',
-    url: '/api/company/cms/otp/qr',
+    url: `${BASE_URL}/cms/otp/qr`,
     method: 'POST',
     isCallPageLoader: true,
     isWithToken: true,
@@ -82,16 +82,17 @@ export async function getOTPQRCode() {
 
 // OTP 인증 (토큰으로 인증)
 export async function verifyOTP(otp: string, tempToken: string) {
-  const url = '/api/company/cms/otp/verify';
-  const body = { otp };
-  
+  // 🔥 BASE_URL 대신 절대 경로 사용 (중복 방지)
+  const url = `/api/company/cms/otp/verify`;
+  const body = { code: Number(otp) }; // 🔥 otp → code로 변경
+
   // Company Code 추출
   const companyCode = getCompanyCodeFromUrl();
   
   // 환경에 따른 URL 설정
   let fullUrl = url;
   if (import.meta.env.VITE_ENV_NAME !== 'dev' && !url.startsWith('http')) {
-    fullUrl = import.meta.env.VITE_API_DOMAIN + url;
+    fullUrl = `${import.meta.env.VITE_API_HOST}${url}`;
   }
 
   try {
@@ -363,7 +364,7 @@ export async function termGetList() {
 export async function termUpdate( index: number, params: TermGetListParams) {
   return callAdminApi({
     title: "약관 생성",
-    url: `${BASE_URL}/api/cms/terms?index=${index}`,
+    url: `${BASE_URL}/cms/terms?id=${index}`,
     method: "PUT",
     body: params,
     isCallPageLoader: true,
@@ -520,6 +521,8 @@ export async function updateCompanyInfo(companyCode: string, params: {
   businessCategory?: string;
   businessType?: string;
   signature?: string;
+  cellphone?: string;
+  businessNo?: string;
   etc?: string[];
 }) {
   // undefined 값들을 제거한 body 객체 생성
@@ -1075,14 +1078,20 @@ export async function downloadEstimateExcel(estimateId: string) {
     
     const invoiceData = JSON.parse(scriptMatch[1]);
     
+    // 콤마 제거 헬퍼 함수
+    const removeComma = (value: string | number): number => {
+      if (typeof value === 'number') return value;
+      return Number(String(value).replace(/,/g, ''));
+    };
+    
     // Excel 워크북 생성
     const workbook = XLSX.utils.book_new();
     
     // 견적서 정보 시트
     const summaryData = [
       ['프로젝트명', invoiceData.project_name],
-      ['총 금액 (부가세 별도)', invoiceData.total_price],
-      ['총 금액 (부가세 포함)', invoiceData.vat_included_price],
+      ['총 금액 (부가세 별도)', removeComma(invoiceData.total_price)],
+      ['총 금액 (부가세 포함)', removeComma(invoiceData.vat_included_price)],
       ['예상 기간', invoiceData.estimated_period],
       ['견적서 ID', invoiceData.uuid],
       ['생성일', estimateData.data.createAt]
@@ -1102,7 +1111,7 @@ export async function downloadEstimateExcel(estimateId: string) {
               category.category_name,
               subCategory.sub_category_name,
               item.name,
-              item.price,
+              removeComma(item.price),
               item.description
             ]);
           }

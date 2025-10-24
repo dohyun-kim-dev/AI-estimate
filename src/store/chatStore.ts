@@ -168,7 +168,12 @@ export const useChatStore = create<ChatState>()(
           
           // 3. 둘 다 없으면 API 호출하여 최신 세션 가져오기
           try {
-            const response: any = await getChatSessions();
+            // 🔥 user 파라미터 생성: 회원이면 _id, 비회원이면 guest-uuid
+            const { useAuthStore } = await import('@/store/authStore');
+            const authUser = useAuthStore.getState().user;
+            const userId = authUser?._id || localStorage.getItem('guest-uuid') || '';
+            
+            const response: any = await getChatSessions(userId);
             
             if (response.statusCode !== 200 || !response.data) {
               devLog('⚠️ 채팅 세션 로드 실패:', response.message);
@@ -211,7 +216,12 @@ export const useChatStore = create<ChatState>()(
           }
 
           try {
-            const response: any = await getChatSessions();
+            // 🔥 user 파라미터 생성: 회원이면 _id, 비회원이면 guest-uuid
+            const { useAuthStore } = await import('@/store/authStore');
+            const authUser = useAuthStore.getState().user;
+            const userId = authUser?._id || localStorage.getItem('guest-uuid') || '';
+            
+            const response: any = await getChatSessions(userId);
             
             // ✅ API 응답 구조 확인: { statusCode, message, data, ... }
             if (response.statusCode !== 200 || !response.data) {

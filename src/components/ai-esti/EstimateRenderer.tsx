@@ -89,7 +89,12 @@ const StyledDiv = styled.div`
   color: ${({ theme }) => (theme.body === '#FFFFFF' ? '#333333' : '#dddddd')};
 `;
 
-const EstimateRenderer: React.FC<{ content: string }> = ({ content }) => {
+interface EstimateRendererProps {
+  content: string;
+  companyCode?: string; // ✅ 추가: 슈퍼어드민에서 전달받을 companyCode
+}
+
+const EstimateRenderer: React.FC<EstimateRendererProps> = ({ content, companyCode }) => {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<EstimateItem | null>(null);
   const [projectPeriod, setProjectPeriod] = useState(20);
@@ -165,7 +170,7 @@ const EstimateRenderer: React.FC<{ content: string }> = ({ content }) => {
 
         <TopSection>
           <MainContent>
-            <EstimateCard estimate={estimateData} />
+            <EstimateCard estimate={estimateData} companyCode={companyCode} />
             <DetailsToggle onClick={() => setIsDetailsVisible(!isDetailsVisible)}>
               상세견적 보기 {isDetailsVisible ?
                 <DetailsToggleIcon><IoChevronUp size={24} /></DetailsToggleIcon> :

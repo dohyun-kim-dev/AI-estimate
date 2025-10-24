@@ -162,8 +162,12 @@ const CategoryRegisterPopup: React.FC<CategoryRegisterPopupProps> = ({ isOpen, o
           id="categoryCode"
           value={categoryCode}
           label="* 카테고리코드"
-          onChange={(e) => setCategoryCode(e.target.value)}
-          placeholder="카테고리코드를 입력하세요"
+          onChange={(e) => {
+            // 숫자만 허용, 4글자까지만 입력
+            const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+            setCategoryCode(value);
+          }}
+          placeholder="카테고리코드를 입력하세요 (숫자 4자)"
           readOnly={!!editData}
         />
       </div>

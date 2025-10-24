@@ -50,6 +50,9 @@ const Description = styled.p`
 
 const SliderContainer = styled.div`
   text-align: center;
+  touch-action: pan-y; /* ✅ 수평 스와이프(뒤로가기) 방지, 수직 스크롤만 허용 */
+  -webkit-user-select: none; /* ✅ iOS Safari에서 텍스트 선택 방지 */
+  user-select: none;
 `;
 
 const WeekDisplay = styled.p`
@@ -79,6 +82,7 @@ const Slider = styled.input<{ $value: number; $min: number; $max: number; }>`
   background-color: transparent;
   appearance: none;
   outline: none;
+  touch-action: none; /* ✅ 슬라이더에서 모든 터치 제스처 차단 (뒤로가기 방지) */
 
   &::-webkit-slider-runnable-track {
     width: 100%;
@@ -196,6 +200,24 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({
   
   const { companyInfo } = useCompanyStore();
   const [isDragging, setIsDragging] = useState(false);
+
+  // ✅ iOS 뒤로가기 제스처 방지 (컴포넌트 마운트 시)
+  React.useEffect(() => {
+    const preventBackGesture = (e: TouchEvent) => {
+      // 슬라이더를 터치하고 있을 때만 뒤로가기 제스처 차단
+      if (isDragging) {
+        e.preventDefault();
+      }
+    };
+
+    if (isDragging) {
+      document.addEventListener('touchmove', preventBackGesture, { passive: false });
+    }
+
+    return () => {
+      document.removeEventListener('touchmove', preventBackGesture);
+    };
+  }, [isDragging]);
 
   // 컴퍼니 데이터에서 할인 설정 가져오기
   const discountSettings = useMemo(() => {

@@ -227,7 +227,7 @@ const EstimateAccordion: React.FC<EstimateAccordionProps> = ({
     const newStates: {[key: string]: boolean} = {};
     estimate.categories.forEach((category, categoryIndex) => {
       newStates[`category-${categoryIndex}`] = newAllExpanded;
-      category.sub_categories.forEach((_, subIndex) => {
+      (category.sub_categories || []).forEach((_, subIndex) => {
         newStates[`sub-${categoryIndex}-${subIndex}`] = newAllExpanded;
       });
     });
@@ -539,7 +539,7 @@ useEffect(() => {
               }
             }}
             // depth=1에서는 2뎁스에서 props로 전달된 price(실제 표시 금액)만 합산해서 보여줌
-            items={category.sub_categories.map((sub) => {
+            items={(category.sub_categories || []).map((sub) => {
               // 2뎁스에서 실제로 화면에 표시되는 금액을 EstimateAccordionItem에서 계산해서 props로 전달받는다고 가정
               // 여기서는 sub.items의 price(이미 할인/제외 적용된 값)를 단순 합산
               // (실제 구조상 sub.items의 price가 이미 할인/제외 적용된 값이어야 함)
@@ -567,7 +567,7 @@ useEffect(() => {
             discountSettings={discountSettings}
           >
             {/* depth=2 : 실제 항목 리스트 (여기서 삭제/복구 콜백 전달) */}
-            {category.sub_categories.map((subCategory, subIndex) => (
+            {(category.sub_categories || []).map((subCategory, subIndex) => (
               <EstimateAccordionItem
                 key={subIndex}
                 name={subCategory.sub_category_name}
@@ -586,7 +586,7 @@ useEffect(() => {
                     `${category.category_name}-${subIndex}`
                   );
                 }}
-                items={subCategory.items.map((item) => ({
+                items={(subCategory.items || []).map((item) => ({
                   name: item.name,
                   price: String(item.price),
                   description: item.description,

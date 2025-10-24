@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState, useEffect } from 'react'
-import { getAI, getGenerativeModel, GenerativeModel, ChatSession, SchemaType } from 'firebase/ai'
-import { app } from '@/firebaseConfig'
+import { GoogleGenerativeAI, GenerativeModel, ChatSession, SchemaType } from '@google/generative-ai'
 import { devLog } from '@/utils/devLogger'
 import { FileUploadData } from '@/firebase.functions'
 import { useCompanyStore } from '@/store/companyStore'
@@ -278,26 +277,110 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
   }, [thinkingBudget, systemInstruction, modelName])
 
   // 초기화 시 한 번만 시스템 프롬프트 설정
+  // 🔥 Gemini API Key와 genAI 인스턴스를 ref로 관리
+  const genAIRef = useRef<GoogleGenerativeAI | null>(null);
+
   useEffect(() => {
     if (!initialized.current) {
       (async () => {
         try {
+          // 🔥 CompanyStore에서 캐시된 정보 먼저 확인
+          let apiKey = companyInfo?.geminiApiKey || '';
+          
+          if (!apiKey) {
+            // 캐시에 없으면 API 호출
+            const { getCompanyInfo } = await import('@/lib/api/user/userApi');
+            const response = await getCompanyInfo();
+            
+            if (response.statusCode === 200 && response.data?.geminiApiKey) {
+              apiKey = response.data.geminiApiKey;
+              devLog('[useAI] Gemini API Key 로드 성공 (API 호출)');
+            } else {
+              // 폴백: 환경변수
+              apiKey = import.meta.env.VITE_FIREBASE_API_KEY || '';
+              devLog('[useAI] 환경변수 API Key 사용');
+            }
+          } else {
+            devLog('[useAI] Gemini API Key 로드 성공 (캐시 사용)');
+          }
+          
+          if (apiKey) {
+            genAIRef.current = new GoogleGenerativeAI(apiKey);
+            devLog('[useAI] GoogleGenerativeAI 초기화 성공');
+          }
+          
+          // 시스템 프롬프트 로드
           const { combineSystemPrompts } = await import('@/ai/prompts');
-          const systemPrompt = await combineSystemPrompts();
+          const baseSystemPrompt = await combineSystemPrompts();
+          
+          // 견적서 출력 규칙 및 JSON 스키마 추가
+          const additionalInstructions = `
+
+## 5. 최종 출력 형식 (Final Output Format)
+
+### 5-1. 견적서 출력 규칙
+-   [자연어 요약]: JSON 출력 전, "지금까지 논의된 내용을 바탕으로 주요 기능과 예상 비용을 정리한 견적서를 제공드립니다." 와 같은 짧은 요약을 먼저 출력.
+-   [최초 견적 안내문]: 대화 기록에 \`<script type="application/json" id="invoiceData">\` 태그가 한 번도 없었다면, 자연어 요약 앞에 아래 안내문을 반드시 추가.
+    \`\`\`
+    견적서가 준비되었습니다. 첫 견적이라 아래 기능을 안내드립니다.
+
+    📤 견적서 및 대화방 공유 기능
+    생성된 견적서는 견적서 및 앱바 우측 상단에 [공유 아이콘]을 눌러 팀원들과 쉽게 공유할 수 있습니다.
+
+    📄 견적서 PDF 다운로드 기능
+    견적서 카드 UI 우측 [다운로드 아이콘]을 통해 현재 견적서를 내려받아 볼 수 있어요.
+
+    🤖 발급된 견적서 열람
+    로그인 후 앱바의 [문서아이콘]에서 발행된 모든 견적서를 확인할 수 있습니다.
+    \`\`\`
+-   [수정 견적]: 대화 기록에 견적서가 이미 존재한다면, 위 안내 문구 없이 바로 자연어 요약으로 시작.
+-   [견적서 본문]: 견적 내용은 반드시 \`<script type="application/json" id="invoiceData">\` 태그 안에 JSON 객체로만 출력.
+
+### 5-2. JSON 스키마 (JSON Schema) - 엄격하게 준수
+
+interface ProjectEstimate {
+  project_name: string;          // 프로젝트 이름
+  total_price: string;           // 총 금액 (예: "90,120,000")
+  vat_included_price: string;    // 부가세 포함 금액
+  estimated_period: string;      // 예상 기간 (예: "22주")
+  categories: Category[];        // 카테고리 목록
+}
+interface Category {
+  category_name: string;         // 카테고리 이름 (예: "⚙️ 기본 공통")
+  sub_categories: SubCategory[]; // 하위 카테고리 목록
+}
+interface SubCategory {
+  sub_category_name: string;     // 하위 카테고리 이름
+  items: EstimateItem[];         // 견적 항목 목록
+}
+interface EstimateItem {
+  name: string;                  // 항목 이름
+  price: string;                 // 가격 (예: "10,000,000")
+  description: string;           // 설명
+  fe: string;                    // 프론트엔드 기간
+  be: string;                    // 백엔드 기간
+  page_count: number;            // 페이지 수
+  is_deleted: boolean;           // 삭제 여부 (기본값: false)
+}
+`;
+          
+          const systemPrompt = baseSystemPrompt + additionalInstructions;
           devLog('[useAI] 시스템 프롬프트 초기화 완료, 길이:', systemPrompt.length);
           setSystemInstruction(systemPrompt);
         } catch (error) {
-          console.error('[useAI] 시스템 프롬프트 초기화 실패:', error);
+          console.error('[useAI] 초기화 실패:', error);
         }
       })();
       initialized.current = true;
     }
-  }, []);
+  }, [companyInfo?.geminiApiKey]);
 
   const ensureModel = useCallback(() => {
-    if (!app) throw new Error('Firebase app not initialized')
-    const ai = getAI(app)
-    modelRef.current = getGenerativeModel(ai, {
+    if (!genAIRef.current) {
+      throw new Error('GoogleGenerativeAI not initialized');
+    }
+    
+    modelRef.current = genAIRef.current.getGenerativeModel({
       model: modelName,
       ...(systemInstruction ? { systemInstruction } : {}),
       generationConfig: {
@@ -306,9 +389,10 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
         topP: 0.95,
         maxOutputTokens: 2048,
       }
-    })
-    devLog('[useAI] model initialized:', modelName)
-    return modelRef.current
+    });
+    
+    devLog('[useAI] model initialized:', modelName);
+    return modelRef.current;
   }, [modelName, systemInstruction])
 
   const generate = useCallback(async (prompt: string): Promise<string> => {

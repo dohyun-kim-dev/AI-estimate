@@ -16,7 +16,7 @@ import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
 import CmsPopup from '@/components/CmsPopup';
 import CmsResponsiveContainer from '@/components/CustomList/ResponsiveList/CmsResponsiveContainer';
 import SimpleGenericList from '@/components/CustomList/SimpleGenericList';
-import ChatHistoryModal from '@/components/ChatHistoryModal';
+import ChatHistoryModal from './ChatHistoryModal';
 import { getChatRoomList, getCompanyInfo, getCompany } from '@/lib/api/admin/adminApi';
 import { useToast } from '@/components/common/ToastProvider';
 

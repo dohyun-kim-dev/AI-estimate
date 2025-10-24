@@ -309,6 +309,31 @@ const SaveAllButton = styled.button`
   }
 `;
 
+// 빈 페이지 스타일 추가
+const EmptyStateContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  min-height: 500px;
+  padding: 60px 20px;
+`;
+
+const EmptyStateImage = styled.img`
+  width: 70px;
+  height: 70px;
+  margin-bottom: 24px;
+  opacity: 0.6;
+`;
+
+const EmptyStateText = styled.p`
+  font-size: 14px;
+  color: #666;
+  font-weight: 400;
+  text-align: center;
+`;
+
 const HiddenInput = styled.input`
   display: none;
 `;
@@ -501,6 +526,21 @@ export default function CompanyInfoSettingsPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    
+    // 전화번호: 숫자만 허용, 최대 11자리
+    if (name === 'cellphone') {
+      const numericValue = value.replace(/[^0-9]/g, '').slice(0, 11);
+      setCompanyInfo(prev => ({ ...prev, [name]: numericValue }));
+      return;
+    }
+    
+    // 사업자등록번호: 숫자만 허용, 최대 10자리
+    if (name === 'businessNo') {
+      const numericValue = value.replace(/[^0-9]/g, '').slice(0, 10);
+      setCompanyInfo(prev => ({ ...prev, [name]: numericValue }));
+      return;
+    }
+    
     setCompanyInfo(prev => ({ ...prev, [name]: value }));
   };
 
@@ -865,6 +905,8 @@ export default function CompanyInfoSettingsPage() {
         businessType: companyInfo.businessType,
         // ✅ 새로 업로드된 파일이 있으면 그것을 사용, 없으면 원본 파일명 사용
         signature: uploadedSignatureImage || originalSignatureFileName || companyInfo.signature,
+        cellphone: companyInfo.cellphone,
+        businessNo: companyInfo.businessNo,
         etc: finalEstimateNotes
       });
       
@@ -912,8 +954,18 @@ export default function CompanyInfoSettingsPage() {
         )}
       </HeaderWrapper>
       
-      <CardsWrapper>
-        <MainContent>
+      {!selectedCompanyCode || selectedCompanyCode.trim() === '' ? (
+        <CardsWrapper>
+          <MainContent>
+        <EmptyStateContainer>
+          <EmptyStateImage src="/cms/nodata.svg" alt="고객사를 선택해주세요" />
+          <EmptyStateText>고객사를 선택해주세요</EmptyStateText>
+        </EmptyStateContainer>
+        </MainContent>
+        </CardsWrapper>
+      ) : (
+        <CardsWrapper>
+          <MainContent>
             {/* 프로필 섹션 */}
             <Card>
                             <SectionTitle>프로필</SectionTitle>
@@ -1126,7 +1178,7 @@ export default function CompanyInfoSettingsPage() {
                     <div style={{ flex: 1 }}>
                       <TextField
                         id={`note-${index}`}
-                        label={`* 비고란 설명`}
+                        label={`비고란 설명`}
                         value={note}
                         onChange={(e) => handleNoteChange(index, e.target.value)}
                         placeholder="비고란을 입력해주세요"
@@ -1158,6 +1210,7 @@ export default function CompanyInfoSettingsPage() {
             </SaveAllButton>
         </MainContent>
       </CardsWrapper>
+      )}
     </SettingsContainer>
   );
 }

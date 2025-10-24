@@ -163,8 +163,9 @@ const CustomerMngPage: React.FC = () => {
       setContractStartDate(initial?.contractStartDate ?? '');
       setContractEndDate(initial?.contractEndDate ?? '');
       setHomepage(initial?.homepage ?? '');
-      setCiImage(initial?.ciImage); // CI 이미지 파일 경로
-      setBusinessImage(initial?.businessImage); // 사업자등록증 파일 경로
+      // 이미지 상태 초기화
+      setCiImage(initial?.ciImage ?? undefined); // CI 이미지 파일 경로
+      setBusinessImage(initial?.businessImage ?? undefined); // 사업자등록증 파일 경로
       setActivateChatBot(initial?.activateChatBot ?? false); // 챗봇 활성 여부
       setPassword('');
       setConfirmPassword('');
@@ -196,6 +197,10 @@ const CustomerMngPage: React.FC = () => {
   const handleCompanyRegisterClick = () => {
     setSelectedCustomer(null); // 먼저 null로 설정
     resetForm(); // 고객사 등록 시 모든 상태 초기화
+    // 카테고리 상태 명시적으로 초기화
+    setCategory('');
+    setCategoryId('');
+    setCategoryCode('');
     setIsCompanyRegisterOpen(true);
   };
 
@@ -208,9 +213,7 @@ const CustomerMngPage: React.FC = () => {
       newErrors.companyName = '고객사명(KR)은 필수입니다.';
     }
     
-    if (!ceoName.trim()) {
-      newErrors.ceoName = '고객사명(EN)은 필수입니다.';
-    }
+    // 🔥 ceoName 검증 제거 (dbName에 code 값 자동 할당)
     
     if (!code.trim()) {
       newErrors.code = '고객사코드는 필수입니다.';
@@ -310,7 +313,7 @@ const CustomerMngPage: React.FC = () => {
         const updateParams = {
           name, // 대표명
           companyName, // 고객사명(KR)
-          dbName: ceoName, // 고객사명(EN)
+          dbName: code, // 🔥 고객사코드를 dbName에 할당
           cellphone,
           email,
           address,
@@ -335,7 +338,7 @@ const CustomerMngPage: React.FC = () => {
         const createParams = {
           name: name || '', // 대표명
           companyName: companyName || '', // 고객사명(KR)
-          dbName: ceoName || '', // 고객사명(EN)
+          dbName: code || '', // 🔥 고객사코드를 dbName에 할당
           cellphone: cellphone || '',
           email: email || '',
           companyCode: code || '', // 고객사코드
@@ -437,7 +440,7 @@ const CustomerMngPage: React.FC = () => {
         row['No'] = item.no || '';
         row['가입일시'] = item.createAt ? dayjs(item.createAt).format('YY.MM.DD(ddd) HH:mm') : '-';
         row['고객사명(KR)'] = item.companyName || '-';
-        row['고객사명(EN)'] = item.dbName || '-';
+        row['고객사코드'] = item.dbName || '-';
         // 라이선스 제외
         // 계약구분
         row['계약구분'] = item.contractType || '-';
@@ -464,7 +467,7 @@ const CustomerMngPage: React.FC = () => {
         { wch: 5 },   // No
         { wch: 18 },  // 가입일시
         { wch: 15 },  // 고객사명(KR)
-        { wch: 15 },  // 고객사명(EN)
+        { wch: 15 },  // 고객사코드
         { wch: 10 },  // 계약구분
         { wch: 20 },  // 계약기간
         { wch: 15 },  // 사업자번호
@@ -564,7 +567,7 @@ const CustomerMngPage: React.FC = () => {
         formatter: (value) => (value ? dayjs(value).format('YY.MM.DD(ddd) HH:mm') : '-'),
       },
       { header: '고객사명(KR)', accessor: 'companyName', width: 100 },
-      { header: '고객사명(EN)', accessor: 'dbName', width: 100 },
+      { header: '고객사코드', accessor: 'dbName', width: 100 },
       {
         header: '고객사 CI',
         accessor: 'ciImage',

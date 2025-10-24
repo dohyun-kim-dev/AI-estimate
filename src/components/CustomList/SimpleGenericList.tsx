@@ -50,6 +50,7 @@ const PageBox = styled.div<{ $themeMode: ThemeMode }>`
 const TopHeader = styled.div`
   display: flex;
   flex-direction: column; /* 세로 배치 */
+  margin-top: 4px;
   margin-bottom: 15px;
   gap: 15px;
 

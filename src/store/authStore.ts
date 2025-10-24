@@ -84,8 +84,10 @@ export const useAuthStore = create<AuthState>()(
           user: null,
         });
         
-        // 채팅 스토어도 클리어
-        useChatStore.getState().clear();
+        // 채팅 스토어 완전히 클리어 (세션 ID + 메시지 모두 초기화)
+        const chatStore = useChatStore.getState();
+        chatStore.setChatSessionId(null); // 세션 ID 초기화
+        chatStore.clear(); // 메시지 및 상태 초기화
       },
 
       isAuthenticated: () => {

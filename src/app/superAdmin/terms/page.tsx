@@ -152,11 +152,17 @@ export default function TermsPage() {
       const response = await termUpdate(current.index, params) as any;
       devLog("📦 저장 응답:", response);
   
-      const result = response?.[0] || response;
-      if (result?.['message'] === "success" || response?.['message'] === "success") {
+      // callAdminApi는 응답을 배열로 감싸서 반환
+      const actualResponse = Array.isArray(response) ? response[0] : response;
+      const apiData = actualResponse?.data || actualResponse;
+      
+      devLog("📦 실제 API 데이터:", apiData);
+      
+      // statusCode 200이고 message가 success면 성공
+      if (apiData?.statusCode === 200 && apiData?.message === "success") {
         showToast("저장되었습니다.", 'success');
 
-        const newId = response?.data?._id;
+        const newId = apiData?.data?._id;
         if (newId) {
             setContents((prev) => ({
                 ...prev,
@@ -177,7 +183,7 @@ export default function TermsPage() {
         }
       } else {
         showToast("저장에 실패했습니다.", 'error');
-        console.warn("🚨 실패 응답 내용:", result);
+        console.warn("🚨 실패 응답 내용:", apiData);
       }
     } catch (error) {
       console.error("❌ 저장 오류:", error);

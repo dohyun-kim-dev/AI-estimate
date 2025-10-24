@@ -22,6 +22,7 @@ type CmsPopupProps = {
   backgroundColor?: string; // ✅ 팝업 배경 색상 지정
   hideHeader?: boolean; // ✅ 헤더 숨김 여부
   contentPadding?: string | { top?: string; right?: string; bottom?: string; left?: string }; // ✅ 콘텐츠 패딩 설정
+  disableScroll?: boolean; // ✅ 콘텐츠 스크롤 비활성화
 };
 
 
@@ -35,8 +36,8 @@ const Overlay = styled.div<{ $scrollX: number }>`
   min-width: 1450px;
   height: 100%;
   background: rgba(0, 0, 0, 0.4);
-  overflow-x: auto;
-  overflow-y: auto;
+  // overflow-x: auto;
+  // overflow-y: auto;
   padding: 40px 0;
   display: flex;
   justify-content: center;
@@ -61,11 +62,11 @@ const PopupContainer = styled.div<{
   position: relative;
   width: ${({ $isWide }) => ($isWide ? '1200px' : '800px')};
   min-width: ${({ $isWide }) => ($isWide ? '1200px' : '800px')};
-  height: ${({ $customHeight }) => $customHeight ?? '94vh'};
-  max-height: 93vh;
+  height: ${({ $customHeight }) => $customHeight ?? '90vh'};
+  max-height: 90vh;
   background: ${({ $backgroundColor }) => $backgroundColor ?? '#2c2e3c'}; // ✅ 배경색
   border-radius: 4px;
-  padding-bottom: ${({ $hasBottomFloating }) => ($hasBottomFloating ? '100px' : '0')};
+  padding-bottom: ${({ $hasBottomFloating }) => ($hasBottomFloating ? '60px' : '0')};
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
@@ -138,9 +139,12 @@ const CloseButton = styled.button`
   }
 `;
 
-const PopupContent = styled.div<{ $contentPadding?: string | { top?: string; right?: string; bottom?: string; left?: string } }>`
+const PopupContent = styled.div<{ 
+  $contentPadding?: string | { top?: string; right?: string; bottom?: string; left?: string };
+  $disableScroll?: boolean;
+}>`
   flex: 1;
-  overflow-y: auto;
+  overflow-y: ${({ $disableScroll }) => $disableScroll ? 'hidden' : 'auto'};
   padding: ${({ $contentPadding }) => {
     if (!$contentPadding) return '20px 38px';
     if (typeof $contentPadding === 'string') return $contentPadding;
@@ -199,6 +203,7 @@ const CmsPopup: React.FC<CmsPopupProps> = ({
   backgroundColor,
   hideHeader = false, // ✅ 기본값으로 헤더 표시
   contentPadding, // ✅ 콘텐츠 패딩 설정
+  disableScroll = false, // ✅ 기본값은 스크롤 가능
 }) => {
   const [scrollX, setScrollX] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -287,7 +292,7 @@ const CmsPopup: React.FC<CmsPopupProps> = ({
             </div>
           </HeaderRow>
         )}
-        <PopupContent $contentPadding={contentPadding}>{children}</PopupContent>
+        <PopupContent $contentPadding={contentPadding} $disableScroll={disableScroll}>{children}</PopupContent>
         {bottomFloating && (
           <BottomFloatingWrapper $backgroundColor={backgroundColor}>{bottomFloating}</BottomFloatingWrapper>
         )}

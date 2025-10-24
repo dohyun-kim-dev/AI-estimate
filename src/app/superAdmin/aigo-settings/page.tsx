@@ -307,6 +307,78 @@ const ButtonContainer = styled.div`
   margin-bottom: 16px;
 `;
 
+// 🔥 API Key 검증 버튼 스타일
+const VerifyButton = styled.button<{ $isVerifying?: boolean; $isValid?: boolean | null }>`
+  margin-top: 12px;
+  padding: 10px 20px;
+  background-color: ${props => 
+    props.$isValid === true ? '#4CAF50' : 
+    props.$isValid === false ? '#F44336' : 
+    '#636994'
+  };
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: ${props => props.$isVerifying ? 'not-allowed' : 'pointer'};
+  transition: all 0.3s ease;
+  opacity: ${props => props.$isVerifying ? 0.6 : 1};
+  
+  &:hover {
+    opacity: ${props => props.$isVerifying ? 0.6 : 0.8};
+  }
+  
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+`;
+
+const VerifyResultText = styled.div<{ $isValid: boolean }>`
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  background-color: ${props => props.$isValid ? '#E8F5E9' : '#FFEBEE'};
+  color: ${props => props.$isValid ? '#2E7D32' : '#C62828'};
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  &::before {
+    content: '${props => props.$isValid ? '✓' : '✗'}';
+    font-weight: bold;
+    font-size: 16px;
+  }
+`;
+
+
+// 빈 페이지 스타일 추가
+const EmptyStateContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  min-height: 500px;
+  padding: 60px 20px;
+`;
+
+const EmptyStateImage = styled.img`
+  width: 70px;
+  height: 70px;
+  margin-bottom: 24px;
+  opacity: 0.6;
+`;
+
+const EmptyStateText = styled.p`
+  font-size: 14px;
+  color: #666;
+  font-weight: 400;
+  text-align: center;
+`;
+
 const SaveAllButton = styled.button`
   position: fixed;
   bottom: 24px;
@@ -467,6 +539,10 @@ export default function AigoSettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const bidUnitSettingRef = React.useRef<{ getCheckpointList: () => Array<{checkpoint: number; discountRate: number}> } | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  
+  // 🔥 API Key 검증 상태 추가
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<{ isValid: boolean; message: string } | null>(null);
 
   // URL에서 회사 코드 추출하여 초기화
   useEffect(() => {
@@ -856,6 +932,40 @@ export default function AigoSettingsPage() {
     setShowTooltip(false);
   };
 
+  // 🔥 API Key 검증 함수
+  const handleVerifyApiKey = async () => {
+    if (!formData.licenseKey || formData.licenseKey.trim() === '') {
+      showToast('API Key를 먼저 입력해주세요.', 'error');
+      return;
+    }
+
+    setIsVerifying(true);
+    setVerificationResult(null);
+
+    try {
+      // validateGeminiApiKey 함수를 동적으로 import
+      const { validateGeminiApiKey } = await import('@/firebaseConfig');
+      const result = await validateGeminiApiKey(formData.licenseKey);
+      
+      setVerificationResult(result);
+      
+      if (result.isValid) {
+        showToast(result.message, 'success');
+      } else {
+        showToast(result.message, 'error');
+      }
+    } catch (error) {
+      console.error('API Key 검증 중 오류:', error);
+      setVerificationResult({ 
+        isValid: false, 
+        message: '검증 중 오류가 발생했습니다.' 
+      });
+      showToast('검증 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   return (
     <ThemeProvider theme={lightTheme}>
       <SettingsContainer>
@@ -876,8 +986,20 @@ export default function AigoSettingsPage() {
           )}
         </HeaderContainer>
         
-        <CardsWrapper>
-          <MainContent>
+
+        
+        {!selectedCompanyCode || selectedCompanyCode.trim() === '' ? (
+          <CardsWrapper>
+            <MainContent>
+              <EmptyStateContainer>
+                <EmptyStateImage src="/cms/nodata.svg" alt="고객사를 선택해주세요" />
+                <EmptyStateText>고객사를 선택해주세요</EmptyStateText>
+              </EmptyStateContainer>
+            </MainContent>
+          </CardsWrapper>
+        ) : (
+          <CardsWrapper>
+            <MainContent>
           {/* 1. 채팅 질의 횟수 설정 */}
           <Card>
             <CardHeader>
@@ -1023,9 +1145,26 @@ export default function AigoSettingsPage() {
                 id="licenseKey"
                 label="AI Key"
                 value={formData.licenseKey}
-                onChange={(value) => setFormData(prev => ({ ...prev, licenseKey: value }))}
+                onChange={(value) => {
+                  setFormData(prev => ({ ...prev, licenseKey: value }));
+                  // API Key 변경 시 검증 결과 초기화
+                  setVerificationResult(null);
+                }}
                 placeholder="AI Key를 입력해주세요"
               />
+              <VerifyButton
+                onClick={handleVerifyApiKey}
+                disabled={isVerifying || !formData.licenseKey}
+                $isVerifying={isVerifying}
+                $isValid={verificationResult?.isValid ?? null}
+              >
+                {isVerifying ? '검증 중...' : verificationResult?.isValid === true ? '✓ 유효한 키' : verificationResult?.isValid === false ? '✗ 유효하지 않은 키' : 'API Key 검증'}
+              </VerifyButton>
+              {verificationResult && (
+                <VerifyResultText $isValid={verificationResult.isValid}>
+                  {verificationResult.message}
+                </VerifyResultText>
+              )}
             </Group>
           </Card>
 
@@ -1185,7 +1324,8 @@ export default function AigoSettingsPage() {
       </MainContent>
 
         </CardsWrapper>
-    <SaveButtonContainer>
+        )}
+        <SaveButtonContainer>
           <SaveAllButton 
             onClick={handleSaveAll} 
             disabled={isLoading || !selectedCompanyCode || selectedCompanyCode.trim() === ''}

@@ -772,7 +772,7 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
       if (_setContractStartDate) _setContractStartDate(dayjs(startDate).format('YYYY-MM-DD HH:mm:ss'));
       if (_setContractEndDate) _setContractEndDate(dayjs(endDate).format('YYYY-MM-DD HH:mm:ss'));
     }
-  }, [selectedCustomer, isEditMode]);
+  }, [selectedCustomer, isEditMode, isOpen]);
 
   // 카테고리 선택 핸들러
   const handleCategorySelect = (cat: {categoryId: string, categoryName: string, categoryCode: string}) => {
@@ -1165,7 +1165,7 @@ const RemoveImageButton = styled.button`
           placeholder="고객사명을 입력하세요"
           errorMessage={errors?.companyName}
         />
-        <CommonTextField
+        {/* <CommonTextField
           id="ceoName"
           value={ceoName || ''}
           label="* 고객사명(EN)"
@@ -1174,12 +1174,16 @@ const RemoveImageButton = styled.button`
           errorMessage={errors?.ceoName}
           readOnly={isEditMode}
           style={isEditMode ? { cursor: 'not-allowed', opacity: 0.8 } : {}}
-        />
+        /> */}
         <CommonTextField
           id="code"
           value={code || ''}
           label="* 고객사코드"
-          onChange={(e) => setCode && setCode(e.target.value)}
+          onChange={(e) => {
+            // 영문, 숫자, 하이픈, 언더스코어만 허용
+            const value = e.target.value.replace(/[^a-zA-Z0-9-_]/g, '');
+            if (setCode) setCode(value);
+          }}
           placeholder="고객사코드를 입력하세요"
           errorMessage={errors?.code}
           readOnly={isEditMode}
@@ -1214,7 +1218,11 @@ const RemoveImageButton = styled.button`
           id="homepage"
           value={homepage || ''}
           label="홈페이지"
-          onChange={(e) => onFormChange?.setHomepage && onFormChange.setHomepage(e.target.value)}
+          onChange={(e) => {
+            // 영문, 숫자, URL 특수문자만 허용
+            const value = e.target.value.replace(/[^a-zA-Z0-9:/.?=&#-]/g, '');
+            if (onFormChange?.setHomepage) onFormChange.setHomepage(value);
+          }}
           placeholder="홈페이지 URL을 입력하세요 (예: www.example.com)"
           errorMessage={errors?.homepage}
         />
@@ -1265,7 +1273,11 @@ const RemoveImageButton = styled.button`
           id="representativeEmail"
           value={email || ''}
           label="* 대표 이메일"
-          onChange={(e) => setEmail && setEmail(e.target.value)}
+          onChange={(e) => {
+            // 영문, 숫자, 이메일 특수문자만 허용
+            const value = e.target.value.replace(/[^a-zA-Z0-9._%+-@]/g, '');
+            if (setEmail) setEmail(value);
+          }}
           placeholder="이메일을 입력하세요"
           errorMessage={errors?.email}
         />

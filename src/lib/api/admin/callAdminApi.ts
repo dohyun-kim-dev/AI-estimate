@@ -29,6 +29,7 @@ export async function callAdminApi<T = unknown>({
 
 devLog('🔍 [API 요청]', { title, method, url });  
 devLog('📄 [요청 body]:', body);
+devLog('🏢 [Company Code]:', companyCode); // 🔥 회사 코드 디버깅 로그 추가
 
   
 
@@ -38,6 +39,8 @@ devLog('📄 [요청 body]:', body);
     'Accept': 'application/json',
     'x-company-code': companyCode,
   };
+  
+  devLog('📋 [요청 헤더]:', headers); // 🔥 헤더 전체 로그 추가
 
   // 토큰이 필요한 경우 localStorage에서 가져오기
   if (isWithToken) {

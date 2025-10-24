@@ -55,6 +55,7 @@ interface ShareAiResponseMessageProps {
   className?: string;
   isLoading?: boolean;
   chatSessionId?: string;
+  companyCode?: string; // ✅ 추가: 슈퍼어드민에서 전달받을 companyCode
 }
 
 const ShareAiResponseMessage: React.FC<ShareAiResponseMessageProps> = ({
@@ -62,7 +63,8 @@ const ShareAiResponseMessage: React.FC<ShareAiResponseMessageProps> = ({
   profileImage = "/ai-estimate/pretty.png",
   name = "AI 컨설턴트",
   className,
-  isLoading = false
+  isLoading = false,
+  companyCode // ✅ 추가
 }) => {
   const isEstimateMessage = (content: string) => {
     if (typeof content !== 'string') return false;
@@ -81,7 +83,7 @@ const ShareAiResponseMessage: React.FC<ShareAiResponseMessageProps> = ({
 
   const renderContent = () => {
     if (typeof content === 'string' && isEstimateMessage(content)) {
-      return <EstimateRenderer content={content} />;
+      return <EstimateRenderer content={content} companyCode={companyCode} />;
     }
 
     if (typeof content === 'string') {

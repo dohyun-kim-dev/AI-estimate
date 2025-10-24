@@ -476,7 +476,7 @@ const BottomInput: React.FC<BottomInputProps> = ({
   const renderRemainingCountText = () => {
     if (remainingCount > 0) {
       return isLoggedIn 
-        ? `오늘 남은 횟수: ${remainingCount}회`
+        ? remainingCount <= 10 ? `오늘 남은 횟수: ${remainingCount}회` : ''
         : `오늘 남은 횟수(비회원): ${remainingCount}회`;
     } else {
       return isLoggedIn 

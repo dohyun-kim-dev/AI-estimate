@@ -260,6 +260,7 @@ const PromptPopup: React.FC<PromptPopupProps> = ({ isOpen, onClose, selectedProm
         onClose={closePopup} 
         isWide
         backgroundColor="#FFF"
+        disableScroll={true}
         bottomFloating={
           <PopupFooter>
             <SaveButton onClick={handleSave} disabled={!selectedPrompt}>저장</SaveButton>
@@ -320,9 +321,10 @@ export default PromptPopup;
 const CustomTextarea = styled.textarea`
   flex: 1;
   width: 100%;
+  height: 100%;
   background-color: #fff;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
+  border: 2px solid #e9ecef;
+  border-radius: 4px;
   padding: 16px;
   font-size: 14px;
   line-height: 1.7;
@@ -368,9 +370,10 @@ const CustomTextarea = styled.textarea`
 const PopupLayout = styled.div`
   display: flex;
   gap: 24px;
-  height: calc(85vh - 200px);
+  height: 100%;
   min-width: 0;
   color: #000;
+  overflow: hidden;
 `;
 
 const LeftSection = styled.div`
@@ -378,14 +381,37 @@ const LeftSection = styled.div`
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow: hidden;
 `;
 
 const RightSection = styled.div`
   flex: 1;
-  overflow: hidden;
+  padding-right: 8px;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  overflow-y: auto;
   
-  /* min-width: 600px; */
+  /* 스크롤바 스타일링 */
+  scrollbar-width: thin;
+  scrollbar-color: #ccc transparent;
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #bbb;
+  }
 `;
 
 const HeaderRow = styled.div`
@@ -521,7 +547,6 @@ const PopupFooter = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 24px;
 `;
 
 const FooterButton = styled.button`

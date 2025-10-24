@@ -37,6 +37,7 @@ import ExcelPreview from './excelPreview';
 import CompletedPage from '@app/completed/page';
 import PromptDetailPage from '@app/prompt-detail/page';
 import FAQPage from '../app/superAdmin/faq/page';
+import ServiceUnavailable from '../pages/ServiceUnavailable';
 
 export default function AppRoutes() {
   const location = useLocation();
@@ -70,12 +71,16 @@ export default function AppRoutes() {
         <Route path="pdf-preview" element={<PDFPreview />} />
         <Route path="excel-preview" element={<ExcelPreview />} />
         <Route path="completed" element={<CompletedPage />} />
+        <Route path="service-unavailable" element={<ServiceUnavailable />} />
 
         <Route path="*" element={<Navigate to="." replace />} />
       </Route>
 
       {/* 프롬프트 상세 페이지 - 레이아웃 없이 독립적으로 렌더링 */}
       <Route path="/prompt-detail" element={<PromptDetailPage />} />
+      
+      {/* 서비스 불가 페이지 - 레이아웃 없이 독립적으로 렌더링 */}
+      <Route path="/service-unavailable" element={<ServiceUnavailable />} />
 
       {/* 새로운 고객사별 CMS 경로 - /:companyCode/cms */}
       <Route path="/:companyCode/cms" element={<Outlet />}>

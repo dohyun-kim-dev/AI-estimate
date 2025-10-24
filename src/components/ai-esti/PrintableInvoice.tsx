@@ -156,8 +156,8 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
   
   // 각 카테고리의 모든 아이템을 플랫하게 만들기 (is_deleted가 false인 항목만)
   const allItems = estimate.categories.flatMap((category) =>
-    category.sub_categories.flatMap((subCategory) =>
-      subCategory.items
+    (category.sub_categories || []).flatMap((subCategory) =>
+      (subCategory.items || [])
         .filter(item => !item.is_deleted) // is_deleted가 true인 항목 제외
         .map(item => ({
           ...item,

@@ -82,6 +82,7 @@ export interface CompanyInfoResponse {
   employeeDailyQueryLimit: number;
   employeeMonthlyQueryLimit: number;
   geminiApiKey: string;
+  geminiApiKey: string; // 🔥 Firebase API Key 추가
   guestDailyQueryLimit: number;
   guestMonthlyQueryLimit: number;
   rateRule: string;
@@ -98,6 +99,7 @@ export interface CompanyInfoResponse {
   maxValue: number;
   minValue: number;
   otpSecret: string;
+  activateChatBot: boolean;
 }
 
 // 게스트 토큰 응답 타입

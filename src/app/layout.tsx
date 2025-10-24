@@ -10,10 +10,12 @@ import styled from "styled-components";
 import { ToastProvider } from "@components/common/ToastProvider";
 import { PageLoaderProvider } from "@contexts/PageLoaderContext";
 import { HeaderProvider, useHeader } from "@contexts/HeaderContext";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Outlet } from "react-router-dom";
 import { useModalStore } from "@store/modalStore";
 import { SocialLoginModal } from "@components/ai-esti/SocialLoginModal";
+import { getCompanyInfo } from "@/lib/api/user/userApi";
+import { devLog } from "@/utils/devLogger";
 
 const Main = styled.main` 
   width: 100vw;
@@ -38,11 +40,58 @@ const FooterWrapper = ({ isCompact }: HeaderFooterProps) => (
 function LayoutContent() {
   const { isLoginModalOpen, closeLoginModal } = useModalStore();
   const location = useLocation();
+  const navigate = useNavigate();
   const { setTitle } = useHeader();
   const [compact, setCompact] = useState(false);
-   const isProfileEditPage = location.pathname.includes('/settings') && location.search.includes('edit=profile');
+  const [chatBotActive, setChatBotActive] = useState<boolean | null>(null);
+  const [isCheckingChatBot, setIsCheckingChatBot] = useState(true);
+  
+  const isProfileEditPage = location.pathname.includes('/settings') && location.search.includes('edit=profile');
   const stepParam = new URLSearchParams(location.search).get('step');
   const showCustomHeader = isProfileEditPage && (stepParam === 'profile' || stepParam === 'phone');
+
+  // 챗봇 활성화 여부 확인
+  useEffect(() => {
+    const checkChatBotActive = async () => {
+      try {
+        const response = await getCompanyInfo();
+        
+        devLog('[Layout] 챗봇 활성화 체크:', response);
+        
+        if (response && response.statusCode === 200 && response.data) {
+          const isActive = response.data.activateChatBot;
+          setChatBotActive(isActive !== false);
+          
+          if (isActive === false) {
+            devLog('[Layout] 챗봇이 비활성화되어 있습니다.');
+            alert('현재 서비스를 이용할 수 없습니다. 관리자에게 문의해주세요.');
+            // 접근 차단 - 빈 페이지로 이동하거나 에러 페이지로 리다이렉트
+            navigate('/service-unavailable', { replace: true });
+          }
+        } else {
+          devLog('[Layout] 회사 정보를 불러올 수 없습니다.');
+          setChatBotActive(false);
+          alert('서비스 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.');
+          navigate('/service-unavailable', { replace: true });
+        }
+      } catch (error) {
+        devLog('[Layout] 챗봇 활성화 체크 에러:', error);
+        setChatBotActive(false);
+        alert('서비스를 확인하는 중 오류가 발생했습니다.');
+        navigate('/service-unavailable', { replace: true });
+      } finally {
+        setIsCheckingChatBot(false);
+      }
+    };
+
+    // aiclient 경로에서만 체크
+    if (location.pathname.includes('/aiclient/')) {
+      checkChatBotActive();
+    } else {
+      setIsCheckingChatBot(false);
+      setChatBotActive(true);
+    }
+  }, [location.pathname, navigate]);
 
 
   useEffect(() => {
@@ -98,6 +147,26 @@ function LayoutContent() {
   }, []);
 
 
+  // 챗봇 활성화 체크 중이거나 비활성화 상태면 렌더링 안 함
+  if (isCheckingChatBot) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '16px',
+        color: '#666'
+      }}>
+        서비스 확인 중...
+      </div>
+    );
+  }
+
+  if (chatBotActive === false && location.pathname.includes('/aiclient/')) {
+    return null; // 비활성화된 경우 아무것도 렌더링하지 않음
+  }
+
   
   return (
     <>
@@ -106,13 +175,6 @@ function LayoutContent() {
       <Outlet />
     </Main>
     {!showCustomHeader && <FooterWrapper isCompact={compact} />}
-    {/* <SocialLoginModal 
-        $isOpen={isLoginModalOpen} 
-        onClose={closeLoginModal}
-        purpose="limitExceeded"
-        onPrimaryButtonClick={() => {}}
-        onGoogleLoginSuccess={() => {}}
-      /> */}
     </>
   );
 }

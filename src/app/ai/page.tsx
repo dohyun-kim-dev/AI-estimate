@@ -17,8 +17,7 @@ import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
 import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import type { EstimateItem } from '@/app/ai-estimate/types';
 import { uploadFiles, FileUploadData } from '@/firebase.functions';
-import { auth } from '@/firebaseConfig';
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { ensureFirebaseInitialized } from '@/firebaseConfig'; // 🔥 Firebase Storage 사용
 import FileUploadSection from '@/components/ai-esti/FileUploadSection';
 import { devLog } from '../../utils/devLogger';
 import { useChatActions } from '@/hooks/useChatActions';
@@ -757,14 +756,14 @@ const userId = getUserId() || '';
 
     // 할인 제외 항목 배열
     const NON_DISCOUNT_ITEMS = [
-      '화면설계', '화면디자인', '화면퍼블리싱', '퍼블리싱', 'UI/UX디자인',
+      '화면설계', '화면디자인', '화면퍼블리싱', '퍼블리싱', 'UI/UX디자인','웹퍼블리싱','웹 퍼블리싱',
       '화면 설계', '화면 퍼블리싱', 'UI/UX 디자인', '스토리보드', '스토리 보드'
     ];
 
     // `flatMap`을 사용하여 모든 `items`를 단일 배열로 만들고 필터링합니다.
     const nonDiscountableItems = estimateData.categories
-      .flatMap(category => category.sub_categories)
-      .flatMap(subCategory => subCategory.items)
+      .flatMap(category => category.sub_categories || [])
+      .flatMap(subCategory => subCategory.items || [])
       .filter(item => NON_DISCOUNT_ITEMS.some(excludeItem => 
         item.name.includes(excludeItem) || excludeItem.includes(item.name)
       ));
@@ -981,8 +980,8 @@ const userId = getUserId() || '';
                 
                 if (extendedPeriod > 0 && estimateData) {
                   estimateData.categories.forEach(category => {
-                    category.sub_categories.forEach(subCategory => {
-                      subCategory.items.forEach(item => {
+                    (category.sub_categories || []).forEach(subCategory => {
+                      (subCategory.items || []).forEach(item => {
                         if (!item.is_deleted) {
                           const itemBasePrice = typeof item.price === 'string' 
                             ? parseFloat(item.price.replace(/,/g, '')) 
@@ -1017,7 +1016,7 @@ const userId = getUserId() || '';
               {(() => {
                 // 할인 제외 항목
                   const NON_DISCOUNT_ITEMS = [
-                  '화면설계', '화면디자인', '화면퍼블리싱', '퍼블리싱', 'UI/UX디자인',
+                  '화면설계', '화면디자인', '화면퍼블리싱', '퍼블리싱', 'UI/UX디자인','웹퍼블리싱','웹 퍼블리싱',
                   '화면 설계', '화면 퍼블리싱', 'UI/UX 디자인', '스토리보드', '스토리 보드'
                 ];
 
@@ -1025,8 +1024,8 @@ const userId = getUserId() || '';
                 let discountableBase = basePrice;
                 if (estimateData && Array.isArray(estimateData.categories)) {
                   const allItems = estimateData.categories
-                    .flatMap(category => category.sub_categories)
-                    .flatMap(subCategory => subCategory.items);
+                    .flatMap(category => category.sub_categories || [])
+                    .flatMap(subCategory => subCategory.items || []);
                   nonDiscountableSum = allItems
                     .filter(item => NON_DISCOUNT_ITEMS.some(excludeItem => 
                       item.name.includes(excludeItem) || excludeItem.includes(item.name)
@@ -1812,7 +1811,9 @@ useEffect(() => {
           }
         } else {
           try {
-            const sessionsResponse = await getChatSessions() as any;
+            // 🔥 user 파라미터 생성: 회원이면 _id, 비회원이면 guest-uuid
+            const userId = user?._id || localStorage.getItem('guest-uuid') || '';
+            const sessionsResponse = await getChatSessions(userId) as any;
             if (sessionsResponse && sessionsResponse.statusCode === 200 && sessionsResponse.data && sessionsResponse.data.length > 0) {
               const latestSession = sessionsResponse.data.sort((a: any, b: any) => 
                 new Date(b.createAt).getTime() - new Date(a.createAt).getTime()
@@ -1912,6 +1913,7 @@ useEffect(() => {
           }
         }
       } else {
+        // 🔥 비회원도 회원과 동일하게 세션 목록 조회 후 최신 세션 메시지 불러오기
         const storeSessionId = getEffectiveSessionId(); // store에서 가져오기
         if (storeSessionId) {
           try {
@@ -1993,6 +1995,13 @@ useEffect(() => {
                 };
               });
               
+              // AI 세션에 과거 대화 이력 전달
+              const chatHistory = chatMessages.map((msg: any) => ({
+                role: msg.role === 'user' ? 'user' as const : 'model' as const,
+                content: msg.content
+              }));
+              startChatWithHistory(chatHistory);
+              
               // 기존 메시지가 1개 이하이면(AI 첫 인사말만 있거나 없으면) DB에서 로드
               const currentMessages = useChatStore.getState().messages;
               if (currentMessages.length <= 1 || !hasShownInitialMessage) {
@@ -2003,7 +2012,111 @@ useEffect(() => {
               }
             }
           } catch (error) {
-            console.error('세션 메시지 조회 실패:', error);
+            console.error('비회원 세션 메시지 조회 실패:', error);
+          }
+        } else {
+          // storeSessionId가 없으면 세션 목록 조회 후 최신 세션 불러오기
+          try {
+            const guestUuid = localStorage.getItem('guest-uuid') || '';
+            const sessionsResponse = await getChatSessions(guestUuid) as any;
+            if (sessionsResponse && sessionsResponse.statusCode === 200 && sessionsResponse.data && sessionsResponse.data.length > 0) {
+              const latestSession = sessionsResponse.data.sort((a: any, b: any) => 
+                new Date(b.createAt).getTime() - new Date(a.createAt).getTime()
+              )[0];
+              setChatSessionId(latestSession._id);
+              devLog("비회원 최신 세션으로 설정:", latestSession._id);
+              const messagesResponse = await getChatSessionMessages(latestSession._id) as any;
+              if (messagesResponse && messagesResponse.statusCode === 200 && messagesResponse.data) {
+                const chatMessages = messagesResponse.data.map((msg: any) => {
+                  let images: ImageData[] = [];
+                  let files: FileData[] = [];
+                  
+                  if (msg.content.fileMetadata && Array.isArray(msg.content.fileMetadata)) {
+                    const getFileUrl = (fileName: string) => {
+                      if (process.env.NODE_ENV === 'development') {
+                        return `/api/file/${fileName}`;
+                      }
+                      const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+                      return `${apiHost}/file/${fileName}`;
+                    };
+                    
+                    msg.content.fileMetadata.forEach((metadata: any) => {
+                      const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(metadata.serverFileName);
+                      
+                      if (isImage) {
+                        images.push({
+                          url: getFileUrl(metadata.serverFileName),
+                          fileName: metadata.originalFileName || metadata.serverFileName,
+                          mimeType: metadata.mimeType || `image/${metadata.serverFileName.split('.').pop()?.toLowerCase() || 'png'}`
+                        });
+                      } else {
+                        files.push({
+                          url: getFileUrl(metadata.serverFileName),
+                          fileName: metadata.originalFileName || metadata.serverFileName,
+                          mimeType: metadata.mimeType,
+                          size: metadata.size
+                        });
+                      }
+                    });
+                  } else if (msg.content.files && Array.isArray(msg.content.files)) {
+                    const getFileUrl = (fileName: string) => {
+                      if (process.env.NODE_ENV === 'development') {
+                        return `/api/file/${fileName}`;
+                      }
+                      const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+                      return `${apiHost}/file/${fileName}`;
+                    };
+                    
+                    msg.content.files.forEach((fileName: string) => {
+                      const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
+                      
+                      if (isImage) {
+                        images.push({
+                          url: getFileUrl(fileName),
+                          fileName: fileName,
+                          mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'png'}`
+                        });
+                      } else {
+                        files.push({
+                          url: getFileUrl(fileName),
+                          fileName: fileName,
+                          mimeType: fileName.endsWith('.pdf') ? 'application/pdf' : 'text/plain',
+                          size: undefined
+                        });
+                      }
+                    });
+                  }
+                  
+                  return {
+                    role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
+                    content: msg.content.value || msg.content.content || '',
+                    images: images.length > 0 ? images : undefined,
+                    files: files.length > 0 ? files : undefined,
+                    messageId: msg._id,
+                    title: msg.title,
+                    estimateId: msg.content?.estimateId
+                  };
+                });
+                
+                // AI 세션에 과거 대화 이력 전달
+                const chatHistory = chatMessages.map((msg: any) => ({
+                  role: msg.role === 'user' ? 'user' as const : 'model' as const,
+                  content: msg.content
+                }));
+                startChatWithHistory(chatHistory);
+                
+                // 기존 메시지가 1개 이하이면(AI 첫 인사말만 있거나 없으면) DB에서 로드
+                const currentMessages = useChatStore.getState().messages;
+                if (currentMessages.length <= 1 || !hasShownInitialMessage) {
+                  clear();
+                  addMessage({ role: 'ai', content: initialAiMessage });
+                  chatMessages.forEach((msg: any) => addMessage(msg));
+                  setHasShownInitialMessage(true);
+                }
+              }
+            }
+          } catch (error) {
+            console.error('비회원 세션 목록 조회 실패:', error);
           }
         }
       }
@@ -2028,40 +2141,18 @@ useEffect(() => {
   useEffect(() => {
     devLog('[AiPageContent] Firebase auth listener - MOUNTING');
     setIsFirebaseChecking(true);
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      devLog('[AiPageContent] onAuthStateChanged CALLBACK TRIGGERED. Firebase user:', user);
-      if (user) {
-        devLog(`[AiPageContent] Firebase user DETECTED (UID: ${user.uid}, Anonymous: ${user.isAnonymous})`);
+    
+    // 🔥 Firebase 초기화를 기다림 (Storage만 사용)
+    (async () => {
+      try {
+        await ensureFirebaseInitialized();
+        devLog('[AiPageContent] Firebase initialized successfully');
         setIsFirebaseChecking(false);
-      } else {
-        devLog('[AiPageContent] No Firebase user DETECTED. Attempting anonymous sign-in...');
-        try {
-          await signInAnonymously(auth);
-          devLog('[AiPageContent] Firebase anonymous sign-in attempt successful. Waiting for new auth state.');
-        } catch (error) {
-          console.error('[AiPageContent] Firebase anonymous sign-in FAILED:', error);
-          setIsFirebaseChecking(false);
-        }
+      } catch (error) {
+        console.error('[AiPageContent] Firebase initialization failed:', error);
+        setIsFirebaseChecking(false);
       }
-    });
-    return () => {
-      devLog('[AiPageContent] Firebase auth listener - UNMOUNTING. Unsubscribing.');
-      unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-      } else {
-        try {
-          await signInAnonymously(auth);
-        } catch (error) {
-          console.error('[AiChatPage] Firebase anonymous sign-in FAILED:', error);
-        }
-      }
-    });
-    return () => unsubscribe();
+    })();
   }, []);
 
   useEffect(() => {

@@ -248,10 +248,14 @@ export async function getChatSession(sessionId: string) {
 }
 
 
-export async function getChatSessions() {
+export async function getChatSessions(user?: string) {
+  const url = user 
+    ? getApiUrl(`/company/chat/sessions?user=${user}`)
+    : getApiUrl('/company/chat/sessions');
+    
   return callUserApi<ChatSessionData[]>({
     title: '유저별 채팅 세션 목록 조회',
-    url: getApiUrl('/company/chat/sessions'),
+    url,
     method: 'GET',
     isCallPageLoader: true,
   });

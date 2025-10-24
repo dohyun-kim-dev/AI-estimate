@@ -131,9 +131,10 @@ interface EstimateCardProps {
     finalWeeks: number;
     estimatedPeriodText: string;
   } | null;
+  companyCode?: string; // ✅ 추가: 외부에서 companyCode 받기 (슈퍼어드민용)
 }
 
-const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, projectPeriod = 0, calculatedPeriod }) => {
+const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, projectPeriod = 0, calculatedPeriod, companyCode: propCompanyCode }) => {
   const [openShare, setOpenShare] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [isSocialLoginModalOpen, setIsSocialLoginModalOpen] = useState(false);
@@ -151,8 +152,27 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
   // 회사 할인 설정 가져오기
   const { companyInfo } = useCompanyStore();
 
+  // ✅ companyCode 추출 로직 개선
   const getCompanyCode = () => {
-    const pathParts = window.location.pathname.split('/');
+    // 1. props로 전달받은 경우 (슈퍼어드민)
+    if (propCompanyCode) {
+      return propCompanyCode;
+    }
+    
+    // 2. URL에서 추출
+    const currentPath = window.location.pathname;
+    
+    // /cms/ 경로인 경우
+    if (currentPath.includes('/cms/')) {
+      const pathParts = currentPath.split('/');
+      const cmsIndex = pathParts.indexOf('cms');
+      if (cmsIndex > 0 && pathParts[cmsIndex - 1]) {
+        return pathParts[cmsIndex - 1];
+      }
+    }
+    
+    // /aiclient/ 경로인 경우
+    const pathParts = currentPath.split('/');
     const companyCodeIndex = pathParts.indexOf('aiclient') + 1;
     return (companyCodeIndex > 0 && pathParts.length > companyCodeIndex)
       ? pathParts[companyCodeIndex]
@@ -187,8 +207,8 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
     if (projectPeriod === 0) {
       let total = 0;
       estimate.categories.forEach(category => {
-        category.sub_categories.forEach(subCategory => {
-          subCategory.items.forEach(item => {
+        (category.sub_categories || []).forEach(subCategory => {
+          (subCategory.items || []).forEach(item => {
             if (!item.is_deleted) {
               const basePrice = typeof item.price === 'string' 
                 ? parseFloat(item.price.replace(/,/g, '')) 
@@ -208,8 +228,8 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
     let discountTotal = 0;
     
     estimate.categories.forEach(category => {
-      category.sub_categories.forEach(subCategory => {
-        subCategory.items.forEach(item => {
+      (category.sub_categories || []).forEach(subCategory => {
+        (subCategory.items || []).forEach(item => {
           if (!item.is_deleted) {
             const basePrice = typeof item.price === 'string' 
               ? parseFloat(item.price.replace(/,/g, '')) 
@@ -476,7 +496,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
   // 다운로드: 로그인 사용자는 바로, 아니면 로그인모달 → 정보입력모달
   const handleGeneratePDF = async () => {
     // /share 경로면 바로 미리보기
-    if (window.location.pathname.includes('/share')) {
+    if (window.location.pathname.includes('/share') || window.location.pathname.includes('/cms') ||window.location.pathname.includes('/superadmin') ) {
       await openPreviewTab();
       return;
     }
@@ -496,7 +516,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       return;
     }
     // /share 경로면 바로 공유 모달
-    if (window.location.pathname.includes('/share')) {
+    if (window.location.pathname.includes('/share')|| window.location.pathname.includes('/cms') ||window.location.pathname.includes('/superadmin') ) {
       const newShareUrl = await ensureUuidAndGetUrl();
       setShareUrl(newShareUrl);
       setOpenShare(true);
