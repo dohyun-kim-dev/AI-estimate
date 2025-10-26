@@ -332,13 +332,21 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
               devLog('[SocialLoginModal] 로그인 후 사용량 정보 업데이트 완료');
               
               // 🔥 비회원 → 회원 전환 시 채팅 세션 소유권 이전
-              const { getEffectiveSessionId, loadLatestChatSession } = useChatStore.getState();
+              const { getEffectiveSessionId, loadLatestChatSession, loadSessionMessages, clear, addMessage } = useChatStore.getState();
               const currentSessionId = getEffectiveSessionId();
               if (currentSessionId) {
                 try {
                   devLog('[SocialLoginModal] 채팅 세션 소유권 이전 시도:', currentSessionId);
                   await transferChatSessionToUser(currentSessionId);
                   devLog('[SocialLoginModal] 채팅 세션 소유권 이전 성공');
+                  
+                  // 🔥 소유권 이전 후 메시지 로드
+                  const messages = await loadSessionMessages(currentSessionId);
+                  if (messages && messages.length > 0) {
+                    clear(); // 기존 메시지 삭제
+                    messages.forEach(msg => addMessage(msg)); // 로드한 메시지 추가
+                    devLog('[SocialLoginModal] 채팅 메시지 화면에 추가 완료:', messages.length, '개');
+                  }
                 } catch (transferError) {
                   console.error('[SocialLoginModal] 채팅 세션 소유권 이전 실패:', transferError);
                   // 소유권 이전 실패해도 로그인 프로세스는 계속 진행
@@ -348,6 +356,17 @@ export const SocialLoginModal: React.FC<SocialLoginModalProps> = (props) => {
                 try {
                   devLog('[SocialLoginModal] 세션 ID 없음, 회원 최신 세션 불러오기 시도');
                   await loadLatestChatSession();
+                  
+                  // 🔥 최신 세션의 메시지도 불러오기
+                  const latestSessionId = useChatStore.getState().chatSessionId;
+                  if (latestSessionId) {
+                    const messages = await loadSessionMessages(latestSessionId);
+                    if (messages && messages.length > 0) {
+                      clear(); // 기존 메시지 삭제
+                      messages.forEach(msg => addMessage(msg)); // 로드한 메시지 추가
+                      devLog('[SocialLoginModal] 회원 최신 세션 메시지 화면에 추가 완료:', messages.length, '개');
+                    }
+                  }
                   devLog('[SocialLoginModal] 회원 최신 세션 불러오기 완료');
                 } catch (loadError) {
                   console.error('[SocialLoginModal] 회원 최신 세션 불러오기 실패:', loadError);

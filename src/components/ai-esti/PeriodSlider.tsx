@@ -188,7 +188,7 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({
   onChange, 
   $isvisible, 
   min=0, 
-  max=8, 
+  max=8, // ✅ 0부터 8까지 = 9개 값 (0,1,2,3,4,5,6,7,8) 
   discountedPrice, 
   basePrice,
   totalDiscountAmount = 0 // ✅ 추가
@@ -200,6 +200,14 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({
   
   const { companyInfo } = useCompanyStore();
   const [isDragging, setIsDragging] = useState(false);
+
+  // 🔍 디버깅: companyInfo 확인
+  React.useEffect(() => {
+    console.log('🏢 PeriodSlider - companyInfo:', companyInfo);
+    console.log('🏢 PeriodSlider - rateRule:', companyInfo?.rateRule);
+    console.log('🏢 PeriodSlider - discountRate:', companyInfo?.discountRate);
+    console.log('🏢 PeriodSlider - checkpointList:', companyInfo?.checkpointList);
+  }, [companyInfo]);
 
   // ✅ iOS 뒤로가기 제스처 방지 (컴포넌트 마운트 시)
   React.useEffect(() => {
@@ -231,13 +239,18 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({
       };
     }
 
-    return {
+    const settings = {
       checkpointList: companyInfo.checkpointList || [{ checkpoint: 1, discountRate: 1.25 }],
       discountRate: companyInfo.discountRate || 'WEEK',
       rateRule: companyInfo.rateRule || 'FIXED',
       minValue: (companyInfo as any).minValue || 0, // 임시로 any 타입 사용
       maxValue: (companyInfo as any).maxValue || 8   // 임시로 any 타입 사용
     };
+    
+    console.log('📦 discountSettings:', settings);
+    console.log('📦 companyInfo.rateRule:', companyInfo.rateRule);
+    
+    return settings;
   }, [companyInfo]);
 
   // 슬라이더 설정 계산
@@ -245,20 +258,26 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({
     const { checkpointList, rateRule, minValue, maxValue } = discountSettings;
 
     if (rateRule === 'FIXED') {
-      return {
+      // FIXED 모드: 0부터 maxValue-minValue까지 연속 선택 가능
+      const config = {
         min: 0,
-        max: maxValue - minValue,
-        step: checkpointList[0]?.checkpoint || 1
+        max: maxValue, // ✅ 예: maxValue=8, minValue=0 → max=8 (0~8까지 9개 값)
+        step: checkpointList[0]?.checkpoint || 1,
+        checkpoints: undefined as number[] | undefined
       };
+      console.log('🔧 FIXED 모드 슬라이더 설정:', config);
+      return config;
     } else {
-      // DYNAMIC의 경우 체크포인트만 선택 가능하도록 설정
+      // DYNAMIC 모드: 체크포인트만 선택 가능
       const checkpoints = [0, ...checkpointList.map(cp => cp.checkpoint)].sort((a, b) => a - b);
-      return {
+      const config = {
         min: 0,
-        max: checkpoints.length - 1, // 인덱스 기반으로 설정
+        max: checkpoints.length - 1, // 인덱스 기반으로 설정 (예: [0,1,5,8] → max=3)
         step: 1,
         checkpoints // 실제 체크포인트 값들
       };
+      console.log('🔧 DYNAMIC 모드 슬라이더 설정:', config, '체크포인트:', checkpoints);
+      return config;
     }
   }, [discountSettings]);
 
@@ -338,7 +357,7 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({
         <Description>견적기간을 늘릴 경우 할인된 금액으로 변경됩니다</Description>
         <SliderContainer className={`slider-container ${isDragging ? 'dragging' : ''}`}>
           <Tooltip $left={tooltipPosition}>
-            {discountInfo.percentage.toFixed(1)}% 할인이 적용되었어요! 
+            {discountInfo.percentage.toFixed(2)}% 할인이 적용되었어요! 
           {value > 0 && (
             <DiscountDisplay>
               (- {discountInfo.amount.toLocaleString()}원)
@@ -379,11 +398,13 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({
   
           <Labels>
             {discountSettings.rateRule === 'DYNAMIC' && sliderConfig.checkpoints ? (
+              // ✅ DYNAMIC 모드: 체크포인트 첫 값과 마지막 값 표시
               <>
                 <span>{sliderConfig.checkpoints[0]}{getUnitText()}</span>
                 <span>{sliderConfig.checkpoints[sliderConfig.checkpoints.length - 1]}{getUnitText()}</span>
               </>
             ) : (
+              // ✅ FIXED 모드: min과 max 표시
               <>
                 <span>{sliderConfig.min}{getUnitText()}</span>
                 <span>{sliderConfig.max}{getUnitText()}</span>

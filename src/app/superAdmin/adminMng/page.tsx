@@ -621,13 +621,22 @@ const AdminMngPage: React.FC = () => {
           // URL에 cms가 포함되어 있는지 확인
           const isCmsUrl = window.location.pathname.includes('/cms/');
           
+          const handleOTPQRClick = () => {
+            // CMS URL이 아닐 때만 고객사 선택 여부 확인
+            if (!isCmsUrl) {
+              if (!selectedCompanyCode) {
+                showToast('먼저 고객사를 선택해주세요.', 'error');
+                return;
+              }
+            }
+            setIsOTPQRModalOpen(true);
+          };
+          
           return (
             <div style={{ flex: 1, textAlign: 'end', fontWeight: 'bold' }}>
-              {isCmsUrl && (
-                <PrimaryButton $themeMode="light" onClick={() => setIsOTPQRModalOpen(true)}>
+                <PrimaryButton $themeMode="light" onClick={handleOTPQRClick}>
                   OTP QR코드
                 </PrimaryButton>
-              )}
               <PrimaryButton $themeMode="light" onClick={handleHeaderButtonClick}>
                 관리자 등록
               </PrimaryButton>
@@ -686,6 +695,7 @@ const AdminMngPage: React.FC = () => {
       <OTPQRModal
         isOpen={isOTPQRModalOpen}
         onClose={() => setIsOTPQRModalOpen(false)}
+        companyCode={selectedCompanyCode}
       />
     </>
   );

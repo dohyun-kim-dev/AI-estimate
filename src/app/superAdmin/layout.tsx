@@ -187,8 +187,30 @@ const handleMenuToggle = (menuId: string) => {
     }
   }, [location.pathname, ready, isLoggedIn, navigate]);
 
-  if (!ready || (!isLoggedIn && !isLoginPage && !isPdfPreviewPage && !isExcelPreviewPage && !isPromptDetailPage)) return null;
-  if (isLoginPage || isPdfPreviewPage || isExcelPreviewPage || isPromptDetailPage) return <Outlet />;
+  // 로딩 중이면 로딩 화면 표시 (검은 화면 방지)
+  if (!ready) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        backgroundColor: '#e6e7e9'
+      }}>
+        <p>로딩 중...</p>
+      </div>
+    );
+  }
+
+  // 예외 페이지는 바로 렌더링
+  if (isLoginPage || isPdfPreviewPage || isExcelPreviewPage || isPromptDetailPage) {
+    return <Outlet />;
+  }
+
+  // 로그인 안 되어 있으면 null 반환 (리다이렉트 중)
+  if (!isLoggedIn) {
+    return null;
+  }
 
   return (
     <ScrollAwareWrapper>

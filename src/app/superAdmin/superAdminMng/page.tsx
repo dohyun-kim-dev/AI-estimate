@@ -116,6 +116,7 @@ const AdminMngPage: React.FC = () => {
   const clearFormErrors = useCallback(() => {
     setIdError(null);
     setPwdError(null);
+    setConfirmPwdError(null); // ✅ 비밀번호 확인 에러 초기화 추가
     setNameError(null);
     setEmailError(null);
     setCellphoneError(null);
@@ -126,6 +127,7 @@ const AdminMngPage: React.FC = () => {
       setSelectedUser(initial ?? null);
       setUserId(initial?.adminId ?? '');
       setPassword('');
+      setConfirmPassword(''); // ✅ 비밀번호 확인 필드 초기화 추가
       setName(initial?.name ?? '');
       setEmail(initial?.email ?? '');
       setCellphone(initial?.cellphone ?? '');

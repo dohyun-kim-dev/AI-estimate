@@ -13,7 +13,7 @@ import { useChatStore } from '@/store/chatStore'; // ✅ 추가
 import { v4 as uuidv4 } from 'uuid';
 import { SocialLoginModal } from './SocialLoginModal';
 import { useNavigate } from 'react-router-dom';
-import { getDownloadEstimateUrlWithUserInfo, googleLoginInitial, googleLoginUpdate, uploadEstimatePdf, fillGuestInfo } from '@/lib/api/user/userApi';
+import { getDownloadEstimateUrlWithUserInfo, googleLoginInitial, googleLoginUpdate, uploadEstimatePdf, fillGuestInfo, getCompanyInfo } from '@/lib/api/user/userApi';
 import { buildFullEstimateData, extractEstimateData } from '@/hooks/estimate';
 import IssuerInfoModal, { IssuerInfo } from '@/components/ai-esti/IssuerInfoModal';
 import { devLog } from '@/utils/devLogger';
@@ -159,7 +159,15 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       return propCompanyCode;
     }
     
-    // 2. URL에서 추출
+    // 2. URL 쿼리 파라미터에서 추출 (통합관리자)
+    const searchParams = new URLSearchParams(window.location.search);
+    const urlCompanyCode = searchParams.get('companyCode');
+    if (urlCompanyCode) {
+      devLog('🔗 EstimateCard: URL 쿼리 파라미터에서 companyCode 추출:', urlCompanyCode);
+      return urlCompanyCode;
+    }
+    
+    // 3. URL 경로에서 추출
     const currentPath = window.location.pathname;
     
     // /cms/ 경로인 경우
@@ -465,7 +473,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
     
     const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
     devLog("ensuredUuid:", ensuredUuid); 
-    return `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+    return `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
   };
 
 
@@ -477,7 +485,7 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
       devLog("openPreviewTab 함수 호출 직전 estimate:", estimate);
           await uploadEstimateForGuest(estimate);
       const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
-      const previewUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+      const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
       const newWindow = window.open(previewUrl, '_blank');
       
          setTimeout(() => {
@@ -555,12 +563,12 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
 
       if (pendingPurpose === 'download') {
         await updateGuestInfo();
-        const previewUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+        const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
         window.open(previewUrl, '_blank');
         success('PDF 미리보기 페이지가 새 탭에서 열립니다.');
       } else if (pendingPurpose === 'share') {
         await updateGuestInfo();
-        const newShareUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+        const newShareUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
         setShareUrl(newShareUrl);
         setOpenShare(true);
         success('공유 링크가 생성되었습니다!');
@@ -582,12 +590,26 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
         return;
       }
 
-      // 회사 정보가 없으면 복사 실패
-      if (!companyInfo || !companyInfo.companyName || !companyInfo.cellphone || !companyInfo.homepage) {
+      // ✅ API를 통해 회사 정보 조회
+      devLog('🏢 회사 정보 조회 시작');
+      const companyResponse = await getCompanyInfo();
+      
+      devLog('🏢 회사 정보 API 응답:', companyResponse);
+      
+      if (!companyResponse || companyResponse.statusCode !== 200 || !companyResponse.data) {
         error('회사 정보를 불러올 수 없어 링크 복사에 실패했습니다.');
         return;
       }
+      
+      const fetchedCompanyInfo = companyResponse.data;
+      
+      // 필수 정보 확인
+      if (!fetchedCompanyInfo.companyName || !fetchedCompanyInfo.cellphone || !fetchedCompanyInfo.homepage) {
+        error('회사 정보가 불완전하여 링크 복사에 실패했습니다.');
+        return;
+      }
 
+      devLog('✅ 회사 정보 조회 성공:', fetchedCompanyInfo);
       devLog('복사하려는 shareUrl:', shareUrl); // 디버깅용
 
       const textToCopy = `${shareUrl}
@@ -595,12 +617,12 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
 
 ⏫위 링크 클릭 시 에이고가 발급한 견적서로 이동합니다
 
-🏢공급사명 : ${companyInfo.companyName}
+🏢공급사명 : ${fetchedCompanyInfo.companyName}
  
-📞전화문의 : ${companyInfo.cellphone}
+📞전화문의 : ${fetchedCompanyInfo.cellphone}
 
 🌐공급사 홈페이지
-${companyInfo.homepage}
+${fetchedCompanyInfo.homepage}
 
 ※ 위 견적서는 공급사 공식 
 홈페이지에서도 조회할 수 있습니다
@@ -699,7 +721,7 @@ ${companyInfo.homepage}
           // 로그인 후 목적대로 바로 진행
           if (socialLoginPurpose === 'download') {
             const ensuredUuid = await ensureUuidOnce(estimate, estimate.project_name || '견적서');
-            const previewUrl = `${window.location.origin}/aiclient/${companyCode}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
+            const previewUrl = `${window.location.origin}/pdf-preview?company=${companyCode}&uuid=${ensuredUuid}`;
             window.open(previewUrl, '_blank');
           } else if (socialLoginPurpose === 'share') {
             await handleShareClick();
@@ -715,8 +737,22 @@ ${companyInfo.homepage}
     }
   };
 
-  // 기간 안전 표시 - projectPeriod(슬라이더로 조정된 기간) 사용
-  const finalWeekValue = projectPeriod || (calculatedPeriod?.finalWeeks || parseInt(estimate.estimated_period) || 0);
+  // 기간 안전 표시 - 기본 기간 + 연장 기간
+  const baseWeeks = calculatedPeriod?.finalWeeks || parseInt(estimate.estimated_period) || 0;
+  
+  // ✅ discountRate에 따라 연장 기간을 주 단위로 변환
+  let extendedWeeks = 0;
+  if (projectPeriod && projectPeriod > 0) {
+    if (discountSettings.discountRate === 'MONTH') {
+      // MONTH일 경우: 1개월 = 4주로 계산
+      extendedWeeks = projectPeriod * 4;
+    } else {
+      // WEEK 또는 기타: 그대로 주 단위
+      extendedWeeks = projectPeriod;
+    }
+  }
+  
+  const finalWeekValue = baseWeeks + extendedWeeks; // 기본 기간 + 연장 기간(주 단위 변환)
   const weeksPerMonth = 4.345;
   const monthValue = Math.ceil(finalWeekValue / weeksPerMonth);
   const displayPeriod = `(약 ${monthValue}개월)`;
@@ -749,7 +785,7 @@ ${companyInfo.homepage}
         </Price>
         <Period>
           <span style={{ marginRight: '4px' }}>
-            {projectPeriod || (calculatedPeriod?.finalWeeks || parseInt(estimate.estimated_period) || 0)}주
+            {finalWeekValue}주
           </span>
           <span className="p">{displayPeriod}</span>
         </Period>

@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useRef, useMemo } from 'react';
 import CmsResponsiveContainer from '@components/CustomList/ResponsiveList/CmsResponsiveContainer';
 import { useToast } from '@/components/common/ToastProvider';
-import { getCompanyList, createCompany, updateCompany } from '@/lib/api/admin/adminApi';
+import { getCompanyList, createCompany, updateCompany, deleteCompany } from '@/lib/api/admin/adminApi';
 import { getFileUrl } from '@/lib/api/user/userApi';
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
@@ -202,6 +202,39 @@ const CustomerMngPage: React.FC = () => {
     setCategoryId('');
     setCategoryCode('');
     setIsCompanyRegisterOpen(true);
+  };
+
+  // 고객사 삭제 핸들러
+  const handleDeleteCompany = async (companyCode: string) => {
+    try {
+      const response = await deleteCompany(companyCode);
+      
+      // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+      const actualResponse = Array.isArray(response) ? response[0] : response;
+      const apiResponse = (actualResponse as any)?.data;
+
+      if (apiResponse && apiResponse.statusCode === 200 && apiResponse.message === 'success') {
+        showToast('고객사가 성공적으로 삭제되었습니다.', 'success');
+        setIsPopupOpen(false);
+        
+        // 리스트 새로고침
+        setTimeout(() => {
+          listRef.current?.refetch();
+        }, 100);
+      } else {
+        const errorMessage = apiResponse?.error?.customMessage || apiResponse?.message || '삭제에 실패했습니다.';
+        showToast(errorMessage, 'error');
+      }
+    } catch (error) {
+      console.error('고객사 삭제 실패:', error);
+      const err = error as Error | { customMessage?: string };
+      const errorMessage = 'customMessage' in err
+        ? err.customMessage
+        : err instanceof Error
+          ? err.message
+          : '삭제 중 오류가 발생했습니다.';
+      showToast(errorMessage, 'error');
+    }
   };
 
   // 폼 벨리데이션 함수
@@ -571,6 +604,7 @@ const CustomerMngPage: React.FC = () => {
       {
         header: '고객사 CI',
         accessor: 'ciImage',
+        width:100,
         flex: 1,
         formatter: (value) => {
           if (!value) return '-';
@@ -580,8 +614,8 @@ const CustomerMngPage: React.FC = () => {
                 src={getFileUrl(value)}
                 alt="고객사 CI"
                 style={{
-                  width: '32px',
-                  height: '32px',
+                  width: '90px',
+                  height: '30px',
                   objectFit: 'cover',
                   borderRadius: '4px',
                   border: '1px solid #ddd'
@@ -711,6 +745,7 @@ const CustomerMngPage: React.FC = () => {
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
         onSave={handleSave}
+        onDelete={handleDeleteCompany}
         selectedCustomer={selectedCustomer as any}
         formData={formData}
         onFormChange={onFormChange}
@@ -725,6 +760,7 @@ const CustomerMngPage: React.FC = () => {
           setIsCompanyRegisterOpen(false);
         }}
         onSave={handleSave} // 동일한 저장 로직 사용
+        onDelete={handleDeleteCompany}
         selectedCustomer={null} // null이면 등록 모드
         formData={formData} // 동일한 formData 사용
         onFormChange={onFormChange} // 동일한 onFormChange 사용

@@ -463,6 +463,7 @@ const ProposalDownloadPage: React.FC = () => {
           header: '파일다운로드',
           accessor: '_id' as const,
           width: 120,
+          sortable: false,
           noPopup: true,
           formatter: (value, row) => (
             <DownloadButton onClick={() => handleDownloadFile(row._id)}>
@@ -474,6 +475,7 @@ const ProposalDownloadPage: React.FC = () => {
           header: '견적xlx다운',
           accessor: '_id' as const,
           width: 120,
+          sortable: false,
           noPopup: true,
           formatter: (value, row) => (
             <ExcelDownloadButton onClick={() => handleExcelDownload(row._id)}>

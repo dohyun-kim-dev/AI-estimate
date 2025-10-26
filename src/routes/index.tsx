@@ -158,6 +158,9 @@ export default function AppRoutes() {
           <Route path="superadmin/excel-preview" element={<ExcelPreview />} />
           <Route path="superadmin/prompt-detail" element={<PromptDetailPage />} />
         </Route>
+          <Route path="pdf-preview" element={<PDFPreview />} />
+
+
     </Routes>
   )
 }

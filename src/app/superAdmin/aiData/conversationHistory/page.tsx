@@ -16,7 +16,7 @@ import { getCompanyCodeFromUrl } from '@/utils/companyUtils';
 import CmsPopup from '@/components/CmsPopup';
 import CmsResponsiveContainer from '@/components/CustomList/ResponsiveList/CmsResponsiveContainer';
 import SimpleGenericList from '@/components/CustomList/SimpleGenericList';
-import ChatHistoryModal from './ChatHistoryModal';
+import ChatHistoryModal from '@/components/ChatHistoryModal';
 import { getChatRoomList, getCompanyInfo, getCompany } from '@/lib/api/admin/adminApi';
 import { useToast } from '@/components/common/ToastProvider';
 
@@ -309,15 +309,28 @@ const AiChatHistoryPage: React.FC = () => {
 
   // URL에서 회사 코드 추출하여 초기화
   React.useEffect(() => {
-    const currentPath = window.location.pathname;
+    // 1. URL 쿼리 파라미터에서 companyCode 확인
+    const searchParams = new URLSearchParams(window.location.search);
+    const urlCompanyCode = searchParams.get('companyCode');
     
-    // URL에서 /cms/가 포함되면 회사 코드 자동 추출
+    if (urlCompanyCode) {
+      setSelectedCompanyCode(urlCompanyCode);
+      setSelectedCompanyName(urlCompanyCode.toUpperCase());
+      devLog('🔗 URL 쿼리 파라미터에서 회사 코드 추출:', {
+        companyCode: urlCompanyCode
+      });
+      loadAIProfileInfo(urlCompanyCode);
+      return;
+    }
+    
+    // 2. URL 경로에서 회사 코드 추출 (/cms/ 경로)
+    const currentPath = window.location.pathname;
     if (currentPath.includes('/cms/')) {
       const extractedCompanyCode = getCompanyCodeFromUrl();
       if (extractedCompanyCode && extractedCompanyCode !== 'aigo') {
         setSelectedCompanyCode(extractedCompanyCode);
         setSelectedCompanyName(extractedCompanyCode.toUpperCase());
-        devLog('🏢 [대화 이력 관리] URL에서 회사 코드 자동 추출:', {
+        devLog('🏢 [대화 이력 관리] URL 경로에서 회사 코드 자동 추출:', {
           path: currentPath,
           companyCode: extractedCompanyCode
         });
@@ -349,6 +362,14 @@ dayjs.locale('ko');
       showToast('회사 코드가 없습니다. 고객사를 다시 선택해주세요.','error');
       return;
     }
+    
+    // URL 파라미터 업데이트
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.set('companyCode', company.id);
+    const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
+    window.history.pushState({}, '', newUrl);
+    
+    devLog('🔗 URL 파라미터 업데이트:', { companyCode: company.id, newUrl });
     
     // 상태 업데이트
     setSelectedCompanyCode(company.id);
@@ -648,7 +669,7 @@ dayjs.locale('ko');
       { 
         header: '채팅방ID', 
         accessor: 'chatSessionId', 
-        sortable: true,
+        sortable: false,
         allowWrap: true,
         width: 80,
         formatter: (value, row) => (

@@ -24,18 +24,37 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
   // adminStore 훅 사용
   const { adminInfo, setAdminInfo, clearAdminInfo } = useAdminStore();
 
+  // 초기 로딩 시에만 localStorage에서 상태 복원
   useEffect(() => {
     const adminId = localStorage.getItem('adminId');
     const adminIsRoot = localStorage.getItem('admin_isRoot') === 'true';
     
+    devLog('🔄 [AdminAuthContext] 초기 상태 복원:', {
+      hasAdminId: !!adminId,
+      adminId,
+      adminIsRoot,
+      hasAdminInfo: !!adminInfo
+    });
+    
     // adminStore에서 정보 가져오기
-    setIsLoggedIn(!!adminId || !!adminInfo);
-    setIsRoot(adminIsRoot || !!adminInfo?.isRoot);
+    if (adminId || adminInfo) {
+      setIsLoggedIn(true);
+      setIsRoot(adminIsRoot || !!adminInfo?.isRoot);
+    }
     setReady(true);
+  }, []); // 빈 의존성 배열 - 초기 마운트 시에만 실행
 
+  // storage 이벤트 감지 (다른 탭에서의 변경사항 동기화)
+  useEffect(() => {
     const syncAuthState = () => {
       const currentAdminId = localStorage.getItem('adminId');
       const currentIsRoot = localStorage.getItem('admin_isRoot') === 'true';
+      
+      devLog('🔄 [AdminAuthContext] storage 이벤트 동기화:', {
+        hasAdminId: !!currentAdminId,
+        currentIsRoot
+      });
+      
       setIsLoggedIn(!!currentAdminId);
       setIsRoot(currentIsRoot);
     };
@@ -44,7 +63,7 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
     return () => {
       window.removeEventListener('storage', syncAuthState);
     };
-  }, [adminInfo]);
+  }, []);
 
   const login = (id: string, token?: string, isRoot?: boolean, adminData?: AdminInfo) => {
     devLog('🚀 [AdminAuthContext] login 함수 호출됨:', {
@@ -57,11 +76,11 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
       adminDataProvided: !!adminData
     });
 
+    // localStorage에 먼저 저장
     localStorage.setItem('adminId', id);
     
     // 토큰이 제공된 경우 저장
     if (token) {
-      // 기존 토큰 확인
       const existingToken = localStorage.getItem('admin_access_token');
       devLog('🔍 [AdminAuthContext] 토큰 저장 전 기존 토큰:', {
         hasExisting: !!existingToken,
@@ -72,7 +91,6 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
       
       localStorage.setItem('admin_access_token', token);
       
-      // 저장 직후 확인
       const savedToken = localStorage.getItem('admin_access_token');
       devLog('🔑 [AdminAuthContext] 토큰 저장됨:', {
         id,
@@ -92,27 +110,39 @@ export const AdminAuthProvider = ({ children }: { children: React.ReactNode }) =
     // adminData가 제공된 경우 adminStore에 저장
     if (adminData) {
       setAdminInfo(adminData);
-      devLog('� [AdminAuthContext] 관리자 정보 저장:', {
+      devLog('✅ [AdminAuthContext] 관리자 정보 저장:', {
         name: adminData.name,
         adminId: adminData.adminId,
         isRoot: adminData.isRoot
       });
     }
     
+    // 마지막에 로그인 상태 변경
     setIsLoggedIn(true);
+    
+    devLog('✅ [AdminAuthContext] 로그인 완료:', {
+      id,
+      isLoggedIn: true,
+      isRoot: isRoot !== undefined ? isRoot : false
+    });
   };
 
   const logout = () => {
-
-    clearAdminInfo();
+    devLog('🚪 [AdminAuthContext] 로그아웃 실행');
+    
+    // localStorage 먼저 삭제
     localStorage.removeItem('adminId');
     localStorage.removeItem('admin_access_token');
     localStorage.removeItem('admin_isRoot');
     
-    // adminStore 정보도 삭제
+    // adminStore 정보 삭제
+    clearAdminInfo();
     
+    // 상태 변경
     setIsLoggedIn(false);
     setIsRoot(false);
+    
+    devLog('✅ [AdminAuthContext] 로그아웃 완료');
   };
 
   // 외부에서 사용할 수 있게 등록

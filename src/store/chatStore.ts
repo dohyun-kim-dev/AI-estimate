@@ -44,6 +44,7 @@ interface ChatState {
   setIsProcessing: (processing: boolean) => void; // 추가: 처리 상태 설정
   setIsCrawlingUrl: (crawling: boolean) => void; // 추가: URL 크롤링 상태 설정
   loadLatestChatSession: (force?: boolean) => Promise<void>; // 추가: 최근 채팅 세션 로드 (force: 강제 로드)
+  loadSessionMessages: (sessionId: string) => Promise<ChatMessage[]>; // 추가: 세션 메시지 로드 및 반환
   clear: () => void;
   removeLastAiLoadingMessage: () => void;
   clearAllLoadingMessages: () => void; // 추가: 모든 로딩 메시지 제거
@@ -209,6 +210,93 @@ export const useChatStore = create<ChatState>()(
         },
         setIsProcessing: (processing) => set({ isProcessing: processing }), // 추가: 처리 상태 설정
         setIsCrawlingUrl: (crawling) => set({ isCrawlingUrl: crawling }), // 추가: URL 크롤링 상태 설정
+        loadSessionMessages: async (sessionId: string) => {
+          try {
+            // getChatSessionMessages API 호출
+            const { getChatSessionMessages } = await import('@/lib/api/user/userApi');
+            const messagesResponse = await getChatSessionMessages(sessionId) as any;
+            
+            if (!messagesResponse || messagesResponse.statusCode !== 200 || !messagesResponse.data) {
+              devLog('⚠️ 채팅 메시지 로드 실패:', messagesResponse?.message);
+              return [];
+            }
+            
+            // 파일 URL 생성 함수
+            const getFileUrl = (fileName: string) => {
+              if (process.env.NODE_ENV === 'development') {
+                return `/api/file/${fileName}`;
+              }
+              const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+              return `${apiHost}/file/${fileName}`;
+            };
+            
+            // 메시지 파싱
+            const chatMessages: ChatMessage[] = messagesResponse.data.map((msg: any) => {
+              let images: ImageData[] = [];
+              let files: FileData[] = [];
+              
+              // fileMetadata가 있으면 우선 사용 (한글 파일명 보존)
+              if (msg.content.fileMetadata && Array.isArray(msg.content.fileMetadata)) {
+                msg.content.fileMetadata.forEach((metadata: any) => {
+                  const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(metadata.serverFileName);
+                  
+                  if (isImage) {
+                    images.push({
+                      url: getFileUrl(metadata.serverFileName),
+                      fileName: metadata.originalFileName || metadata.serverFileName,
+                      mimeType: metadata.mimeType || `image/${metadata.serverFileName.split('.').pop()?.toLowerCase() || 'png'}`
+                    });
+                  } else {
+                    files.push({
+                      url: getFileUrl(metadata.serverFileName),
+                      fileName: metadata.originalFileName || metadata.serverFileName,
+                      mimeType: metadata.mimeType,
+                      size: metadata.size
+                    });
+                  }
+                });
+              } 
+              // fileMetadata가 없으면 기존 files 배열 사용 (하위 호환성)
+              else if (msg.content.files && Array.isArray(msg.content.files)) {
+                msg.content.files.forEach((fileName: string) => {
+                  const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
+                  
+                  if (isImage) {
+                    images.push({
+                      url: getFileUrl(fileName),
+                      fileName: fileName,
+                      mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'png'}`
+                    });
+                  } else {
+                    files.push({
+                      url: getFileUrl(fileName),
+                      fileName: fileName,
+                      mimeType: fileName.endsWith('.pdf') ? 'application/pdf' : 'text/plain',
+                      size: undefined
+                    });
+                  }
+                });
+              }
+              
+              return {
+                role: msg.role === 'USER' ? 'user' as const : 'ai' as const,
+                content: msg.content.value || msg.content.content || '',
+                images: images.length > 0 ? images : undefined,
+                files: files.length > 0 ? files : undefined,
+                messageId: msg._id,
+                title: msg.title,
+                estimateId: msg.content?.estimateId
+              };
+            });
+            
+            devLog('✅ 채팅 메시지 로드 완료:', chatMessages.length, '개');
+            return chatMessages;
+            
+          } catch (error) {
+            console.error('❌ 채팅 메시지 로드 실패:', error);
+            return [];
+          }
+        },
         loadLatestChatSession: async (force = false) => {
           // force가 true가 아니고 이미 chatSessionId가 있으면 API 호출하지 않음
           if (!force && get().chatSessionId) {

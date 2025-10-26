@@ -822,6 +822,13 @@ export default function AigoSettingsPage() {
         return false;
       }
       
+      // 1-2-1. 최소 단위가 1 이상인지 확인
+      const minUnit = parseInt(formData.projectName1) || 0;
+      if (minUnit < 1) {
+        showToast('최소 단위는 1 이상이어야 합니다.', 'error');
+        return false;
+      }
+      
       // 1-3. 최대 단위 입력 체크
       if (!formData.projectName2 || formData.projectName2.trim() === '') {
         showToast('최대 단위를 입력해주세요.', 'error');
@@ -829,7 +836,6 @@ export default function AigoSettingsPage() {
       }
 
       // 1-4. 최소 단위가 최대 단위보다 작은지 확인
-      const minUnit = parseInt(formData.projectName1) || 0;
       const maxUnit = parseInt(formData.projectName2) || 0;
       if (minUnit >= maxUnit) {
         showToast('최소 단위는 최대 단위보다 작아야 합니다.', 'error');
@@ -1205,13 +1211,13 @@ export default function AigoSettingsPage() {
                       onChange={() => handleUnitBasisChange('MONTH')}
                       color="#636994"
                     />
-                    <CheckBox
+                    {/* <CheckBox
                       id="unitAmount"
                       label="수량"
                       checked={formData.discountRate === 'QUANTITY'}
                       onChange={() => handleUnitBasisChange('QUANTITY')}
                       color="#636994"
-                    />
+                    /> */}
                   </div>
                 </div>
 

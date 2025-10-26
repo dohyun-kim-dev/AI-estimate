@@ -460,11 +460,22 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
     const value = formData[name] || '';
     const hasError = !!errors[name];
     
+    // 필수 항목 표시가 포함된 라벨 생성
+    const labelWithRequired = required ? (
+      <>
+        <span style={{ color: AppColors.error, marginRight: '4px' }}>*</span>
+        {name}
+      </>
+    ) : name;
+    
     switch (type) {
       case 'boolean':
         return (
           <SwitchFieldContainer>
-            <SwitchFloatingLabel>{name}</SwitchFloatingLabel>
+            <SwitchFloatingLabel>
+              {required && <span style={{ color: AppColors.error, marginRight: '4px' }}>*</span>}
+              {name}
+            </SwitchFloatingLabel>
             <SwitchContainer style={{ borderColor: hasError ? AppColors.error : AppColors.border }}>
               <SwitchButton
                 $isOn={Boolean(value)}
@@ -486,7 +497,7 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
         return (
           <TextField
             id={`field-${name}`}
-            label={name}
+            label={labelWithRequired}
             type="text"
             value={value === '' ? '' : String(value)}
             onChange={(e) => handleFieldChange(name, e.target.value, type)}
@@ -504,7 +515,7 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
           return (
             <TextField
               id={`field-${name}`}
-              label={name}
+              label={labelWithRequired}
               value={String(value)}
               onChange={(e) => handleFieldChange(name, e.target.value, type)}
               placeholder={`${name}을(를) 입력하세요`}
@@ -520,7 +531,7 @@ const PriceEditPopup: React.FC<PriceEditPopupProps> = ({
           return (
             <TextField
               id={`field-${name}`}
-              label={name}
+              label={labelWithRequired}
               value={String(value)}
               onChange={(e) => handleFieldChange(name, e.target.value, type)}
               placeholder={name === 'id' ? 'ID (자동생성)' : `${name}을(를) 입력하세요`}

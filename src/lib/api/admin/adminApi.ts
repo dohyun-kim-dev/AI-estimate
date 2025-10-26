@@ -514,6 +514,17 @@ export async function updateCompany(companyCode: string, params: CompanyUpdatePa
   });
 }
 
+// 고객사 삭제 API
+export async function deleteCompany(companyCode: string) {
+  return callAdminApi({
+    title: '고객사 삭제',
+    url: `${BASE_URL}/cms/company/${companyCode}`,
+    method: 'DELETE',
+    isCallPageLoader: true,
+    isWithToken: true,
+  });
+}
+
 // 회사 정보 수정 API
 export async function updateCompanyInfo(companyCode: string, params: {
   aiProfile?: string;
@@ -851,9 +862,15 @@ export async function updateUser(params: UserUpdateParams) {
   if (params.email !== undefined) requestBody.email = params.email;
   if (params.memo !== undefined) requestBody.memo = params.memo;
 
+  // ✅ CMS URL일 때는 /memo 엔드포인트 사용
+  const isCMS = typeof window !== 'undefined' && window.location.pathname.includes('/cms');
+  const endpoint = isCMS 
+    ? `${BASE_URL}/cms/users/${params.id}/memo`
+    : `${BASE_URL}/cms/users/${params.id}`;
+
   return callAdminApi({
     title: '회원 정보 수정',
-    url: `${BASE_URL}/cms/users/${params.id}`,
+    url: endpoint,
     method: 'PATCH',
     body: requestBody,
     isCallPageLoader: true,
@@ -1145,10 +1162,18 @@ export async function downloadEstimateExcel(estimateId: string) {
 }
 
 // 채팅방 메시지 조회 API
-export async function getChatMessages(chatId: string, companyCode: string = '') {
+export async function getChatMessages(chatId: string, companyCode?: string) {
+  const queryParams = new URLSearchParams();
+  if (companyCode) {
+    queryParams.append('companyCode', companyCode);
+  }
+  
+  const queryString = queryParams.toString();
+  const url = `${BASE_URL}/cms/company/chat/${chatId}/messages${queryString ? `?${queryString}` : ''}`;
+  
   return callAdminApi({
     title: '채팅 메시지 조회',
-    url: `${BASE_URL}/cms/company/chat/${chatId}/messages?companyCode=${companyCode}`,
+    url: url,
     method: 'GET',
     isCallPageLoader: true,
     isWithToken: true,

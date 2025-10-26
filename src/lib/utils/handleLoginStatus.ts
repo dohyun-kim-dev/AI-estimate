@@ -23,19 +23,19 @@ export function handleLoginStatus({
       break;
     case ApiLoginStatus.NoUser:
       onFail?.();
-      showMessage('가입된 회원 정보가 없습니다');
+      showMessage(customMessage || '가입된 회원 정보가 없습니다');
       break;
     case ApiLoginStatus.PasswordIncorrect:
       onFail?.();
-      showMessage('비밀번호가 일치하지 않습니다');
+      showMessage(customMessage || '비밀번호가 일치하지 않습니다');
       break;
     case ApiLoginStatus.DisabledUser:
       onFail?.();
-      showMessage('탈퇴한 회원입니다. 재가입이 필요합니다.');
+      showMessage(customMessage || '탈퇴한 회원입니다. 재가입이 필요합니다.');
       break;
     case ApiLoginStatus.NoData:
       onFail?.();
-      showMessage('데이터가 없습니다');
+      showMessage(customMessage || '데이터가 없습니다');
       break;
     case ApiLoginStatus.Forbidden:
       onFail?.();

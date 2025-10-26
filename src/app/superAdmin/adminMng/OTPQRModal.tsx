@@ -7,9 +7,10 @@ import { devLog } from '@/lib/utils/devLogger';
 interface OTPQRModalProps {
   isOpen: boolean;
   onClose: () => void;
+  companyCode?: string; // 통합 관리자용 고객사 코드
 }
 
-const OTPQRModal: React.FC<OTPQRModalProps> = ({ isOpen, onClose }) => {
+const OTPQRModal: React.FC<OTPQRModalProps> = ({ isOpen, onClose, companyCode }) => {
   const [qrCodeImage, setQrCodeImage] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const { show: showToast } = useToast();
@@ -25,16 +26,26 @@ const OTPQRModal: React.FC<OTPQRModalProps> = ({ isOpen, onClose }) => {
         URL.revokeObjectURL(qrCodeImage);
       }
     };
-  }, [isOpen]);
+  }, [isOpen, companyCode]); // companyCode 의존성 추가
 
   const fetchQRCode = async () => {
     setIsLoading(true);
     try {
+      // URL에 cms가 포함되어 있는지 확인
+      const isCmsUrl = window.location.pathname.includes('/cms/');
+      
       // QR 코드는 이미지 바이너리로 응답하므로 직접 fetch 사용
       const token = localStorage.getItem('admin_access_token');
       
-      const response = await fetch('/api/company/cms/otp/qr', {
-        method: 'POST',
+      // CMS URL인 경우 기존 API, 통합 관리자인 경우 companyCode 파라미터 전달
+      const apiUrl = isCmsUrl 
+        ? '/api/company/cms/otp/qr'
+        : `/api/cms/company/otp/qr?companyCode=${companyCode || ''}`;
+      
+      devLog('OTP QR Code API 호출:', { isCmsUrl, apiUrl, companyCode });
+
+      const response = await fetch(apiUrl, {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -42,7 +53,28 @@ const OTPQRModal: React.FC<OTPQRModalProps> = ({ isOpen, onClose }) => {
       });
 
       if (!response.ok) {
-        throw new Error('QR 코드를 불러오는데 실패했습니다.');
+        // JSON 응답일 수 있으므로 먼저 파싱 시도
+        try {
+          const errorData = await response.json();
+          devLog('OTP QR Code API 에러 응답:', errorData);
+          
+          // 커스텀 메시지가 있으면 그것을 사용
+          const errorMessage = errorData?.error?.customMessage || errorData?.message || 'QR 코드를 불러오는데 실패했습니다.';
+          
+          // "회사 코드가 필요합니다." 메시지를 더 친절하게 변경
+          if (errorMessage.includes('회사 코드') || errorMessage.includes('companyCode')) {
+            showToast('먼저 고객사를 선택해주세요.', 'error');
+          } else {
+            showToast(errorMessage, 'error');
+          }
+          
+          setIsLoading(false);
+          return;
+        } catch (jsonError) {
+          // JSON 파싱 실패 시 기본 에러 메시지
+          devLog('OTP QR Code API 응답 파싱 오류:', jsonError);
+          throw new Error('QR 코드를 불러오는데 실패했습니다.');
+        }
       }
 
       // 이미지 blob을 받아서 URL로 변환

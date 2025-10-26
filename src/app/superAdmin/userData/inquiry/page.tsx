@@ -11,7 +11,7 @@ import { THEME_COLORS } from '@/styles/theme_colors';
 import { getEstimateRequestListByRole } from '@/lib/utils/adminApiRouter';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { useToast } from '@/components/common/ToastProvider';
-import { downloadEstimate, downloadEstimateExcel, updateEstimateRequestStatus } from '@/lib/api/admin/adminApi';
+import { downloadEstimate, downloadEstimateExcel, updateEstimateRequestStatus, getCompanyInfo, getCompany } from '@/lib/api/admin/adminApi';
 import ChatHistoryModal from '@/components/ChatHistoryModal';
 import EstimateInquiryModal from '@/components/EstimateInquiryModal';
 import { devLog } from '@/utils/devLogger';
@@ -339,6 +339,8 @@ const InquiryPage: React.FC = () => {
   // 고객사 선택 상태 추가
   const [selectedCompanyCode, setSelectedCompanyCode] = useState<string>('');
   const [selectedCompanyName, setSelectedCompanyName] = useState<string>('');
+  const [aiProfile, setAiProfile] = useState<string>('');
+  const [aiName, setAiName] = useState<string>('');
   
   // 키워드 상태 추가 (userMng와 동일)
   const [currentKeyword, setCurrentKeyword] = useState<string>('');
@@ -353,6 +355,39 @@ const InquiryPage: React.FC = () => {
       fromDate: string;
       toDate: string;
     } | null>(null);
+
+  // AI 프로필 정보 로드 함수
+  const loadAIProfileInfo = async (companyCode: string) => {
+    try {
+      const currentPath = window.location.pathname;
+      let response;
+      
+      // URL에 /cms/가 포함되면 getCompanyInfo 호출
+      if (currentPath.includes('/cms/')) {
+        devLog('🔍 [getCompanyInfo 호출] - CMS 경로');
+        response = await getCompanyInfo();
+      } else {
+        // 슈퍼어드민 경로면 getCompany 호출
+        devLog('🔍 [getCompany 호출] - 슈퍼어드민 경로, companyCode:', companyCode);
+        response = await getCompany(companyCode);
+      }
+      
+      devLog('✅ [AI 프로필 정보 응답]:', response);
+      
+      // callAdminApi는 응답을 배열로 감싸서 반환
+      const actualResponse = Array.isArray(response) ? response[0] : response;
+      const apiData = (actualResponse as any)?.data;
+      
+      if (apiData && apiData.statusCode === 200) {
+        const companyData = apiData.data;
+        setAiProfile(companyData.aiProfile || '');
+        setAiName(companyData.aiName || '');
+        devLog('✅ [AI 프로필 설정 완료]:', { aiProfile: companyData.aiProfile, aiName: companyData.aiName });
+      }
+    } catch (error) {
+      console.error('❌ [AI 프로필 정보 로드 실패]:', error);
+    }
+  };
 
   // URL에서 회사 코드 추출하여 초기화
   useEffect(() => {
@@ -369,6 +404,9 @@ const InquiryPage: React.FC = () => {
           path: currentPath,
           companyCode: extractedCompanyCode
         });
+        
+        // AI 프로필 정보 로드
+        loadAIProfileInfo(extractedCompanyCode);
         
         // 회사 코드 추출 후 데이터 로드
         setTimeout(() => {
@@ -548,6 +586,9 @@ const InquiryPage: React.FC = () => {
     
     // 초기 로드 플래그 해제 (실제 조회이므로)
     setIsInitialLoad(false);
+    
+    // AI 프로필 정보 로드
+    loadAIProfileInfo(company.id);
     
     // 고객사 변경 시 리스트 새로고침
     setTimeout(() => {
@@ -918,6 +959,9 @@ const InquiryPage: React.FC = () => {
         chatSessionId={selectedChatSession}
         userName={selectedUserName}
         chatTitle={selectedChatTitle}
+        aiProfile={aiProfile}
+        aiName={aiName}
+        companyCode={selectedCompanyCode}
       />
     </>
   );

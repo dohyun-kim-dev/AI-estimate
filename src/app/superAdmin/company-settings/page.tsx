@@ -15,7 +15,7 @@ interface CompanyInfo {
   id: string;
   name: string;
   ceo: string;
-  businessNo: string;
+  businessNumber: string;
   cellphone: string;
   address: string;
   detailAddress: string;
@@ -32,7 +32,7 @@ const initialCompanyInfo: CompanyInfo = {
   id: '',
   name: '',
   ceo: '',
-  businessNo: '',
+  businessNumber: '',
   cellphone: '',
   address: '',
   detailAddress: '',
@@ -535,7 +535,7 @@ export default function CompanyInfoSettingsPage() {
     }
     
     // 사업자등록번호: 숫자만 허용, 최대 10자리
-    if (name === 'businessNo') {
+    if (name === 'businessNumber') {
       const numericValue = value.replace(/[^0-9]/g, '').slice(0, 10);
       setCompanyInfo(prev => ({ ...prev, [name]: numericValue }));
       return;
@@ -794,7 +794,7 @@ export default function CompanyInfoSettingsPage() {
           id: company.companyCode || '',
           name: company.companyName || '',
           ceo: company.name || company.ceo || '', // name을 대표명(ceo)으로 매핑
-          businessNo: company.businessNumber || company.businessNo || '', // businessNumber을 사업자등록번호(businessNo)로 매핑
+          businessNumber: company.businessNumber || company.businessNumber || '', // businessNumber을 사업자등록번호(businessNo)로 매핑
           cellphone: company.cellphone || '',
           address: company.address || '',
           detailAddress: company.detailAddress || '',
@@ -892,6 +892,18 @@ export default function CompanyInfoSettingsPage() {
       return;
     }
 
+    // 전화번호 최소 글자 수 검증
+    if (companyInfo.cellphone && companyInfo.cellphone.length < 10) {
+      showToast('전화번호는 최소 10자리 이상이어야 합니다.', 'error');
+      return;
+    }
+
+    // 사업자등록번호 최소 글자 수 검증
+    if (companyInfo.businessNumber && companyInfo.businessNumber.length < 10) {
+      showToast('사업자등록번호는 10자리여야 합니다.', 'error');
+      return;
+    }
+
     // 견적 비고란이 비어있으면 기본값 추가
     const finalEstimateNotes = estimateNotes.length > 0 ? estimateNotes : [''];
 
@@ -906,7 +918,7 @@ export default function CompanyInfoSettingsPage() {
         // ✅ 새로 업로드된 파일이 있으면 그것을 사용, 없으면 원본 파일명 사용
         signature: uploadedSignatureImage || originalSignatureFileName || companyInfo.signature,
         cellphone: companyInfo.cellphone,
-        businessNo: companyInfo.businessNo,
+        businessNo: companyInfo.businessNumber, // API는 businessNo 필드명 사용
         etc: finalEstimateNotes
       });
       
@@ -1057,10 +1069,10 @@ export default function CompanyInfoSettingsPage() {
                   placeholder="전화번호를 입력해주세요"
                 />
                 <TextField
-                  id="businessNo"
+                  id="businessNumber"
                   label="* 사업자등록번호"
-                  name="businessNo"
-                  value={companyInfo.businessNo}
+                  name="businessNumber"
+                  value={companyInfo.businessNumber}
                   onChange={handleChange}
                   placeholder="사업자등록번호를 입력해주세요"
                 />

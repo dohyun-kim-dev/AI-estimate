@@ -122,9 +122,9 @@ const UserMessageContainer = styled.div<{ hasImages?: boolean }>`
   `}
 `;
  
-const StyledAiMessage = styled(ShareAiResponseMessage)<{ isFullWidth?: boolean }>`
+const StyledAiMessage = styled(ShareAiResponseMessage)<{ $isFullWidth?: boolean }>`
   padding: 0;
-  max-width: ${({ isFullWidth }) => (isFullWidth ? '100%' : '100%')};
+  max-width: ${({ $isFullWidth }) => ($isFullWidth ? '100%' : '100%')};
   align-self: flex-start;
   min-width: 0; /* flexbox 축소 허용 */
   box-sizing: border-box;
@@ -628,7 +628,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({
                 profileImage={getProfileImageUrl(aiProfile)}
                 name={aiName || "AI 에이전트"}
                 chatSessionId={chatSessionId}
-                isFullWidth={isEstimateMessage(message.content)}
+                $isFullWidth={isEstimateMessage(message.content)}
               />
             );
           }

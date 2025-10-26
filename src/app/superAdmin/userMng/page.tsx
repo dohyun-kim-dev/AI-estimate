@@ -517,9 +517,9 @@ const UserMngPage: React.FC = () => {
       }
       
       if (detailData) {
-        // memo 추출: 최상위 memo 또는 usingService 배열의 첫 번째 항목의 memo
-        let extractedMemo = detailData.memo || '';
-        if (!extractedMemo && detailData.usingService && Array.isArray(detailData.usingService) && detailData.usingService.length > 0) {
+        // ✅ memo 추출: usingService 배열에서만 추출 (최상위 memo 사용 안 함)
+        let extractedMemo = '';
+        if (detailData.usingService && Array.isArray(detailData.usingService) && detailData.usingService.length > 0) {
           const firstService = detailData.usingService[0];
           if (firstService && typeof firstService === 'object' && 'memo' in firstService) {
             extractedMemo = (firstService as any).memo || '';
@@ -904,8 +904,19 @@ const UserMngPage: React.FC = () => {
             }
           }
           
-          // 최상위 memo 또는 기본값 반환
-          return value || '-';
+          // ✅ 통합관리자: usingService 배열의 첫 번째 항목의 memo 사용
+          if (row.usingService && Array.isArray(row.usingService) && row.usingService.length > 0) {
+            const firstService = row.usingService[0];
+            if (firstService) {
+              const firstServiceObj = firstService as any;
+              if (firstServiceObj && typeof firstServiceObj === 'object' && 'memo' in firstServiceObj) {
+                return firstServiceObj.memo || '-';
+              }
+            }
+          }
+          
+          // 기본값 반환
+          return '-';
         }
       },
     ],

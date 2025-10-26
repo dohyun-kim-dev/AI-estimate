@@ -9,6 +9,8 @@ import CommonTextField from '@/components/common/TextField';
 import { SwitchInput } from '@/components/SwitchInput';
 import CategorySearchPopup from './CategorySearchPopup';
 import { uploadFiles, getFileUrl } from '@/lib/api/user/userApi';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
+import { useToast } from '@/components/common/ToastProvider';
 import DaumPostcode from 'react-daum-postcode';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -170,6 +172,16 @@ const SaveButton = styled(FooterButton)`
   }
 `;
 
+const DeleteButton = styled(FooterButton)`
+  background-color: #2C2E3C;
+  color: #FFFFFF;
+  // border: 1px solid #DC2626;
+
+  &:hover:not(:disabled) {
+    background-color: #B91C1C;
+    border: 1px solid #B91C1C;
+  }
+`;
 
 const SearchButton = styled(FooterButton)`
   background-color: #2C2E3C;
@@ -274,6 +286,7 @@ interface CompanyFormPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
+  onDelete?: (companyCode: string) => Promise<void>;
   selectedCustomer: Partial<Customer> | null;
   formData: {
     name: string;
@@ -388,6 +401,7 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
   isOpen,
   onClose,
   onSave,
+  onDelete,
   selectedCustomer,
   formData,
   onFormChange,
@@ -509,6 +523,12 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
 
   // 로딩 상태
   const [isSaving, setIsSaving] = React.useState(false);
+  
+  // 삭제 확인 모달 상태
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = React.useState(false);
+  
+  // URL에 cms가 포함되어 있는지 확인 (슈퍼어드민만 삭제 가능)
+  const isCmsUrl = typeof window !== 'undefined' && window.location.pathname.includes('/cms/');
 
   // 저장 핸들러 (벨리데이션 포함)
   const handleSave = async () => {
@@ -519,6 +539,23 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
       console.error('저장 실패:', error);
     } finally {
       setIsSaving(false);
+    }
+  };
+  
+  // 삭제 핸들러
+  const handleDeleteClick = () => {
+    setIsDeleteConfirmOpen(true);
+  };
+  
+  const handleDeleteConfirm = async () => {
+    if (!selectedCustomer?.companyCode || !onDelete) return;
+    
+    try {
+      await onDelete(selectedCustomer.companyCode);
+      setIsDeleteConfirmOpen(false);
+    } catch (error) {
+      console.error('삭제 실패:', error);
+      setIsDeleteConfirmOpen(false);
     }
   };
 
@@ -587,16 +624,28 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
     const file = event.target.files?.[0];
     if (file) {
       try {
-        const response = await uploadFiles([file]);
+        const originalFileName = file.name; // 원본 파일명 (한글 포함)
+        
+        // 파일명을 Base64로 인코딩
+        const encodedFileName = btoa(encodeURIComponent(originalFileName));
+        const fileExtension = originalFileName.split('.').pop();
+        const newFileName = `${encodedFileName}.${fileExtension}`;
+        
+        // 인코딩된 파일명으로 새로운 File 객체 생성
+        const encodedFile = new File([file], newFileName, { type: file.type });
+        
+        const response = await uploadFiles([encodedFile]);
         // 업로드 응답에서 data 배열의 첫 번째 값을 사용
         if (response.data && response.data.length > 0) {
-          const fileName = response.data[0]; // 파일명 (예: "45f67d8d-10e1-4c7c-8921-cd98ddac326b_(1).pdf")
-          setCiFileId(fileName);
+          const serverFileName = response.data[0]; // 서버에서 생성한 파일명
+          
+          setCiFileId(serverFileName);
+          setCiFileName(originalFileName); // 원본 파일명 저장
           setCiPreview(URL.createObjectURL(file));
           
-          // 부모 컴포넌트의 상태도 업데이트
+          // 부모 컴포넌트의 상태도 업데이트 (서버 파일명만 전달)
           if (onFormChange?.setCiImage) {
-            onFormChange.setCiImage(fileName);
+            onFormChange.setCiImage(serverFileName);
           }
         }
       } catch (error) {
@@ -609,22 +658,34 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
     const file = event.target.files?.[0];
     if (file) {
       try {
-        const response = await uploadFiles([file]);
+        const originalFileName = file.name; // 원본 파일명 (한글 포함)
+        
+        // 파일명을 Base64로 인코딩
+        const encodedFileName = btoa(encodeURIComponent(originalFileName));
+        const fileExtension = originalFileName.split('.').pop();
+        const newFileName = `${encodedFileName}.${fileExtension}`;
+        
+        // 인코딩된 파일명으로 새로운 File 객체 생성
+        const encodedFile = new File([file], newFileName, { type: file.type });
+        
+        const response = await uploadFiles([encodedFile]);
         // 업로드 응답에서 data 배열의 첫 번째 값을 사용
         if (response.data && response.data.length > 0) {
-          const fileName = response.data[0]; // 파일명 (예: "45f67d8d-10e1-4c7c-8921-cd98ddac326b_(1).pdf")
-          setBusinessFileId(fileName);
+          const serverFileName = response.data[0]; // 서버에서 생성한 파일명
           
-          // PDF 파일인 경우 파일명만 저장, 이미지 파일인 경우 미리보기 생성
+          setBusinessFileId(serverFileName);
+          setBusinessFileName(originalFileName); // 원본 파일명 저장
+          
+          // PDF 파일인 경우 원본 파일명 표시, 이미지 파일인 경우 미리보기 생성
           if (file.type === 'application/pdf') {
-            setBusinessPreview(`PDF: ${file.name}`);
+            setBusinessPreview(`PDF: ${originalFileName}`);
           } else {
             setBusinessPreview(URL.createObjectURL(file));
           }
           
-          // 부모 컴포넌트의 상태도 업데이트
+          // 부모 컴포넌트의 상태도 업데이트 (서버 파일명만 전달)
           if (onFormChange?.setBusinessImage) {
-            onFormChange.setBusinessImage(fileName);
+            onFormChange.setBusinessImage(serverFileName);
           }
         }
       } catch (error) {
@@ -668,29 +729,98 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
   const [businessFileId, setBusinessFileId] = React.useState<string>('');
   const [ciPreview, setCiPreview] = React.useState<string>('');
   const [businessPreview, setBusinessPreview] = React.useState<string>('');
+  
+  // 원본 파일명 저장 (한글 이름 포함)
+  const [ciFileName, setCiFileName] = React.useState<string>('');
+  const [businessFileName, setBusinessFileName] = React.useState<string>('');
 
   // 선택된 고객사 정보가 변경될 때 모든 상태 초기화/설정
   React.useEffect(() => {
     if (selectedCustomer && isEditMode) {
       // 수정 모드일 때 기존 정보 설정
       
-      // 이미지 미리보기 설정
+      // CI 이미지 미리보기 및 파일명 설정
       if (selectedCustomer.ciImage) {
+        setCiFileId(selectedCustomer.ciImage);
         setCiPreview(getFileUrl(selectedCustomer.ciImage));
+        
+        // 서버 파일명 디코딩
+        try {
+          // UUID와 확장자 제거 후 Base64 디코딩
+          let fileName = selectedCustomer.ciImage;
+          
+          // UUID_ 패턴 제거 (예: "45f67d8d-10e1-4c7c-8921-cd98ddac326b_파일명.jpg")
+          if (fileName.includes('_')) {
+            fileName = fileName.split('_').slice(1).join('_');
+          }
+          
+          // Base64 인코딩된 파일명인지 확인 (확장자 전 부분이 Base64)
+          const parts = fileName.split('.');
+          const encodedPart = parts.slice(0, -1).join('.');
+          const extension = parts[parts.length - 1];
+          
+          // Base64 디코딩 시도
+          try {
+            const decodedFileName = decodeURIComponent(atob(encodedPart));
+            setCiFileName(decodedFileName);
+          } catch {
+            // 디코딩 실패 시 원본 파일명 사용
+            setCiFileName(fileName);
+          }
+        } catch (error) {
+          console.error('CI 파일명 디코딩 실패:', error);
+          setCiFileName(selectedCustomer.ciImage);
+        }
       } else {
+        setCiFileId('');
         setCiPreview('');
+        setCiFileName('');
       }
       
+      // 사업자등록증 미리보기 및 파일명 설정
       if (selectedCustomer.businessImage) {
+        setBusinessFileId(selectedCustomer.businessImage);
         const fileUrl = getFileUrl(selectedCustomer.businessImage);
+        
+        // 서버 파일명 디코딩
+        let decodedFileName = selectedCustomer.businessImage;
+        try {
+          // UUID_ 패턴 제거 (예: "45f67d8d-10e1-4c7c-8921-cd98ddac326b_파일명.pdf")
+          let fileName = selectedCustomer.businessImage;
+          if (fileName.includes('_')) {
+            fileName = fileName.split('_').slice(1).join('_');
+          }
+          
+          // Base64 인코딩된 파일명인지 확인 (확장자 전 부분이 Base64)
+          const parts = fileName.split('.');
+          const encodedPart = parts.slice(0, -1).join('.');
+          const extension = parts[parts.length - 1];
+          
+          // Base64 디코딩 시도
+          try {
+            const decoded = decodeURIComponent(atob(encodedPart));
+            decodedFileName = decoded;
+          } catch {
+            // 디코딩 실패 시 원본 파일명 사용
+            decodedFileName = fileName;
+          }
+        } catch (error) {
+          console.error('사업자등록증 파일명 디코딩 실패:', error);
+          decodedFileName = selectedCustomer.businessImage;
+        }
+        
+        setBusinessFileName(decodedFileName);
+        
         // 파일 확장자를 확인하여 PDF 파일인지 판단
         if (selectedCustomer.businessImage.toLowerCase().endsWith('.pdf')) {
-          setBusinessPreview(`PDF: ${selectedCustomer.businessImage}`);
+          setBusinessPreview(`PDF: ${decodedFileName}`);
         } else {
           setBusinessPreview(fileUrl);
         }
       } else {
+        setBusinessFileId('');
         setBusinessPreview('');
+        setBusinessFileName('');
       }
       
       // 카테고리 정보 설정 - 서버 데이터 구조에 맞게 수정
@@ -743,6 +873,8 @@ const CompanyFormPopup: React.FC<CompanyFormPopupProps> = ({
       setBusinessPreview('');
       setCiFileId('');
       setBusinessFileId('');
+      setCiFileName('');
+      setBusinessFileName('');
       setSelectedCategory(null);
       
       // 부모 컴포넌트의 카테고리 상태도 초기화
@@ -1032,7 +1164,14 @@ const RemoveImageButton = styled.button`
       backgroundColor="#FFF"
       bottomFloating={
         <PopupFooter>
-          <div />
+          {/* 슈퍼어드민(URL에 /cms/ 없음) & 수정 모드일 때만 삭제 버튼 표시 */}
+          <div>
+            {!isCmsUrl && isEditMode && onDelete && (
+              <DeleteButton onClick={handleDeleteClick}>
+                삭제
+              </DeleteButton>
+            )}
+          </div>
           <div style={{ display: 'flex', gap: '12px' }}>
             <SaveButton 
               onClick={handleSave}
@@ -1321,6 +1460,7 @@ const RemoveImageButton = styled.button`
                   e.stopPropagation();
                   setCiFileId('');
                   setCiPreview('');
+                  setCiFileName('');
                   // 부모 컴포넌트 상태도 초기화
                   if (onFormChange?.setCiImage) {
                     onFormChange.setCiImage(undefined);
@@ -1356,7 +1496,7 @@ const RemoveImageButton = styled.button`
           {businessPreview ? (
             <div style={{ marginBottom: '16px', textAlign: 'center', position: 'relative', color:'black'}}>
               {businessPreview.startsWith('PDF:') ? (
-                // PDF 파일인 경우 파일명 표시
+                // PDF 파일인 경우 원본 파일명 표시
                 <div style={{
                   padding: '20px',
                   border: '1px solid #ddd',
@@ -1370,7 +1510,7 @@ const RemoveImageButton = styled.button`
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 5.99 22H18C19.1 22 20 21.1 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z" fill="#dc3545"/>
                   </svg>
-                  <span>{businessPreview}</span>
+                  <span>{businessFileName || businessPreview.replace('PDF: ', '')}</span>
                 </div>
               ) : (
                 // 이미지 파일인 경우 미리보기 표시
@@ -1394,6 +1534,7 @@ const RemoveImageButton = styled.button`
                   e.stopPropagation();
                   setBusinessFileId('');
                   setBusinessPreview('');
+                  setBusinessFileName('');
                   // 부모 컴포넌트 상태도 초기화
                   if (onFormChange?.setBusinessImage) {
                     onFormChange.setBusinessImage(undefined);
@@ -1448,6 +1589,20 @@ const RemoveImageButton = styled.button`
           }}
         />
       )}
+      
+      {/* 삭제 확인 모달 */}
+      <DeleteConfirmModal
+        open={isDeleteConfirmOpen}
+        title="고객사 삭제"
+        content={`정말로 "${selectedCustomer?.companyName || '이 고객사'}"를(을) 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`}
+        confirmText="삭제"
+        cancelText="취소"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
+        width={400}
+        showCloseButton={false}
+        reverseButtons={true}
+      />
     </CmsPopup>
   );
 };

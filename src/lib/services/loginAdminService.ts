@@ -52,6 +52,9 @@ export async function loginAdminService({
     const responseData = response.data as LoginResponse;
     const message = responseData?.message ?? 'unknown';
     const status = getLoginStatus(message);
+    
+    // customMessage 추출 (error 객체 안에 있을 수 있음)
+    const customMessage = (responseData as any)?.error?.customMessage || (responseData as any)?.customMessage;
 
     // 토큰 추출 시도 - 우선순위: 헤더 > 응답 데이터
     let token: string | undefined;
@@ -111,6 +114,7 @@ export async function loginAdminService({
     handleLoginStatus({
       status,
       message,
+      customMessage,  // customMessage 추가
       showMessage,
       onSuccess: () => {
         // ✅ 토큰 저장
