@@ -1,6 +1,7 @@
 // 🔥 Gemini File API를 사용한 파일 업로드 (Firebase Storage 대체)
 
 import { GoogleGenerativeAI, GoogleAIFileManager } from '@google/generative-ai';
+import { devLog } from './utils/devLogger';
 
 export interface FileUploadData {
   name: string;

@@ -201,13 +201,6 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({
   const { companyInfo } = useCompanyStore();
   const [isDragging, setIsDragging] = useState(false);
 
-  // 🔍 디버깅: companyInfo 확인
-  React.useEffect(() => {
-    console.log('🏢 PeriodSlider - companyInfo:', companyInfo);
-    console.log('🏢 PeriodSlider - rateRule:', companyInfo?.rateRule);
-    console.log('🏢 PeriodSlider - discountRate:', companyInfo?.discountRate);
-    console.log('🏢 PeriodSlider - checkpointList:', companyInfo?.checkpointList);
-  }, [companyInfo]);
 
   // ✅ iOS 뒤로가기 제스처 방지 (컴포넌트 마운트 시)
   React.useEffect(() => {
@@ -247,9 +240,6 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({
       maxValue: (companyInfo as any).maxValue || 8   // 임시로 any 타입 사용
     };
     
-    console.log('📦 discountSettings:', settings);
-    console.log('📦 companyInfo.rateRule:', companyInfo.rateRule);
-    
     return settings;
   }, [companyInfo]);
 
@@ -265,7 +255,6 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({
         step: checkpointList[0]?.checkpoint || 1,
         checkpoints: undefined as number[] | undefined
       };
-      console.log('🔧 FIXED 모드 슬라이더 설정:', config);
       return config;
     } else {
       // DYNAMIC 모드: 체크포인트만 선택 가능
@@ -276,7 +265,6 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({
         step: 1,
         checkpoints // 실제 체크포인트 값들
       };
-      console.log('🔧 DYNAMIC 모드 슬라이더 설정:', config, '체크포인트:', checkpoints);
       return config;
     }
   }, [discountSettings]);
