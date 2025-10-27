@@ -12,6 +12,7 @@ interface OTPQRModalProps {
 
 const OTPQRModal: React.FC<OTPQRModalProps> = ({ isOpen, onClose, companyCode }) => {
   const [qrCodeImage, setQrCodeImage] = useState<string>('');
+  const [otpUrl, setOtpUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const { show: showToast } = useToast();
 
@@ -77,18 +78,61 @@ const OTPQRModal: React.FC<OTPQRModalProps> = ({ isOpen, onClose, companyCode })
         }
       }
 
-      // 이미지 blob을 받아서 URL로 변환
-      const blob = await response.blob();
-      const imageUrl = URL.createObjectURL(blob);
-      
-      devLog('OTP QR Code image URL:', imageUrl);
-      setQrCodeImage(imageUrl);
+      // Content-Type 확인하여 JSON인지 이미지인지 구분
+      const contentType = response.headers.get('Content-Type');
+      devLog('Response Content-Type:', contentType);
+
+      if (contentType?.includes('application/json')) {
+        // JSON 응답 (URL과 QR 이미지 포함)
+        const jsonData = await response.json();
+        devLog('OTP QR Code JSON 응답:', jsonData);
+        
+        if (jsonData.data) {
+          // URL 저장
+          if (jsonData.data.url) {
+            setOtpUrl(jsonData.data.url);
+          }
+          
+          // QR 이미지 (base64 또는 blob)
+          if (jsonData.data.qrCode) {
+            // base64 형식인 경우
+            if (jsonData.data.qrCode.startsWith('data:image')) {
+              setQrCodeImage(jsonData.data.qrCode);
+            } else {
+              // blob URL 생성
+              const base64Response = await fetch(`data:image/png;base64,${jsonData.data.qrCode}`);
+              const blob = await base64Response.blob();
+              const imageUrl = URL.createObjectURL(blob);
+              setQrCodeImage(imageUrl);
+            }
+          }
+        }
+      } else {
+        // 이미지 blob을 받아서 URL로 변환 (기존 방식)
+        const blob = await response.blob();
+        const imageUrl = URL.createObjectURL(blob);
+        
+        devLog('OTP QR Code image URL:', imageUrl);
+        setQrCodeImage(imageUrl);
+      }
       
     } catch (error) {
       console.error('QR Code fetch error:', error);
       showToast('QR 코드를 불러오는데 실패했습니다.', 'error');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCopyUrl = () => {
+    if (otpUrl) {
+      navigator.clipboard.writeText(otpUrl)
+        .then(() => {
+          showToast('URL이 복사되었습니다.', 'success');
+        })
+        .catch(() => {
+          showToast('복사에 실패했습니다.', 'error');
+        });
     }
   };
 
@@ -106,13 +150,24 @@ const OTPQRModal: React.FC<OTPQRModalProps> = ({ isOpen, onClose, companyCode })
           {isLoading ? (
             <LoadingText>QR 코드를 생성하는 중...</LoadingText>
           ) : qrCodeImage ? (
-            <>
-              <QRCodeImage src={qrCodeImage} alt="OTP QR Code" />
-              <InfoText>
-                Google Authenticator 또는 다른 OTP 앱으로<br />
-                위 QR 코드를 스캔하세요.
-              </InfoText>
-            </>
+            <ContentWrapper>
+              <LeftSection>
+                <QRCodeImage src={qrCodeImage} alt="OTP QR Code" />
+                <InfoText>
+                  Google Authenticator 또는 다른 OTP 앱으로<br />
+                  위 QR 코드를 스캔하세요.
+                </InfoText>
+              </LeftSection>
+              {otpUrl && (
+                <RightSection>
+                  <UrlContainer>
+                    <UrlLabel>OTP URL</UrlLabel>
+                    <UrlBox>{otpUrl}</UrlBox>
+                    <CopyButton onClick={handleCopyUrl}>복사</CopyButton>
+                  </UrlContainer>
+                </RightSection>
+              )}
+            </ContentWrapper>
           ) : (
             <ErrorText>QR 코드를 표시할 수 없습니다.</ErrorText>
           )}
@@ -142,7 +197,7 @@ const ModalContainer = styled.div`
   background: white;
   border-radius: 0px;
   width: 90%;
-  max-width: 450px;
+  max-width: 800px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   overflow: hidden;
 `;
@@ -191,6 +246,81 @@ const ModalBody = styled.div`
   align-items: center;
   justify-content: center;
   min-height: 300px;
+`;
+
+const ContentWrapper = styled.div`
+  display: flex;
+  gap: 40px;
+  width: 100%;
+  align-items: flex-start;
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+  }
+`;
+
+const LeftSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+const RightSection = styled.div`
+  flex: 1;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+`;
+
+const UrlContainer = styled.div`
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  background: #f8f8f8;
+`;
+
+const UrlLabel = styled.div`
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+`;
+
+const UrlBox = styled.div`
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 12px;
+  font-size: 12px;
+  color: #666;
+  word-break: break-all;
+  margin-bottom: 12px;
+  font-family: monospace;
+  line-height: 1.5;
+`;
+
+const CopyButton = styled.button`
+  width: 100%;
+  background: #2C2E3C;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #1a1c28;
+  }
+
+  &:active {
+    background: #0f1015;
+  }
 `;
 
 const QRCodeImage = styled.img`

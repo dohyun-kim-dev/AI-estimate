@@ -1020,7 +1020,7 @@ export default function AigoSettingsPage() {
             <Group>
               <TextField
                 id="maxGuestQueries"
-                label="[1일] 비회원 최대 질의 횟수"
+                label="[1일] 비회원 추가 최대 질의 횟수"
                 name="maxGuestQueries"
                 value={formData.maxGuestQueries}
                 onChange={handleNumericChange}

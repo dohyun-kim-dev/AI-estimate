@@ -396,7 +396,11 @@ const SharePage: React.FC = () => {
     if (fileMatch) {
       const fileName = fileMatch[1];
       textContent = content.replace(/\[첨부파일: .+?\]/, '').trim();
-      const imageUrl = `/file/${fileName}`;
+      
+      // 환경별 파일 경로 처리 (setting 페이지와 동일)
+      const isDev = import.meta.env.VITE_ENV_NAME === 'dev';
+      const imageUrl = isDev ? `/api/file/${fileName}` : `/file/${fileName}`;
+      
       // 이미지 파일인지 확인
       const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
       return {
@@ -668,17 +672,26 @@ const SharePage: React.FC = () => {
                 </UserMessageContainer>
               );
             } else {
+              // AI 프로필 이미지 경로 처리 (환경별 분기)
+              const getAiProfileImage = () => {
+                if (!companyInfo?.aiProfile) return "/ai-estimate/pretty.png";
+                
+                // 정적 파일인 경우 그대로 반환
+                if (companyInfo.aiProfile.startsWith('/ai-estimate/') || 
+                    companyInfo.aiProfile.startsWith('/cms/')) {
+                  return companyInfo.aiProfile;
+                }
+                
+                // 서버 파일인 경우 환경별 경로 처리
+                const isDev = import.meta.env.VITE_ENV_NAME === 'dev';
+                return isDev ? `/api/file/${companyInfo.aiProfile}` : `/file/${companyInfo.aiProfile}`;
+              };
+              
               return (
                 <StyledAiMessage
                   key={index}
                   content={<AiMessageContent content={message.content}/>} 
-                  profileImage={
-                    companyInfo?.aiProfile 
-                      ? (companyInfo.aiProfile.startsWith('/ai-estimate/') 
-                          ? companyInfo.aiProfile 
-                          : `/api/file/${companyInfo.aiProfile}`)
-                      : "/ai-estimate/pretty.png"
-                  }
+                  profileImage={getAiProfileImage()}
                   name={companyInfo?.aiName || "AI 에이전트"}
                   chatSessionId={sessionId}
                   // estimateDataForConsult={estimateDataForConsult}
