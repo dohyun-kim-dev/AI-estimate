@@ -384,22 +384,45 @@ export function getDownloadEstimateUrl(companyCode: string, uuid: string) {
   return getApiUrl(`/file/estimate/download/${filePath}`);
 }
 
+// ✅ CMS용 견적서 다운로드 기록 API (응답값 없음)
+export async function recordEstimateDownload(estimateId: string) {
+  return callUserApi({
+    title: '견적서 다운로드 기록',
+    url: getApiUrl(`/cms/company/estimate/${estimateId}/download`),
+    method: 'GET',
+    isCallPageLoader: false,
+  });
+}
+
 export async function getDownloadEstimateUrlWithUserInfo(
   companyCode: string,
   uuid: string,
-  userInfo?: { id: string; name: string; email: string; cellphone: string }
+  userInfo?: { user: string; name: string; email: string; cellphone: string }
 ) {
   const filePath = `${uuid}`;
   const params = new URLSearchParams();
-  if (userInfo?.id) params.append('id', userInfo.id);
-  if (userInfo?.name) params.append('name', userInfo.name);
-  if (userInfo?.email) params.append('email', userInfo.email);
-  if (userInfo?.cellphone) params.append('cellphone', userInfo.cellphone);
+  
+  // ✅ aiclient URL일 때는 user ID만, 그 외에는 name, email, cellphone만
+  const isShareUrl = window.location.pathname.includes('/share');
+  if (!isShareUrl) {
+    // aiclient: user ID만 전송
+    if (userInfo?.user) params.append('user', userInfo.user);
+    if (userInfo?.name) params.append('name', userInfo.name);
+    if (userInfo?.email) params.append('email', userInfo.email);
+    if (userInfo?.cellphone) params.append('cellphone', userInfo.cellphone);
+  } else {
+    // cms, superadmin 등: 개인정보만 전송
+    if (userInfo?.name) params.append('name', userInfo.name);
+    if (userInfo?.email) params.append('email', userInfo.email);
+    if (userInfo?.cellphone) params.append('cellphone', userInfo.cellphone);
+  }
+  
   const queryString = params.toString();
-  const url = getApiUrl(`/users/company/estimate/${filePath}?${queryString}`);
-  // callUserApi를 사용해 GET 요청 (회사코드 헤더 자동 포함)
+  const url = getApiUrl(`/users/company/estimate/${filePath}${queryString ? '?' + queryString : ''}`);
+  
+  // GET 요청으로 다운로드 카운트 기록
   return callUserApi({
-    title: '견적서 다운로드 카운트',
+    title: '견적서 조회',
     url,
     method: 'GET',
     isCallPageLoader: false,

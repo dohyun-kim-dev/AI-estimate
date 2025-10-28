@@ -32,6 +32,7 @@ type ProposalDownload = {
   title: string;
   _id: string;
   isGuest?: boolean;
+  downloadCount: number; // ✅ 추가: 다운로드 횟수
 };
 
 type userInfo={
@@ -354,7 +355,8 @@ const ProposalDownloadPage: React.FC = () => {
                 createAt: item.createAt || '',
                 title: item.title || '',
                 _id: item._id || '',
-                isGuest
+                isGuest,
+                downloadCount: item.downloadCount || 0 // ✅ 추가
               };
             });
             
@@ -395,7 +397,8 @@ const ProposalDownloadPage: React.FC = () => {
                     createAt: item.createAt || '',
                     title: item.title || '',
                     _id: item._id || '',
-                    isGuest
+                    isGuest,
+                    downloadCount: item.downloadCount || 0 // ✅ 추가
                   };
                 });
                 
@@ -459,6 +462,13 @@ const ProposalDownloadPage: React.FC = () => {
         { header: '이메일', accessor: 'email' as const, flex: 1.2, sortable: true, allowWrap: true },
         { header: '아이디', accessor: 'userId' as const, flex: 1.2, sortable: true, allowWrap: true },
         { header: '견적 제목', accessor: 'title' as const, flex: 2, allowWrap: true },
+        { 
+          header: '다운로드', 
+          accessor: 'downloadCount' as const, 
+          width: 100, 
+          sortable: true,
+          formatter: (value) => String(value || 0) // 숫자만 표시
+        },
         {
           header: '파일다운로드',
           accessor: '_id' as const,

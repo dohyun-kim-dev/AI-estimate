@@ -316,9 +316,9 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
           // 견적서 출력 규칙 및 JSON 스키마 추가
           const additionalInstructions = `
 
-## 5. 최종 출력 형식 (Final Output Format)
+## 최종 출력 형식 (Final Output Format)
 
-### 5-1. 견적서 출력 규칙
+### 견적서 출력 규칙
 -   [자연어 요약]: JSON 출력 전, "지금까지 논의된 내용을 바탕으로 주요 기능과 예상 비용을 정리한 견적서를 제공드립니다." 와 같은 짧은 요약을 먼저 출력.
 -   [최초 견적 안내문]: 대화 기록에 \`<script type="application/json" id="invoiceData">\` 태그가 한 번도 없었다면, 자연어 요약 앞에 아래 안내문을 반드시 추가.
     \`\`\`
@@ -336,7 +336,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
 -   [수정 견적]: 대화 기록에 견적서가 이미 존재한다면, 위 안내 문구 없이 바로 자연어 요약으로 시작.
 -   [견적서 본문]: 견적 내용은 반드시 \`<script type="application/json" id="invoiceData">\` 태그 안에 JSON 객체로만 출력.
 
-### 5-2. JSON 스키마 (JSON Schema) - 엄격하게 준수
+### JSON 스키마 (JSON Schema) - 엄격하게 준수
 
 interface ProjectEstimate {
   project_name: string;          // 프로젝트 이름

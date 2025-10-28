@@ -341,20 +341,20 @@ const EstimateCard: React.FC<EstimateCardProps> = ({ estimate, discountedPrice, 
         }
       }
 
-      // getDownloadEstimateUrlWithUserInfo는 URL만 반환하므로, 실제로 호출을 발생시켜야 함
-      const url:string = getDownloadEstimateUrlWithUserInfo(
-        companyCode,
-        effectiveId,
-        { id: userId, name, email, cellphone }
-      );
+      if (!effectiveId) throw new Error('uuid 보장 실패');
+      
+      // ✅ 견적서 조회 API 호출 (aiclient일 때는 user ID, 그 외에는 개인정보)
       try {
-        await fetch(url, { method: 'GET' });
-        devLog("다운로드 카운트 성공")
+        await getDownloadEstimateUrlWithUserInfo(
+          companyCode,
+          effectiveId,
+          { user: userId, name, email, cellphone }
+        );
+        devLog("견적서 조회 성공");
       } catch (e) {
-        devLog("다운로드 카운트 실패 ")
+        devLog("견적서 조회 실패", e);
       }
 
-      if (!effectiveId) throw new Error('uuid 보장 실패');
       devLog("estimateObj._id(effectiveId):", effectiveId);
       return effectiveId as string;
     }
