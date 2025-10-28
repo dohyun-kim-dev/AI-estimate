@@ -64,7 +64,7 @@ const DetailsToggle = styled.div`
   letter-spacing: 0.28px;
   color: ${({ theme }) => theme.subtleText};
   cursor: pointer;
-  margin: -20px 0 -20px;
+  margin: -20px 0 -10px;
 `;
 
 const DetailsToggleIcon = styled.div`

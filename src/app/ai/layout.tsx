@@ -306,17 +306,20 @@ export default function AILayout() {
     if (location.pathname.includes('/ai/setting') && isProfileEdit) {
       if (currentStep === 'phone') {
         // 전화번호 변경 단계에서는 프로필로 돌아가기
-        const newParams = new URLSearchParams();
-        newParams.set('edit', 'profile');
-        newParams.set('step', 'profile');
-        navigate(`${location.pathname}?${newParams.toString()}`, { replace: true });
+        navigate(-1);
       } else {
-        // 프로필 편집에서는 설정 메인으로 돌아가기 (히스토리 교체)
-        navigate(location.pathname, { replace: true });
+        // 프로필 편집에서는 뒤로가기 (히스토리 사용)
+        navigate(-1);
       }
-    } else if (location.pathname.includes('/ai/setting') || location.pathname.includes('/ai/my-estimate')) {
-      // 설정/내 견적서에서는 뒤로가기로 AI 홈으로 (상태 유지)
+    } else if (location.pathname.includes('/ai/setting')) {
+      // 설정 메인에서는 항상 AI 홈으로
+      navigate(`/aiclient/${companyCode}/ai`);
+    } else if (location.pathname.includes('/ai/my-estimate')) {
+      // 내 견적서에서는 뒤로가기로 AI 홈으로 (상태 유지)
       navigate(-1);
+    } else if (location.pathname === `/aiclient/${companyCode}/ai`) {
+      // AI 홈에서는 회사 메인 페이지로
+      navigate(`/aiclient/${companyCode}`);
     } else if (isMobile) {
       navigate(`/aiclient/${companyCode}/ai`, { replace: true });
       return;

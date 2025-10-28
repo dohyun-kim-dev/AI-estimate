@@ -331,15 +331,31 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
     const imageFiles: File[] = [];
     const textContent = e.clipboardData?.getData('text') || '';
 
+    devLog('🔍 [handlePaste] 클립보드 아이템 개수:', items.length);
+
     // 클립보드에서 이미지 파일 추출
-    for (const item of items) {
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      devLog(`🔍 [handlePaste] 아이템 ${i}: type=${item.type}, kind=${item.kind}`);
+      
       if (item.type.startsWith('image/')) {
         const file = item.getAsFile();
         if (file) {
-          imageFiles.push(file);
+          // 🔥 각 파일마다 고유한 타임스탬프 생성 (밀리초 + 인덱스)
+          const uniqueTimestamp = Date.now() + i;
+          const extension = file.type.split('/')[1] || 'png';
+          const uniqueFileName = `pasted-image-${uniqueTimestamp}-${i}.${extension}`;
+          
+          // 파일명을 고유하게 변경
+          const renamedFile = new File([file], uniqueFileName, { type: file.type });
+          imageFiles.push(renamedFile);
+          
+          devLog(`🔍 [handlePaste] 이미지 파일 추가: ${uniqueFileName}`);
         }
       }
     }
+
+    devLog(`🔍 [handlePaste] 추출된 이미지 파일 개수: ${imageFiles.length}`);
 
     // 이미지가 있으면 파일로 처리
     if (imageFiles.length > 0) {
@@ -366,7 +382,9 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
             // MIME 타입 추출
             const mimeMatch = base64Data.match(/data:image\/([^;]+);base64/);
             const extension = mimeMatch ? mimeMatch[1] : 'png';
-            const fileName = `pasted-base64-image-${Date.now()}-${index}.${extension}`;
+            // 🔥 고유한 타임스탬프 생성
+            const uniqueTimestamp = Date.now() + index;
+            const fileName = `pasted-base64-image-${uniqueTimestamp}-${index}.${extension}`;
             
             return new File([blob], fileName, { type: blob.type });
           } catch (error) {
@@ -402,7 +420,9 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
             if (!response.ok) throw new Error(`Failed to fetch ${url}`);
             
             const blob = await response.blob();
-            const fileName = `pasted-image-${Date.now()}-${index}.${blob.type.split('/')[1] || 'png'}`;
+            // 🔥 고유한 타임스탬프 생성
+            const uniqueTimestamp = Date.now() + index;
+            const fileName = `pasted-image-${uniqueTimestamp}-${index}.${blob.type.split('/')[1] || 'png'}`;
             return new File([blob], fileName, { type: blob.type });
           } catch (error) {
             console.warn(`이미지 URL 로드 실패: ${url}`, error);
@@ -508,6 +528,10 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
             devLog('❌ 파일 업로드 실패:', uploadResponse);
             throw new Error('파일 업로드에 실패했습니다.');
           }
+          
+          // 🔥 첫 업로드 완료 후 selectedFiles 초기화하여 중복 업로드 방지
+          setSelectedFiles([]);
+          devLog('✅ 첫 번째 업로드 완료 - selectedFiles 초기화됨');
         }
         
         // 환경에 따른 파일 URL 생성 (UUID 파일명 사용)
@@ -750,46 +774,38 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
         type: file.type
       })));
       
-      if (selectedFiles.length > 0) {
-        devLog('📤 서버로 파일 업로드 시작...');
+      // 🔥 이미 첫 번째 업로드에서 파일이 업로드되었는지 확인
+      // uploadedFiles에 파일이 있고, selectedFiles가 비어있으면 이미 업로드됨
+      const alreadyUploaded = uploadedFiles.length > 0 && selectedFiles.length === 0;
+      
+      if (alreadyUploaded) {
+        devLog('🔄 파일이 이미 첫 번째 단계에서 업로드됨, 두 번째 업로드 생략');
+        // 첫 번째 업로드의 serverFileNames를 여기서 사용할 수 없으므로
+        // Gemini용 파일 생성은 건너뛰고 이미지/파일 URL만 사용
+      } else if (selectedFiles.length > 0) {
+        devLog('� 서버로 파일 업로드 시작...');
           if (abortSignal?.aborted) {
             handleAbort();
             return;
           }
 
-        // ⚠️ 이미 이미지 URL 생성을 위해 업로드를 수행했는지 확인
-        // selectedFiles가 남아있다면 아직 업로드되지 않은 파일들이 있음
-        let needsUpload = true;
-        
-        // 이미지가 포함된 경우 이미 위에서 업로드했을 수 있음
-        const hasImages = selectedFiles.some(file => 
-          /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name)
-        );
-        
-        if (hasImages && uploadedFileNames.length > 0) {
-          devLog('🔄 이미지 파일들은 이미 업로드됨, 추가 업로드 생략');
-          needsUpload = false;
-        }
-        
-        if (needsUpload) {
-          const uploadResponse = await uploadFiles(selectedFiles);
-            if (abortSignal?.aborted) {
-              handleAbort();
-              return;
-            }
-
-          devLog('📥 서버 업로드 응답:', uploadResponse);
-          
-          // 🔥 API 응답 구조 수정: { statusCode: 200, data: [...] } 형태
-          if (uploadResponse && uploadResponse.statusCode === 200 && Array.isArray(uploadResponse.data) && uploadResponse.data.length > 0) {
-            devLog('✅ 파일 업로드 성공 - 파일명들:', uploadResponse.data);
-            uploadedFileNames = uploadResponse.data;
-          } else {
-            console.error('❌ 파일 업로드 실패 - 응답이 비어있거나 잘못됨:', uploadResponse);
-            console.error('❌ statusCode:', uploadResponse?.statusCode);
-            console.error('❌ data 길이:', uploadResponse?.data?.length);
-            throw new Error(`파일 업로드에 실패했습니다. 상태코드: ${uploadResponse?.statusCode || 'unknown'}`);
+        const uploadResponse = await uploadFiles(selectedFiles);
+          if (abortSignal?.aborted) {
+            handleAbort();
+            return;
           }
+
+        devLog('📥 서버 업로드 응답:', uploadResponse);
+        
+        // 🔥 API 응답 구조 수정: { statusCode: 200, data: [...] } 형태
+        if (uploadResponse && uploadResponse.statusCode === 200 && Array.isArray(uploadResponse.data) && uploadResponse.data.length > 0) {
+          devLog('✅ 파일 업로드 성공 - 파일명들:', uploadResponse.data);
+          uploadedFileNames = uploadResponse.data;
+        } else {
+          console.error('❌ 파일 업로드 실패 - 응답이 비어있거나 잘못됨:', uploadResponse);
+          console.error('❌ statusCode:', uploadResponse?.statusCode);
+          console.error('❌ data 길이:', uploadResponse?.data?.length);
+          throw new Error(`파일 업로드에 실패했습니다. 상태코드: ${uploadResponse?.statusCode || 'unknown'}`);
         }
         
         // Gemini용 파일 데이터 생성
@@ -977,13 +993,19 @@ export function useChatActions({ modelName, selectedPromptId }: UseChatActionsPr
           .replace(/^\s*\n+/g, '') // 시작 부분 빈 줄 제거
           .trim();
         
+        // 🔥 첫 청크 받았는지 확인 - displayContent에 실제 내용이 있을 때만 로딩 해제
+        const hasActualContent = displayContent.length > 0 && displayContent !== '';
+        
         // 일반 텍스트 스트리밍 표시 (정리된 내용으로)
         updateLastMessage({
           content: displayContent,
-          isLoading: wasEmpty ? false : false,
+          isLoading: !hasActualContent, // 🔥 실제 내용이 없으면 계속 로딩 상태 유지
         });
         
-        if (!firstChunkReceived && wasEmpty) firstChunkReceived = true;
+        if (!firstChunkReceived && hasActualContent) {
+          firstChunkReceived = true;
+          devLog('✅ 첫 번째 실제 내용 수신됨, 로딩 상태 해제');
+        }
       },
         abortSignal,
       });

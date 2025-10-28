@@ -315,7 +315,7 @@ const DetailsToggle = styled.div<{ $isShare?: boolean }>`
   letter-spacing: 0.28px;
   color: ${({ theme }) => theme.subtleText};
   cursor: pointer;
-  margin: ${({ $isShare }) => $isShare ? '0' : '-20px 0 -20px'};
+  margin: ${({ $isShare }) => $isShare ? '0' : '-20px 0 -10px'};
 
   @media (min-width: 1024px) {
     display: none;

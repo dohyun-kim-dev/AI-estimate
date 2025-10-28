@@ -116,11 +116,18 @@ const OTPQRModal: React.FC<OTPQRModalProps> = ({ isOpen, onClose, companyCode })
       const actualResponse = Array.isArray(response) ? response[0] : response;
       const apiResponse = (actualResponse as any)?.data;
 
-      if (apiResponse && apiResponse.statusCode === 200 && apiResponse.data?.url) {
-        setOtpUrl(apiResponse.data.url);
-        devLog('OTP URL 설정됨:', apiResponse.data.url);
+      // data가 직접 URL 문자열로 옴
+      if (apiResponse && apiResponse.statusCode === 200 && apiResponse.data) {
+        // data 자체가 URL 문자열
+        const urlString = typeof apiResponse.data === 'string' ? apiResponse.data : apiResponse.data.url;
+        if (urlString) {
+          setOtpUrl(urlString);
+          devLog('OTP URL 설정됨:', urlString);
+        } else {
+          devLog('OTP URL 응답에 url이 없음:', apiResponse);
+        }
       } else {
-        devLog('OTP URL 응답에 url이 없음:', apiResponse);
+        devLog('OTP URL 응답 형식 오류:', apiResponse);
       }
     } catch (error) {
       console.error('OTP URL fetch error:', error);
@@ -150,7 +157,7 @@ const OTPQRModal: React.FC<OTPQRModalProps> = ({ isOpen, onClose, companyCode })
                   위 QR 코드를 스캔하세요.
                 </InfoText>
               </LeftSection>
-              {otpUrl && (
+              {/* {otpUrl && (
                 <RightSection>
                   <UrlContainer>
                     <UrlLabel>OTP URL</UrlLabel>
@@ -158,7 +165,7 @@ const OTPQRModal: React.FC<OTPQRModalProps> = ({ isOpen, onClose, companyCode })
                     <CopyButton onClick={handleCopyUrl}>복사</CopyButton>
                   </UrlContainer>
                 </RightSection>
-              )}
+              )} */}
             </ContentWrapper>
           ) : (
             <ErrorText>QR 코드를 표시할 수 없습니다.</ErrorText>
@@ -188,7 +195,7 @@ const Overlay = styled.div`
 const ModalContainer = styled.div`
   background: white;
   border-radius: 0px;
-  width: 90%;
+  // width: 50%;
   max-width: 800px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   overflow: hidden;
@@ -232,7 +239,7 @@ const CloseButton = styled.button`
 
 const ModalBody = styled.div`
   background: white;
-  padding: 40px 24px;
+  padding: 40px 80px;
   display: flex;
   flex-direction: column;
   align-items: center;

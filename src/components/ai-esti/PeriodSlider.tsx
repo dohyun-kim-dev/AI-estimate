@@ -199,6 +199,11 @@ const PeriodSlider: React.FC<PeriodSliderProps> = ({
   }
   
   const { companyInfo } = useCompanyStore();
+  
+  // ✅ checkpointList가 빈 배열이면 렌더링하지 않음
+  if (!companyInfo?.checkpointList || companyInfo.checkpointList.length === 0) {
+    return null;
+  }
   const [isDragging, setIsDragging] = useState(false);
 
 
