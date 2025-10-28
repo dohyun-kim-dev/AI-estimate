@@ -39,19 +39,37 @@ const OTPQRModal: React.FC<OTPQRModalProps> = ({ isOpen, onClose, companyCode })
       // QR 코드는 이미지 바이너리로 응답하므로 직접 fetch 사용
       const token = localStorage.getItem('admin_access_token');
       
-      // CMS URL인 경우 기존 API, 통합 관리자인 경우 companyCode 파라미터 전달
-      const apiUrl = isCmsUrl 
-        ? '/api/company/cms/otp/qr'
-        : `/api/cms/company/otp/qr?companyCode=${companyCode || ''}`;
+      // CMS URL인 경우: URL에서 companyCode 추출
+      let apiUrl = '';
+      let headers: HeadersInit = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
       
-      devLog('OTP QR Code API 호출:', { isCmsUrl, apiUrl, companyCode });
+      if (isCmsUrl) {
+        // URL 패턴: /{companyCode}/cms/...
+        const pathMatch = window.location.pathname.match(/^\/([^\/]+)\/cms/);
+        const extractedCompanyCode = pathMatch ? pathMatch[1] : '';
+        
+        apiUrl = '/api/company/cms/otp/qr';
+        
+        // CMS URL일 때는 x-company-code 헤더 추가
+        headers = {
+          ...headers,
+          'x-company-code': extractedCompanyCode,
+        };
+        
+        devLog('OTP QR Code API 호출 (CMS):', { isCmsUrl, apiUrl, extractedCompanyCode, headers });
+      } else {
+        // 통합 관리자인 경우 companyCode 쿼리 파라미터 사용
+        apiUrl = `/api/cms/company/otp/qr?companyCode=${companyCode || ''}`;
+        
+        devLog('OTP QR Code API 호출 (통합 관리자):', { isCmsUrl, apiUrl, companyCode });
+      }
 
       const response = await fetch(apiUrl, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       });
 
       if (!response.ok) {
