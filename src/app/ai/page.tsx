@@ -103,7 +103,10 @@ const SpinnerCircle = styled.circle`
   animation: ${dash} 3s ease-in-out infinite;
 `;
 const ProfileImg = styled.img`
-  width: 44px; height: 44px; border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
   z-index: 1;
 `;
 
@@ -888,12 +891,34 @@ const userId = getUserId() || '';
               // 견적서 JSON이 아니면 원본을 정리해서 표시
               textContent = cleanUnnecessaryText(content).replace(/\\n/g, '<br/>').trim();
             }
+          } else if (trimmed.startsWith('{')) {
+            // { 로 시작하지만 } 로 끝나지 않는 경우 (불완전한 JSON)
+            // JSON 부분을 제거하고 나머지 텍스트만 표시
+            const jsonStartIndex = content.indexOf('{');
+            const beforeJson = content.substring(0, jsonStartIndex).trim();
+            textContent = cleanUnnecessaryText(beforeJson).replace(/\\n/g, '<br/>').trim();
           } else {
             textContent = cleanUnnecessaryText(content).replace(/\\n/g, '<br/>').trim();
           }
         } catch {
-          // JSON 파싱 실패하면 일반 텍스트로 처리 (불필요한 텍스트 제거 후)
-          textContent = cleanUnnecessaryText(content).replace(/\\n/g, '<br/>').trim();
+          // JSON 파싱 실패 - JSON 형태 문자열 제거 시도
+          const trimmed = content.trim();
+          
+          // { 로 시작하는 경우 JSON일 가능성이 높으므로 제거
+          if (trimmed.startsWith('{')) {
+            // JSON 시작 전의 텍스트만 추출
+            const jsonStartIndex = content.indexOf('{');
+            if (jsonStartIndex > 0) {
+              const beforeJson = content.substring(0, jsonStartIndex).trim();
+              textContent = cleanUnnecessaryText(beforeJson).replace(/\\n/g, '<br/>').trim();
+            } else {
+              // 전체가 JSON으로 시작하면 빈 문자열
+              textContent = '';
+            }
+          } else {
+            // JSON이 아닌 일반 텍스트
+            textContent = cleanUnnecessaryText(content).replace(/\\n/g, '<br/>').trim();
+          }
         }
       }
     }

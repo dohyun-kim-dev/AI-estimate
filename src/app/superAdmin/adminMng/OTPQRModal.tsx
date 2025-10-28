@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { getOTPQRCode } from '@/lib/api/admin/adminApi';
+import { getOTPQRCode, getOTPUrl } from '@/lib/api/admin/adminApi';
 import { useToast } from '@/components/common/ToastProvider';
 import { devLog } from '@/lib/utils/devLogger';
 
@@ -19,6 +19,7 @@ const OTPQRModal: React.FC<OTPQRModalProps> = ({ isOpen, onClose, companyCode })
   useEffect(() => {
     if (isOpen) {
       fetchQRCode();
+      fetchOTPUrl(); // OTP URL 조회 추가
     }
     
     // 컴포넌트 언마운트 시 URL 해제
@@ -78,43 +79,12 @@ const OTPQRModal: React.FC<OTPQRModalProps> = ({ isOpen, onClose, companyCode })
         }
       }
 
-      // Content-Type 확인하여 JSON인지 이미지인지 구분
-      const contentType = response.headers.get('Content-Type');
-      devLog('Response Content-Type:', contentType);
-
-      if (contentType?.includes('application/json')) {
-        // JSON 응답 (URL과 QR 이미지 포함)
-        const jsonData = await response.json();
-        devLog('OTP QR Code JSON 응답:', jsonData);
-        
-        if (jsonData.data) {
-          // URL 저장
-          if (jsonData.data.url) {
-            setOtpUrl(jsonData.data.url);
-          }
-          
-          // QR 이미지 (base64 또는 blob)
-          if (jsonData.data.qrCode) {
-            // base64 형식인 경우
-            if (jsonData.data.qrCode.startsWith('data:image')) {
-              setQrCodeImage(jsonData.data.qrCode);
-            } else {
-              // blob URL 생성
-              const base64Response = await fetch(`data:image/png;base64,${jsonData.data.qrCode}`);
-              const blob = await base64Response.blob();
-              const imageUrl = URL.createObjectURL(blob);
-              setQrCodeImage(imageUrl);
-            }
-          }
-        }
-      } else {
-        // 이미지 blob을 받아서 URL로 변환 (기존 방식)
-        const blob = await response.blob();
-        const imageUrl = URL.createObjectURL(blob);
-        
-        devLog('OTP QR Code image URL:', imageUrl);
-        setQrCodeImage(imageUrl);
-      }
+      // 이미지 blob을 받아서 URL로 변환
+      const blob = await response.blob();
+      const imageUrl = URL.createObjectURL(blob);
+      
+      devLog('OTP QR Code image URL:', imageUrl);
+      setQrCodeImage(imageUrl);
       
     } catch (error) {
       console.error('QR Code fetch error:', error);
@@ -133,6 +103,28 @@ const OTPQRModal: React.FC<OTPQRModalProps> = ({ isOpen, onClose, companyCode })
         .catch(() => {
           showToast('복사에 실패했습니다.', 'error');
         });
+    }
+  };
+
+  const fetchOTPUrl = async () => {
+    try {
+      const response = await getOTPUrl(companyCode);
+      
+      devLog('OTP URL API 응답:', response);
+
+      // callAdminApi는 응답을 배열로 감싸서 반환하므로 첫 번째 요소를 가져옴
+      const actualResponse = Array.isArray(response) ? response[0] : response;
+      const apiResponse = (actualResponse as any)?.data;
+
+      if (apiResponse && apiResponse.statusCode === 200 && apiResponse.data?.url) {
+        setOtpUrl(apiResponse.data.url);
+        devLog('OTP URL 설정됨:', apiResponse.data.url);
+      } else {
+        devLog('OTP URL 응답에 url이 없음:', apiResponse);
+      }
+    } catch (error) {
+      console.error('OTP URL fetch error:', error);
+      // URL 조회 실패는 조용히 처리 (QR 코드는 여전히 표시)
     }
   };
 

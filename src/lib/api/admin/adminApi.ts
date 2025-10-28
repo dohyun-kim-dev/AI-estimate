@@ -80,6 +80,25 @@ export async function getOTPQRCode() {
   });
 }
 
+// OTP URL 조회
+export async function getOTPUrl(companyCode?: string) {
+  // URL에 cms가 포함되어 있는지 확인
+  const isCmsUrl = typeof window !== 'undefined' && window.location.pathname.includes('/cms/');
+  
+  // CMS URL인 경우 기존 API, 통합 관리자인 경우 companyCode 파라미터 전달
+  const apiUrl = isCmsUrl 
+    ? `${BASE_URL}/cms/otp/url`
+    : `${BASE_URL}/cms/company/otp/url${companyCode ? `?companyCode=${companyCode}` : ''}`;
+  
+  return callAdminApi({
+    title: 'OTP URL 조회',
+    url: apiUrl,
+    method: 'GET',
+    isCallPageLoader: false,
+    isWithToken: true,
+  });
+}
+
 // OTP 인증 (토큰으로 인증)
 export async function verifyOTP(otp: string, tempToken: string) {
   // 🔥 BASE_URL 대신 절대 경로 사용 (중복 방지)
