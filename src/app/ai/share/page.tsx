@@ -16,6 +16,9 @@ import ShareAiResponseMessage from '@/components/ai-esti/ShareAiResponseMessage'
 import type { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import { AiMessageContent } from '@/app/ai/page';
 import { devLog } from '@/utils/devLogger'
+import ImageGrid from '@/components/ai-esti/ImageGrid';
+import FileList from '@/components/ai-esti/FileList';
+import type { ImageData, FileData } from '@/store/chatStore';
 
 // 메시지 타입 정의
 import type { FileUploadData } from '@/firebase.functions';
@@ -28,9 +31,19 @@ interface ChatMessage {
     value?: string;
     content?: string;
     file?: string;
+    files?: string[]; // 파일명 배열 (UUID)
+    fileMetadata?: FileMetadata[]; // 파일 메타데이터
   };
   createAt: string;
   files?: FileUploadData[];
+}
+
+// 파일 메타데이터 타입 정의
+interface FileMetadata {
+  serverFileName: string;  // UUID 파일명
+  originalFileName: string; // 원본 파일명 (한글 등)
+  mimeType: string;
+  size?: number;
 }
 
 
@@ -129,15 +142,13 @@ const UserMessage = styled.div`
   line-height: 2.0;
 `;
 
-const UserMessageContainer = styled.div`
+const UserMessageContainer = styled.div<{ hasImages?: boolean }>`
   align-self: flex-end;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: 100%;
-
   align-items: flex-end;      
-  max-width: 80%;            
+  max-width: ${({ hasImages }) => (hasImages ? '90%' : '80%')};
   width: fit-content;
 `;
 
@@ -352,7 +363,6 @@ const SharePage: React.FC = () => {
     return false;
   };
 
-  // 메시지에서 파일 정보를 파싱하는 함수
   // 유저 메시지에서 ai 프롬프트(견적 정보 등) 제거 및 액션별 메시지 변환
   const stripAiPrompt = (text: string) => {
     // AI 예산 줄이기 패턴 감지 및 변환
@@ -390,32 +400,121 @@ const SharePage: React.FC = () => {
     return cleanedText;
   };
 
-  const parseMessageContent = (content: string) => {
-    const fileMatch = content.match(/\[첨부파일: (.+?)\]/);
-    let textContent = content;
-    if (fileMatch) {
-      const fileName = fileMatch[1];
-      textContent = content.replace(/\[첨부파일: .+?\]/, '').trim();
+  // 메시지에서 파일 정보를 파싱하는 함수
+  const parseMessageContent = (content: string, files?: FileUploadData[]) => {
+    // console.log('🔍 parseMessageContent 호출:', { content, files });
+    
+    // content가 undefined나 null인 경우 처리
+    if (!content || typeof content !== 'string') {
+      // files prop에서 이미지와 문서 분리
+      const imageFiles = files ? files.filter(f => f.mimeType?.startsWith('image/')) : [];
+      const documentFiles = files ? files.filter(f => 
+        f.mimeType === 'application/pdf' || f.mimeType === 'text/plain'
+      ) : [];
       
-      // 환경별 파일 경로 처리 (setting 페이지와 동일)
-      const isDev = import.meta.env.VITE_ENV_NAME === 'dev';
-      const imageUrl = isDev ? `/api/file/${fileName}` : `/file/${fileName}`;
-      
-      // 이미지 파일인지 확인
-      const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
-      return {
-        text: stripAiPrompt(textContent),
-        fileName,
-        imageUrl,
-        isImage
+      const result = {
+        text: '',
+        images: imageFiles.map(f => ({
+          url: f.fileUri,
+          fileName: f.name,
+          mimeType: f.mimeType || 'image/png'
+        })),
+        files: documentFiles.map(f => ({
+          url: f.fileUri,
+          fileName: f.name,
+          mimeType: f.mimeType || 'application/pdf',
+          size: f.size
+        })),
+        hasImages: imageFiles.length > 0,
+        hasFiles: documentFiles.length > 0
       };
+      // console.log('🔍 parseMessageContent 결과 (빈 content):', result);
+      return result;
     }
-    return {
-      text: stripAiPrompt(content),
-      fileName: null,
-      imageUrl: null,
-      isImage: false
+    
+    // 첨부파일 패턴을 찾아서 제거하되, 이미지와 문서 파일로 분리
+    const fileMatches = content.match(/\[첨부파일: (.+?)\]/g);
+    let textContent = content;
+    const extractedImages: ImageData[] = [];
+    const extractedFiles: FileData[] = [];
+    
+    if (fileMatches) {
+      fileMatches.forEach(match => {
+        const fileName = match.match(/\[첨부파일: (.+?)\]/)?.[1];
+        if (fileName) {
+          const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName);
+          const isPdf = /\.pdf$/i.test(fileName);
+          const isTxt = /\.txt$/i.test(fileName);
+          
+          // 환경에 따른 파일 URL 생성
+          const getFileUrl = (fileName: string) => {
+            // 이미 full URL인 경우 (http로 시작)
+            if (fileName.startsWith('http')) {
+              return fileName;
+            }
+            
+            // 개발 환경에서는 프록시 설정에 의해 /api/file/로 접근
+            if (process.env.NODE_ENV === 'development') {
+              return `/api/file/${fileName}`;
+            }
+            
+            // 프로덕션 환경에서는 file 경로로 직접 접근
+            const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+            return `${apiHost}/file/${fileName}`;
+          };
+          
+          const fileUrl = getFileUrl(fileName);
+          
+          if (isImage) {
+            extractedImages.push({
+              url: fileUrl,
+              fileName: fileName,
+              mimeType: `image/${fileName.split('.').pop()?.toLowerCase() || 'png'}`
+            });
+          } else if (isPdf || isTxt) {
+            extractedFiles.push({
+              url: fileUrl,
+              fileName: fileName,
+              mimeType: isPdf ? 'application/pdf' : 'text/plain'
+            });
+          }
+        }
+        // 텍스트에서 첨부파일 태그 제거
+        textContent = textContent.replace(match, '').trim();
+      });
+    }
+    
+    // files prop에서 이미지와 문서 분리
+    const filesImages = files ? files
+      .filter(f => f.mimeType?.startsWith('image/'))
+      .map(f => ({
+        url: f.fileUri,
+        fileName: f.name,
+        mimeType: f.mimeType || 'image/png'
+      })) : [];
+    
+    const filesDocuments = files ? files
+      .filter(f => f.mimeType === 'application/pdf' || f.mimeType === 'text/plain')
+      .map(f => ({
+        url: f.fileUri,
+        fileName: f.name,
+        mimeType: f.mimeType || 'application/pdf',
+        size: f.size
+      })) : [];
+    
+    // 추출된 것과 prop으로 받은 것을 합치기
+    const allImages = [...extractedImages, ...filesImages];
+    const allFiles = [...extractedFiles, ...filesDocuments];
+    
+    const result = {
+      text: stripAiPrompt(textContent),
+      images: allImages,
+      files: allFiles,
+      hasImages: allImages.length > 0,
+      hasFiles: allFiles.length > 0
     };
+    // console.log('🔍 parseMessageContent 결과 (일반):', result);
+    return result;
   };
 
 
@@ -446,12 +545,78 @@ const SharePage: React.FC = () => {
                   // 메시지들을 채팅 스토어에 추가
         messages.forEach((message: ChatMessage) => {
           if (message.role === 'USER') {
-            // USER 메시지: content.content에 텍스트, content.file에 파일명
-            const userContent = message.content.content || '';
-            const fileInfo = message.content.file ? `\n[첨부파일: ${message.content.file}]` : '';
+            // USER 메시지: content.content에 텍스트, content.file에 파일명, content.files 배열에 파일명들
+            const userContent = message.content?.content || '';
+            const fileInfo = message.content?.file ? `\n[첨부파일: ${message.content.file}]` : '';
+            
+            // 🔥 fileMetadata가 있으면 우선 사용, 없으면 기존 files 배열 사용
+            let convertedFiles: FileUploadData[] = [];
+            
+            if (message.content?.fileMetadata && Array.isArray(message.content.fileMetadata)) {
+              // 새로운 방식: fileMetadata 사용 (원본 파일명 포함)
+              devLog('🔥 fileMetadata 사용:', message.content.fileMetadata);
+              convertedFiles = message.content.fileMetadata.map((metadata: FileMetadata) => {
+                // 환경에 따른 파일 URL 생성 (UUID 파일명 사용)
+                const getFileUrl = (serverFileName: string) => {
+                  if (serverFileName.startsWith('http')) {
+                    return serverFileName;
+                  }
+                  
+                  if (process.env.NODE_ENV === 'development') {
+                    return `/api/file/${serverFileName}`;
+                  }
+                  
+                  const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+                  return `${apiHost}/file/${serverFileName}`;
+                };
+                
+                return {
+                  name: metadata.originalFileName,
+                  fileUri: getFileUrl(metadata.serverFileName),
+                  mimeType: metadata.mimeType,
+                  size: metadata.size
+                };
+              });
+            } else if (message.content?.files && Array.isArray(message.content.files)) {
+              // 기존 방식: files 배열 사용 (하위 호환성)
+              devLog('⚠️ 기존 files 배열 사용 (fileMetadata 없음)');
+              convertedFiles = message.content.files.map(fileName => {
+                const getFileUrl = (fileName: string) => {
+                  if (fileName.startsWith('http')) {
+                    return fileName;
+                  }
+                  
+                  if (process.env.NODE_ENV === 'development') {
+                    return `/api/file/${fileName}`;
+                  }
+                  
+                  const apiHost = process.env.VITE_API_HOST || 'https://aigopartners.com';
+                  return `${apiHost}/file/${fileName}`;
+                };
+                
+                // 파일 확장자로 MIME 타입 추정
+                const getFileType = (fileName: string): string => {
+                  const ext = fileName.split('.').pop()?.toLowerCase();
+                  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '')) {
+                    return `image/${ext}`;
+                  }
+                  if (ext === 'pdf') return 'application/pdf';
+                  if (ext === 'txt') return 'text/plain';
+                  return 'application/octet-stream';
+                };
+                
+                return {
+                  name: fileName,
+                  fileUri: getFileUrl(fileName),
+                  mimeType: getFileType(fileName)
+                };
+              });
+            }
+            
             addMessage({
               role: 'user',
-              content: userContent + fileInfo
+              content: userContent + fileInfo,
+              files: convertedFiles // 변환된 파일 정보 전달
             });
           } else if (message.role === 'AI') {
             // AI 메시지: content.value에 텍스트
@@ -624,50 +789,22 @@ const SharePage: React.FC = () => {
         <ChatBox>
           {messages.map((message, index) => {
             if (message.role === 'user') {
-              const parsedContent = parseMessageContent(message.content);
+              // 이미지와 텍스트를 분리해서 처리
+              const parsedContent = parseMessageContent(message.content, message.files);
+              
               return (
-                <UserMessageContainer key={index}>
-                  {/* 텍스트 메시지 */}
+                <UserMessageContainer key={index} hasImages={parsedContent.hasImages}>
+                  {/* 이미지가 있으면 그리드로 표시 */}
+                  {parsedContent.hasImages && (
+                    <ImageGrid images={parsedContent.images} />
+                  )}
+                  {/* 📄 문서 파일이 있으면 파일 목록으로 표시 */}
+                  {parsedContent.hasFiles && (
+                    <FileList files={parsedContent.files} />
+                  )}
+                  {/* 텍스트가 있으면 말풍선으로 표시 */}
                   {parsedContent.text && (
                     <UserMessage>{parsedContent.text}</UserMessage>
-                  )}
-                  {/* files 배열 기반 이미지/파일 미리보기 */}
-                  {message.files && message.files.length > 0 && message.files.map((file, idx) =>
-                    file.mimeType && file.mimeType.startsWith('image/') ? (
-                      <UserImagePreview
-                        key={idx}
-                        src={file.fileUri}
-                        alt={file.name}
-                        onError={(e) => {
-                          console.error('이미지 로드 실패:', file.fileUri);
-                          setTimeout(() => {
-                            e.currentTarget.src = file.fileUri + '?retry=' + Date.now();
-                          }, 1000);
-                        }}
-                      />
-                    ) : (
-                      <UserMessage key={idx}>
-                        📎 <a href={file.fileUri} download={file.name} target="_blank" rel="noopener noreferrer">{file.name}</a>
-                      </UserMessage>
-                    )
-                  )}
-                  {/* 기존 텍스트 파싱 방식의 이미지/파일(백워드 호환) */}
-                  {parsedContent.isImage && parsedContent.imageUrl && (
-                    <UserImagePreview
-                      src={parsedContent.imageUrl}
-                      alt={parsedContent.fileName || '첨부된 이미지'}
-                      onError={(e) => {
-                        console.error('이미지 로드 실패:', parsedContent.imageUrl);
-                        setTimeout(() => {
-                          e.currentTarget.src = parsedContent.imageUrl + '?retry=' + Date.now();
-                        }, 1000);
-                      }}
-                    />
-                  )}
-                  {parsedContent.fileName && !parsedContent.isImage && (
-                    <UserMessage>
-                      📎 {parsedContent.fileName}
-                    </UserMessage>
                   )}
                 </UserMessageContainer>
               );
