@@ -324,6 +324,7 @@ export default function useAI(initialModel: SimpleModel = 'gemini-2.5-flash') {
     \`\`\`
     견적서가 준비되었습니다. 첫 견적이라 아래 기능을 안내드립니다.
 
+    
     📤 견적서 및 대화방 공유 기능
     생성된 견적서는 견적서 및 앱바 우측 상단에 [공유 아이콘]을 눌러 팀원들과 쉽게 공유할 수 있습니다.
 
