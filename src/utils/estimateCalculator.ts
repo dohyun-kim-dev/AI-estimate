@@ -175,6 +175,7 @@ export function calculateTotalPages(categories: Category[]): number {
                               item.name.includes('웹 퍼블리싱')||
                               item.name.includes('퍼블리싱')||
                               item.name.includes('화면 퍼블리싱')||
+                              item.name.includes('서비스 기획')||
                               item.name.includes('화면퍼블리싱');
 
           if (!isDesignItem) {
@@ -227,6 +228,7 @@ export function updateDesignItemPrices(estimate: ProjectEstimate, totalPages: nu
                                 item.name.includes('웹퍼블리싱')||
                                 item.name.includes('웹 퍼블리싱')||
                                 item.name.includes('퍼블리싱')||
+                                item.name.includes('서비스 기획')||
                                 item.name.includes('화면 퍼블리싱')||
                                 item.name.includes('화면퍼블리싱');
 
