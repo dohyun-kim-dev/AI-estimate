@@ -92,7 +92,7 @@ export function isNonDiscountableItem(item: any): boolean {
     'uiux디자인', 'uidesign', 'uxdesign', 'guidesign',
     '스토리보드', '와이어프레임', '프로토타입', '프로토타이핑', '시안',
     '퍼블리싱', '퍼블', '마크업', 'markup', '정적코딩', 'htmlcss', 'html코딩', 'css코딩',
-    '화면기획', '기획설계', '기획', '서비스 기획',
+    '화면기획', '기획설계', '기획', '서비스 기획', '기획/설계', '디자인'
   ];
 
   const zws = '[\\s\\u200B-\\u200D\\uFEFF]*';
