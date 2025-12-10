@@ -218,42 +218,35 @@ export function updateDesignItemPrices(estimate: ProjectEstimate, totalPages: nu
   const updatedEstimate = JSON.parse(JSON.stringify(estimate)); // 깊은 복사
   
   try {
+    // 단가 (원/페이지)
+    const unitPrice = 150000;
+    const designKeywords = [
+      '기획', '기획/설계', '설계', '디자인', 'ui/ux', 'uiux', '화면설계', '화면디자인', '스토리보드',
+      '퍼블리싱', '웹퍼블리싱', '화면퍼블리싱'
+    ];
+
+    const normalize = (s: any) => (s || '').toString().toLowerCase().replace(/\s+/g, '');
+
     (updatedEstimate.categories || []).forEach(category => {
-      // 카테고리 이름 기준으로 디자인 관련 카테고리 여부 우선 판정
-      const catName = (category.category_name || '').replace(/\s+/g, '');
-      const isDesignCategory = catName === '기획/디자인' ||
-                               catName.includes('기획') ||
-                               catName.includes('디자인') ||
-                               catName.includes('서비스기획') ||
-                               catName.includes('UI/UX') ||
-                               catName.includes('화면설계') ||
-                               catName.includes('퍼블리싱');
+      const normCat = normalize(category.category_name);
 
       (category.sub_categories || []).forEach(subCategory => {
+        const normSub = normalize(subCategory.sub_category_name);
+
         (subCategory.items || []).forEach(item => {
           if (!item.is_deleted) {
-            const name = (item.name || '').replace(/\s+/g, '');
-            // 카테고리 판정이 true면 해당 카테고리의 모든 항목을 디자인 항목으로 처리
-            const itemKeywordMatch = name === '화면설계' ||
-                                    name.includes('화면설계')||
-                                    name.includes('화면설계')||
-                                    name.includes('UI/UX디자인')||
-                                    name.includes('UI/UX')||
-                                    name.includes('스토리보드') ||
-                                    name.includes('화면디자인')||
-                                    name.includes('웹퍼블리싱')||
-                                    name.includes('퍼블리싱')||
-                                    name.includes('서비스기획')||
-                                    name.includes('기획/설계')||
-                                    name.includes('기획')||
-                                    name.includes('디자인')||
-                                    name.includes('화면퍼블리싱');
+            const normName = normalize(item.name);
 
-            const isDesignItem = isDesignCategory || itemKeywordMatch;
+            // 카테고리 또는 서브카테고리 명에 디자인/퍼블리싱 키워드가 있으면 해당 카테고리 전체를 페이지 기반 항목으로 취급
+            const isDesignCategory = designKeywords.some(k => normCat.includes(k) || normSub.includes(k));
+            // 개별 아이템명으로도 매칭(예: 항목명이 '화면설계' 등)
+            const isDesignByName = designKeywords.some(k => normName.includes(k));
+
+            const isDesignItem = isDesignCategory || isDesignByName;
 
             if (isDesignItem) {
               try {
-                const newPrice = totalPages * 150000; // 페이지당 15만원 (0페이지면 0원)
+                const newPrice = totalPages * unitPrice; // 페이지당 단가 적용
                 const formattedPrice = newPrice.toLocaleString();
 
                 // 기존 description에서 총 페이지 수 정보 제거 (있다면)
@@ -274,9 +267,11 @@ export function updateDesignItemPrices(estimate: ProjectEstimate, totalPages: nu
                 
                 item.price = formattedPrice;
                 item.description = updatedDescription;
-                // 예전 데이터 호환성을 위해 안전하게 page_count 설정
-                if (typeof item.page_count !== 'undefined') {
-                  item.page_count = totalPages; // 페이지 카운트도 업데이트 (0페이지면 0)
+                // 페이지 카운트 업데이트 (항목이 page_count 필드를 가지고 있든 없든 안전하게 설정)
+                try {
+                  item.page_count = totalPages;
+                } catch (e) {
+                  // 무시
                 }
               } catch (itemError) {
                 console.warn(`화면설계/UI디자인 항목 "${item.name}" 가격 업데이트 실패, 기존 값 유지:`, itemError);
