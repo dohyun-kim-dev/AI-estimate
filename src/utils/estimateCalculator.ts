@@ -150,23 +150,6 @@ export function calculateFinalProjectPeriod(
 }
 
 /**
- * description 또는 이름 텍스트에서 "N페이지" 패턴을 찾아 정수로 반환
- * 예: "(22페이지)", "22페이지", "총 22페이지" 등
- */
-function parsePageCountFromText(text: string): number {
-  if (!text || typeof text !== 'string') return 0;
-  const patterns = [/(?:총\s*)?(\d{1,4})\s*페이지/, /\((\d{1,4})\s*페이지\)/, /(\d{1,4})\s*장/];
-  for (const p of patterns) {
-    const m = text.match(p);
-    if (m && m[1]) {
-      const n = parseInt(m[1], 10);
-      if (!isNaN(n) && n > 0) return n;
-    }
-  }
-  return 0;
-}
-
-/**
  * 총 페이지 수 계산
  * 화면설계, UI/UX디자인을 제외한 나머지 기능들의 page_count를 합산
  */
@@ -174,63 +157,42 @@ export function calculateTotalPages(categories: Category[]): number {
   devLog('📄 총 페이지 수 계산 시작 (화면설계, UI/UX디자인 제외)');
   let totalPages = 0;
 
-  const loggedExclusions = new Set<string>();
-  const seenItems = new Set<string>();
-
   (categories || []).forEach(category => {
-    const categoryName = category.category_name || '';
-    devLog(`   📁 카테고리: ${categoryName}`);
-    // 기본 카테고리는 합산에서 제외
-    if (/기본/.test(categoryName)) {
-      devLog(`     ⛔ 카테고리 '${categoryName}'는 기본 항목으로 간주되어 페이지 합산에서 제외됩니다.`);
-      return;
-    }
-
+    devLog(`   📁 카테고리: ${category.category_name}`);
     (category.sub_categories || []).forEach(subCategory => {
       devLog(`     📂 하위 카테고리: ${subCategory.sub_category_name}`);
       (subCategory.items || []).forEach(item => {
-        if (item.is_deleted) return;
+        if (!item.is_deleted) {
+           const name = item.name.replace(/\s+/g, '');
+            const isDesignItem = name === '화면설계' ||
+                                name.includes('화면설계')||
+                                name.includes('화면 설계')||
+                                name.includes('UI/UX디자인')||
+                                name.includes('UI/UX 디자인')||
+                                name.includes('스토리보드') ||
+                                name.includes('화면디자인')||
+                                name.includes('웹퍼블리싱')||
+                                name.includes('웹 퍼블리싱')||
+                                name.includes('퍼블리싱')||
+                                name.includes('서비스 기획')||
+                                name.includes('기획/설계')||
+                                name.includes('기획')||
+                                name.includes('디자인')||
+                                name.includes('서비스')||
+                                name.includes('화면 퍼블리싱')||
+                                name.includes('화면퍼블리싱');
 
-        // 중복 항목(item_id)이 있으면 한 번만 계산
-        if (item.item_id) {
-          if (seenItems.has(item.item_id)) return;
-          seenItems.add(item.item_id);
-        }
-
-        const nameNormalized = (item.name || '').replace(/\s+/g, '');
-        const isDesignItem = nameNormalized === '화면설계' ||
-                             nameNormalized.includes('화면설계') ||
-                             nameNormalized.includes('화면설계') ||
-                             nameNormalized.includes('UI/UX디자인') ||
-                             nameNormalized.includes('UI/UX디자인') ||
-                             nameNormalized.includes('스토리보드') ||
-                             nameNormalized.includes('화면디자인') ||
-                             nameNormalized.includes('웹퍼블리싱') ||
-                             nameNormalized.includes('웹퍼블리싱') ||
-                             nameNormalized.includes('퍼블리싱') ||
-                             nameNormalized.includes('화면퍼블리싱') ||
-                             nameNormalized.includes('서비스기획') ||
-                             nameNormalized.includes('기획/설계') ||
-                             nameNormalized.includes('기획') ||
-                             nameNormalized.includes('디자인');
-
-
-        const parsedPageFromDesc = parsePageCountFromText(item.description || item.name || '');
-
-        if (isDesignItem) {
-          const key = item.item_id || `${item.name}::${parsedPageFromDesc || item.page_count}`;
-          if (!loggedExclusions.has(key)) {
+          if (!isDesignItem) {
+            // 예전 데이터에서는 page_count 필드가 없을 수 있으므로 안전하게 처리
+            const pageCount = (typeof item.page_count === 'number') ? item.page_count : 0;
+            if (pageCount > 0) {
+              devLog(`       📃 ${item.name}: ${pageCount}페이지`);
+            }
+            totalPages += pageCount;
+          } else {
             devLog(`       🎨 ${item.name}: 제외 (디자인 관련 항목)`);
-            loggedExclusions.add(key);
           }
-          return;
         }
-
-        const pageCount = parsedPageFromDesc > 0 ? parsedPageFromDesc : ((typeof item.page_count === 'number') ? item.page_count : 0);
-        if (pageCount > 0) {
-          devLog(`       📃 ${item.name}: ${pageCount}페이지 (parsedFromDesc=${parsedPageFromDesc}, rawPageCount=${item.page_count})`);
-        }
-        totalPages += pageCount;
       });
     });
   });
@@ -245,63 +207,91 @@ export function calculateTotalPages(categories: Category[]): number {
 export function updateDesignItemPrices(estimate: ProjectEstimate, totalPages: number): ProjectEstimate {
   devLog('🎨 화면설계/UI디자인 가격 및 설명 업데이트 시작');
   devLog(`   📊 총 페이지 수: ${totalPages}페이지`);
+  
+  // 페이지 수가 0일 때도 화면설계/UI디자인 항목 업데이트 필요
+  if (totalPages === 0) {
+    devLog('   ⚠️ 총 페이지 수가 0 → 화면설계/UI디자인 항목을 0페이지/0원으로 업데이트');
+  } else {
+    devLog(`   💰 계산 공식: ${totalPages} × 150,000원 = ${totalPages * 150000}원`);
+  }
 
   const updatedEstimate = JSON.parse(JSON.stringify(estimate)); // 깊은 복사
-
+  
   try {
     (updatedEstimate.categories || []).forEach(category => {
+      // 카테고리 이름 기준으로 디자인 관련 카테고리 여부 우선 판정
+      const catName = (category.category_name || '').replace(/\s+/g, '');
+      const isDesignCategory = catName === '기획/디자인' ||
+                               catName.includes('기획') ||
+                               catName.includes('디자인') ||
+                               catName.includes('서비스기획') ||
+                               catName.includes('UI/UX') ||
+                               catName.includes('화면설계') ||
+                               catName.includes('퍼블리싱');
+
       (category.sub_categories || []).forEach(subCategory => {
         (subCategory.items || []).forEach(item => {
-          if (item.is_deleted) return;
+          if (!item.is_deleted) {
+            const name = (item.name || '').replace(/\s+/g, '');
+            // 카테고리 판정이 true면 해당 카테고리의 모든 항목을 디자인 항목으로 처리
+            const itemKeywordMatch = name === '화면설계' ||
+                                    name.includes('화면설계')||
+                                    name.includes('화면설계')||
+                                    name.includes('UI/UX디자인')||
+                                    name.includes('UI/UX')||
+                                    name.includes('스토리보드') ||
+                                    name.includes('화면디자인')||
+                                    name.includes('웹퍼블리싱')||
+                                    name.includes('퍼블리싱')||
+                                    name.includes('서비스기획')||
+                                    name.includes('기획/설계')||
+                                    name.includes('기획')||
+                                    name.includes('디자인')||
+                                    name.includes('화면퍼블리싱');
 
-          const nameNormalized = (item.name || '').replace(/\s+/g, '');
-          const isDesignItem = nameNormalized === '화면설계' ||
-                                nameNormalized.includes('화면설계') ||
-                                nameNormalized.includes('UI/UX디자인') ||
-                                nameNormalized.includes('스토리보드') ||
-                                nameNormalized.includes('화면디자인') ||
-                                nameNormalized.includes('웹퍼블리싱') ||
-                                nameNormalized.includes('퍼블리싱') ||
-                                nameNormalized.includes('화면퍼블리싱')||
-                                nameNormalized.includes('서비스기획') ||
-                             nameNormalized.includes('기획/설계') ||
-                             nameNormalized.includes('기획') ||
-                             nameNormalized.includes('디자인');
+            const isDesignItem = isDesignCategory || itemKeywordMatch;
 
-          if (!isDesignItem) return;
+            if (isDesignItem) {
+              try {
+                const newPrice = totalPages * 150000; // 페이지당 15만원 (0페이지면 0원)
+                const formattedPrice = newPrice.toLocaleString();
 
-          try {
-            const newPrice = totalPages * 150000; // 페이지당 15만원
-            const formattedPrice = newPrice.toLocaleString();
+                // 기존 description에서 총 페이지 수 정보 제거 (있다면)
+                let baseDescription = item.description || '';
+                // 다양한 패턴으로 기존 페이지 수 정보 제거
+                baseDescription = baseDescription
+                  .replace(/\s*총\s*(장수|페이지\s*수)\s*:\s*\d+/g, '')
+                  .replace(/\s*총\s*(장수|페이지\s*수)\s*\d+/g, '')
+                  .replace(/\s*\(\s*총\s*(장수|페이지\s*수)\s*:\s*\d+\s*\)/g, '')
+                  .trim();
+                
+                // 새로운 총 페이지 수 정보 추가
+                const updatedDescription = `${baseDescription} \n총 페이지 수: ${totalPages}`;
 
-            let baseDescription = item.description || '';
-            baseDescription = baseDescription
-              .replace(/\s*총\s*(장수|페이지\s*수)\s*:\s*\d+/g, '')
-              .replace(/\s*총\s*(장수|페이지\s*수)\s*\d+/g, '')
-              .replace(/\s*\(\s*총\s*(장수|페이지\s*수)\s*:\s*\d+\s*\)/g, '')
-              .trim();
-
-            const updatedDescription = `${baseDescription} \n총 페이지 수: ${totalPages}`;
-
-            devLog(`   🔄 ${item.name}:`);
-            devLog(`     💰 가격: ${item.price} → ${formattedPrice} (${totalPages}페이지)`);
-            devLog(`     📝 설명: "${item.description}" → "${updatedDescription}"`);
-
-            item.price = formattedPrice;
-            item.description = updatedDescription;
-            // 기존 page_count를 덮어쓰지 않음. 대신 별도 필드에 저장
-            try { (item as any)._design_page_count = totalPages; } catch (e) {}
-          } catch (itemError) {
-            console.warn(`화면설계/UI디자인 항목 "${item.name}" 가격 업데이트 실패, 기존 값 유지:`, itemError);
+                devLog(`   🔄 ${item.name}:`);
+                devLog(`     💰 가격: ${item.price} → ${formattedPrice} (${totalPages}페이지)`);
+                devLog(`     📝 설명: "${item.description}" → "${updatedDescription}"`);
+                
+                item.price = formattedPrice;
+                item.description = updatedDescription;
+                // 예전 데이터 호환성을 위해 안전하게 page_count 설정
+                if (typeof item.page_count !== 'undefined') {
+                  item.page_count = totalPages; // 페이지 카운트도 업데이트 (0페이지면 0)
+                }
+              } catch (itemError) {
+                console.warn(`화면설계/UI디자인 항목 "${item.name}" 가격 업데이트 실패, 기존 값 유지:`, itemError);
+                // 개별 항목 업데이트 실패 시 기존 값 유지 (아무것도 하지 않음)
+              }
+            }
           }
         });
       });
     });
   } catch (error) {
     console.warn('화면설계/UI디자인 가격 업데이트 중 오류 발생, 원본 견적 반환:', error);
-    return estimate;
+    return estimate; // 전체 업데이트 실패 시 원본 반환
   }
-
+  
   return updatedEstimate;
 }
 
