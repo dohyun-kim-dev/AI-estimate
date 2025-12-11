@@ -370,10 +370,10 @@ export function updateDesignItemPrices(estimate: ProjectEstimate, totalPages: nu
             const isDesignItem = isDesignCategory || isDesignByName;
 
             if (isDesignItem) {
-              // 기존 item에 이미 page_count가 설정되어 있고 그 값이 2보다 크면 수정을 건너뜁니다.
+              // 기존 item에 이미 page_count가 설정되어 있고 그 값이 10보다 크면 수정을 건너뜁니다.
               const existingPageCount = (typeof item.page_count === 'number') ? item.page_count : null;
-              if (existingPageCount && existingPageCount > 2) {
-                devLog(`   ⏭️ ${item.name}: 기존 페이지 수 ${existingPageCount} > 2 이므로 업데이트 건너뜀`);
+              if (existingPageCount && existingPageCount > 10) {
+                devLog(`   ⏭️ ${item.name}: 기존 페이지 수 ${existingPageCount} > 10 이므로 업데이트 건너뜀`);
                 return; // forEach 내에서 현재 항목 처리 건너뜀
               }
 
