@@ -113,7 +113,7 @@ export function buildPriceTableFromStore(): { planning?: number; design?: number
 
     // 카테고리/제목 키로 매핑
     if (unit) {
-      if (cat.includes('기획') || title.includes('기획') || title.includes('설계')) {
+      if (cat.includes('기획') || title.includes('기획')) {
         table.planning = unit;
       } else if (cat.includes('디자인') || title.includes('디자인') || title.includes('ui/ux') || title.includes('화면')) {
         table.design = unit;
@@ -315,7 +315,7 @@ export function updateDesignItemPrices(estimate: ProjectEstimate, totalPages: nu
     // 단가 판정 유틸 및 기본 단가
     const defaults = { planning: 150000, design: 100000, publishing: 100000, default: 150000 };
     const designKeywords = [
-      '기획', '기획/설계', '설계', '디자인', 'ui/ux', 'uiux', '화면설계', '화면디자인', '스토리보드',
+      '기획', '기획/설계', '디자인', 'ui/ux', 'uiux', '화면설계', '화면디자인', '스토리보드',
       '퍼블리싱', '웹퍼블리싱', '화면퍼블리싱'
     ];
 
