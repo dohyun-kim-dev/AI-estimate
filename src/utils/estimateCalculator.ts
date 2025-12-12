@@ -245,7 +245,7 @@ export function calculateFinalProjectPeriod(
 
 /**
  * 총 페이지 수 계산
- * '기본 공통'을 제외한 카테고리의 sub_categories에 있는 page_count를 곱한 값
+ * '기본 공통'을 제외한 카테고리의 items들의 page_count를 합산
  */
 export function calculateTotalPages(categories: Category[]): number {
   devLog('📄 총 페이지 수 계산 시작 (기본 공통 제외)');
@@ -254,19 +254,26 @@ export function calculateTotalPages(categories: Category[]): number {
   (categories || []).forEach(category => {
     devLog(`   📁 카테고리: ${category.category_name}`);
     
-    // '기본 공통' 카테고리는 제외
-    if (category.category_name !== '기본 공통') {
+    // '기본 공통' 카테고리는 제외 (이름에 '기본 공통'이 포함된 경우)
+    if (!category.category_name.includes('기본 공통')) {
       (category.sub_categories || []).forEach(subCategory => {
-        const subCategoryPageCount = (subCategory as any).page_count || 0; // page_count가 없으면 기본값 0
-        totalPages += subCategoryPageCount;
-        devLog(`     📂 ${subCategory.sub_category_name}: ${subCategoryPageCount}페이지`);
+        devLog(`     📂 하위 카테고리: ${subCategory.sub_category_name}`);
+        (subCategory.items || []).forEach(item => {
+          if (!item.is_deleted) {
+            const pageCount = (typeof item.page_count === 'number') ? item.page_count : 0;
+            if (pageCount > 0) {
+              devLog(`       📃 ${item.name}: ${pageCount}페이지`);
+            }
+            totalPages += pageCount;
+          }
+        });
       });
     } else {
       devLog(`     ⏭️ '기본 공통' 카테고리 제외`);
     }
   });
 
-  devLog(`   ✅ 총 페이지수: ${totalPages}페이지 (기본 공통 제외한 sub_categories의 page_count 합)`);
+  devLog(`   ✅ 총 페이지수: ${totalPages}페이지 (기본 공통 제외한 items의 page_count 합)`);
   return totalPages;
 }
 
