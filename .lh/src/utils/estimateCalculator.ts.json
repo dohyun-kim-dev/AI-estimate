@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 6,
+            "activePatchIndex": 7,
             "patches": [
                 {
                     "date": 1765503266535,
@@ -32,6 +32,10 @@
                 {
                     "date": 1765522699463,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -296,29 +296,26 @@\n         (category.sub_categories || []).forEach(subCategory => {\n           (subCategory.items || []).forEach(item => {\n             if (!item.is_deleted) {\n               try {\n-                // '본 수 반영' 컬럼 확인 (다양한 필드명 지원)\n-                const pageReflection = (item as any)['본 수 반영'] || \n-                                     (item as any).page_reflection || \n-                                     (item as any).pageReflection || \n-                                     'N';\n+                // cal_page 필드 확인 (AI 응답에서 제공)\n+                const calPage = (item as any).cal_page || 'N';\n                 \n                 // 기존 가격에서 숫자 추출\n                 const currentPrice = typeof item.price === 'string' \n                   ? parseFloat(item.price.replace(/,/g, '')) \n                   : (item.price || 0);\n                 \n                 let newPrice = currentPrice;\n                 \n-                if (pageReflection === 'Y' || pageReflection === 'y') {\n-                  // '본 수 반영'이 Y인 경우: 단가 * 총 페이지수\n+                if (calPage === 'Y' || calPage === 'y') {\n+                  // cal_page가 Y인 경우: 단가 * 총 페이지수\n                   newPrice = currentPrice * totalPages;\n-                  devLog(`   🔄 ${item.name}: 본 수 반영 Y → ${currentPrice} × ${totalPages} = ${newPrice}`);\n+                  devLog(`   🔄 ${item.name}: cal_page Y → ${currentPrice} × ${totalPages} = ${newPrice}`);\n                 } else {\n-                  // '본 수 반영'이 N인 경우: 단가 그대로\n+                  // cal_page가 N인 경우: 단가 그대로\n                   newPrice = currentPrice;\n-                  devLog(`   ➡️ ${item.name}: 본 수 반영 N → ${currentPrice} (그대로)`);\n+                  devLog(`   ➡️ ${item.name}: cal_page N → ${currentPrice} (고정가격)`);\n                 }\n                 \n                 item.price = newPrice.toLocaleString();\n                 \n"
+                },
+                {
+                    "date": 1765523774825,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,8 +10,9 @@\n   description: string;\n   fe: string; // 프론트엔드 개발 일수\n   be: string; // 백엔드 개발 일수\n   page_count: number; // 페이지 수\n+  cal_page: string; // 본 수 반영 여부 (\"Y\" 또는 \"N\")\n   is_deleted: boolean;\n   item_id?: string;\n }\n \n@@ -260,12 +261,16 @@\n         devLog(`     📂 하위 카테고리: ${subCategory.sub_category_name}`);\n         (subCategory.items || []).forEach(item => {\n           if (!item.is_deleted) {\n             const pageCount = (typeof item.page_count === 'number') ? item.page_count : 0;\n-            if (pageCount > 0) {\n-              devLog(`       📃 ${item.name}: ${pageCount}페이지`);\n+            \n+            // cal_page가 \"Y\"인 경우만 페이지 수를 합산\n+            if (item.cal_page === 'Y' && pageCount > 0) {\n+              devLog(`       📃 ${item.name}: ${pageCount}페이지 (본 수 반영: Y)`);\n+              totalPages += pageCount;\n+            } else if (pageCount > 0) {\n+              devLog(`       📃 ${item.name}: ${pageCount}페이지 (본 수 반영: ${item.cal_page || 'N'} - 제외)`);\n             }\n-            totalPages += pageCount;\n           }\n         });\n       });\n     } else {\n"
                 }
             ],
             "date": 1765503266535,

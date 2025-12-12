@@ -361,8 +361,18 @@ interface EstimateItem {
   fe: string;                    // 프론트엔드 기간
   be: string;                    // 백엔드 기간
   page_count: number;            // 페이지 수
+  cal_page: string;              // 본 수 반영 여부 ("Y" 또는 "N")
   is_deleted: boolean;           // 삭제 여부 (기본값: false)
 }
+
+**단가표 컬럼 매핑 규칙:**
+- "금액" → price 필드
+- "기능명" 또는 "제목" → name 필드
+- "설명" → description 필드
+- "프론트엔드_기간" 또는 "FE기간" → fe 필드
+- "백엔드_기간" 또는 "BE기간" → be 필드
+- "본 수 반영" → cal_page 필드 ("Y" 또는 "N" 값)
+
 `;
           
           const systemPrompt = baseSystemPrompt + additionalInstructions;
