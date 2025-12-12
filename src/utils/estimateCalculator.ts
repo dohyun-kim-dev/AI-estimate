@@ -297,11 +297,8 @@ export function updateCommonCategoryPrices(estimate: ProjectEstimate, totalPages
           (subCategory.items || []).forEach(item => {
             if (!item.is_deleted) {
               try {
-                // '본 수 반영' 컬럼 확인 (다양한 필드명 지원)
-                const pageReflection = (item as any)['본 수 반영'] || 
-                                     (item as any).page_reflection || 
-                                     (item as any).pageReflection || 
-                                     'N';
+                // cal_page 필드 확인 (AI 응답에서 제공)
+                const calPage = (item as any).cal_page || 'N';
                 
                 // 기존 가격에서 숫자 추출
                 const currentPrice = typeof item.price === 'string' 
@@ -310,14 +307,14 @@ export function updateCommonCategoryPrices(estimate: ProjectEstimate, totalPages
                 
                 let newPrice = currentPrice;
                 
-                if (pageReflection === 'Y' || pageReflection === 'y') {
-                  // '본 수 반영'이 Y인 경우: 단가 * 총 페이지수
+                if (calPage === 'Y' || calPage === 'y') {
+                  // cal_page가 Y인 경우: 단가 * 총 페이지수
                   newPrice = currentPrice * totalPages;
-                  devLog(`   🔄 ${item.name}: 본 수 반영 Y → ${currentPrice} × ${totalPages} = ${newPrice}`);
+                  devLog(`   🔄 ${item.name}: cal_page Y → ${currentPrice} × ${totalPages} = ${newPrice}`);
                 } else {
-                  // '본 수 반영'이 N인 경우: 단가 그대로
+                  // cal_page가 N인 경우: 단가 그대로
                   newPrice = currentPrice;
-                  devLog(`   ➡️ ${item.name}: 본 수 반영 N → ${currentPrice} (그대로)`);
+                  devLog(`   ➡️ ${item.name}: cal_page N → ${currentPrice} (고정가격)`);
                 }
                 
                 item.price = newPrice.toLocaleString();

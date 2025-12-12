@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 5,
+            "activePatchIndex": 6,
             "patches": [
                 {
                     "date": 1765503266535,
@@ -28,6 +28,10 @@
                 {
                     "date": 1765522181262,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -288,11 +288,11 @@\n   const updatedEstimate = JSON.parse(JSON.stringify(estimate)); // 깊은 복사\n   \n   try {\n     (updatedEstimate.categories || []).forEach(category => {\n-      // '기본 공통' 카테고리만 처리\n-      if (category.category_name === '기본 공통') {\n-        devLog(`   📁 '기본 공통' 카테고리 처리 시작`);\n+      // '기본 공통' 카테고리만 처리 (이름에 '기본 공통'이 포함된 경우)\n+      if (category.category_name.includes('기본 공통')) {\n+        devLog(`   📁 '기본 공통' 카테고리 처리 시작: ${category.category_name}`);\n         \n         (category.sub_categories || []).forEach(subCategory => {\n           (subCategory.items || []).forEach(item => {\n             if (!item.is_deleted) {\n"
+                },
+                {
+                    "date": 1765522699463,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -296,29 +296,26 @@\n         (category.sub_categories || []).forEach(subCategory => {\n           (subCategory.items || []).forEach(item => {\n             if (!item.is_deleted) {\n               try {\n-                // '본 수 반영' 컬럼 확인 (다양한 필드명 지원)\n-                const pageReflection = (item as any)['본 수 반영'] || \n-                                     (item as any).page_reflection || \n-                                     (item as any).pageReflection || \n-                                     'N';\n+                // cal_page 필드 확인 (AI 응답에서 제공)\n+                const calPage = (item as any).cal_page || 'N';\n                 \n                 // 기존 가격에서 숫자 추출\n                 const currentPrice = typeof item.price === 'string' \n                   ? parseFloat(item.price.replace(/,/g, '')) \n                   : (item.price || 0);\n                 \n                 let newPrice = currentPrice;\n                 \n-                if (pageReflection === 'Y' || pageReflection === 'y') {\n-                  // '본 수 반영'이 Y인 경우: 단가 * 총 페이지수\n+                if (calPage === 'Y' || calPage === 'y') {\n+                  // cal_page가 Y인 경우: 단가 * 총 페이지수\n                   newPrice = currentPrice * totalPages;\n-                  devLog(`   🔄 ${item.name}: 본 수 반영 Y → ${currentPrice} × ${totalPages} = ${newPrice}`);\n+                  devLog(`   🔄 ${item.name}: cal_page Y → ${currentPrice} × ${totalPages} = ${newPrice}`);\n                 } else {\n-                  // '본 수 반영'이 N인 경우: 단가 그대로\n+                  // cal_page가 N인 경우: 단가 그대로\n                   newPrice = currentPrice;\n-                  devLog(`   ➡️ ${item.name}: 본 수 반영 N → ${currentPrice} (그대로)`);\n+                  devLog(`   ➡️ ${item.name}: cal_page N → ${currentPrice} (고정가격)`);\n                 }\n                 \n                 item.price = newPrice.toLocaleString();\n                 \n"
                 }
             ],
             "date": 1765503266535,
