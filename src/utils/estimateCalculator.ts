@@ -245,209 +245,92 @@ export function calculateFinalProjectPeriod(
 
 /**
  * 총 페이지 수 계산
- * 화면설계, UI/UX디자인을 제외한 나머지 기능들의 page_count를 합산
+ * '기본 공통'을 제외한 카테고리의 sub_categories에 있는 page_count를 곱한 값
  */
 export function calculateTotalPages(categories: Category[]): number {
-  devLog('📄 총 페이지 수 계산 시작 (화면설계, UI/UX디자인 제외)');
+  devLog('📄 총 페이지 수 계산 시작 (기본 공통 제외)');
   let totalPages = 0;
 
   (categories || []).forEach(category => {
     devLog(`   📁 카테고리: ${category.category_name}`);
-    (category.sub_categories || []).forEach(subCategory => {
-      devLog(`     📂 하위 카테고리: ${subCategory.sub_category_name}`);
-      (subCategory.items || []).forEach(item => {
-        if (!item.is_deleted) {
-           const name = item.name.replace(/\s+/g, '');
-            const isDesignItem = name === '화면설계' ||
-                                name.includes('화면설계')||
-                                name.includes('화면 설계')||
-                                name.includes('UI/UX디자인')||
-                                name.includes('UI/UX 디자인')||
-                                name.includes('스토리보드') ||
-                                name.includes('화면디자인')||
-                                name.includes('웹퍼블리싱')||
-                                name.includes('웹 퍼블리싱')||
-                                name.includes('퍼블리싱')||
-                                name.includes('서비스 기획')||
-                                name.includes('기획/설계')||
-                                name.includes('기획')||
-                                name.includes('디자인')||
-                                name.includes('서비스')||
-                                name.includes('화면 퍼블리싱')||
-                                name.includes('화면퍼블리싱');
-
-          if (!isDesignItem) {
-            // 예전 데이터에서는 page_count 필드가 없을 수 있으므로 안전하게 처리
-            const pageCount = (typeof item.page_count === 'number') ? item.page_count : 0;
-            if (pageCount > 0) {
-              devLog(`       📃 ${item.name}: ${pageCount}페이지`);
-            }
-            totalPages += pageCount;
-          } else {
-            devLog(`       🎨 ${item.name}: 제외 (디자인 관련 항목)`);
-          }
-        }
+    
+    // '기본 공통' 카테고리는 제외
+    if (category.category_name !== '기본 공통') {
+      (category.sub_categories || []).forEach(subCategory => {
+        const subCategoryPageCount = (subCategory as any).page_count || 0; // page_count가 없으면 기본값 0
+        totalPages += subCategoryPageCount;
+        devLog(`     📂 ${subCategory.sub_category_name}: ${subCategoryPageCount}페이지`);
       });
-    });
+    } else {
+      devLog(`     ⏭️ '기본 공통' 카테고리 제외`);
+    }
   });
 
-  devLog(`   ✅ 실제 기능 페이지 수 합계: ${totalPages}페이지 (화면설계/UI디자인 제외)`);
+  devLog(`   ✅ 총 페이지수: ${totalPages}페이지 (기본 공통 제외한 sub_categories의 page_count 합)`);
   return totalPages;
 }
 
 /**
- * 화면설계/UI디자인 항목의 가격 및 설명을 총 페이지 수 기반으로 업데이트
+ * '기본 공통' 카테고리 항목의 가격을 업데이트
+ * '본 수 반영' 컬럼을 사용하여 계산
  */
-export function updateDesignItemPrices(estimate: ProjectEstimate, totalPages: number, companyPriceTable?: { planning?: number; design?: number; publishing?: number }): ProjectEstimate {
-  devLog('🎨 화면설계/UI디자인 가격 및 설명 업데이트 시작');
+export function updateCommonCategoryPrices(estimate: ProjectEstimate, totalPages: number, companyPriceTable?: { planning?: number; design?: number; publishing?: number }): ProjectEstimate {
+  devLog('🏢 기본 공통 카테고리 가격 업데이트 시작');
   devLog(`   📊 총 페이지 수: ${totalPages}페이지`);
-  
-  // 페이지 수가 0일 때도 화면설계/UI디자인 항목 업데이트 필요
-  if (totalPages === 0) {
-    devLog('   ⚠️ 총 페이지 수가 0 → 화면설계/UI디자인 항목을 0페이지/0원으로 업데이트');
-  } else {
-    devLog(`   💰 계산 공식: ${totalPages} × 150,000원 = ${totalPages * 150000}원`);
-  }
 
   const updatedEstimate = JSON.parse(JSON.stringify(estimate)); // 깊은 복사
   
   try {
-    // 단가 판정 유틸 및 기본 단가
-    const defaults = { planning: 150000, design: 100000, publishing: 100000, default: 150000 };
-    const designKeywords = [
-      '기획', '기획/설계', '디자인', 'ui/ux', 'uiux', '화면설계', '화면디자인', '스토리보드',
-      '퍼블리싱', '웹퍼블리싱', '화면퍼블리싱'
-    ];
-
-    const normalize = (s: any) => (s || '').toString().toLowerCase().replace(/\s+/g, '');
-
-    // description에서 단가(원) 추출: "1장당 15만원", "1장당 150,000원", "본수 기준 1장당 15만원" 등
-    const extractUnitFromDescription = (desc?: string): number | null => {
-      if (!desc) return null;
-      const s = desc.toLowerCase();
-      // 만원 단위 예: "1장당 15만원"
-      const manwon = s.match(/(?:1장당|장당|1장[^0-9]*)([0-9]+(?:[.,][0-9]+)?)\s*만원/);
-      if (manwon) {
-        const v = parseFloat(manwon[1].replace(',', '.'));
-        if (!isNaN(v)) return Math.round(v * 10000);
-      }
-      // 원 단위 예: "1장당 150,000원"
-      const won = s.match(/(?:1장당|장당|1장[^0-9]*)([0-9,]+)\s*원/);
-      if (won) {
-        const v = parseInt(won[1].replace(/,/g, ''), 10);
-        if (!isNaN(v)) return v;
-      }
-      // 숫자만 있는 경우(예: "1장당 150000")
-      const num = s.match(/(?:1장당|장당|1장[^0-9]*)([0-9]{3,})/);
-      if (num) {
-        const v = parseInt(num[1].replace(/,/g, ''), 10);
-        if (!isNaN(v)) return v;
-      }
-      return null;
-    };
-
-    // 여러 텍스트 필드(description, memo, note 등)를 순서대로 검사하여 단가를 추출
-    const extractUnitFromTexts = (texts: Array<string | undefined | null>): number | null => {
-      for (const t of texts) {
-        const v = extractUnitFromDescription(t || undefined);
-        if (v && v > 0) return v;
-      }
-      return null;
-    };
-
     (updatedEstimate.categories || []).forEach(category => {
-      const normCat = normalize(category.category_name);
-
-      (category.sub_categories || []).forEach(subCategory => {
-        const normSub = normalize(subCategory.sub_category_name);
-
-        (subCategory.items || []).forEach(item => {
-          if (!item.is_deleted) {
-            const normName = normalize(item.name);
-            // 카테고리/서브카테고리/아이템명에서 키 결정
-            const isDesignCategory = designKeywords.some(k => normCat.includes(k) || normSub.includes(k));
-            const isDesignByName = designKeywords.some(k => normName.includes(k));
-            const isDesignItem = isDesignCategory || isDesignByName;
-
-            if (isDesignItem) {
-              // 기존 item에 이미 page_count가 설정되어 있고 그 값이 10보다 크면 수정을 건너뜁니다.
-              const existingPageCount = (typeof item.page_count === 'number') ? item.page_count : null;
-              if (existingPageCount && existingPageCount > 10) {
-                devLog(`   ⏭️ ${item.name}: 기존 페이지 수 ${existingPageCount} > 10 이므로 업데이트 건너뜀`);
-                return; // forEach 내에서 현재 항목 처리 건너뜀
-              }
-
+      // '기본 공통' 카테고리만 처리
+      if (category.category_name === '기본 공통') {
+        devLog(`   📁 '기본 공통' 카테고리 처리 시작`);
+        
+        (category.sub_categories || []).forEach(subCategory => {
+          (subCategory.items || []).forEach(item => {
+            if (!item.is_deleted) {
               try {
-                // 단가 결정 우선순위: companyPriceTable -> description에서 추출 -> defaults
-                // companyPriceTable은 호출자가 전달한 값(우선) 또는 estimate 내부의 price_table(호환성) 사용
-                const priceTableFromArgsOrEstimate: any = companyPriceTable || (estimate as any).price_table || null;
-
-                // 항목 종류 키 결정 (planning, design, publishing)
-                const determineKey = (): 'planning' | 'design' | 'publishing' | 'default' => {
-                  if (normCat.includes('기획') || normSub.includes('기획') || normName.includes('기획')) return 'planning';
-                  if (normCat.includes('디자인') || normSub.includes('디자인') || normName.includes('ui/ux') || normName.includes('디자인')) return 'design';
-                  if (normCat.includes('퍼블리싱') || normSub.includes('퍼블리싱') || normName.includes('퍼블리싱')) return 'publishing';
-                  return 'default';
-                };
-
-                const key = determineKey();
-
-                let unit = defaults[key] || defaults.default;
-                // 1) store/price table 우선 사용
-                if (priceTableFromArgsOrEstimate && typeof priceTableFromArgsOrEstimate[key] === 'number') {
-                  unit = priceTableFromArgsOrEstimate[key];
-                }
-                // 2) description에 장당 단가 명시되어 있으면 그것 우선
-                // description 뿐 아니라 memo나 note 필드에서도 단가를 추출해 우선 사용
-                const possibleTexts = [item.description, (item as any).memo, (item as any).note];
-                const descUnit = extractUnitFromTexts(possibleTexts);
-                if (descUnit && descUnit > 0) {
-                  unit = descUnit;
-                }
-
-                const newPrice = totalPages * unit; // 페이지당 단가 적용
-                const formattedPrice = newPrice.toLocaleString();
-
-                // 기존 description에서 총 페이지 수 정보 제거 (있다면)
-                let baseDescription = item.description || '';
-                // 다양한 패턴으로 기존 페이지 수 정보 제거
-                baseDescription = baseDescription
-                  .replace(/\s*총\s*(장수|페이지\s*수)\s*:\s*\d+/g, '')
-                  .replace(/\s*총\s*(장수|페이지\s*수)\s*\d+/g, '')
-                  .replace(/\s*\(\s*총\s*(장수|페이지\s*수)\s*:\s*\d+\s*\)/g, '')
-                  .trim();
+                // '본 수 반영' 컬럼 확인 (다양한 필드명 지원)
+                const pageReflection = (item as any)['본 수 반영'] || 
+                                     (item as any).page_reflection || 
+                                     (item as any).pageReflection || 
+                                     'N';
                 
-                // 새로운 총 페이지 수 정보 추가
-                const updatedDescription = `${baseDescription} \n총 페이지 수: ${totalPages}`;
-
-                devLog(`   🔄 ${item.name}:`);
-                devLog(`     💰 가격: ${item.price} → ${formattedPrice} (${totalPages}페이지)`);
-                devLog(`     📝 설명: "${item.description}" → "${updatedDescription}"`);
+                // 기존 가격에서 숫자 추출
+                const currentPrice = typeof item.price === 'string' 
+                  ? parseFloat(item.price.replace(/,/g, '')) 
+                  : (item.price || 0);
                 
-                item.price = formattedPrice;
-                item.description = updatedDescription;
-                // 페이지 카운트 업데이트 (항목이 page_count 필드를 가지고 있든 없든 안전하게 설정)
-                try {
-                  item.page_count = totalPages;
-                } catch (e) {
-                  // 무시
+                let newPrice = currentPrice;
+                
+                if (pageReflection === 'Y' || pageReflection === 'y') {
+                  // '본 수 반영'이 Y인 경우: 단가 * 총 페이지수
+                  newPrice = currentPrice * totalPages;
+                  devLog(`   🔄 ${item.name}: 본 수 반영 Y → ${currentPrice} × ${totalPages} = ${newPrice}`);
+                } else {
+                  // '본 수 반영'이 N인 경우: 단가 그대로
+                  newPrice = currentPrice;
+                  devLog(`   ➡️ ${item.name}: 본 수 반영 N → ${currentPrice} (그대로)`);
                 }
+                
+                item.price = newPrice.toLocaleString();
+                
               } catch (itemError) {
-                console.warn(`화면설계/UI디자인 항목 "${item.name}" 가격 업데이트 실패, 기존 값 유지:`, itemError);
-                // 개별 항목 업데이트 실패 시 기존 값 유지 (아무것도 하지 않음)
+                console.warn(`기본 공통 항목 "${item.name}" 가격 업데이트 실패, 기존 값 유지:`, itemError);
               }
             }
-          }
+          });
         });
-      });
+      }
     });
   } catch (error) {
-    console.warn('화면설계/UI디자인 가격 업데이트 중 오류 발생, 원본 견적 반환:', error);
-    return estimate; // 전체 업데이트 실패 시 원본 반환
+    console.warn('기본 공통 가격 업데이트 중 오류 발생, 원본 견적 반환:', error);
+    return estimate;
   }
   
   return updatedEstimate;
 }
+
 
 /**
  * 전체 예상 기간 계산 (메인 함수)
@@ -474,9 +357,9 @@ export function calculateEstimatedPeriod(estimate: ProjectEstimate): {
       totalPages = calculateTotalPages(estimate.categories);
       devLog('1️⃣ 총 페이지 수:', totalPages, '페이지');
       
-      // 1.5단계: 화면설계/UI디자인 가격 업데이트
+      // 1.5단계: '기본 공통' 카테고리 가격 업데이트
       try {
-        // store에서 회사별 단가표를 빌드하여 updateDesignItemPrices로 전달 (원본 estimate을 변경하지 않음)
+        // store에서 회사별 단가표를 빌드하여 updateCommonCategoryPrices로 전달 (원본 estimate을 변경하지 않음)
         let priceTable: any = null;
         try {
           priceTable = buildPriceTableFromStore();
@@ -485,9 +368,9 @@ export function calculateEstimatedPeriod(estimate: ProjectEstimate): {
           devLog('   ⚠️ price table 빌드 실패, 기본값 사용:', e);
         }
 
-        updatedEstimate = updateDesignItemPrices(estimate, totalPages, priceTable);
+        updatedEstimate = updateCommonCategoryPrices(estimate, totalPages, priceTable);
       } catch (priceError) {
-        console.warn('가격 업데이트 실패, 원본 견적 사용:', priceError);
+        console.warn('기본 공통 가격 업데이트 실패, 원본 견적 사용:', priceError);
         updatedEstimate = estimate; // 가격 업데이트 실패 시 원본 사용
       }
     } catch (error) {
