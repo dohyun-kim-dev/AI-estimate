@@ -289,9 +289,9 @@ export function updateCommonCategoryPrices(estimate: ProjectEstimate, totalPages
   
   try {
     (updatedEstimate.categories || []).forEach(category => {
-      // '기본 공통' 카테고리만 처리
-      if (category.category_name === '기본 공통') {
-        devLog(`   📁 '기본 공통' 카테고리 처리 시작`);
+      // '기본 공통' 카테고리만 처리 (이름에 '기본 공통'이 포함된 경우)
+      if (category.category_name.includes('기본 공통')) {
+        devLog(`   📁 '기본 공통' 카테고리 처리 시작: ${category.category_name}`);
         
         (category.sub_categories || []).forEach(subCategory => {
           (subCategory.items || []).forEach(item => {

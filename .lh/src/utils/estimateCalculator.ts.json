@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 4,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1765503266535,
@@ -24,6 +24,10 @@
                 {
                     "date": 1765522042759,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -244,30 +244,37 @@\n }\n \n /**\n  * 총 페이지 수 계산\n- * '기본 공통'을 제외한 카테고리의 sub_categories에 있는 page_count를 곱한 값\n+ * '기본 공통'을 제외한 카테고리의 items들의 page_count를 합산\n  */\n export function calculateTotalPages(categories: Category[]): number {\n   devLog('📄 총 페이지 수 계산 시작 (기본 공통 제외)');\n   let totalPages = 0;\n \n   (categories || []).forEach(category => {\n     devLog(`   📁 카테고리: ${category.category_name}`);\n     \n-    // '기본 공통' 카테고리는 제외\n-    if (category.category_name !== '기본 공통') {\n+    // '기본 공통' 카테고리는 제외 (이름에 '기본 공통'이 포함된 경우)\n+    if (!category.category_name.includes('기본 공통')) {\n       (category.sub_categories || []).forEach(subCategory => {\n-        const subCategoryPageCount = (subCategory as any).page_count || 0; // page_count가 없으면 기본값 0\n-        totalPages += subCategoryPageCount;\n-        devLog(`     📂 ${subCategory.sub_category_name}: ${subCategoryPageCount}페이지`);\n+        devLog(`     📂 하위 카테고리: ${subCategory.sub_category_name}`);\n+        (subCategory.items || []).forEach(item => {\n+          if (!item.is_deleted) {\n+            const pageCount = (typeof item.page_count === 'number') ? item.page_count : 0;\n+            if (pageCount > 0) {\n+              devLog(`       📃 ${item.name}: ${pageCount}페이지`);\n+            }\n+            totalPages += pageCount;\n+          }\n+        });\n       });\n     } else {\n       devLog(`     ⏭️ '기본 공통' 카테고리 제외`);\n     }\n   });\n \n-  devLog(`   ✅ 총 페이지수: ${totalPages}페이지 (기본 공통 제외한 sub_categories의 page_count 합)`);\n+  devLog(`   ✅ 총 페이지수: ${totalPages}페이지 (기본 공통 제외한 items의 page_count 합)`);\n   return totalPages;\n }\n \n /**\n"
+                },
+                {
+                    "date": 1765522181262,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -288,11 +288,11 @@\n   const updatedEstimate = JSON.parse(JSON.stringify(estimate)); // 깊은 복사\n   \n   try {\n     (updatedEstimate.categories || []).forEach(category => {\n-      // '기본 공통' 카테고리만 처리\n-      if (category.category_name === '기본 공통') {\n-        devLog(`   📁 '기본 공통' 카테고리 처리 시작`);\n+      // '기본 공통' 카테고리만 처리 (이름에 '기본 공통'이 포함된 경우)\n+      if (category.category_name.includes('기본 공통')) {\n+        devLog(`   📁 '기본 공통' 카테고리 처리 시작: ${category.category_name}`);\n         \n         (category.sub_categories || []).forEach(subCategory => {\n           (subCategory.items || []).forEach(item => {\n             if (!item.is_deleted) {\n"
                 }
             ],
             "date": 1765503266535,
