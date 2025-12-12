@@ -1,9 +1,9 @@
 // 예상 기간 산출 로직 (Estimated Period Calculation Logic)
-
+ 
 import { devLog } from "./devLogger";
 import { usePromptStore } from "../store/promptStore";
 import { useCompanyStore } from "../store/companyStore";
-
+ 
 export interface EstimateItem {
   name: string;
   price: string;
@@ -15,17 +15,17 @@ export interface EstimateItem {
   is_deleted: boolean;
   item_id?: string;
 }
-
+ 
 export interface Category {
   category_name: string;
   sub_categories: SubCategory[];
 }
-
+ 
 export interface SubCategory {
   sub_category_name: string;
   items: EstimateItem[];
 }
-
+ 
 export interface ProjectEstimate {
   project_name: string;
   total_price: string;
@@ -34,7 +34,7 @@ export interface ProjectEstimate {
   categories: Category[];
   uuid: string;
 }
-
+ 
 // description에서 단가(원) 추출 유틸 (재사용 위해 최상단으로 이동)
 export const extractUnitFromDescription = (desc?: string): number | null => {
   if (!desc) return null;
@@ -56,7 +56,7 @@ export const extractUnitFromDescription = (desc?: string): number | null => {
   }
   return null;
 };
-
+ 
 export const extractUnitFromTexts = (texts: Array<string | undefined | null>): number | null => {
   for (const t of texts) {
     const v = extractUnitFromDescription(t || undefined);
@@ -64,13 +64,13 @@ export const extractUnitFromTexts = (texts: Array<string | undefined | null>): n
   }
   return null;
 };
-
+ 
 // promptStore의 priceList를 분석해 company 단가표(planning/design/publishing)를 반환
 export function buildPriceTableFromStore(): { planning?: number; design?: number; publishing?: number } {
   const state = usePromptStore.getState();
   const companyState = useCompanyStore.getState();
   const companyCodeFromState = (companyState?.companyInfo?.companyCode || companyState?.companyInfo?.companyName || companyState?.companyInfo?.name || '').toString().toLowerCase();
-
+ 
   // URL 쿼리에서 companyCode 파라미터가 있으면 우선 참고 (브라우저 실행 시)
   let companyCode = companyCodeFromState;
   try {
@@ -85,7 +85,7 @@ export function buildPriceTableFromStore(): { planning?: number; design?: number
   } catch (e) {
     devLog('   ⚠️ failed to read companyCode from URL:', e);
   }
-
+ 
   // 회사명이 heredot이면 모든 항목 150,000 고정
   if (companyCode === 'heredot') {
     const table = { planning: 150000, design: 150000, publishing: 150000 };
@@ -95,14 +95,14 @@ export function buildPriceTableFromStore(): { planning?: number; design?: number
   const priceList = state.getPriceList ? state.getPriceList() : state.priceList || [];
   const defaults = { planning: 150000, design: 100000, publishing: 100000 };
   const table: { planning?: number; design?: number; publishing?: number } = { ...defaults };
-
+ 
   (priceList || []).forEach((row: any) => {
     // 다양한 필드명 시도
     const cat = (row['카테고리'] || row.category || row['관리자 카테고리'] || '').toString().toLowerCase();
     const title = (row['제목'] || row.title || '').toString().toLowerCase();
     const desc = (row['설명'] || row.description || row.memo || row['메모'] || '').toString();
     const amountField = row['금액'] || row.amount || row['금액(원)'] || row.price || row['가격'];
-
+ 
     let unit: number | null = null;
     // description에서 추출 우선
     unit = extractUnitFromDescription(desc);
@@ -111,7 +111,7 @@ export function buildPriceTableFromStore(): { planning?: number; design?: number
       const num = typeof amountField === 'number' ? amountField : parseInt(String(amountField).replace(/[,\s]/g, ''), 10);
       if (!isNaN(num) && num > 0) unit = num;
     }
-
+ 
     // 카테고리/제목 키로 매핑
     if (unit) {
       if (cat.includes('기획') || title.includes('기획')) {
@@ -123,17 +123,17 @@ export function buildPriceTableFromStore(): { planning?: number; design?: number
       }
     }
   });
-
+ 
   return table;
 }
-
+ 
 /**
- * 1단계: '기획/디자인' 기간 산출
- * 총 페이지 수를 기반으로 기획/디자인 기간을 계산
- */
+* 1단계: '기획/디자인' 기간 산출
+* 총 페이지 수를 기반으로 기획/디자인 기간을 계산
+*/
 export function calculatePlanningDesignPeriod(totalPages: number): number {
   devLog('🎯 기획/디자인 기간 산출 시작 - 총 페이지 수:', totalPages);
-
+ 
   let result: number;
   let reason: string;
   //페이지 수가 0일경우 result 0으로 처리
@@ -158,20 +158,20 @@ export function calculatePlanningDesignPeriod(totalPages: number): number {
     result = 12;
     reason = '기획 7주 + 디자인 5주 = 총 12주';
   }
-
+ 
   devLog(`   ➡️ ${totalPages}페이지 → ${result}주 (${reason})`);
   return result;
 }
-
+ 
 /**
- * 2단계: 기능별 개발 기간 합산
- * 모든 기능의 FE/BE 개발일을 각각 합산
- */
+* 2단계: 기능별 개발 기간 합산
+* 모든 기능의 FE/BE 개발일을 각각 합산
+*/
 export function calculateDevelopmentDays(categories: Category[]): { totalFeDays: number; totalBeDays: number } {
   devLog('💻 기능별 개발 기간 합산 시작');
   let totalFeDays = 0;
   let totalBeDays = 0;
-
+ 
   (categories || []).forEach(category => {
     devLog(`   📁 카테고리: ${category.category_name}`);
     (category.sub_categories || []).forEach(subCategory => {
@@ -194,28 +194,28 @@ export function calculateDevelopmentDays(categories: Category[]): { totalFeDays:
       });
     });
   });
-
+ 
   devLog(`   ✅ 합산 결과: FE 총 ${totalFeDays}일, BE 총 ${totalBeDays}일`);
   return { totalFeDays, totalBeDays };
 }
-
+ 
 /**
- * 3단계: '순수 개발 기간' 확정 (FE/BE 중 최대값 선택)
- */
+* 3단계: '순수 개발 기간' 확정 (FE/BE 중 최대값 선택)
+*/
 export function calculatePureDevelopmentDays(totalFeDays: number, totalBeDays: number): number {
   devLog('⚡ 순수 개발 기간 확정');
   devLog(`   📊 비교: FE ${totalFeDays}일 vs BE ${totalBeDays}일`);
-
+ 
   const result = Math.max(totalFeDays, totalBeDays);
   const selectedType = totalFeDays >= totalBeDays ? 'FE' : 'BE';
-
+ 
   devLog(`   ➡️ 최대값 선택: ${result}일 (${selectedType} 기준)`);
   return result;
 }
-
+ 
 /**
- * 4단계: '최종 프로젝트 기간' 종합 계산
- */
+* 4단계: '최종 프로젝트 기간' 종합 계산
+*/
 export function calculateFinalProjectPeriod(
   planningDesignWeeks: number,
   pureDevelopmentDays: number,
@@ -223,7 +223,7 @@ export function calculateFinalProjectPeriod(
 ): number {
   devLog('🏁 최종 프로젝트 기간 종합 계산');
   devLog(`   📋 입력값: 기획/디자인 ${planningDesignWeeks}주, 순수 개발 ${pureDevelopmentDays}일, 총 페이지 ${totalPages}페이지`);
-
+ 
   // 개발 기간(주) = CEILING(순수 개발일 / 5), 단 개발일이 있으면 최소 1주
   let developmentWeeks = 0;
   if (pureDevelopmentDays > 0) {
@@ -232,26 +232,26 @@ export function calculateFinalProjectPeriod(
   } else {
     devLog(`   📈 개발 기간: ${pureDevelopmentDays}일 → ${developmentWeeks}주 (개발 없음)`);
   }
-
+ 
   // 검수/테스트 기간: 페이지가 0이면 0주, 아니면 2주
   const testWeeks = totalPages === 0 ? 0 : 2;
   devLog(`   🧪 검수/테스트 기간: ${testWeeks}주 (페이지 수: ${totalPages})`);
-
+ 
   // 최종 예상 기간(주) = 기획/디자인 기간 + 개발 기간 + 검수/테스트 기간
   const finalWeeks = planningDesignWeeks + developmentWeeks + testWeeks;
   devLog(`   🎯 최종 계산: ${planningDesignWeeks}주(기획/디자인) + ${developmentWeeks}주(개발) + ${testWeeks}주(검수/테스트) = ${finalWeeks}주`);
-
+ 
   return finalWeeks;
 }
-
+ 
 /**
- * 총 페이지 수 계산
- * '기본 공통'을 제외한 카테고리의 items들의 page_count를 합산
- */
+* 총 페이지 수 계산
+* '기본 공통'을 제외한 카테고리의 items들의 page_count를 합산
+*/
 export function calculateTotalPages(categories: Category[]): number {
   devLog('📄 총 페이지 수 계산 시작 (기본 공통 제외)');
   let totalPages = 0;
-
+ 
   (categories || []).forEach(category => {
     devLog(`   📁 카테고리: ${category.category_name}`);
     
@@ -281,19 +281,19 @@ export function calculateTotalPages(categories: Category[]): number {
       devLog(`     ⏭️ '기본 공통' 카테고리 제외`);
     }
   });
-
+ 
   devLog(`   ✅ 총 페이지수: ${totalPages}페이지 (기본 공통 제외한 items의 page_count 합)`);
   return totalPages;
 }
-
+ 
 /**
- * '기본 공통' 카테고리 항목의 가격을 업데이트
- * '본 수 반영' 컬럼을 사용하여 계산
- */
+* '기본 공통' 카테고리 항목의 가격을 업데이트
+* '본 수 반영' 컬럼을 사용하여 계산
+*/
 export function updateCommonCategoryPrices(estimate: ProjectEstimate, totalPages: number, companyPriceTable?: { planning?: number; design?: number; publishing?: number }): ProjectEstimate {
   devLog('🏢 기본 공통 카테고리 가격 업데이트 시작');
   devLog(`   📊 총 페이지 수: ${totalPages}페이지`);
-
+ 
   const updatedEstimate = JSON.parse(JSON.stringify(estimate)); // 깊은 복사
   
   try {
@@ -310,16 +310,31 @@ export function updateCommonCategoryPrices(estimate: ProjectEstimate, totalPages
                 const calPage = (item as any).cal_page || 'N';
                 
                 // 기존 가격에서 숫자 추출
-                const currentPrice = typeof item.price === 'string' 
-                  ? parseFloat(item.price.replace(/,/g, '')) 
+                const currentPrice = typeof item.price === 'string'
+                  ? parseFloat(item.price.replace(/,/g, ''))
                   : (item.price || 0);
                 
                 let newPrice = currentPrice;
                 
                 if (calPage === 'Y' || calPage === 'y') {
-                  // cal_page가 Y인 경우: 단가 * 총 페이지수
-                  newPrice = currentPrice * totalPages;
-                  devLog(`   🔄 ${item.name}: cal_page Y → ${currentPrice} × ${totalPages} = ${newPrice}`);
+                  // cal_page가 Y인 경우: 서브카테고리별 고정 단가 * 총 페이지수
+                  const subCategoryName = subCategory.sub_category_name;
+                  let unitPrice = 0; // 기본값을 0으로 설정
+                  
+                  // 서브카테고리명에 따른 고정 단가 적용
+                  if (subCategoryName.includes('기획')) {
+                    unitPrice = 150000;
+                  } else if (subCategoryName.includes('디자인') || subCategoryName.includes('퍼블리싱')) {
+                    unitPrice = 100000;
+                  } else {
+                    // 매칭되는 카테고리가 없으면 기본 단가 사용 (한 번만)
+                    // description에서 원래 단가를 추출하거나 기본값 사용
+                    const extractedUnit = extractUnitFromDescription(item.description);
+                    unitPrice = extractedUnit || 100000; // 추출 실패시 기본 10만원
+                  }
+                  
+                  newPrice = unitPrice * totalPages;
+                  devLog(`   🔄 ${item.name}: cal_page Y → ${unitPrice} × ${totalPages} = ${newPrice} (서브카테고리: ${subCategoryName})`);
                 } else {
                   // cal_page가 N인 경우: 단가 그대로
                   newPrice = currentPrice;
@@ -343,11 +358,11 @@ export function updateCommonCategoryPrices(estimate: ProjectEstimate, totalPages
   
   return updatedEstimate;
 }
-
-
+ 
+ 
 /**
- * 전체 예상 기간 계산 (메인 함수)
- */
+* 전체 예상 기간 계산 (메인 함수)
+*/
 export function calculateEstimatedPeriod(estimate: ProjectEstimate): {
   totalPages: number;
   planningDesignWeeks: number;
@@ -360,7 +375,7 @@ export function calculateEstimatedPeriod(estimate: ProjectEstimate): {
   updatedEstimate: ProjectEstimate;
 } {
   devLog('📊 예상 기간 계산 시작:', estimate.project_name);
-
+ 
   try {
     // 1단계: 총 페이지 수 계산
     let totalPages = 0;
@@ -380,7 +395,7 @@ export function calculateEstimatedPeriod(estimate: ProjectEstimate): {
         } catch (e) {
           devLog('   ⚠️ price table 빌드 실패, 기본값 사용:', e);
         }
-
+ 
         updatedEstimate = updateCommonCategoryPrices(estimate, totalPages, priceTable);
       } catch (priceError) {
         console.warn('기본 공통 가격 업데이트 실패, 원본 견적 사용:', priceError);
@@ -395,7 +410,7 @@ export function calculateEstimatedPeriod(estimate: ProjectEstimate): {
     // 2단계: 기획/디자인 기간 산출
     const planningDesignWeeks = calculatePlanningDesignPeriod(totalPages);
     devLog('2️⃣ 기획/디자인 기간:', planningDesignWeeks, '주');
-
+ 
     // 3단계: 기능별 개발 기간 합산
     let totalFeDays = 0;
     let totalBeDays = 0;
@@ -417,23 +432,23 @@ export function calculateEstimatedPeriod(estimate: ProjectEstimate): {
     // 4단계: 순수 개발 기간 확정
     const pureDevelopmentDays = calculatePureDevelopmentDays(totalFeDays, totalBeDays);
     devLog('4️⃣ 순수 개발 기간:', pureDevelopmentDays, '일 (FE/BE 중 최대값)');
-
+ 
     // 5단계: 최종 프로젝트 기간 계산
     const developmentWeeks = pureDevelopmentDays > 0 ? Math.max(1, Math.ceil(pureDevelopmentDays / 5)) : 0;
     devLog('5️⃣ 개발 기간(주):', developmentWeeks, '주 (', pureDevelopmentDays, '일, 최소 1주 보장)');
-
+ 
     const finalWeeks = calculateFinalProjectPeriod(planningDesignWeeks, pureDevelopmentDays, totalPages);
     const testWeeks = totalPages === 0 ? 0 : 2;
     devLog('6️⃣ 최종 계산:', planningDesignWeeks, '주(기획/디자인) +', developmentWeeks, '주(개발) +', testWeeks, '주(검수/테스트) =', finalWeeks, '주');
-
+ 
     // 월 단위 계산 (1개월 = 4주)
     const weeksPerMonth = 4;
     const monthValue = Math.ceil(finalWeeks / weeksPerMonth);
     devLog('7️⃣ 월 단위 변환:', finalWeeks, '주 ÷', weeksPerMonth, '= ', (finalWeeks / weeksPerMonth).toFixed(1), '→', monthValue, '개월');
-
+ 
     const estimatedPeriodText = `${finalWeeks}주 (약 ${monthValue}개월)`;
     devLog('✅ 최종 결과:', estimatedPeriodText);
-
+ 
     return {
       totalPages,
       planningDesignWeeks,
@@ -462,29 +477,29 @@ export function calculateEstimatedPeriod(estimate: ProjectEstimate): {
     };
   }
 }
-
+ 
 /**
- * 실제 총 금액 계산 (삭제되지 않은 기능들의 가격 합산)
- */
+* 실제 총 금액 계산 (삭제되지 않은 기능들의 가격 합산)
+*/
 export function calculateTotalAmount(estimate: ProjectEstimate): number {
   if (!estimate || !Array.isArray(estimate.categories)) {
     return 0;
   }
-
+ 
   let totalAmount = 0;
-
+ 
   (estimate.categories || []).forEach(category => {
     (category.sub_categories || []).forEach(subCategory => {
       (subCategory.items || []).forEach(item => {
         if (!item.is_deleted) {
-          const price = typeof item.price === 'string' 
-            ? parseFloat(item.price.replace(/,/g, '')) 
+          const price = typeof item.price === 'string'
+            ? parseFloat(item.price.replace(/,/g, ''))
             : item.price;
           totalAmount += (price || 0);
         }
       });
     });
   });
-
+ 
   return totalAmount;
 }
