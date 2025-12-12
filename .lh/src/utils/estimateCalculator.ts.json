@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 7,
+            "activePatchIndex": 8,
             "patches": [
                 {
                     "date": 1765503266535,
@@ -36,6 +36,10 @@
                 {
                     "date": 1765523774825,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,8 +10,9 @@\n   description: string;\n   fe: string; // 프론트엔드 개발 일수\n   be: string; // 백엔드 개발 일수\n   page_count: number; // 페이지 수\n+  cal_page: string; // 본 수 반영 여부 (\"Y\" 또는 \"N\")\n   is_deleted: boolean;\n   item_id?: string;\n }\n \n@@ -260,12 +261,16 @@\n         devLog(`     📂 하위 카테고리: ${subCategory.sub_category_name}`);\n         (subCategory.items || []).forEach(item => {\n           if (!item.is_deleted) {\n             const pageCount = (typeof item.page_count === 'number') ? item.page_count : 0;\n-            if (pageCount > 0) {\n-              devLog(`       📃 ${item.name}: ${pageCount}페이지`);\n+            \n+            // cal_page가 \"Y\"인 경우만 페이지 수를 합산\n+            if (item.cal_page === 'Y' && pageCount > 0) {\n+              devLog(`       📃 ${item.name}: ${pageCount}페이지 (본 수 반영: Y)`);\n+              totalPages += pageCount;\n+            } else if (pageCount > 0) {\n+              devLog(`       📃 ${item.name}: ${pageCount}페이지 (본 수 반영: ${item.cal_page || 'N'} - 제외)`);\n             }\n-            totalPages += pageCount;\n           }\n         });\n       });\n     } else {\n"
+                },
+                {
+                    "date": 1765524632354,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -261,16 +261,12 @@\n         devLog(`     📂 하위 카테고리: ${subCategory.sub_category_name}`);\n         (subCategory.items || []).forEach(item => {\n           if (!item.is_deleted) {\n             const pageCount = (typeof item.page_count === 'number') ? item.page_count : 0;\n-            \n-            // cal_page가 \"Y\"인 경우만 페이지 수를 합산\n-            if (item.cal_page === 'Y' && pageCount > 0) {\n-              devLog(`       📃 ${item.name}: ${pageCount}페이지 (본 수 반영: Y)`);\n-              totalPages += pageCount;\n-            } else if (pageCount > 0) {\n-              devLog(`       📃 ${item.name}: ${pageCount}페이지 (본 수 반영: ${item.cal_page || 'N'} - 제외)`);\n+            if (pageCount > 0) {\n+              devLog(`       📃 ${item.name}: ${pageCount}페이지`);\n             }\n+            totalPages += pageCount;\n           }\n         });\n       });\n     } else {\n"
                 }
             ],
             "date": 1765503266535,

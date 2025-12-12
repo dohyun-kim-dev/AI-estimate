@@ -262,14 +262,10 @@ export function calculateTotalPages(categories: Category[]): number {
         (subCategory.items || []).forEach(item => {
           if (!item.is_deleted) {
             const pageCount = (typeof item.page_count === 'number') ? item.page_count : 0;
-            
-            // cal_page가 "Y"인 경우만 페이지 수를 합산
-            if (item.cal_page === 'Y' && pageCount > 0) {
-              devLog(`       📃 ${item.name}: ${pageCount}페이지 (본 수 반영: Y)`);
-              totalPages += pageCount;
-            } else if (pageCount > 0) {
-              devLog(`       📃 ${item.name}: ${pageCount}페이지 (본 수 반영: ${item.cal_page || 'N'} - 제외)`);
+            if (pageCount > 0) {
+              devLog(`       📃 ${item.name}: ${pageCount}페이지`);
             }
+            totalPages += pageCount;
           }
         });
       });
