@@ -227,6 +227,7 @@ interface EstimateItem {
   fe: string; // 프론트엔드 개발 여부
   be: string; // 백엔드 개발 여부
   page_count: number; // 페이지 수
+  cal_page: string; // 본 수 반영 여부 ("Y" 또는 "N")
   is_deleted: boolean;
   item_id?: string;  // 옵셔널로 변경
 }

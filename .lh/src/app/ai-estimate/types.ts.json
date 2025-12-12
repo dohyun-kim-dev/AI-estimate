@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1756804119905,
@@ -12,6 +12,10 @@
                 {
                     "date": 1756859857308,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,10 +6,10 @@\n   description: string;\n   people: number;\n   days: number;\n   cost: number;\n-  front_end_period?: number; // 프론트엔드 개발 기간\n-  back_end_period?: number;  // 백엔드 개발 기간\n+  front_end_period?: number | string;\n+  back_end_period?: number | string;\n }\n \n export interface Estimate {\n   totalCost: number;\n"
+                },
+                {
+                    "date": 1765524388014,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,15 +1,23 @@\n // src/app/ai-estimate/types.ts\n export interface EstimateItem {\n-  id: string;\n-  category: string;\n-  task: string;\n+  id?: string;\n+  category?: string;\n+  task?: string;\n+  name: string;\n+  price: string;\n   description: string;\n-  people: number;\n-  days: number;\n-  cost: number;\n+  people?: number;\n+  days?: number;\n+  cost?: number;\n   front_end_period?: number | string;\n   back_end_period?: number | string;\n+  fe: string; // 프론트엔드 개발 일수 (예: \"3일\")\n+  be: string; // 백엔드 개발 일수 (예: \"3일\")\n+  page_count: number; // 페이지 수\n+  cal_page: string; // 본 수 반영 여부 (\"Y\" 또는 \"N\")\n+  is_deleted: boolean;\n+  item_id?: string;\n }\n \n export interface Estimate {\n   totalCost: number;\n"
                 }
             ],
             "date": 1756804119905,
