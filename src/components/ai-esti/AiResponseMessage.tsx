@@ -3,6 +3,15 @@
 import React from 'react';
 import styled, { keyframes } from 'styled-components';
 
+const spin = keyframes`
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+`;
+
 const MessageWrapper = styled.div`
   display: flex;
   gap: 15px;

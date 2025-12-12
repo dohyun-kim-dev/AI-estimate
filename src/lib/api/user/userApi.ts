@@ -107,7 +107,7 @@ export async function googleLoginInitial(params: GoogleLoginInitialParams) {
 }
 
 export async function googleLoginUpdate(params: GoogleLoginUpdateParams) {
-  return callUserApi<GoogleLoginResponse>({
+  return callUserApi({
     title: '구글 로그인 정보 업데이트',
     url: getApiUrl('/users/login/google'),
     method: 'POST',
@@ -270,7 +270,7 @@ export async function getChatMessages(sessionId: string) {
   });
 }
 
-export async function getChatSessionMessages(sessionId: string) {
+export async function getChatSessionMessages(sessionId: string): Promise<ChatMessage[]> {
   return callUserApi<ChatMessage[]>({
     title: '채팅 세션 메시지 불러오기',
     url: getApiUrl(`/company/chat/sessions/${sessionId}/messages`),

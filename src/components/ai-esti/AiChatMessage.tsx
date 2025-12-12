@@ -974,7 +974,7 @@ export const PrintableInvoice: React.FC<PrintableInvoiceProps> = ({
     .map(([stepId, selectedIds]) => {
       const step = stepData.find((s) => s.id === stepId);
       if (!step) return '';
-      const labels = selectedIds
+      const labels = (Array.isArray(selectedIds) ? selectedIds : [])
         .map((id) => step.options.find((opt) => opt.id === id)?.label)
         .filter((label): label is string => !!label);
       return labels.join(', ');
@@ -1514,7 +1514,7 @@ export function AiChatMessage({
                             {item.note &&
                             /^[A-Z]{3}\s[\d,.]+\s\(₩[\d,.]+\)$/.test(item.note)
                               ? item.note
-                              : formatAmountWithCurrency(item.amount, true)}
+                              : formatAmountWithCurrency(item.amount, countryCode)}
                           </span>
                         </div>
                         <div className="actions-row">
@@ -1551,16 +1551,16 @@ export function AiChatMessage({
                                 invoiceData.total?.amount ||
                                 0) * 1
                             ),
-                            true
+                            countryCode
                           )
                         : calculatedTotalAmount !== undefined
                         ? formatAmountWithCurrency(
                             Math.round(calculatedTotalAmount * 1),
-                            true
+                            countryCode
                           )
                         : formatAmountWithCurrency(
                             Math.round((invoiceData.total?.amount || 0) * 1),
-                            true
+                            countryCode
                           )}
                     </span>
                   </div>
@@ -1578,16 +1578,16 @@ export function AiChatMessage({
                                 invoiceData.total?.amount ||
                                 0) * 1.1
                             ),
-                            true
+                            countryCode
                           )
                         : calculatedTotalAmount !== undefined
                         ? formatAmountWithCurrency(
                             Math.round(calculatedTotalAmount * 1.1),
-                            true
+                            countryCode
                           )
                         : formatAmountWithCurrency(
                             Math.round((invoiceData.total?.amount || 0) * 1.1),
-                            true
+                            countryCode
                           )}
                     </span>
                   </div>
@@ -1725,7 +1725,7 @@ export function AiChatMessage({
                                   : AppColors.onBackground,
                               }}
                             >
-                              {formatAmountWithCurrency(item.amount, true)}
+                              {formatAmountWithCurrency(item.amount, countryCode)}
                             </td>
                             <td className="col-actions">
                               <ActionButton

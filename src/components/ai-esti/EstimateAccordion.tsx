@@ -5,7 +5,7 @@ import EstimateAccordionItem from "./EstimateAccordionItem";
 import { patchChatMessages, uploadEstimatePdf } from "@/lib/api/user/userApi";
 import { buildFullEstimateData } from "@/hooks/estimate";
 import { ChatMessage, useChatStore } from "@/store/chatStore";
-import { calculateEstimatedPeriod, updateDesignItemPrices, calculateTotalPages } from "@/utils/estimateCalculator";
+import { calculateEstimatedPeriod, updateCommonCategoryPrices, calculateTotalPages } from "@/utils/estimateCalculator";
 import { IoChevronDown, IoChevronUp } from 'react-icons/io5';
 import { devLog } from "../../utils/devLogger";
 import { useCompanyStore } from '@/store/companyStore';
@@ -253,7 +253,7 @@ useEffect(() => {
   
   // 화면설계/UI디자인 가격 업데이트
   const totalPages = calculateTotalPages(data.categories);
-  const updatedEstimate = updateDesignItemPrices(data, totalPages);
+  const updatedEstimate = updateCommonCategoryPrices(data, totalPages);
   
   // 업데이트된 데이터가 기존과 다른 경우에만 저장
   const hasChanges = JSON.stringify(updatedEstimate) !== JSON.stringify(data);
@@ -325,7 +325,7 @@ useEffect(() => {
           if (!hasDesignPricing) {
             devLog("견적서 업로드 전 가격 업데이트 시작...");
             const totalPages = calculateTotalPages(est.categories);
-            finalEst = updateDesignItemPrices(est, totalPages);
+            finalEst = updateCommonCategoryPrices(est, totalPages);
             devLog("견적서 가격 업데이트 완료, 데이터 빌드 시작...");
           } else {
             devLog("이미 업데이트된 가격 데이터 사용, 데이터 빌드 시작...");
@@ -417,7 +417,7 @@ useEffect(() => {
         // ⭐️ 아이템 삭제/복구 후 총 페이지 수 재계산 및 화면설계/UI디자인 가격 업데이트
         devLog("아이템 변경 후 화면설계/UI디자인 가격 재계산 시작...");
         const newTotalPages = calculateTotalPages(next.categories);
-        const finalUpdatedEst = updateDesignItemPrices(next, newTotalPages);
+        const finalUpdatedEst = updateCommonCategoryPrices(next, newTotalPages);
         devLog(`페이지 수 변경: ${newTotalPages}페이지 → 화면설계/UI디자인 가격 업데이트 완료`);
         
         // next를 최종 업데이트된 데이터로 교체

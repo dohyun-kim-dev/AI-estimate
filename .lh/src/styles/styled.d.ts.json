@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1755953514832,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1765514290788,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,7 @@\n // src/styles/styled.d.ts\n import 'styled-components';\n-import { Theme } from '@styles/theme';\n+import { Theme } from './theme';\n \n declare module 'styled-components' {\n   export interface DefaultTheme extends Theme {}\n-}\n+}\n\\ No newline at end of file\n"
                 }
             ],
             "date": 1755953514832,

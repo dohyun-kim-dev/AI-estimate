@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/components/ai-esti/AiResponseMessage.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1765514580530,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1765514580530,
+            "name": "Commit-0",
+            "content": "\"use client\";\n\nimport React from 'react';\nimport styled, { keyframes } from 'styled-components';\n\nconst spin = keyframes`\n  from {\n    transform: rotate(0deg);\n  }\n  to {\n    transform: rotate(360deg);\n  }\n`;\n\nconst MessageWrapper = styled.div`\n  display: flex;\n  gap: 15px;\n  padding: 12px 0;\n  max-width: 800px;\n`;\n\n\nconst ProfileImage = styled.img<{ 'data-is-loading'?: boolean }>`\n  width: 44px;\n  height: 44px;\n  border-radius: 50%;\n  object-fit: cover;\n  position: relative;\n  z-index: 1;\n\n  ${props => props['data-is-loading'] && `\n    &::before {\n      content: '';\n      position: absolute;\n      top: -2px;\n      left: -2px;\n      right: -2px;\n      bottom: -2px;\n      border: 2px solid transparent;\n      border-top-color: #3498db; // 로딩 바 색상\n      border-radius: 50%;\n      animation: ${spin} 1s linear infinite;\n      z-index: -1;\n    }\n  `}\n`;\n\n\nconst ContentWrapper = styled.div`\n  flex: 1;\n`;\n\nconst Header = styled.div`\n  display:flex;\n  gap: 8px;\n  margin-bottom: 4px;\n\n  h2 {\n    font-size: 18px;\n    font-weight: 500;\n    line-height: 160%;\n    margin: 4px 0 4px 0;\n    color: ${({ theme }) => theme.text};\n  }\n`;\n\nconst MessageContent = styled.div`\n  font-size: 14px;\n  line-height: 160%;\n  color: ${({ theme }) => theme.text};\n  white-space: pre-wrap;\n  \n  p {\n    margin: 0;\n  }\n`;\n\ninterface AiResponseMessageProps {\n  profileImage?: string;\n  name?: string;\n  content: string | React.ReactNode;\n  className?: string;\n  isLoading?: boolean;\n}\n\nconst AiResponseMessage: React.FC<AiResponseMessageProps> = ({\n  profileImage = \"/ai-estimate/pretty.png\",\n  name = \"AI 컨설턴트\",\n  content,\n  className,\n  isLoading = false\n}) => {\n\nconst spin = keyframes`\n0% { transform: rotate(0deg); }\n100% { transform: rotate(360deg); }\n`;\n\n  return (\n    <MessageWrapper className={className}>\n      <ContentWrapper>\n        {profileImage == null ? null :\n        <Header>\n          {profileImage && (\n            <ProfileImage src={profileImage} alt={name} data-is-loading={isLoading} />\n          )}\n          <h2>{name}</h2>\n        </Header>\n       }\n        <MessageContent>\n          {typeof content === 'string' ? <p>{content}</p> : content}\n        </MessageContent>\n      </ContentWrapper>\n    </MessageWrapper>\n  );\n};\n\nexport default AiResponseMessage;"
+        }
+    ]
+}

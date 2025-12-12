@@ -1,0 +1,22 @@
+{
+    "sourceFile": "src/components/ai-esti/EstimateSheet.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1765514797130,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1765514807120,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,9 +2,9 @@\n \"use client\";\n \n import React from 'react';\n import styled from 'styled-components';\n-import { ProjectEstimate } from '../types';\n+import { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';\n import EstimateAccordion from './EstimateAccordion';\n \n const SheetWrapper = styled.div`\n   background-color: ${({ theme }) => theme.surface1};\n"
+                }
+            ],
+            "date": 1765514797130,
+            "name": "Commit-0",
+            "content": "// src/app/ai-estimate/components/EstimateSheet.tsx\n\"use client\";\n\nimport React from 'react';\nimport styled from 'styled-components';\nimport { ProjectEstimate } from '../types';\nimport EstimateAccordion from './EstimateAccordion';\n\nconst SheetWrapper = styled.div`\n  background-color: ${({ theme }) => theme.surface1};\n  color: ${({ theme }) => theme.text};\n  border-radius: 12px;\n  overflow: hidden;\n  box-shadow: 0 4px 12px rgba(0,0,0,0.05);\n`;\n\nconst Header = styled.div`\n  background-color: ${({ theme }) => theme.surface2};\n  padding: 25px;\n  text-align: center;\n  border-bottom: 1px solid ${({ theme }) => theme.border};\n`;\n\nconst ProjectName = styled.h1`\n  font-size: 1.8em;\n  color: ${({ theme }) => theme.text};\n  margin-bottom: 15px;\n  font-weight: 700;\n`;\n\nconst PriceInfo = styled.div`\n  display: flex;\n  justify-content: space-around;\n  font-size: 1.1em;\n  color: ${({ theme }) => theme.subtleText};\n  gap: 20px;\n`;\n\ninterface EstimateSheetProps {\n  data: ProjectEstimate;\n}\n\nconst EstimateSheet: React.FC<EstimateSheetProps> = ({ data }) => {\n  const handleItemClick = (item: any) => {\n    // Handle item click - could be used for showing details, editing, etc.\n    console.log('Item clicked:', item);\n  };\n\n  return (\n    <SheetWrapper>\n      <Header>\n        <ProjectName>{data.project_name}</ProjectName>\n        <PriceInfo>\n          <span><strong>총 합계:</strong> {data.total_price}원</span>\n          <span><strong>부가세 포함:</strong> {data.vat_included_price}원</span>\n          <span><strong>예상 기간:</strong> {data.estimated_period}</span>\n        </PriceInfo>\n      </Header>\n      <EstimateAccordion data={data} onItemClick={handleItemClick} />\n    </SheetWrapper>\n  );\n};\n\nexport default EstimateSheet;\n"
+        }
+    ]
+}

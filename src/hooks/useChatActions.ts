@@ -17,7 +17,7 @@ import { devLog } from '@/utils/devLogger'
 
 import { ensureEstimateUuid, buildFullEstimateData, extractIntroFromReply } from '@/hooks/estimate';
 import { uploadEstimatePdf } from '@/lib/api/user/userApi';
-import { calculateTotalAmount, calculateEstimatedPeriod, calculateTotalPages, updateDesignItemPrices } from '../utils/estimateCalculator';
+import { calculateTotalAmount, calculateEstimatedPeriod, calculateTotalPages, updateCommonCategoryPrices } from '../utils/estimateCalculator';
 import { transformMessageForDisplay } from '@/utils/messageTransform';
 
 // 견적서 데이터를 추출하는 유틸리티 함수
@@ -1175,7 +1175,7 @@ if (estimateData) {
     
     // 🔍 EstimateAccordion과 동일한 전처리 적용 테스트
     const totalPages = calculateTotalPages(estimateData.categories);
-    const preprocessedEstimate = updateDesignItemPrices(estimateData, totalPages);
+    const preprocessedEstimate = updateCommonCategoryPrices(estimateData, totalPages);
     
     const totalAmountOriginal = calculateTotalAmount(estimateData);
     const totalAmountPreprocessed = calculateTotalAmount(preprocessedEstimate);

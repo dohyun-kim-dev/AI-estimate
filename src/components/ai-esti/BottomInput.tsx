@@ -523,17 +523,16 @@ const BottomInput: React.FC<BottomInputProps> = ({
       devLog('[handleEstimateConfirm] chatSessionId:', chatSessionId);
 
       // 2. getChatSessionMessages 호출
-      const response = await getChatSessionMessages(chatSessionId);
+      const messages = await getChatSessionMessages(chatSessionId);
       
-      if (response.statusCode !== 200 || !response.data || response.data.length === 0) {
+      if (!messages || messages.length === 0) {
         showError('채팅 메시지를 불러올 수 없습니다.');
         return;
       }
 
-      devLog('[handleEstimateConfirm] 메시지 응답:', response.data);
+      devLog('[handleEstimateConfirm] 메시지 응답:', messages);
 
       // 3. 가장 마지막 메시지에서 estimateId 추출
-      const messages = response.data;
       const lastMessage = messages[messages.length - 1];
       
       const estimateId = (lastMessage?.content as any)?.estimateId;

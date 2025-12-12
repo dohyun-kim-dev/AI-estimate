@@ -237,7 +237,7 @@ const NON_DISCOUNT_ITEMS = ['화면설계', '화면디자인', '화면퍼블리�
 
 interface EstimateAccordionItemProps {
   name: string;
-  price?: string;ㄴ
+  price?: string;
   description?: string;
   items?: EstimateItem[];
   depth: 1 | 2 | 3;

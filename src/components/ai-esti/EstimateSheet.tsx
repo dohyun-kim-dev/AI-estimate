@@ -3,7 +3,7 @@
 
 import React from 'react';
 import styled from 'styled-components';
-import { ProjectEstimate } from '../types';
+import { ProjectEstimate } from '@/app/ai-estimate/types/projectEstimate';
 import EstimateAccordion from './EstimateAccordion';
 
 const SheetWrapper = styled.div`
@@ -41,6 +41,11 @@ interface EstimateSheetProps {
 }
 
 const EstimateSheet: React.FC<EstimateSheetProps> = ({ data }) => {
+  const handleItemClick = (item: any) => {
+    // Handle item click - could be used for showing details, editing, etc.
+    console.log('Item clicked:', item);
+  };
+
   return (
     <SheetWrapper>
       <Header>
@@ -51,7 +56,7 @@ const EstimateSheet: React.FC<EstimateSheetProps> = ({ data }) => {
           <span><strong>예상 기간:</strong> {data.estimated_period}</span>
         </PriceInfo>
       </Header>
-      <EstimateAccordion data={data} />
+      <EstimateAccordion data={data} onItemClick={handleItemClick} />
     </SheetWrapper>
   );
 };
