@@ -261,9 +261,17 @@ export function calculateTotalPages(categories: Category[]): number {
         devLog(`     📂 하위 카테고리: ${subCategory.sub_category_name}`);
         (subCategory.items || []).forEach(item => {
           if (!item.is_deleted) {
-            const pageCount = (typeof item.page_count === 'number') ? item.page_count : 0;
+            // page_count가 string일 수도 있으므로 안전하게 변환
+            let pageCount = 0;
+            if (typeof item.page_count === 'number') {
+              pageCount = item.page_count;
+            } else if (typeof item.page_count === 'string') {
+              const parsed = parseInt(item.page_count, 10);
+              pageCount = !isNaN(parsed) ? parsed : 0;
+            }
+            
             if (pageCount > 0) {
-              devLog(`       📃 ${item.name}: ${pageCount}페이지`);
+              devLog(`       📃 ${item.name}: ${pageCount}페이지 (원본: ${item.page_count})`);
             }
             totalPages += pageCount;
           }

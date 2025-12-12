@@ -360,26 +360,18 @@ interface EstimateItem {
   description: string;           // 설명
   fe: string;                    // 프론트엔드 기간
   be: string;                    // 백엔드 기간
-  page_count: number;            // 페이지 수
+  page_count: number | string;   // 페이지 수 (AI가 string으로 반환할 수도 있음)
   cal_page: string;              // 본 수 반영 여부 ("Y" 또는 "N")
   is_deleted: boolean;           // 삭제 여부 (기본값: false)
 }
 
 **단가표 컬럼 매핑 규칙:**
-- "금액" → price 필드 (단가표의 실제 가격을 그대로 사용)
+- "금액" → price 필드
 - "기능명" 또는 "제목" → name 필드
 - "설명" → description 필드
 - "프론트엔드_기간" 또는 "FE기간" → fe 필드
 - "백엔드_기간" 또는 "BE기간" → be 필드
 - "본 수 반영" → cal_page 필드 ("Y" 또는 "N" 값)
-
-**cal_page 필드 사용 규칙:**
-- cal_page: "Y" → 페이지 수 기반 계산 (page_count × 단가)
-- cal_page: "N" → 고정 가격 사용 (단가표의 price 값 그대로 사용)
-- 기획, 디자인, 환경구축 등 ⚙️ 기본 공통 항목들은 cal_page: "N"으로 설정
-- 화면 개발 관련 기능들은 cal_page: "Y"로 설정
-
-**중요**: 단가표에 가격이 명시된 항목은 절대로 price를 "0"으로 설정하지 말고, 반드시 단가표의 실제 금액을 사용하세요.
 
 `;
           

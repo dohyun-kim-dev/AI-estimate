@@ -223,8 +223,19 @@ export const combineSystemPrompts = async () => {
   devLog('[combineSystemPrompts] 최종 프롬프트 생성 완료, 길이:', finalPrompt.length);
   devLog('[combineSystemPrompts] AI 프롬프트 포함 여부:', finalPrompt.includes(aiPromptsContent.substring(0, 50)));
   devLog('[combineSystemPrompts] 단가표 마크다운 포함 여부:', finalPrompt.includes('# 단가표 정보'));
-  devLog('priceListMarkdown', priceListMarkdown);
-  devLog('priceList', priceList);
+  
+  // 🔍 디자인 관련 데이터 상세 로그
+  devLog('🔍 [PRICE_DATA_DEBUG] priceListMarkdown 전체:', priceListMarkdown);
+  devLog('🔍 [PRICE_DATA_DEBUG] priceList 전체:', JSON.stringify(priceList, null, 2));
+  
+  // 디자인 관련 항목 필터링해서 확인
+  const designRelatedItems = priceList?.filter(item => 
+    item.기능명?.includes('디자인') || 
+    item.기능명?.includes('화면설계') || 
+    item.기능명?.includes('UI') || 
+    item.기능명?.includes('UX')
+  ) || [];
+  devLog('🎨 [DESIGN_DEBUG] 디자인 관련 항목들:', JSON.stringify(designRelatedItems, null, 2));
 
   // 최종 프롬프트에 마크다운이 포함되었는지 상세 확인
   if (finalPrompt.includes('# 단가표 정보')) {
