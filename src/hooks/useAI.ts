@@ -379,6 +379,12 @@ interface EstimateItem {
 3. 화면 개발 관련 기능은 cal_page: "Y"로 설정하고 page_count와 함께 price는 단가표의 실제 단가 사용
 4. 어떤 경우에도 단가표에 가격이 있는 항목의 price를 "0"으로 설정하지 말 것
 
+**⚙️ 기본 공통 카테고리 특별 규칙:**
+- 스토리보드, UI/UX 디자인 항목: cal_page: "N", page_count: 0, price: 단가표의 실제 금액
+- 환경구축 관련 항목: cal_page: "N", page_count: 0, price: 단가표의 실제 금액
+- 페이지 수를 추론하지 않는다고 해서 가격을 0으로 설정하는 것이 아님
+- 기본 공통 항목들도 반드시 단가표의 실제 가격을 사용해야 함
+
 `;
           
           const systemPrompt = baseSystemPrompt + additionalInstructions;

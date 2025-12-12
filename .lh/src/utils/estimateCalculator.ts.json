@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 9,
+            "activePatchIndex": 10,
             "patches": [
                 {
                     "date": 1765503266535,
@@ -44,6 +44,10 @@
                 {
                     "date": 1765526134101,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -260,11 +260,19 @@\n       (category.sub_categories || []).forEach(subCategory => {\n         devLog(`     📂 하위 카테고리: ${subCategory.sub_category_name}`);\n         (subCategory.items || []).forEach(item => {\n           if (!item.is_deleted) {\n-            const pageCount = (typeof item.page_count === 'number') ? item.page_count : 0;\n+            // page_count가 string일 수도 있으므로 안전하게 변환\n+            let pageCount = 0;\n+            if (typeof item.page_count === 'number') {\n+              pageCount = item.page_count;\n+            } else if (typeof item.page_count === 'string') {\n+              const parsed = parseInt(item.page_count, 10);\n+              pageCount = !isNaN(parsed) ? parsed : 0;\n+            }\n+            \n             if (pageCount > 0) {\n-              devLog(`       📃 ${item.name}: ${pageCount}페이지`);\n+              devLog(`       📃 ${item.name}: ${pageCount}페이지 (원본: ${item.page_count})`);\n             }\n             totalPages += pageCount;\n           }\n         });\n"
+                },
+                {
+                    "date": 1765529200667,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -316,11 +316,21 @@\n                 \n                 let newPrice = currentPrice;\n                 \n                 if (calPage === 'Y' || calPage === 'y') {\n-                  // cal_page가 Y인 경우: 단가 * 총 페이지수\n-                  newPrice = currentPrice * totalPages;\n-                  devLog(`   🔄 ${item.name}: cal_page Y → ${currentPrice} × ${totalPages} = ${newPrice}`);\n+                  // cal_page가 Y인 경우: 서브카테고리별 고정 단가 * 총 페이지수\n+                  const subCategoryName = subCategory.sub_category_name;\n+                  let unitPrice = currentPrice; // 기본값은 AI가 준 가격\n+                  \n+                  // 서브카테고리명에 따른 고정 단가 적용\n+                  if (subCategoryName.includes('서비스 기획')) {\n+                    unitPrice = 150000;\n+                  } else if (subCategoryName.includes('디자인') || subCategoryName.includes('퍼블리싱')) {\n+                    unitPrice = 100000;\n+                  }\n+                  \n+                  newPrice = unitPrice * totalPages;\n+                  devLog(`   🔄 ${item.name}: cal_page Y → ${unitPrice} × ${totalPages} = ${newPrice} (서브카테고리: ${subCategoryName})`);\n                 } else {\n                   // cal_page가 N인 경우: 단가 그대로\n                   newPrice = currentPrice;\n                   devLog(`   ➡️ ${item.name}: cal_page N → ${currentPrice} (고정가격)`);\n"
                 }
             ],
             "date": 1765503266535,

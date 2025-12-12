@@ -317,9 +317,19 @@ export function updateCommonCategoryPrices(estimate: ProjectEstimate, totalPages
                 let newPrice = currentPrice;
                 
                 if (calPage === 'Y' || calPage === 'y') {
-                  // cal_page가 Y인 경우: 단가 * 총 페이지수
-                  newPrice = currentPrice * totalPages;
-                  devLog(`   🔄 ${item.name}: cal_page Y → ${currentPrice} × ${totalPages} = ${newPrice}`);
+                  // cal_page가 Y인 경우: 서브카테고리별 고정 단가 * 총 페이지수
+                  const subCategoryName = subCategory.sub_category_name;
+                  let unitPrice = currentPrice; // 기본값은 AI가 준 가격
+                  
+                  // 서브카테고리명에 따른 고정 단가 적용
+                  if (subCategoryName.includes('서비스 기획')) {
+                    unitPrice = 150000;
+                  } else if (subCategoryName.includes('디자인') || subCategoryName.includes('퍼블리싱')) {
+                    unitPrice = 100000;
+                  }
+                  
+                  newPrice = unitPrice * totalPages;
+                  devLog(`   🔄 ${item.name}: cal_page Y → ${unitPrice} × ${totalPages} = ${newPrice} (서브카테고리: ${subCategoryName})`);
                 } else {
                   // cal_page가 N인 경우: 단가 그대로
                   newPrice = currentPrice;
