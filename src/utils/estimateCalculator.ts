@@ -320,10 +320,41 @@ export function updateCommonCategoryPrices(estimate: ProjectEstimate, totalPages
                   // 서비스 기획: 15만원 × 총페이지수
                   newPrice = 150000 * totalPages;
                   devLog(`   🔄 ${item.name}: 서비스 기획 → 150000 × ${totalPages} = ${newPrice}`);
+                  // 설명에 총페이지수 기준 계산 표시 (중복 방지)
+                  try {
+                    const standardizedNote = ` (총페이지수: ${totalPages}페이지 기준 계산)`;
+                    let descStr = item.description ? String(item.description) : '';
+                    // 기존에 숫자형 페이지 표기나 이전에 붙은 노트가 여러개 있을 경우 제거
+                    // 예: (47페이지) (41페이지) 등을 모두 제거
+                    descStr = descStr.replace(/\(\s*\d+\s*페이지\s*\)/g, '');
+                    // 이전에 붙은 '총페이지수' 형태의 노트도 제거
+                    descStr = descStr.replace(/\(\s*총페이지수[\s\S]*?\)/gi, '');
+                    // 정리된 문자열 앞뒤 공백 제거 및 중복 공백 축소
+                    descStr = descStr.replace(/\s{2,}/g, ' ').trim();
+                    // 필요시 맨 끝의 불필요한 구두점 제거
+                    descStr = descStr.replace(/[.,，;:\s]+$/g, '');
+                    const beforeDesc = item.description || '';
+                    item.description = descStr ? `${descStr}${standardizedNote}` : standardizedNote;
+                    devLog(`   📝 ${item.name} description updated. before: "${beforeDesc}", after: "${item.description}"`);
+                  } catch (e) {
+                    devLog('   ⚠️ 설명에 총페이지수 주석 추가 실패:', e);
+                  }
                 } else if ((subCategoryName.includes('디자인') || subCategoryName.includes('퍼블리싱')) && currentPrice > 0) {
                   // 디자인/퍼블리싱: 10만원 × 총페이지수
                   newPrice = 100000 * totalPages;
                   devLog(`   🔄 ${item.name}: 디자인/퍼블리싱 → 100000 × ${totalPages} = ${newPrice}`);
+                  // 설명에 총페이지수 기준 계산 표시 (중복 방지)
+                  try {
+                    const standardizedNote = ` (총페이지수: ${totalPages}페이지 기준 계산)`;
+                    let descStr = item.description ? String(item.description) : '';
+                    descStr = descStr.replace(/\(\s*\d+\s*페이지\s*\)/g, '');
+                    descStr = descStr.replace(/\(\s*총페이지수[\s\S]*?\)/gi, '');
+                    descStr = descStr.replace(/\s{2,}/g, ' ').trim();
+                    descStr = descStr.replace(/[.,，;:\s]+$/g, '');
+                    item.description = descStr ? `${descStr}${standardizedNote}` : standardizedNote;
+                  } catch (e) {
+                    devLog('   ⚠️ 설명에 총페이지수 주석 추가 실패:', e);
+                  }
                 } else {
                   // 나머지는 단가 그대로 유지
                   newPrice = currentPrice;
