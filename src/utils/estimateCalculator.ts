@@ -306,9 +306,6 @@ export function updateCommonCategoryPrices(estimate: ProjectEstimate, totalPages
           (subCategory.items || []).forEach(item => {
             if (!item.is_deleted) {
               try {
-                // cal_page 필드 확인 (AI 응답에서 제공)
-                const calPage = (item as any).cal_page || 'N';
-                
                 // 기존 가격에서 숫자 추출
                 const currentPrice = typeof item.price === 'string'
                   ? parseFloat(item.price.replace(/,/g, ''))
@@ -316,29 +313,21 @@ export function updateCommonCategoryPrices(estimate: ProjectEstimate, totalPages
                 
                 let newPrice = currentPrice;
                 
-                if (calPage === 'Y' || calPage === 'y') {
-                  // cal_page가 Y인 경우: 서브카테고리별 고정 단가 * 총 페이지수
-                  const subCategoryName = subCategory.sub_category_name;
-                  let unitPrice = 0; // 기본값을 0으로 설정
-                  
-                  // 서브카테고리명에 따른 고정 단가 적용
-                  if (subCategoryName.includes('기획')) {
-                    unitPrice = 150000;
-                  } else if (subCategoryName.includes('디자인') || subCategoryName.includes('퍼블리싱')) {
-                    unitPrice = 100000;
-                  } else {
-                    // 매칭되는 카테고리가 없으면 기본 단가 사용 (한 번만)
-                    // description에서 원래 단가를 추출하거나 기본값 사용
-                    const extractedUnit = extractUnitFromDescription(item.description);
-                    unitPrice = extractedUnit || 100000; // 추출 실패시 기본 10만원
-                  }
-                  
-                  newPrice = unitPrice * totalPages;
-                  devLog(`   🔄 ${item.name}: cal_page Y → ${unitPrice} × ${totalPages} = ${newPrice} (서브카테고리: ${subCategoryName})`);
+                // 서브카테고리명에 따라 페이지 수 곱하기 여부 결정
+                const subCategoryName = subCategory.sub_category_name;
+                
+                if (subCategoryName.includes('기획') && currentPrice > 0) {
+                  // 서비스 기획: 15만원 × 총페이지수
+                  newPrice = 150000 * totalPages;
+                  devLog(`   🔄 ${item.name}: 서비스 기획 → 150000 × ${totalPages} = ${newPrice}`);
+                } else if ((subCategoryName.includes('디자인') || subCategoryName.includes('퍼블리싱')) && currentPrice > 0) {
+                  // 디자인/퍼블리싱: 10만원 × 총페이지수
+                  newPrice = 100000 * totalPages;
+                  devLog(`   🔄 ${item.name}: 디자인/퍼블리싱 → 100000 × ${totalPages} = ${newPrice}`);
                 } else {
-                  // cal_page가 N인 경우: 단가 그대로
+                  // 나머지는 단가 그대로 유지
                   newPrice = currentPrice;
-                  devLog(`   ➡️ ${item.name}: cal_page N → ${currentPrice} (고정가격)`);
+                  devLog(`   ➡️ ${item.name}: 기타 항목 → ${currentPrice} (단가 그대로)`);
                 }
                 
                 item.price = newPrice.toLocaleString();
@@ -503,3 +492,4 @@ export function calculateTotalAmount(estimate: ProjectEstimate): number {
  
   return totalAmount;
 }
+ 
